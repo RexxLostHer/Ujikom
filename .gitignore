@@ -1,0 +1,4 @@
+# Jangan pernah commit file kredensial Firebase asli
+*firebase-adminsdk*.json
+.DS_Store
+node_modules/

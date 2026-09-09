@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Siswa - Login</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Presensi Siswa</h1>
+    <p class="subtitle">Login orang tua</p>
+
+    <form id="loginForm">
+      <label for="nisn">NISN Anak</label>
+      <input type="text" id="nisn" placeholder="Masukkan NISN" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Masukkan password" required>
+
+      <button type="submit">Masuk</button>
+    </form>
+
+    <p id="errorMsg" class="error"></p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="assets/firebase-config.js"></script>
+  <script src="assets/login.js"></script>
+</body>
+</html>

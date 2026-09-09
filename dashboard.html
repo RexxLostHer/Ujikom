@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Siswa - Dashboard</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 id="namaAnak">Memuat...</h1>
+      <button id="logoutBtn" class="logout">Keluar</button>
+    </div>
+
+    <div id="statusHariIni" class="status-card">
+      <p>Memuat status hari ini...</p>
+    </div>
+
+    <h2>Riwayat Absensi</h2>
+    <div id="riwayat" class="riwayat-list"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="assets/firebase-config.js"></script>
+  <script src="assets/dashboard.js"></script>
+</body>
+</html>
