@@ -61,6 +61,7 @@ button:hover { background: #1d4ed8; }
 }
 
 .status-card.belum { background: #fef2f2; border-color: #fecaca; }
+.status-card.peringatan { background: #fffbeb; border-color: #fde68a; }
 
 h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
 
@@ -73,4 +74,10 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
   background: #fafafa;
   border-radius: 8px;
   font-size: 14px;
+}
+
+.riwayat-item.peringatan {
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 600;
 }

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Siswa - Admin</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+<div class="container admin-container">
+  <div class="header">
+    <h1>Panel Admin</h1>
+    <button id="logoutBtn" class="logout">Keluar</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="siswa">Data Siswa</button>
+    <button class="tab-btn" data-tab="kartu">Mapping Kartu NFC</button>
+    <button class="tab-btn" data-tab="jadwal">Jadwal Pulang</button>
+  </div>
+
+  <!-- Tab: Data Siswa -->
+  <div id="tab-siswa" class="tab-panel active">
+    <form id="formSiswa" class="inline-form">
+      <input type="hidden" id="siswaEditingKey">
+      <div class="form-row">
+        <div>
+          <label for="siswaNisn">NISN</label>
+          <input type="text" id="siswaNisn" placeholder="Contoh: 0067787337" required>
+        </div>
+        <div>
+          <label for="siswaNama">Nama</label>
+          <input type="text" id="siswaNama" placeholder="Nama siswa" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="siswaKelas">Kelas</label>
+          <input type="text" id="siswaKelas" placeholder="Contoh: 9A" required>
+        </div>
+        <div>
+          <label for="siswaPassword">Password</label>
+          <input type="text" id="siswaPassword" placeholder="Password login ortu" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" id="siswaSubmitBtn">Tambah Siswa</button>
+        <button type="button" id="siswaCancelBtn" class="btn-secondary hidden">Batal Edit</button>
+      </div>
+    </form>
+    <p id="siswaMsg" class="msg"></p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>NISN</th><th>Nama</th><th>Kelas</th><th></th></tr>
+      </thead>
+      <tbody id="siswaTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab: Mapping Kartu NFC -->
+  <div id="tab-kartu" class="tab-panel">
+    <form id="formKartu" class="inline-form">
+      <div class="form-row">
+        <div>
+          <label for="kartuId">ID Kartu NFC</label>
+          <input type="text" id="kartuId" placeholder="UID kartu (hex, dari scan)" required>
+        </div>
+        <div>
+          <label for="kartuNisn">NISN Siswa</label>
+          <select id="kartuNisn" required></select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Simpan Mapping</button>
+      </div>
+    </form>
+    <p id="kartuMsg" class="msg"></p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th></th></tr>
+      </thead>
+      <tbody id="kartuTableBody"></tbody>
+    </table>
+  </div>
+  <!-- Tab: Jadwal Pulang -->
+  <div id="tab-jadwal" class="tab-panel">
+    <p class="tab-desc">Set jam pulang resmi per kelas. Kalau siswa tap kartu "pulang" sebelum jam ini, orang tua akan lihat label "Pulang lebih awal" di dashboard.</p>
+    <form id="formJadwal" class="inline-form">
+      <div class="form-row">
+        <div>
+          <label for="jadwalKelas">Kelas</label>
+          <input type="text" id="jadwalKelas" placeholder="Contoh: 9A" required>
+        </div>
+        <div>
+          <label for="jadwalJam">Jam Pulang</label>
+          <input type="time" id="jadwalJam" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Simpan Jadwal</button>
+      </div>
+    </form>
+    <p id="jadwalMsg" class="msg"></p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr>
+      </thead>
+      <tbody id="jadwalTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
