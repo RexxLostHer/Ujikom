@@ -64,16 +64,21 @@ Supaya nyambung ke siswa yang benar, `absensi.py` sebaiknya:
 
 Contoh potongan Python (pakai `firebase-admin` SDK):
 ```python
-def catat_absensi(uid_kartu):
+def catat_absensi(uid_kartu, status="hadir"):
     nisn = db.reference(f"kartu/{uid_kartu}").get()
     if nisn is None:
         print(f"Kartu {uid_kartu} belum terdaftar, cek di panel admin.")
         return
+    now = datetime.now()
     db.reference(f"absensi/{nisn}").push({
-        "waktu": datetime.now().strftime("%H:%M:%S"),
-        "status": "hadir"
+        "tanggal": now.strftime("%Y-%m-%d"),  # WAJIB, dipakai dashboard buat cek "hari ini"
+        "waktu": now.strftime("%H:%M:%S"),
+        "status": status  # "hadir" pas masuk, "pulang" pas keluar
     })
 ```
+Field `tanggal` ini **wajib** -- tanpa itu, dashboard nggak bisa mastiin suatu
+entry absensi itu dari hari ini atau bukan, dan bakal nganggap "belum ada data
+hari ini" walau ada histori dari hari-hari sebelumnya.
 
 ## Catatan soal status "pulang"
 Dashboard membedakan "Pulang" vs "Pulang lebih awal" dengan bandingin `waktu`

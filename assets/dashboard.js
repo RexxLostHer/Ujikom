@@ -26,22 +26,37 @@ function labelStatus(entry) {
   return entry.status;
 }
 
+function tanggalHariIni() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Entry lama (sebelum ada field tanggal) nggak punya properti ini -> anggap "tanggal tidak diketahui",
+// jangan dianggap sebagai hari ini biar nggak salah nampilin data basi sebagai status hari ini.
+function entryDariHariIni(entry) {
+  return entry.tanggal === tanggalHariIni();
+}
+
 function mulaiDengarAbsensi() {
   // Ambil data absensi realtime -> otomatis update kalau ada tap kartu baru
-  // Struktur data: absensi/{nisn atau id_kartu}/{waktu, status}
-  db.ref('absensi/' + nisn).limitToLast(1).on('value', function (snapshot) {
+  // Struktur data: absensi/{nisn}/{push_id}: {tanggal, waktu, status}
+  db.ref('absensi/' + nisn).limitToLast(10).on('value', function (snapshot) {
     const statusEl = document.getElementById('statusHariIni');
     const data = snapshot.val();
+    const entries = data ? Object.values(data) : [];
 
-    if (!data) {
+    // cari entry TERBARU yang tanggalnya hari ini -- bukan cuma entry terakhir apapun tanggalnya
+    const entryHariIni = entries.filter(entryDariHariIni).pop();
+
+    if (!entryHariIni) {
       statusEl.className = 'status-card belum';
       statusEl.innerHTML = '<p>Belum ada data absensi hari ini.</p>';
       return;
     }
 
-    const entry = Object.values(data)[0];
-    statusEl.className = 'status-card' + (pulangLebihAwal(entry) ? ' peringatan' : '');
-    statusEl.innerHTML = `<p><strong>${labelStatus(entry)}</strong> pada ${entry.waktu}</p>`;
+    statusEl.className = 'status-card' + (pulangLebihAwal(entryHariIni) ? ' peringatan' : '');
+    statusEl.innerHTML = `<p><strong>${labelStatus(entryHariIni)}</strong> pada ${entryHariIni.waktu}</p>`;
   });
 
   // Ambil riwayat lengkap (30 terakhir)
@@ -59,7 +74,8 @@ function mulaiDengarAbsensi() {
     entries.forEach(function (entry) {
       const item = document.createElement('div');
       item.className = 'riwayat-item' + (pulangLebihAwal(entry) ? ' peringatan' : '');
-      item.innerHTML = `<span>${entry.waktu}</span><span>${labelStatus(entry)}</span>`;
+      const tanggalLabel = entry.tanggal ? entry.tanggal + ' ' : '';
+      item.innerHTML = `<span>${tanggalLabel}${entry.waktu}</span><span>${labelStatus(entry)}</span>`;
       riwayatEl.appendChild(item);
     });
   });
