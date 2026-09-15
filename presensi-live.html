@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Live</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/presensi-live.css">
+</head>
+<body>
+<div class="container admin-container">
+  <div class="header">
+    <h1>Presensi Live</h1>
+    <div class="header-actions">
+      <a href="admin.html" class="btn-secondary-link">Panel Admin</a>
+      <button id="logoutBtn" class="logout">Keluar</button>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div>
+      <label for="kelasSelect">Kelas</label>
+      <select id="kelasSelect"></select>
+    </div>
+  </div>
+
+  <div id="infoJam" class="info-jam">Memuat jadwal...</div>
+
+  <div class="ringkasan">
+    <div class="kartu-ringkasan sudah">
+      <span class="angka" id="jumlahSudah">0</span>
+      <span class="label">Sudah absen</span>
+    </div>
+    <div class="kartu-ringkasan belum">
+      <span class="angka" id="jumlahBelum">0</span>
+      <span class="label">Belum absen</span>
+    </div>
+  </div>
+
+  <h3>Belum absen jam ini</h3>
+  <div id="daftarBelum" class="daftar-siswa"></div>
+
+  <h3>Sudah absen jam ini</h3>
+  <div id="daftarSudah" class="daftar-siswa"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/presensi-live.js"></script>
+</body>
+</html>

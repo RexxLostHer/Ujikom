@@ -87,17 +87,23 @@ function hapusSiswa(nisn) {
 function renderSiswaTable(data) {
   const tbody = document.getElementById('siswaTableBody');
   const selectKartu = document.getElementById('kartuNisn');
+  const selectPelajaranKelas = document.getElementById('pelajaranKelas');
+  const kelasSebelumnya = selectPelajaranKelas.value;
   tbody.innerHTML = '';
   selectKartu.innerHTML = '<option value="">-- Pilih siswa --</option>';
 
   const nisnList = Object.keys(data).sort();
   if (nisnList.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="color:#999;">Belum ada data siswa.</td></tr>';
+    selectPelajaranKelas.innerHTML = '<option value="">-- Belum ada kelas --</option>';
     return;
   }
 
+  const kelasSet = new Set();
+
   nisnList.forEach(function (nisn) {
     const s = data[nisn];
+    kelasSet.add(s.kelas);
     const tr = document.createElement('tr');
     tr.innerHTML = '<td>' + nisn + '</td><td>' + s.nama + '</td><td>' + s.kelas + '</td><td class="row-actions"></td>';
     const actionsTd = tr.querySelector('.row-actions');
@@ -120,6 +126,21 @@ function renderSiswaTable(data) {
     opt.textContent = nisn + ' - ' + s.nama;
     selectKartu.appendChild(opt);
   });
+
+  selectPelajaranKelas.innerHTML = '';
+  Array.from(kelasSet).sort().forEach(function (kelas) {
+    const opt = document.createElement('option');
+    opt.value = kelas;
+    opt.textContent = kelas;
+    selectPelajaranKelas.appendChild(opt);
+  });
+  // pertahanin kelas yang lagi dipilih user kalau masih ada di list
+  if (kelasSet.has(kelasSebelumnya)) selectPelajaranKelas.value = kelasSebelumnya;
+
+  // kelas yang lagi aktif berubah (termasuk pas pertama kali kebaca) -> attach listener jadwal pelajarannya
+  if (selectPelajaranKelas.value !== kelasSebelumnya) {
+    pasangListenerPelajaran(selectPelajaranKelas.value);
+  }
 }
 
 db.ref('siswa').on('value', function (snapshot) {
@@ -129,7 +150,8 @@ db.ref('siswa').on('value', function (snapshot) {
 });
 
 // ===== TAB: Mapping Kartu NFC =====
-// Struktur data: kartu/{id_kartu} = nisn
+// Struktur data (BARU): kartu/{id_kartu} = { nisn, device_id }
+// device_id dipakai anti-cloning: kartu cuma diterima kalau device yang scan cocok.
 const formKartu = document.getElementById('formKartu');
 const kartuMsg = document.getElementById('kartuMsg');
 let kartuCache = {};
@@ -139,13 +161,17 @@ formKartu.addEventListener('submit', function (e) {
 
   const idKartu = document.getElementById('kartuId').value.trim();
   const nisn = document.getElementById('kartuNisn').value;
+  const deviceId = document.getElementById('kartuDeviceId').value.trim();
 
   if (!nisn) {
     showMsg(kartuMsg, 'Pilih siswa dulu.', 'error');
     return;
   }
 
-  db.ref('kartu/' + idKartu).set(nisn)
+  const payload = { nisn: nisn };
+  if (deviceId) payload.device_id = deviceId;
+
+  db.ref('kartu/' + idKartu).set(payload)
     .then(function () {
       showMsg(kartuMsg, 'Mapping kartu disimpan.', 'success');
       formKartu.reset();
@@ -162,28 +188,51 @@ function hapusKartu(idKartu) {
     .catch(function (err) { showMsg(kartuMsg, 'Gagal menghapus: ' + err.message, 'error'); });
 }
 
+function lepasDeviceKartu(idKartu) {
+  if (!confirm('Lepas ikatan device dari kartu ' + idKartu + '? Kartu ini nanti akan otomatis terikat ke device berikutnya yang dipakai buat tap.')) return;
+  db.ref('kartu/' + idKartu + '/device_id').remove()
+    .then(function () { showMsg(kartuMsg, 'Ikatan device dilepas.', 'success'); })
+    .catch(function (err) { showMsg(kartuMsg, 'Gagal: ' + err.message, 'error'); });
+}
+
 function renderKartuTable(data) {
   const tbody = document.getElementById('kartuTableBody');
   tbody.innerHTML = '';
 
   const idList = Object.keys(data).sort();
   if (idList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:#999;">Belum ada mapping kartu.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#999;">Belum ada mapping kartu.</td></tr>';
     return;
   }
 
   idList.forEach(function (idKartu) {
-    const nisn = data[idKartu];
+    // dukung data lama yang masih format string polos (nisn doang, tanpa device_id)
+    const raw = data[idKartu];
+    const nisn = typeof raw === 'string' ? raw : raw.nisn;
+    const deviceId = typeof raw === 'string' ? null : raw.device_id;
     const nama = (siswaCache[nisn] && siswaCache[nisn].nama) || '(siswa tidak ditemukan)';
+
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + idKartu + '</td><td>' + nisn + '</td><td>' + nama + '</td><td class="row-actions"></td>';
+    tr.innerHTML = '<td>' + idKartu + '</td><td>' + nisn + '</td><td>' + nama + '</td>' +
+      '<td>' + (deviceId ? deviceId : '<span style="color:#999;">belum terikat</span>') + '</td>' +
+      '<td class="row-actions"></td>';
+
+    const actionsTd = tr.querySelector('.row-actions');
+
+    if (deviceId) {
+      const lepasBtn = document.createElement('button');
+      lepasBtn.textContent = 'Lepas Device';
+      lepasBtn.className = 'btn-secondary';
+      lepasBtn.addEventListener('click', function () { lepasDeviceKartu(idKartu); });
+      actionsTd.appendChild(lepasBtn);
+    }
 
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Hapus';
     delBtn.className = 'btn-danger';
     delBtn.addEventListener('click', function () { hapusKartu(idKartu); });
+    actionsTd.appendChild(delBtn);
 
-    tr.querySelector('.row-actions').appendChild(delBtn);
     tbody.appendChild(tr);
   });
 }
@@ -248,4 +297,92 @@ function renderJadwalTable(data) {
 
 db.ref('jadwal').on('value', function (snapshot) {
   renderJadwalTable(snapshot.val() || {});
+});
+
+// ===== TAB: Jadwal Pelajaran =====
+// Struktur data: jadwal_pelajaran/{kelas}/{jam_ke} = { mapel, mulai: "HH:MM", selesai: "HH:MM" }
+const formPelajaran = document.getElementById('formPelajaran');
+const pelajaranMsg = document.getElementById('pelajaranMsg');
+const pelajaranKelasSelect = document.getElementById('pelajaranKelas');
+
+formPelajaran.addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const kelas = pelajaranKelasSelect.value;
+  if (!kelas) {
+    showMsg(pelajaranMsg, 'Belum ada kelas terdaftar -- tambahin data siswa dulu di tab Data Siswa.', 'error');
+    return;
+  }
+
+  const jamKe = document.getElementById('pelajaranJamKe').value.trim();
+  const mapel = document.getElementById('pelajaranMapel').value.trim();
+  const mulai = document.getElementById('pelajaranMulai').value;
+  const selesai = document.getElementById('pelajaranSelesai').value;
+
+  if (mulai >= selesai) {
+    showMsg(pelajaranMsg, 'Jam selesai harus lebih besar dari jam mulai.', 'error');
+    return;
+  }
+
+  db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).set({ mapel, mulai, selesai })
+    .then(function () {
+      showMsg(pelajaranMsg, 'Jam ke-' + jamKe + ' buat kelas ' + kelas + ' disimpan.', 'success');
+      formPelajaran.reset();
+    })
+    .catch(function (err) {
+      showMsg(pelajaranMsg, 'Gagal menyimpan: ' + err.message, 'error');
+    });
+});
+
+function hapusPelajaran(kelas, jamKe) {
+  if (!confirm('Hapus jam ke-' + jamKe + ' dari kelas ' + kelas + '?')) return;
+  db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).remove()
+    .then(function () { showMsg(pelajaranMsg, 'Jam ke-' + jamKe + ' dihapus.', 'success'); })
+    .catch(function (err) { showMsg(pelajaranMsg, 'Gagal menghapus: ' + err.message, 'error'); });
+}
+
+function renderPelajaranTable(kelas, data) {
+  const tbody = document.getElementById('pelajaranTableBody');
+  tbody.innerHTML = '';
+
+  if (!data) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#999;">Belum ada jadwal pelajaran buat kelas ' + kelas + '.</td></tr>';
+    return;
+  }
+
+  const jamKeList = Object.keys(data).sort(function (a, b) { return Number(a) - Number(b); });
+  jamKeList.forEach(function (jamKe) {
+    const p = data[jamKe];
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + jamKe + '</td><td>' + p.mapel + '</td><td>' + p.mulai + '</td><td>' + p.selesai + '</td><td class="row-actions"></td>';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Hapus';
+    delBtn.className = 'btn-danger';
+    delBtn.addEventListener('click', function () { hapusPelajaran(kelas, jamKe); });
+
+    tr.querySelector('.row-actions').appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+}
+
+let pelajaranListenerAktif = null; // buat detach listener lama pas ganti kelas
+
+function pasangListenerPelajaran(kelas) {
+  if (pelajaranListenerAktif) {
+    db.ref('jadwal_pelajaran/' + pelajaranListenerAktif.kelas).off('value', pelajaranListenerAktif.callback);
+  }
+  if (!kelas) {
+    renderPelajaranTable(kelas, null);
+    return;
+  }
+  const callback = function (snapshot) {
+    renderPelajaranTable(kelas, snapshot.val());
+  };
+  db.ref('jadwal_pelajaran/' + kelas).on('value', callback);
+  pelajaranListenerAktif = { kelas, callback };
+}
+
+pelajaranKelasSelect.addEventListener('change', function () {
+  pasangListenerPelajaran(pelajaranKelasSelect.value);
 });

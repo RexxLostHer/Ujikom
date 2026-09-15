@@ -11,13 +11,17 @@
 <div class="container admin-container">
   <div class="header">
     <h1>Panel Admin</h1>
-    <button id="logoutBtn" class="logout">Keluar</button>
+    <div class="header-actions">
+      <a href="presensi-live.html" class="btn-secondary-link">Presensi Live</a>
+      <button id="logoutBtn" class="logout">Keluar</button>
+    </div>
   </div>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="siswa">Data Siswa</button>
     <button class="tab-btn" data-tab="kartu">Mapping Kartu NFC</button>
     <button class="tab-btn" data-tab="jadwal">Jadwal Pulang</button>
+    <button class="tab-btn" data-tab="pelajaran">Jadwal Pelajaran</button>
   </div>
 
   <!-- Tab: Data Siswa -->
@@ -61,6 +65,7 @@
 
   <!-- Tab: Mapping Kartu NFC -->
   <div id="tab-kartu" class="tab-panel">
+    <p class="tab-desc">Device ID diisi otomatis kalau kartu itu pernah di-tap (device nulis ID-nya sendiri saat scan pertama), atau bisa diisi manual. Kartu yang punya Device ID cuma akan diterima kalau di-tap di device itu lagi (anti-cloning).</p>
     <form id="formKartu" class="inline-form">
       <div class="form-row">
         <div>
@@ -72,6 +77,12 @@
           <select id="kartuNisn" required></select>
         </div>
       </div>
+      <div class="form-row">
+        <div>
+          <label for="kartuDeviceId">Device ID (opsional, buat anti-cloning)</label>
+          <input type="text" id="kartuDeviceId" placeholder="Contoh: rpi-9a-01, kosongin kalau belum tau">
+        </div>
+      </div>
       <div class="form-actions">
         <button type="submit">Simpan Mapping</button>
       </div>
@@ -80,7 +91,7 @@
 
     <table class="data-table">
       <thead>
-        <tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th></th></tr>
+        <tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th>Device ID</th><th></th></tr>
       </thead>
       <tbody id="kartuTableBody"></tbody>
     </table>
@@ -110,6 +121,51 @@
         <tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr>
       </thead>
       <tbody id="jadwalTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab: Jadwal Pelajaran -->
+  <div id="tab-pelajaran" class="tab-panel">
+    <p class="tab-desc">Atur jam ke berapa aja dalam sehari per kelas. Ini dipakai sistem buat nentuin "sekarang lagi jam pelajaran keberapa" pas siswa tap kartu, dan buat halaman Presensi Live.</p>
+    <div class="form-row">
+      <div>
+        <label for="pelajaranKelas">Pilih Kelas</label>
+        <select id="pelajaranKelas"></select>
+      </div>
+    </div>
+
+    <form id="formPelajaran" class="inline-form">
+      <div class="form-row">
+        <div>
+          <label for="pelajaranJamKe">Jam Ke-</label>
+          <input type="number" id="pelajaranJamKe" placeholder="1" min="1" required>
+        </div>
+        <div>
+          <label for="pelajaranMapel">Mata Pelajaran</label>
+          <input type="text" id="pelajaranMapel" placeholder="Contoh: Matematika" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="pelajaranMulai">Jam Mulai</label>
+          <input type="time" id="pelajaranMulai" required>
+        </div>
+        <div>
+          <label for="pelajaranSelesai">Jam Selesai</label>
+          <input type="time" id="pelajaranSelesai" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Simpan Jam Ke-</button>
+      </div>
+    </form>
+    <p id="pelajaranMsg" class="msg"></p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Jam Ke-</th><th>Mapel</th><th>Mulai</th><th>Selesai</th><th></th></tr>
+      </thead>
+      <tbody id="pelajaranTableBody"></tbody>
     </table>
   </div>
 </div>
