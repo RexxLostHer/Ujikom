@@ -16,6 +16,7 @@ absensi-app/
 │   ├── admin.css
 │   ├── presensi-live.css
 │   ├── firebase-config.js   # ISI SENDIRI dengan config Firebase kamu
+│   ├── jadwal-util.js       # fungsi bersama (cari jam pelajaran aktif dari jadwal + waktu)
 │   ├── login.js
 │   ├── dashboard.js
 │   ├── admin-login.js
@@ -174,6 +175,15 @@ keluar gerbang (bukan cuma `status: "hadir"` sepanjang hari). Kalau di Pi kamu
 belum ada logic buat bedain scan masuk vs keluar (misalnya reader kedua di
 gerbang keluar, atau tombol toggle), itu perlu ditambahin di `absensi.py`.
 
+## Simulasi Absen (buat siswa tanpa kartu NFC fisik)
+Kalau kartu NFC yang tersedia belum cukup buat 1 kelas penuh, tab **Simulasi
+Absen** di panel admin bisa dipakai buat catet kehadiran siswa itu secara
+manual -- hasilnya masuk ke `absensi/{nisn}` dan `presensi_jam/...` PERSIS
+kayak kalau dia beneran tap kartu (jam ke berapa juga otomatis kedeteksi dari
+`jadwal_pelajaran`), jadi keliatan konsisten di dashboard ortu maupun
+Presensi Live. Ini murni buat kebutuhan pilot/demo, bukan pengganti permanen
+buat kartu fisik.
+
 ## Testing
 Ada unit test buat logic-logic penting (nggak butuh Firebase asli, dites pakai
 data palsu):
@@ -189,6 +199,7 @@ nggak ada yang somehow kebalik logic-nya.
 - [x] Fitur jadwal pulang per kelas + deteksi pulang lebih awal
 - [x] Fitur NFC device-bound (anti-cloning per kartu) -- pilot 1 kelas
 - [x] Presensi per jam pelajaran + halaman live buat guru/BK
+- [x] Simulasi absen dari admin (buat siswa yang belum kebagian kartu NFC fisik)
 - [ ] Import data siswa dari Excel (nunggu file dari user)
 - [ ] Expand ke semua kelas + lab (jumlah nyusul)
 - [ ] Pisahin akun guru dari akun admin (sekarang masih numpang 1 login)

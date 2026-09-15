@@ -22,6 +22,7 @@
     <button class="tab-btn" data-tab="kartu">Mapping Kartu NFC</button>
     <button class="tab-btn" data-tab="jadwal">Jadwal Pulang</button>
     <button class="tab-btn" data-tab="pelajaran">Jadwal Pelajaran</button>
+    <button class="tab-btn" data-tab="simulasi">Simulasi Absen</button>
   </div>
 
   <!-- Tab: Data Siswa -->
@@ -168,12 +169,41 @@
       <tbody id="pelajaranTableBody"></tbody>
     </table>
   </div>
+
+  <!-- Tab: Simulasi Absen -->
+  <div id="tab-simulasi" class="tab-panel">
+    <p class="tab-desc">
+      Buat siswa yang belum kebagian kartu NFC fisik, catetan absen bisa
+      disimulasiin dari sini -- hasilnya kecatet persis kayak siswa beneran
+      tap kartu (masuk ke riwayat dashboard ortu &amp; Presensi Live), cuma
+      sumbernya manual dari admin, bukan dari device NFC.
+    </p>
+    <div class="form-row">
+      <div>
+        <label for="simulasiNisn">Siswa</label>
+        <select id="simulasiNisn"></select>
+      </div>
+      <div>
+        <label for="simulasiStatus">Status</label>
+        <select id="simulasiStatus">
+          <option value="hadir">Hadir (masuk)</option>
+          <option value="pulang">Pulang</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" id="simulasiBtn">Simulasikan Tap Sekarang</button>
+    </div>
+    <p id="simulasiMsg" class="msg"></p>
+    <p id="simulasiInfoJam" class="tab-desc"></p>
+  </div>
 </div>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="assets/firebase-config.js"></script>
+<script src="assets/jadwal-util.js"></script>
 <script src="assets/admin.js"></script>
 </body>
 </html>

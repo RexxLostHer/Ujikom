@@ -87,10 +87,12 @@ function hapusSiswa(nisn) {
 function renderSiswaTable(data) {
   const tbody = document.getElementById('siswaTableBody');
   const selectKartu = document.getElementById('kartuNisn');
+  const selectSimulasi = document.getElementById('simulasiNisn');
   const selectPelajaranKelas = document.getElementById('pelajaranKelas');
   const kelasSebelumnya = selectPelajaranKelas.value;
   tbody.innerHTML = '';
   selectKartu.innerHTML = '<option value="">-- Pilih siswa --</option>';
+  selectSimulasi.innerHTML = '<option value="">-- Pilih siswa --</option>';
 
   const nisnList = Object.keys(data).sort();
   if (nisnList.length === 0) {
@@ -125,6 +127,11 @@ function renderSiswaTable(data) {
     opt.value = nisn;
     opt.textContent = nisn + ' - ' + s.nama;
     selectKartu.appendChild(opt);
+
+    const optSim = document.createElement('option');
+    optSim.value = nisn;
+    optSim.textContent = nisn + ' - ' + s.nama + ' (' + s.kelas + ')';
+    selectSimulasi.appendChild(optSim);
   });
 
   selectPelajaranKelas.innerHTML = '';
@@ -385,4 +392,68 @@ function pasangListenerPelajaran(kelas) {
 
 pelajaranKelasSelect.addEventListener('change', function () {
   pasangListenerPelajaran(pelajaranKelasSelect.value);
+});
+
+// ===== TAB: Simulasi Absen =====
+// Buat siswa yang belum kebagian kartu NFC fisik. Nulis data PERSIS kayak
+// alur absensi.py asli (absensi/{nisn} + presensi_jam/{kelas}/{tanggal}/{jam_ke}/{nisn}),
+// jadi hasilnya kebaca sama di dashboard ortu maupun Presensi Live.
+const simulasiBtn = document.getElementById('simulasiBtn');
+const simulasiMsg = document.getElementById('simulasiMsg');
+const simulasiInfoJam = document.getElementById('simulasiInfoJam');
+
+simulasiBtn.addEventListener('click', function () {
+  const nisn = document.getElementById('simulasiNisn').value;
+  const status = document.getElementById('simulasiStatus').value;
+
+  if (!nisn) {
+    showMsg(simulasiMsg, 'Pilih siswa dulu.', 'error');
+    return;
+  }
+
+  const siswa = siswaCache[nisn];
+  const kelas = siswa && siswa.kelas;
+  simulasiBtn.disabled = true;
+
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const tanggal = tanggalHariIni();
+  const waktu = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const tulisAbsensi = function (jamKeInfo) {
+    const entry = { tanggal, waktu, status };
+    if (jamKeInfo) entry.jam_ke = jamKeInfo.jam_ke;
+
+    const tugas = [db.ref('absensi/' + nisn).push(entry)];
+    if (kelas && jamKeInfo) {
+      tugas.push(db.ref('presensi_jam/' + kelas + '/' + tanggal + '/' + jamKeInfo.jam_ke + '/' + nisn).set({ waktu, status }));
+    }
+
+    Promise.all(tugas)
+      .then(function () {
+        showMsg(simulasiMsg, 'Absen ' + siswa.nama + ' berhasil disimulasikan (' + status + ', ' + waktu + ').', 'success');
+        simulasiInfoJam.textContent = jamKeInfo
+          ? 'Tercatat sebagai jam ke-' + jamKeInfo.jam_ke + ' (' + jamKeInfo.mapel + ').'
+          : 'Nggak lagi ada jam pelajaran aktif buat kelas ' + kelas + ' sekarang, tercatat tanpa jam_ke.';
+      })
+      .catch(function (err) {
+        showMsg(simulasiMsg, 'Gagal: ' + err.message, 'error');
+      })
+      .finally(function () {
+        simulasiBtn.disabled = false;
+      });
+  };
+
+  if (!kelas) {
+    tulisAbsensi(null);
+    return;
+  }
+
+  db.ref('jadwal_pelajaran/' + kelas).once('value').then(function (snapshot) {
+    const jamKeInfo = cariJamKeAktif(snapshot.val(), jamSekarang());
+    tulisAbsensi(jamKeInfo);
+  }).catch(function (err) {
+    simulasiBtn.disabled = false;
+    showMsg(simulasiMsg, 'Gagal ambil jadwal pelajaran: ' + err.message, 'error');
+  });
 });

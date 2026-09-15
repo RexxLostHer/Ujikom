@@ -6,6 +6,7 @@ const fs = require('fs');
 const assert = require('assert');
 
 const src = fs.readFileSync('assets/presensi-live.js', 'utf8');
+const srcUtil = fs.readFileSync('assets/jadwal-util.js', 'utf8');
 
 function buatElement() {
   return {
@@ -38,6 +39,7 @@ function buatContext() {
     console,
   };
   vm.createContext(context);
+  vm.runInContext(srcUtil, context);
   vm.runInContext(src, context);
   return context;
 }
