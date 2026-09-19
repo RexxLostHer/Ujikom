@@ -99,12 +99,22 @@
   </div>
   <!-- Tab: Jadwal Pulang -->
   <div id="tab-jadwal" class="tab-panel">
-    <p class="tab-desc">Set jam pulang resmi per kelas. Kalau siswa tap kartu "pulang" sebelum jam ini, orang tua akan lihat label "Pulang lebih awal" di dashboard.</p>
+    <p class="tab-desc">Set jam pulang per kelas PER HARI (bisa beda-beda tiap hari). Kalau siswa tap kartu "pulang" sebelum jam hari itu, orang tua akan lihat label "Pulang lebih awal" di dashboard.</p>
     <form id="formJadwal" class="inline-form">
       <div class="form-row">
         <div>
           <label for="jadwalKelas">Kelas</label>
-          <input type="text" id="jadwalKelas" placeholder="Contoh: 9A" required>
+          <input type="text" id="jadwalKelas" placeholder="Contoh: XII RPL 2" required>
+        </div>
+        <div>
+          <label for="jadwalHari">Hari</label>
+          <select id="jadwalHari" required>
+            <option value="senin">Senin</option>
+            <option value="selasa">Selasa</option>
+            <option value="rabu">Rabu</option>
+            <option value="kamis">Kamis</option>
+            <option value="jumat">Jumat</option>
+          </select>
         </div>
         <div>
           <label for="jadwalJam">Jam Pulang</label>
@@ -119,7 +129,7 @@
 
     <table class="data-table">
       <thead>
-        <tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr>
+        <tr><th>Kelas</th><th>Hari</th><th>Jam Pulang</th><th></th></tr>
       </thead>
       <tbody id="jadwalTableBody"></tbody>
     </table>

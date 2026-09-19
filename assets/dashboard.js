@@ -9,13 +9,21 @@ document.getElementById('logoutBtn').addEventListener('click', function () {
   window.location.href = 'index.html';
 });
 
-// jam pulang resmi kelas anak ini
-let jamPulangKelas = null;
+// jam pulang resmi kelas ini. Bisa 2 format:
+// - string "HH:MM" (format lama, sama buat semua hari)
+// - object { senin: "HH:MM", selasa: "HH:MM", ... } (format baru, per hari -- karena jam pulang bisa beda tiap hari)
+let jadwalPulangKelas = null;
 
 // entry.waktu formatnya "HH:MM:SS" atau "HH:MM" -> bandingkan cuma HH:MM-nya
 function pulangLebihAwal(entry) {
-  if (entry.status !== 'pulang' || !jamPulangKelas) return false;
-  return entry.waktu.slice(0, 5) < jamPulangKelas;
+  if (entry.status !== 'pulang' || !jadwalPulangKelas || !entry.tanggal) return false;
+
+  const jamPulangHariItu = typeof jadwalPulangKelas === 'string'
+    ? jadwalPulangKelas
+    : jadwalPulangKelas[namaHariDariTanggal(entry.tanggal)];
+
+  if (!jamPulangHariItu) return false; // hari itu belum diset jadwalnya -> jangan asal tandain
+  return entry.waktu.slice(0, 5) < jamPulangHariItu;
 }
 
 function labelStatus(entry) {
@@ -91,6 +99,6 @@ db.ref('siswa/' + nisn).once('value').then(function (snapshot) {
     return db.ref('jadwal/' + data.kelas).once('value');
   }
 }).then(function (snapshot) {
-  if (snapshot) jamPulangKelas = snapshot.val(); // format "HH:MM", null kalau belum diset admin
+  if (snapshot) jadwalPulangKelas = snapshot.val();
   mulaiDengarAbsensi();
 });

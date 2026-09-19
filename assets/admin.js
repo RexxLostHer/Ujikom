@@ -250,7 +250,9 @@ db.ref('kartu').on('value', function (snapshot) {
 });
 
 // ===== TAB: Jadwal Pulang =====
-// Struktur data: jadwal/{kelas} = "HH:MM"
+// Struktur data (BARU): jadwal/{kelas}/{hari} = "HH:MM" -- karena jam pulang bisa beda tiap hari.
+// Data lama jadwal/{kelas} = "HH:MM" (string langsung, bukan object) masih didukung buat ditampilkan,
+// tapi begitu disimpan ulang lewat form ini otomatis jadi format baru.
 const formJadwal = document.getElementById('formJadwal');
 const jadwalMsg = document.getElementById('jadwalMsg');
 
@@ -258,11 +260,12 @@ formJadwal.addEventListener('submit', function (e) {
   e.preventDefault();
 
   const kelas = document.getElementById('jadwalKelas').value.trim();
+  const hari = document.getElementById('jadwalHari').value;
   const jam = document.getElementById('jadwalJam').value;
 
-  db.ref('jadwal/' + kelas).set(jam)
+  db.ref('jadwal/' + kelas + '/' + hari).set(jam)
     .then(function () {
-      showMsg(jadwalMsg, 'Jadwal pulang kelas ' + kelas + ' disimpan.', 'success');
+      showMsg(jadwalMsg, 'Jadwal pulang ' + kelas + ' hari ' + hari + ' disimpan.', 'success');
       formJadwal.reset();
     })
     .catch(function (err) {
@@ -270,9 +273,10 @@ formJadwal.addEventListener('submit', function (e) {
     });
 });
 
-function hapusJadwal(kelas) {
-  if (!confirm('Hapus jadwal pulang kelas ' + kelas + '?')) return;
-  db.ref('jadwal/' + kelas).remove()
+function hapusJadwal(kelas, hari) {
+  if (!confirm('Hapus jadwal pulang ' + kelas + ' hari ' + hari + '?')) return;
+  const path = hari ? 'jadwal/' + kelas + '/' + hari : 'jadwal/' + kelas;
+  db.ref(path).remove()
     .then(function () { showMsg(jadwalMsg, 'Jadwal dihapus.', 'success'); })
     .catch(function (err) { showMsg(jadwalMsg, 'Gagal menghapus: ' + err.message, 'error'); });
 }
@@ -283,22 +287,39 @@ function renderJadwalTable(data) {
 
   const kelasList = Object.keys(data).sort();
   if (kelasList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="color:#999;">Belum ada jadwal pulang.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="color:#999;">Belum ada jadwal pulang.</td></tr>';
     return;
   }
 
   kelasList.forEach(function (kelas) {
-    const jam = data[kelas];
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + kelas + '</td><td>' + jam + '</td><td class="row-actions"></td>';
+    const nilai = data[kelas];
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = 'Hapus';
-    delBtn.className = 'btn-danger';
-    delBtn.addEventListener('click', function () { hapusJadwal(kelas); });
+    // format lama: jadwal/{kelas} langsung "HH:MM" (bukan per-hari)
+    if (typeof nilai === 'string') {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + kelas + '</td><td><em>semua hari</em></td><td>' + nilai + '</td><td class="row-actions"></td>';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Hapus';
+      delBtn.className = 'btn-danger';
+      delBtn.addEventListener('click', function () { hapusJadwal(kelas, null); });
+      tr.querySelector('.row-actions').appendChild(delBtn);
+      tbody.appendChild(tr);
+      return;
+    }
 
-    tr.querySelector('.row-actions').appendChild(delBtn);
-    tbody.appendChild(tr);
+    // format baru: jadwal/{kelas}/{hari}
+    const urutanHari = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+    urutanHari.forEach(function (hari) {
+      if (!nilai[hari]) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + kelas + '</td><td>' + hari.charAt(0).toUpperCase() + hari.slice(1) + '</td><td>' + nilai[hari] + '</td><td class="row-actions"></td>';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Hapus';
+      delBtn.className = 'btn-danger';
+      delBtn.addEventListener('click', function () { hapusJadwal(kelas, hari); });
+      tr.querySelector('.row-actions').appendChild(delBtn);
+      tbody.appendChild(tr);
+    });
   });
 }
 
