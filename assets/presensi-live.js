@@ -1,4 +1,4 @@
-// Gate akses: pakai login admin yang sama (lihat catatan di README soal ini)
+// Gate akses: harus login admin dulu
 const adminUser = localStorage.getItem('admin_aktif');
 if (!adminUser) {
   window.location.href = 'admin-login.html';
@@ -9,95 +9,173 @@ document.getElementById('logoutBtn').addEventListener('click', function () {
   window.location.href = 'admin-login.html';
 });
 
-// tanggalHariIni(), jamSekarang(), dan cariJamKeAktif() sekarang ada di assets/jadwal-util.js
-// (di-load sebelum file ini lewat <script> tag di presensi-live.html)
-
+// ---- State ----
 let siswaCache = {};
 let jadwalPelajaranKelas = null;
-let jamKeAktifSekarang = null; // { jam_ke, mapel, mulai, selesai } | null
-let listenerPresensiJam = null; // { ref, callback }
+let jamKeAktifSekarang = null;
+let listenerPresensiJam = null;
 let sudahAbsenSet = new Set();
+let detailAbsensi = {};
 
 const kelasSelect = document.getElementById('kelasSelect');
 const infoJam = document.getElementById('infoJam');
 
-function renderInfoJam() {
-  if (!jamKeAktifSekarang) {
-    infoJam.className = 'info-jam kosong';
-    infoJam.textContent = 'Bukan jam pelajaran sekarang (istirahat / di luar jadwal).';
-    return;
+// ---- Helper Foto ----
+function buatSiswaCard(nisn, s, statusSudah) {
+  const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+  const card = document.createElement('div');
+  card.className = 'siswa-card ' + (statusSudah ? 'status-sudah' : 'status-belum');
+
+  // Foto / Avatar Inisial
+  const photoEl = document.createElement('div');
+  photoEl.className = 'siswa-card-photo';
+  const img = document.createElement('img');
+  img.src = 'assets/foto/' + nisn + '.jpg';
+  img.alt = s.nama;
+  photoEl.textContent = inisial;
+  img.onload = function() {
+    photoEl.textContent = '';
+    photoEl.appendChild(img);
+  };
+  img.onerror = function() { /* biarkan inisial */ };
+  photoEl.appendChild(img);
+  card.appendChild(photoEl);
+
+  // Info
+  const info = document.createElement('div');
+  info.className = 'siswa-card-info';
+
+  const nama = document.createElement('div');
+  nama.className = 'siswa-card-nama';
+  nama.textContent = s.nama;
+
+  const sub = document.createElement('div');
+  sub.className = 'siswa-card-sub';
+  sub.textContent = 'NISN: ' + nisn;
+
+  const pill = document.createElement('span');
+  pill.className = 'status-pill ' + (statusSudah ? 'sudah' : 'belum');
+  if (statusSudah) {
+    const waktu = detailAbsensi[nisn]?.waktu || '';
+    pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
+  } else {
+    pill.textContent = '✗ Belum Scan Kartu';
   }
-  infoJam.className = 'info-jam';
-  infoJam.textContent = `Jam ke-${jamKeAktifSekarang.jam_ke}: ${jamKeAktifSekarang.mapel} (${jamKeAktifSekarang.mulai}-${jamKeAktifSekarang.selesai})`;
+
+  info.appendChild(nama);
+  info.appendChild(sub);
+  info.appendChild(pill);
+  card.appendChild(info);
+
+  return card;
 }
 
+// ---- Render Roster ----
 function renderRoster() {
   const kelas = kelasSelect.value;
-  const daftarSiswaKelas = Object.entries(siswaCache).filter(function ([, s]) { return s.kelas === kelas; });
+  const daftarSiswaKelas = Object.entries(siswaCache)
+    .filter(function ([, s]) { return s.kelas === kelas; })
+    .sort(function (a, b) { return a[1].nama.localeCompare(b[1].nama); });
 
-  const belumEl = document.getElementById('daftarBelum');
   const sudahEl = document.getElementById('daftarSudah');
-  belumEl.innerHTML = '';
+  const belumEl = document.getElementById('daftarBelum');
   sudahEl.innerHTML = '';
+  belumEl.innerHTML = '';
 
   let jumlahSudah = 0;
   let jumlahBelum = 0;
 
-  if (!jamKeAktifSekarang) {
-    belumEl.innerHTML = '<p class="kosong-msg">Nggak lagi jam pelajaran, nggak ada yang perlu dicek.</p>';
-    sudahEl.innerHTML = '<p class="kosong-msg">-</p>';
-    document.getElementById('jumlahSudah').textContent = '0';
-    document.getElementById('jumlahBelum').textContent = '0';
-    return;
-  }
-
-  daftarSiswaKelas.sort(function (a, b) { return a[1].nama.localeCompare(b[1].nama); });
+  const labelWaktu = jamKeAktifSekarang
+    ? 'Jam ke-' + jamKeAktifSekarang.jam_ke
+    : 'Rekap Hari Ini';
 
   daftarSiswaKelas.forEach(function ([nisn, s]) {
-    const chip = document.createElement('span');
-    if (sudahAbsenSet.has(nisn)) {
-      chip.className = 'chip-siswa sudah';
-      chip.textContent = s.nama;
-      sudahEl.appendChild(chip);
+    const isSudah = sudahAbsenSet.has(nisn);
+    const card = buatSiswaCard(nisn, s, isSudah);
+    if (isSudah) {
+      sudahEl.appendChild(card);
       jumlahSudah++;
     } else {
-      chip.className = 'chip-siswa belum';
-      chip.textContent = s.nama;
-      belumEl.appendChild(chip);
+      belumEl.appendChild(card);
       jumlahBelum++;
     }
   });
 
-  if (jumlahBelum === 0) belumEl.innerHTML = '<p class="kosong-msg">Semua udah absen jam ini 🎉</p>';
-  if (jumlahSudah === 0) sudahEl.innerHTML = '<p class="kosong-msg">Belum ada yang absen jam ini.</p>';
+  if (jumlahSudah === 0) {
+    sudahEl.innerHTML = '<p class="kosong-msg">Belum ada murid yang scan kartu ' + (jamKeAktifSekarang ? 'jam ini' : 'hari ini') + '.</p>';
+  }
+  if (jumlahBelum === 0 && daftarSiswaKelas.length > 0) {
+    belumEl.innerHTML = '<p style="color:#10b981; font-weight:600; font-size:13px; grid-column:1/-1;">Semua murid sudah hadir! 🎉</p>';
+  }
 
   document.getElementById('jumlahSudah').textContent = jumlahSudah;
   document.getElementById('jumlahBelum').textContent = jumlahBelum;
 }
 
-// Pasang listener realtime ke presensi_jam/{kelas}/{tanggal}/{jam_ke} -- ini path denormalisasi
-// yang ditulis Python pas siswa tap kartu, biar halaman ini nggak perlu listen ke tiap siswa satu-satu.
+// ---- Render Info Jam ----
+function renderInfoJam() {
+  if (!jamKeAktifSekarang) {
+    infoJam.className = 'jam-aktif-banner kosong';
+    infoJam.innerHTML = '<span class="icon">🕒</span><div>Bukan jam pelajaran sekarang (istirahat / di luar jadwal).</div>';
+    return;
+  }
+  infoJam.className = 'jam-aktif-banner';
+  infoJam.innerHTML =
+    '<span class="icon">🔔</span>' +
+    '<div>' +
+      '<div>Jam ke-' + jamKeAktifSekarang.jam_ke + ': <b>' + jamKeAktifSekarang.mapel + '</b></div>' +
+      '<div class="sub">' + jamKeAktifSekarang.mulai + ' – ' + jamKeAktifSekarang.selesai + '</div>' +
+    '</div>';
+}
+
+// ---- Listener Presensi Jam ----
 function pasangListenerPresensiJam(kelas) {
   if (listenerPresensiJam) {
     listenerPresensiJam.ref.off('value', listenerPresensiJam.callback);
     listenerPresensiJam = null;
   }
   sudahAbsenSet = new Set();
+  detailAbsensi = {};
 
-  if (!kelas || !jamKeAktifSekarang) {
+  if (!kelas) {
     renderRoster();
     return;
   }
 
-  const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni() + '/' + jamKeAktifSekarang.jam_ke;
-  const ref = db.ref(path);
-  const callback = function (snapshot) {
-    const data = snapshot.val() || {};
-    sudahAbsenSet = new Set(Object.keys(data));
-    renderRoster();
-  };
-  ref.on('value', callback);
-  listenerPresensiJam = { ref, callback };
+  if (jamKeAktifSekarang) {
+    // Jam aktif → pantau jam ini saja secara real-time
+    const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni() + '/' + jamKeAktifSekarang.jam_ke;
+    const ref = db.ref(path);
+    const callback = function (snapshot) {
+      const data = snapshot.val() || {};
+      sudahAbsenSet = new Set(Object.keys(data).filter(k => /^\d+$/.test(k)));
+      detailAbsensi = data;
+      renderRoster();
+    };
+    ref.on('value', callback);
+    listenerPresensiJam = { ref, callback };
+  } else {
+    // Di luar jam → gabungkan semua jam hari ini (kumulatif)
+    const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni();
+    const ref = db.ref(path);
+    const callback = function (snapshot) {
+      const semuaJam = snapshot.val() || {};
+      const gabungan = {};
+      Object.values(semuaJam).forEach(function(jamData) {
+        if (jamData && typeof jamData === 'object') {
+          Object.entries(jamData).forEach(function([n, v]) {
+            if (/^\d+$/.test(n)) gabungan[n] = v;
+          });
+        }
+      });
+      sudahAbsenSet = new Set(Object.keys(gabungan));
+      detailAbsensi = gabungan;
+      renderRoster();
+    };
+    ref.on('value', callback);
+    listenerPresensiJam = { ref, callback };
+  }
 }
 
 function cekJamAktifTerkini() {
@@ -133,24 +211,29 @@ kelasSelect.addEventListener('change', function () {
   pindahKelas(kelasSelect.value);
 });
 
-// cek ulang jam aktif tiap 15 detik -- nangkep pergantian jam pelajaran otomatis tanpa reload
+// Cek pergantian jam tiap 15 detik
 setInterval(cekJamAktifTerkini, 15000);
 
+// Load semua siswa & populate dropdown kelas
 db.ref('siswa').on('value', function (snapshot) {
   siswaCache = snapshot.val() || {};
 
   const kelasSebelumnya = kelasSelect.value;
   const kelasSet = new Set(Object.values(siswaCache).map(function (s) { return s.kelas; }));
   kelasSelect.innerHTML = '';
+
   Array.from(kelasSet).sort().forEach(function (kelas) {
     const opt = document.createElement('option');
     opt.value = kelas;
-    opt.textContent = kelas;
+    opt.textContent = 'Kelas ' + kelas;
     kelasSelect.appendChild(opt);
   });
-  if (kelasSet.has(kelasSebelumnya)) kelasSelect.value = kelasSebelumnya;
 
-  if (kelasSelect.value !== kelasSebelumnya) {
+  if (kelasSebelumnya && kelasSet.has(kelasSebelumnya)) {
+    kelasSelect.value = kelasSebelumnya;
+  }
+
+  if (!kelasSebelumnya || !kelasSet.has(kelasSebelumnya)) {
     pindahKelas(kelasSelect.value);
   } else {
     renderRoster();

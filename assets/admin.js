@@ -1,22 +1,50 @@
-// Gate akses: harus login admin dulu
-const adminUser = localStorage.getItem('admin_aktif');
-if (!adminUser) {
-  window.location.href = 'admin-login.html';
-}
+﻿// ===== ADMIN.JS =====
+// Guard: Firebase Auth + cek role admin
+let adminSessionUser = null;
+
+firebase.auth().onAuthStateChanged(async function(fbUser) {
+  if (!fbUser) {
+    // Fallback: cek login admin lama (username-based)
+    const legacy = localStorage.getItem('admin_aktif');
+    if (!legacy) { window.location.href = 'index.html'; return; }
+    adminSessionUser = { uid: 'legacy', nama: legacy, role: 'admin', email: '', kelas: null, nisn: null };
+    document.getElementById('adminNamaBadge').textContent = legacy;
+    initAdmin();
+    return;
+  }
+  const userData = await prosesLoginUser(fbUser);
+  if (userData.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+  adminSessionUser = userData;
+  document.getElementById('adminNamaBadge').textContent = userData.nama;
+  initAdmin();
+});
 
 document.getElementById('logoutBtn').addEventListener('click', function () {
   localStorage.removeItem('admin_aktif');
-  window.location.href = 'admin-login.html';
+  logout();
 });
 
+function initAdmin() {
+  initTabs();
+  loadSiswa();
+  loadKartu();
+  loadJadwal();
+  refreshPerijinanAdmin();
+  listenPendingCount();
+  loadUsers();
+}
+
 // ===== Tab switching =====
-document.querySelectorAll('.tab-btn').forEach(function (btn) {
-  btn.addEventListener('click', function () {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
   });
+}
 });
 
 // cache data siswa biar bisa dipakai buat dropdown & lookup nama di tab kartu
@@ -478,3 +506,76 @@ simulasiBtn.addEventListener('click', function () {
     showMsg(simulasiMsg, 'Gagal ambil jadwal pelajaran: ' + err.message, 'error');
   });
 });
+
+
+// ===== PERIJINAN ADMIN =====
+function refreshPerijinanAdmin() {
+  const filter = document.getElementById('filterStatusPerijinan').value;
+  renderDaftarPerijinanAdmin('daftarPerijinanAdmin', filter);
+}
+
+function listenPendingCount() {
+  db.ref('perijinan').orderByChild('status').equalTo('pending').on('value', function(snap) {
+    const n = snap.numChildren();
+    const banner = document.getElementById('notifPerijinanBanner');
+    const jml = document.getElementById('jumlahPending');
+    if (n > 0) {
+      banner.style.display = 'block';
+      jml.textContent = n;
+    } else {
+      banner.style.display = 'none';
+    }
+  });
+}
+
+// ===== KELOLA GURU / USER =====
+const formGuru = document.getElementById('formGuru');
+formGuru.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('guruEmail').value.trim().toLowerCase();
+  const nama = document.getElementById('guruNama').value.trim();
+  const msg = document.getElementById('guruMsg');
+
+  function encodeEmail(em) { return em.replace(/\./g, ',').replace(/@/g, '(at)'); }
+  const encoded = encodeEmail(email);
+
+  await db.ref('email_mapping/' + encoded).set({
+    nisn: null, nama: nama, kelas: null, role: 'guru', email: email
+  });
+  msg.textContent = '✅ Guru berhasil didaftarkan.';
+  msg.className = 'msg success';
+  setTimeout(() => { msg.textContent=''; msg.className='msg'; }, 3000);
+  formGuru.reset();
+});
+
+function loadUsers() {
+  db.ref('users').on('value', function(snap) {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = '';
+    const data = snap.val() || {};
+    Object.entries(data).forEach(function([uid, u]) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + (u.nama||'-') + '</td>' +
+        '<td style="font-size:12px;">' + (u.email||'-') + '</td>' +
+        '<td>' +
+          '<select onchange="ubahRoleUser(\'' + uid + '\', this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;">' +
+            ['siswa','ortu','guru','admin'].map(r =>
+              '<option value="' + r + '"' + (u.role===r?' selected':'') + '>' + r + '</option>'
+            ).join('') +
+          '</select>' +
+        '</td>' +
+        '<td><button onclick="hapusUser(\'' + uid + '\')" style="width:auto;margin-top:0;padding:4px 10px;font-size:12px;background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;cursor:pointer;">Hapus</button></td>';
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+async function ubahRoleUser(uid, role) {
+  await db.ref('users/' + uid + '/role').set(role);
+}
+
+async function hapusUser(uid) {
+  if (!confirm('Hapus user ini dari daftar terdaftar?')) return;
+  await db.ref('users/' + uid).remove();
+}

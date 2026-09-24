@@ -1,33 +1,432 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa - Login</title>
+<title>Presensi Siswa — Masuk / Daftar</title>
 <link rel="stylesheet" href="assets/style.css">
+<style>
+  body {
+    align-items: center;
+    min-height: 100vh;
+    background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                #0f172a;
+    padding: 24px 16px;
+  }
+  .login-card {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 28px;
+    padding: 36px 32px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  .brand-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .brand-logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+    margin-bottom: 12px;
+  }
+  .brand-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+  }
+  .brand-header p {
+    font-size: 13.5px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  .btn-google-smart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+  }
+  .btn-google-smart:hover {
+    border-color: #4285f4;
+    background: #f8faff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.15);
+  }
+  .btn-google-smart img { width: 20px; height: 20px; }
+
+  .sep-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .sep-line::before, .sep-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+  }
+  .sep-line span {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Tab Masuk / Daftar */
+  .switch-tabs {
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 14px;
+    margin-bottom: 22px;
+    gap: 4px;
+  }
+  .switch-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .switch-btn.active {
+    background: #ffffff;
+    color: #4f46e5;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  .form-group-item {
+    margin-bottom: 14px;
+  }
+  .form-group-item label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+  .form-group-item input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 14px;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .form-group-item input:focus {
+    outline: none;
+    background: #fff;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+
+  .btn-submit-action {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    transition: all 0.2s;
+  }
+  .btn-submit-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+  }
+
+  #notifBox {
+    margin-top: 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 10px;
+    display: none;
+    line-height: 1.45;
+  }
+  #notifBox.error {
+    display: block;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+  }
+  #notifBox.success {
+    display: block;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+  }
+
+  .switch-caption {
+    margin-top: 18px;
+    font-size: 13px;
+    color: #64748b;
+    text-align: center;
+  }
+  .switch-caption a {
+    color: #4f46e5;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .switch-caption a:hover {
+    text-decoration: underline;
+  }
+
+  #loadingBox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    gap: 12px;
+  }
+  #loadingBox.show { display: flex; }
+  .spin-wheel {
+    width: 36px;
+    height: 36px;
+    border: 3.5px solid #e2e8f0;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Presensi Siswa</h1>
-    <p class="subtitle">Login orang tua</p>
-
-    <form id="loginForm">
-      <label for="nisn">NISN Anak</label>
-      <input type="text" id="nisn" placeholder="Masukkan NISN" required>
-
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Masukkan password" required>
-
-      <button type="submit">Masuk</button>
-    </form>
-
-    <p id="errorMsg" class="error"></p>
+  <div id="loadingBox">
+    <div class="spin-wheel"></div>
+    <span id="loadingCaption">Memproses...</span>
   </div>
 
-  <!-- Firebase SDK -->
+  <div class="login-card">
+    <div class="brand-header">
+      <div class="brand-logo">⚡</div>
+      <h1>Presensi Siswa</h1>
+      <p>Sistem Absensi & Perijinan Kelas</p>
+    </div>
+
+    <!-- Opsi 1: Google Langsung 1-Klik -->
+    <button class="btn-google-smart" id="btnGoogle" onclick="handleGoogleLogin()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Masuk dengan Google
+    </button>
+
+    <div class="sep-line">
+      <span>atau</span>
+    </div>
+
+    <!-- Tab Masuk / Daftar -->
+    <div class="switch-tabs">
+      <button class="switch-btn active" id="tabMasuk" onclick="gantiTab('login')">Masuk</button>
+      <button class="switch-btn" id="tabDaftar" onclick="gantiTab('register')">Daftar</button>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <form id="formLogin" onsubmit="handleLoginEmail(event)">
+      <div class="form-group-item">
+        <label for="loginEmail">Email Gmail</label>
+        <input type="email" id="loginEmail" placeholder="nama@gmail.com" required>
+      </div>
+
+      <div class="form-group-item">
+        <label for="loginPassword">Kata Sandi</label>
+        <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required>
+      </div>
+
+      <button type="submit" class="btn-submit-action" id="btnActionLogin">Masuk</button>
+    </form>
+
+    <!-- FORM REGISTER -->
+    <form id="formRegister" style="display:none;" onsubmit="handleRegisterEmail(event)">
+      <div class="form-group-item">
+        <label for="regNama">Nama Lengkap</label>
+        <input type="text" id="regNama" placeholder="Nama siswa atau orang tua" required>
+      </div>
+
+      <div class="form-group-item">
+        <label for="regEmail">Email Gmail</label>
+        <input type="email" id="regEmail" placeholder="nama@gmail.com" required>
+      </div>
+
+      <div class="form-group-item">
+        <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
+        <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required>
+      </div>
+
+      <button type="submit" class="btn-submit-action" id="btnActionRegister">Daftar</button>
+    </form>
+
+    <div id="notifBox"></div>
+
+    <div class="switch-caption" id="captionBawah">
+      Belum punya akun? <a onclick="gantiTab('register')">Daftar</a>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="assets/firebase-config.js"></script>
-  <script src="assets/login.js"></script>
+  <script src="assets/auth.js"></script>
+  <script>
+    function gantiTab(mode) {
+      const fLog = document.getElementById('formLogin');
+      const fReg = document.getElementById('formRegister');
+      const tLog = document.getElementById('tabMasuk');
+      const tReg = document.getElementById('tabDaftar');
+      const cap = document.getElementById('captionBawah');
+      bersihkanNotif();
+
+      if (mode === 'login') {
+        fLog.style.display = 'block';
+        fReg.style.display = 'none';
+        tLog.classList.add('active');
+        tReg.classList.remove('active');
+        cap.innerHTML = 'Belum punya akun? <a onclick=\"gantiTab(\'register\')\">Daftar</a>';
+      } else {
+        fLog.style.display = 'none';
+        fReg.style.display = 'block';
+        tLog.classList.remove('active');
+        tReg.classList.add('active');
+        cap.innerHTML = 'Sudah punya akun? <a onclick=\"gantiTab(\'login\')\">Masuk</a>';
+      }
+    }
+
+    function tampilNotif(pesan, tipe) {
+      const b = document.getElementById('notifBox');
+      b.textContent = pesan;
+      b.className = tipe;
+    }
+
+    function bersihkanNotif() {
+      const b = document.getElementById('notifBox');
+      b.textContent = '';
+      b.className = '';
+    }
+
+    function loading(show, text = 'Memproses...') {
+      const l = document.getElementById('loadingBox');
+      document.getElementById('loadingCaption').textContent = text;
+      if (show) l.classList.add('show'); else l.classList.remove('show');
+    }
+
+    // Auto redirect jika session aktif
+    const userSession = getSessionUser();
+    if (userSession) {
+      window.location.href = userSession.role === 'admin' ? 'admin.html' : 'dashboard.html';
+    }
+
+    // Login Google
+    async function handleGoogleLogin() {
+      bersihkanNotif();
+      loading(true, 'Menghubungkan akun Google...');
+      try {
+        const result = await loginDenganGoogle();
+        const userData = await prosesLoginUser(result.user);
+        window.location.href = userData.role === 'admin' ? 'admin.html' : 'dashboard.html';
+      } catch (e) {
+        loading(false);
+        if (e.code === 'auth/unauthorized-domain') {
+          tampilNotif('Harap tambahkan 127.0.0.1 ke Firebase Console -> Auth -> Settings -> Authorized domains.', 'error');
+        } else if (e.code === 'auth/popup-closed-by-user') {
+          tampilNotif('Login dibatalkan.', 'error');
+        } else {
+          tampilNotif(e.message || 'Gagal login Google.', 'error');
+        }
+      }
+    }
+
+    // Login Email
+    async function handleLoginEmail(e) {
+      e.preventDefault();
+      bersihkanNotif();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      loading(true, 'Memverifikasi akun...');
+      try {
+        const fbUser = await loginDenganEmail(email, pass);
+        const userData = await prosesLoginUser(fbUser);
+        window.location.href = userData.role === 'admin' ? 'admin.html' : 'dashboard.html';
+      } catch (err) {
+        loading(false);
+        if (err.code === 'auth/email-not-verified') {
+          tampilNotif('Email belum diverifikasi. Cek kotak masuk atau spam di Gmail Anda.', 'error');
+        } else if (err.code === 'auth/operation-not-allowed') {
+          tampilNotif('PENTING: Nyalakan Email/Password di Firebase Console -> Authentication -> Sign-in method -> Email/Password -> Enable.', 'error');
+        } else {
+          tampilNotif('Email atau kata sandi salah / belum terdaftar.', 'error');
+        }
+      }
+    }
+
+    // Register Email
+    async function handleRegisterEmail(e) {
+      e.preventDefault();
+      bersihkanNotif();
+      const nama = document.getElementById('regNama').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass = document.getElementById('regPassword').value;
+
+      loading(true, 'Mendaftarkan akun...');
+      try {
+        await registerDenganEmail(email, pass, nama);
+        loading(false);
+        tampilNotif('Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik verifikasi, lalu masuk.', 'success');
+        document.getElementById('formRegister').reset();
+        setTimeout(() => gantiTab('login'), 3500);
+      } catch (err) {
+        loading(false);
+        if (err.code === 'auth/operation-not-allowed') {
+          tampilNotif('Harap aktifkan provider Email/Password di Firebase Console -> Auth -> Sign-in method.', 'error');
+        } else if (err.code === 'auth/email-already-in-use') {
+          tampilNotif('Email ini sudah terdaftar. Silakan pilih Masuk.', 'error');
+        } else {
+          tampilNotif(err.message || 'Gagal mendaftar.', 'error');
+        }
+      }
+    }
+  </script>
 </body>
 </html>

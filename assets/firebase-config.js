@@ -1,15 +1,12 @@
 // GANTI dengan konfigurasi Firebase project kamu sendiri.
-// Cara ambil: Firebase Console -> Project Settings -> scroll ke bawah -> "Your apps" -> Web app (</> icon)
-// Kalau belum ada web app terdaftar, klik "Add app" pilih Web.
-
 const firebaseConfig = {
-  apiKey: "ISI_API_KEY_DISINI",
+  apiKey: "AIzaSyBOQFp5SOvBTMpA_FEaMQyp0G4mmHfFa_c",
   authDomain: "absensi-6e385.firebaseapp.com",
   databaseURL: "https://absensi-6e385-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "absensi-6e385",
-  storageBucket: "absensi-6e385.appspot.com",
-  messagingSenderId: "ISI_SENDER_ID",
-  appId: "ISI_APP_ID"
+  storageBucket: "absensi-6e385.firebasestorage.app",
+  messagingSenderId: "632114437491",
+  appId: "1:632114437491:web:4b0c90ec78669e7cc0b906"
 };
 
 firebase.initializeApp(firebaseConfig);

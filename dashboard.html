@@ -1,30 +1,173 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa - Dashboard</title>
+<title>Presensi Siswa — Smart Dashboard 2026</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1 id="namaAnak">Memuat...</h1>
-      <button id="logoutBtn" class="logout">Keluar</button>
-    </div>
+<div class="dashboard-container">
 
-    <div id="statusHariIni" class="status-card">
-      <p>Memuat status hari ini...</p>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="user-badge">
+      <div class="user-avatar" id="avatarUser">?</div>
+      <div class="user-info">
+        <h1 id="namaUser">Memuat Profil...</h1>
+        <p id="infoSubUser">Portal Presensi & Perijinan</p>
+      </div>
     </div>
-
-    <h2>Riwayat Absensi</h2>
-    <div id="riwayat" class="riwayat-list"></div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="admin.html" id="linkAdmin" style="display:none;" class="btn-logout" style="color:#4f46e5;border-color:#c7d2fe;">⚙️ Panel Admin</a>
+      <button class="btn-logout" onclick="logout()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Keluar
+      </button>
+    </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="assets/firebase-config.js"></script>
-  <script src="assets/jadwal-util.js"></script>
-  <script src="assets/dashboard.js"></script>
+  <!-- BANNER KELAS MANDIRI / GURU BERHALANGAN -->
+  <div class="guru-alert">
+    <div class="alert-icon">⚡</div>
+    <div>
+      <strong>Sistem Presensi Kelas Mandiri (Anti-Kebohongan):</strong>
+      Jika guru berhalangan hadir atau ada kendala mengajar, murid tetap wajib berada di kelas dan melakukan <b>scan kartu RFID</b> pada device kelas. Kehadiran fisik terverifikasi secara langsung dan transparan.
+    </div>
+  </div>
+
+  <!-- TABS UNIFIED (UNTUK SEMUA PENGGUNA) -->
+  <div class="view-tabs">
+    <button class="view-tab-btn active" onclick="switchTab('tabKelas', this)">
+      <span>👥</span> Pantau Kelas
+    </button>
+    <button class="view-tab-btn" onclick="switchTab('tabPerijinan', this)">
+      <span>📝</span> Ajukan Ijin / Dispen
+    </button>
+    <button class="view-tab-btn" onclick="switchTab('tabRiwayatIjin', this)">
+      <span>💬</span> Chat & Status Ijin
+    </button>
+  </div>
+
+  <!-- ===== TAB 1: PANTAU KELAS ===== -->
+  <div id="tabKelas" class="tab-content active">
+    <div class="filter-bar">
+      <select id="pilihKelasPantau"></select>
+      <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">
+    </div>
+
+    <!-- Status Jam Pelajaran -->
+    <div id="infoJamPelajaran" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:14px 18px;border-radius:14px;font-size:13.5px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      Memeriksa jadwal aktif...
+    </div>
+
+    <!-- Statistik Ringkasan -->
+    <div class="ringkasan-grid">
+      <div class="stat-box sudah">
+        <div class="stat-icon">✓</div>
+        <div>
+          <div class="stat-number" id="countSudah">0</div>
+          <div class="stat-label">Sudah Hadir di Kelas</div>
+        </div>
+      </div>
+      <div class="stat-box belum">
+        <div class="stat-icon">!</div>
+        <div>
+          <div class="stat-number" id="countBelum">0</div>
+          <div class="stat-label">Belum Absen / Belum Scan</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span style="color:#10b981;font-size:18px;">●</span> Sudah Absen (<span id="titleCountSudah">0</span>)
+    </div>
+    <div class="siswa-grid" id="gridSudahAbsen"></div>
+
+    <div class="section-title" style="margin-top:16px;">
+      <span style="color:#ef4444;font-size:18px;">●</span> Belum Absen (<span id="titleCountBelum">0</span>)
+    </div>
+    <div class="siswa-grid" id="gridBelumAbsen"></div>
+  </div>
+
+  <!-- ===== TAB 2: AJUKAN IJIN (SETIAP ORANG BISA AJUKAN SISWA) ===== -->
+  <div id="tabPerijinan" class="tab-content" style="display:none;">
+    <div class="form-card">
+      <h2>Pengajuan Perijinan Siswa</h2>
+      <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+        Pilih nama siswa yang ingin diizinkan (sakit, dispensasi kegiatan, atau dinas). Admin akan memverifikasi dan merespon via chat.
+      </p>
+
+      <div class="form-group">
+        <label for="perijinanSiswaTarget">Nama Siswa yang Diizinkan</label>
+        <select id="perijinanSiswaTarget" required></select>
+      </div>
+
+      <div class="form-group">
+        <label for="perijinanJenis">Kategori Perijinan</label>
+        <select id="perijinanJenis">
+          <option value="sakit">🤒 Ijin Sakit (Surat Dokter / Konfirmasi)</option>
+          <option value="dispensasi">📄 Dispensasi Kegiatan / Dinas (Wajib Surat)</option>
+          <option value="ijin_kegiatan">🏆 Ijin Lomba / Event Sekolah (Wajib Surat)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="perijinanTanggal">Tanggal Berlaku Ijin</label>
+        <input type="date" id="perijinanTanggal">
+      </div>
+
+      <div class="form-group">
+        <label for="perijinanAlasan">Alasan / Keterangan</label>
+        <textarea id="perijinanAlasan" rows="3" placeholder="Contoh: Mengikuti seleksi LKS / Sakit demam beristirahat di rumah..."></textarea>
+      </div>
+
+      <div class="form-group" id="uploadDokumenWrap">
+        <label for="perijinanFile">📎 Lampirkan Bukti / Surat Ijin (Foto / PDF)</label>
+        <input type="file" id="perijinanFile" accept=".pdf,.jpg,.jpeg,.png">
+        <small style="color:#94a3b8;font-size:12px;margin-top:4px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
+      </div>
+
+      <button class="btn-primary-action" onclick="handleSubmitPerijinan()" id="btnSubmitPerijinan">
+        Kirim Pengajuan ke Admin
+      </button>
+      <p id="perijinanMsg" style="margin-top:14px;font-size:13.5px;font-weight:700;"></p>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: RIWAYAT IJIN & CHAT CS ===== -->
+  <div id="tabRiwayatIjin" class="tab-content" style="display:none;">
+    <div class="section-title">Riwayat Pengajuan & Chat dengan Admin</div>
+    <div id="daftarPerijinanSaya"></div>
+  </div>
+
+</div>
+
+<!-- MODAL CHAT CS -->
+<div id="modalChat" class="chat-modal-overlay">
+  <div class="chat-modal-box">
+    <div class="chat-modal-header">
+      <span style="font-weight:800;font-size:15px;color:#1e293b;" id="modalChatJudul">Chat Bantuan & Konfirmasi</span>
+      <button onclick="tutupModalChat()" style="background:#f1f5f9;border:none;padding:6px 12px;border-radius:8px;font-weight:700;cursor:pointer;">✕ Tutup</button>
+    </div>
+    <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:#f8fafc;"></div>
+    <div style="padding:14px 18px;border-top:1px solid #e2e8f0;display:flex;gap:10px;background:#fff;">
+      <input type="text" id="chatInputPesan" placeholder="Ketik pesan konfirmasi..." style="flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;"
+             onkeydown="if(event.key==='Enter') kirimPesanChat()">
+      <button onclick="kirimPesanChat()" style="background:#4f46e5;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;">Kirim</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/jadwal-util.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/perijinan.js"></script>
+<script src="assets/dashboard.js"></script>
 </body>
 </html>

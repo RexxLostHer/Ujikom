@@ -1,52 +1,76 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa - Admin</title>
+<title>Presensi Siswa — Panel Admin</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/admin.css">
 </head>
 <body>
-<div class="container admin-container">
+<div class="container admin-container" style="max-width:900px;">
   <div class="header">
-    <h1>Panel Admin</h1>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:2px;">PANEL ADMIN / GURU</div>
+      <h1>⚙️ Sistem Presensi</h1>
+    </div>
     <div class="header-actions">
-      <a href="presensi-live.html" class="btn-secondary-link">Presensi Live</a>
+      <a href="dashboard.html" class="btn-secondary-link">📊 Dashboard</a>
+      <span id="adminNamaBadge" style="font-size:13px;color:#64748b;font-weight:600;"></span>
       <button id="logoutBtn" class="logout">Keluar</button>
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="siswa">Data Siswa</button>
-    <button class="tab-btn" data-tab="kartu">Mapping Kartu NFC</button>
-    <button class="tab-btn" data-tab="jadwal">Jadwal Pulang</button>
-    <button class="tab-btn" data-tab="pelajaran">Jadwal Pelajaran</button>
-    <button class="tab-btn" data-tab="simulasi">Simulasi Absen</button>
+  <!-- Badge notif perijinan -->
+  <div id="notifPerijinanBanner" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13.5px;color:#92400e;font-weight:600;">
+    🔔 Ada <span id="jumlahPending">0</span> perijinan yang menunggu respon admin.
   </div>
 
-  <!-- Tab: Data Siswa -->
-  <div id="tab-siswa" class="tab-panel active">
+  <div class="tabs" style="flex-wrap:wrap;">
+    <button class="tab-btn active" data-tab="perijinan">📋 Perijinan Masuk</button>
+    <button class="tab-btn" data-tab="siswa">👤 Data Siswa</button>
+    <button class="tab-btn" data-tab="kartu">🪪 Kartu NFC</button>
+    <button class="tab-btn" data-tab="jadwal">🕐 Jadwal Pulang</button>
+    <button class="tab-btn" data-tab="pelajaran">📚 Jadwal Pelajaran</button>
+    <button class="tab-btn" data-tab="guru">👩‍🏫 Kelola Guru/Akun</button>
+    <button class="tab-btn" data-tab="simulasi">🧪 Simulasi Absen</button>
+  </div>
+
+  <!-- ===== TAB: PERIJINAN ===== -->
+  <div id="tab-perijinan" class="tab-panel active">
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <select id="filterStatusPerijinan" onchange="refreshPerijinanAdmin()">
+        <option value="semua">Semua Status</option>
+        <option value="pending" selected>Menunggu Respon</option>
+        <option value="disetujui">Sudah Disetujui</option>
+        <option value="ditolak">Ditolak</option>
+      </select>
+    </div>
+    <div id="daftarPerijinanAdmin"></div>
+  </div>
+
+  <!-- ===== TAB: SISWA ===== -->
+  <div id="tab-siswa" class="tab-panel">
     <form id="formSiswa" class="inline-form">
       <input type="hidden" id="siswaEditingKey">
       <div class="form-row">
         <div>
           <label for="siswaNisn">NISN</label>
-          <input type="text" id="siswaNisn" placeholder="Contoh: 0067787337" required>
+          <input type="text" id="siswaNisn" placeholder="Contoh: 0098263610" required>
         </div>
         <div>
           <label for="siswaNama">Nama</label>
-          <input type="text" id="siswaNama" placeholder="Nama siswa" required>
+          <input type="text" id="siswaNama" placeholder="Nama lengkap siswa" required>
         </div>
       </div>
       <div class="form-row">
         <div>
           <label for="siswaKelas">Kelas</label>
-          <input type="text" id="siswaKelas" placeholder="Contoh: 9A" required>
+          <input type="text" id="siswaKelas" placeholder="Contoh: XII RPL 2" required>
         </div>
         <div>
-          <label for="siswaPassword">Password</label>
-          <input type="text" id="siswaPassword" placeholder="Password login ortu" required>
+          <label for="siswaEmail">Email Google Siswa</label>
+          <input type="email" id="siswaEmail" placeholder="email@gmail.com">
         </div>
       </div>
       <div class="form-actions">
@@ -55,23 +79,20 @@
       </div>
     </form>
     <p id="siswaMsg" class="msg"></p>
-
     <table class="data-table">
-      <thead>
-        <tr><th>NISN</th><th>Nama</th><th>Kelas</th><th></th></tr>
-      </thead>
+      <thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Email</th><th></th></tr></thead>
       <tbody id="siswaTableBody"></tbody>
     </table>
   </div>
 
-  <!-- Tab: Mapping Kartu NFC -->
+  <!-- ===== TAB: KARTU NFC ===== -->
   <div id="tab-kartu" class="tab-panel">
-    <p class="tab-desc">Device ID diisi otomatis kalau kartu itu pernah di-tap (device nulis ID-nya sendiri saat scan pertama), atau bisa diisi manual. Kartu yang punya Device ID cuma akan diterima kalau di-tap di device itu lagi (anti-cloning).</p>
+    <p class="tab-desc">Mapping kartu RFID ke siswa. Device ID opsional untuk anti-cloning.</p>
     <form id="formKartu" class="inline-form">
       <div class="form-row">
         <div>
-          <label for="kartuId">ID Kartu NFC</label>
-          <input type="text" id="kartuId" placeholder="UID kartu (hex, dari scan)" required>
+          <label for="kartuId">ID Kartu RFID</label>
+          <input type="text" id="kartuId" placeholder="UID kartu dari scan" required>
         </div>
         <div>
           <label for="kartuNisn">NISN Siswa</label>
@@ -80,8 +101,8 @@
       </div>
       <div class="form-row">
         <div>
-          <label for="kartuDeviceId">Device ID (opsional, buat anti-cloning)</label>
-          <input type="text" id="kartuDeviceId" placeholder="Contoh: rpi-9a-01, kosongin kalau belum tau">
+          <label for="kartuDeviceId">Device ID (opsional)</label>
+          <input type="text" id="kartuDeviceId" placeholder="Contoh: rpi-12rpl2-01">
         </div>
       </div>
       <div class="form-actions">
@@ -89,17 +110,15 @@
       </div>
     </form>
     <p id="kartuMsg" class="msg"></p>
-
     <table class="data-table">
-      <thead>
-        <tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th>Device ID</th><th></th></tr>
-      </thead>
+      <thead><tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th>Device ID</th><th></th></tr></thead>
       <tbody id="kartuTableBody"></tbody>
     </table>
   </div>
-  <!-- Tab: Jadwal Pulang -->
+
+  <!-- ===== TAB: JADWAL PULANG ===== -->
   <div id="tab-jadwal" class="tab-panel">
-    <p class="tab-desc">Set jam pulang per kelas PER HARI (bisa beda-beda tiap hari). Kalau siswa tap kartu "pulang" sebelum jam hari itu, orang tua akan lihat label "Pulang lebih awal" di dashboard.</p>
+    <p class="tab-desc">Set jam pulang resmi per kelas. Format HH:MM (contoh: 15:15).</p>
     <form id="formJadwal" class="inline-form">
       <div class="form-row">
         <div>
@@ -107,113 +126,129 @@
           <input type="text" id="jadwalKelas" placeholder="Contoh: XII RPL 2" required>
         </div>
         <div>
-          <label for="jadwalHari">Hari</label>
-          <select id="jadwalHari" required>
-            <option value="senin">Senin</option>
-            <option value="selasa">Selasa</option>
-            <option value="rabu">Rabu</option>
-            <option value="kamis">Kamis</option>
-            <option value="jumat">Jumat</option>
-          </select>
-        </div>
-        <div>
           <label for="jadwalJam">Jam Pulang</label>
           <input type="time" id="jadwalJam" required>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="submit">Simpan Jadwal</button>
-      </div>
+      <div class="form-actions"><button type="submit">Simpan Jadwal Pulang</button></div>
     </form>
     <p id="jadwalMsg" class="msg"></p>
-
     <table class="data-table">
-      <thead>
-        <tr><th>Kelas</th><th>Hari</th><th>Jam Pulang</th><th></th></tr>
-      </thead>
+      <thead><tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr></thead>
       <tbody id="jadwalTableBody"></tbody>
     </table>
   </div>
 
-  <!-- Tab: Jadwal Pelajaran -->
+  <!-- ===== TAB: JADWAL PELAJARAN ===== -->
   <div id="tab-pelajaran" class="tab-panel">
-    <p class="tab-desc">Atur jam ke berapa aja dalam sehari per kelas. Ini dipakai sistem buat nentuin "sekarang lagi jam pelajaran keberapa" pas siswa tap kartu, dan buat halaman Presensi Live.</p>
+    <p class="tab-desc">Jadwal pelajaran per kelas dipakai untuk menentukan jam presensi aktif.</p>
     <div class="form-row">
-      <div>
-        <label for="pelajaranKelas">Pilih Kelas</label>
+      <div style="max-width:200px;">
+        <label for="pelajaranKelas">Kelas</label>
         <select id="pelajaranKelas"></select>
       </div>
     </div>
-
     <form id="formPelajaran" class="inline-form">
       <div class="form-row">
         <div>
           <label for="pelajaranJamKe">Jam Ke-</label>
-          <input type="number" id="pelajaranJamKe" placeholder="1" min="1" required>
+          <input type="number" id="pelajaranJamKe" min="1" max="12" placeholder="1" required>
         </div>
         <div>
           <label for="pelajaranMapel">Mata Pelajaran</label>
-          <input type="text" id="pelajaranMapel" placeholder="Contoh: Matematika" required>
+          <input type="text" id="pelajaranMapel" placeholder="Nama mata pelajaran" required>
         </div>
       </div>
       <div class="form-row">
         <div>
-          <label for="pelajaranMulai">Jam Mulai</label>
+          <label for="pelajaranMulai">Mulai</label>
           <input type="time" id="pelajaranMulai" required>
         </div>
         <div>
-          <label for="pelajaranSelesai">Jam Selesai</label>
+          <label for="pelajaranSelesai">Selesai</label>
           <input type="time" id="pelajaranSelesai" required>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="submit">Simpan Jam Ke-</button>
-      </div>
+      <div class="form-actions"><button type="submit">Simpan Jam Pelajaran</button></div>
     </form>
     <p id="pelajaranMsg" class="msg"></p>
-
     <table class="data-table">
-      <thead>
-        <tr><th>Jam Ke-</th><th>Mapel</th><th>Mulai</th><th>Selesai</th><th></th></tr>
-      </thead>
+      <thead><tr><th>Jam Ke-</th><th>Mata Pelajaran</th><th>Mulai</th><th>Selesai</th><th></th></tr></thead>
       <tbody id="pelajaranTableBody"></tbody>
     </table>
   </div>
 
-  <!-- Tab: Simulasi Absen -->
+  <!-- ===== TAB: KELOLA GURU / AKUN ===== -->
+  <div id="tab-guru" class="tab-panel">
+    <p class="tab-desc">Daftarkan email guru atau staf agar bisa login dan pantau presensi. Admin bisa ubah role user yang sudah login.</p>
+    <form id="formGuru" class="inline-form">
+      <div class="form-row">
+        <div>
+          <label for="guruEmail">Email Google (Guru/Staf)</label>
+          <input type="email" id="guruEmail" placeholder="guru@gmail.com" required>
+        </div>
+        <div>
+          <label for="guruNama">Nama</label>
+          <input type="text" id="guruNama" placeholder="Nama lengkap" required>
+        </div>
+      </div>
+      <div class="form-actions"><button type="submit" id="guruSubmitBtn">Daftarkan Guru</button></div>
+    </form>
+    <p id="guruMsg" class="msg"></p>
+    <p style="color:#64748b;font-size:13px;margin-top:20px;">Daftar User yang Sudah Login:</p>
+    <table class="data-table">
+      <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr></thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ===== TAB: SIMULASI ABSEN ===== -->
   <div id="tab-simulasi" class="tab-panel">
-    <p class="tab-desc">
-      Buat siswa yang belum kebagian kartu NFC fisik, catetan absen bisa
-      disimulasiin dari sini -- hasilnya kecatet persis kayak siswa beneran
-      tap kartu (masuk ke riwayat dashboard ortu &amp; Presensi Live), cuma
-      sumbernya manual dari admin, bukan dari device NFC.
-    </p>
-    <div class="form-row">
-      <div>
-        <label for="simulasiNisn">Siswa</label>
-        <select id="simulasiNisn"></select>
+    <p class="tab-desc">Simulasi tap kartu RFID untuk testing. Data akan ditulis ke Firebase seolah-olah kartu di-scan.</p>
+    <form id="formSimulasi" class="inline-form">
+      <div class="form-row">
+        <div>
+          <label for="simulasiNisn">Siswa</label>
+          <select id="simulasiNisn" required></select>
+        </div>
+        <div>
+          <label for="simulasiStatus">Status</label>
+          <select id="simulasiStatus">
+            <option value="hadir">Hadir</option>
+            <option value="pulang">Pulang</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label for="simulasiStatus">Status</label>
-        <select id="simulasiStatus">
-          <option value="hadir">Hadir (masuk)</option>
-          <option value="pulang">Pulang</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button type="button" id="simulasiBtn">Simulasikan Tap Sekarang</button>
-    </div>
+      <div class="form-actions"><button type="submit">🧪 Simulasikan Absen</button></div>
+    </form>
     <p id="simulasiMsg" class="msg"></p>
-    <p id="simulasiInfoJam" class="tab-desc"></p>
   </div>
 </div>
 
-<!-- Firebase SDK -->
+<!-- MODAL CHAT PERIJINAN -->
+<div id="modalChat" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000;padding:16px;">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:700;font-size:15px;" id="modalChatJudul">Chat</span>
+      <button onclick="tutupModalChat()" style="width:auto;margin-top:0;padding:6px 14px;font-size:13px;background:#f1f5f9;color:#334155;">✕ Tutup</button>
+    </div>
+    <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="padding:12px 16px;border-top:1px solid #e2e8f0;display:flex;gap:8px;">
+      <input type="text" id="chatInputPesan" placeholder="Tulis pesan..." style="flex:1;"
+             onkeydown="if(event.key==='Enter') kirimPesanChat()">
+      <button onclick="kirimPesanChat()" style="width:auto;margin-top:0;padding:10px 16px;">Kirim</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="assets/firebase-config.js"></script>
 <script src="assets/jadwal-util.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/perijinan.js"></script>
 <script src="assets/admin.js"></script>
 </body>
 </html>

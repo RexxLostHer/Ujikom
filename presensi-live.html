@@ -1,48 +1,89 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Live</title>
+<title>Presensi Live — Pantau Kelas</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/admin.css">
 <link rel="stylesheet" href="assets/presensi-live.css">
+<style>
+  .container { max-width: 960px; }
+  .header-brand {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .jam-aktif-banner {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14.5px;
+    color: #1e40af;
+    font-weight: 600;
+  }
+  .jam-aktif-banner.kosong {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
+    font-weight: 400;
+  }
+  .jam-aktif-banner .icon { font-size: 22px; flex-shrink: 0; }
+  .jam-aktif-banner .sub { font-size: 12.5px; font-weight: 400; color: #3b82f6; margin-top: 2px; }
+</style>
 </head>
 <body>
 <div class="container admin-container">
   <div class="header">
-    <h1>Presensi Live</h1>
+    <div>
+      <div class="header-brand">SISTEM PRESENSI — AKSES ADMIN/GURU</div>
+      <h1>📡 Presensi Live</h1>
+    </div>
     <div class="header-actions">
-      <a href="admin.html" class="btn-secondary-link">Panel Admin</a>
+      <a href="admin.html" class="btn-secondary-link">⚙️ Panel Admin</a>
       <button id="logoutBtn" class="logout">Keluar</button>
     </div>
   </div>
 
-  <div class="form-row">
-    <div>
-      <label for="kelasSelect">Kelas</label>
+  <!-- Pilih Kelas -->
+  <div class="form-row" style="margin-bottom: 0;">
+    <div style="max-width:200px;">
+      <label for="kelasSelect">📚 Kelas</label>
       <select id="kelasSelect"></select>
     </div>
   </div>
 
-  <div id="infoJam" class="info-jam">Memuat jadwal...</div>
+  <!-- Info Jam Pelajaran Aktif -->
+  <div class="jam-aktif-banner kosong" id="infoJam">
+    <span class="icon">🕒</span>
+    <div><div>Memuat jadwal pelajaran...</div></div>
+  </div>
 
+  <!-- Ringkasan Angka -->
   <div class="ringkasan">
     <div class="kartu-ringkasan sudah">
       <span class="angka" id="jumlahSudah">0</span>
-      <span class="label">Sudah absen</span>
+      <span class="label">Sudah Scan Kartu</span>
     </div>
     <div class="kartu-ringkasan belum">
       <span class="angka" id="jumlahBelum">0</span>
-      <span class="label">Belum absen</span>
+      <span class="label">Belum Absen</span>
     </div>
   </div>
 
-  <h3>Belum absen jam ini</h3>
-  <div id="daftarBelum" class="daftar-siswa"></div>
+  <!-- Grid: Sudah Absen -->
+  <h2 style="margin-bottom:12px;"><span style="color:#10b981;">●</span> Sudah Absen Jam Ini</h2>
+  <div id="daftarSudah" class="siswa-grid"></div>
 
-  <h3>Sudah absen jam ini</h3>
-  <div id="daftarSudah" class="daftar-siswa"></div>
+  <!-- Grid: Belum Absen -->
+  <h2 style="margin-bottom:12px;"><span style="color:#ef4444;">●</span> Belum Absen</h2>
+  <div id="daftarBelum" class="siswa-grid"></div>
 </div>
 
 <!-- Firebase SDK -->
