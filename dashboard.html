@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -27,30 +27,152 @@
     </div>
   </div>
 
-  <!-- BANNER KELAS MANDIRI / GURU BERHALANGAN -->
-  <div class="guru-alert">
-    <div class="alert-icon">⚡</div>
-    <div>
-      <strong>Sistem Presensi Kelas Mandiri (Anti-Kebohongan):</strong>
-      Jika guru berhalangan hadir atau ada kendala mengajar, murid tetap wajib berada di kelas dan melakukan <b>scan kartu RFID</b> pada device kelas. Kehadiran fisik terverifikasi secara langsung dan transparan.
-    </div>
-  </div>
-
   <!-- TABS UNIFIED (UNTUK SEMUA PENGGUNA) -->
   <div class="view-tabs">
-    <button class="view-tab-btn active" onclick="switchTab('tabKelas', this)">
+    <button class="view-tab-btn active" id="btnTabBeranda" onclick="switchTab('tabBeranda', this)">
+      <span>🏠</span> Beranda
+    </button>
+    <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
       <span>👥</span> Pantau Kelas
     </button>
-    <button class="view-tab-btn" onclick="switchTab('tabPerijinan', this)">
+    <button class="view-tab-btn" id="btnTabPerijinan" onclick="switchTab('tabPerijinan', this)">
       <span>📝</span> Ajukan Ijin / Dispen
     </button>
-    <button class="view-tab-btn" onclick="switchTab('tabRiwayatIjin', this)">
+    <button class="view-tab-btn" id="btnTabRiwayatIjin" onclick="switchTab('tabRiwayatIjin', this)">
       <span>💬</span> Chat & Status Ijin
     </button>
   </div>
 
+  <!-- ===== TAB 0: BERANDA (PORTAL SUPER APP SEKOLAH 2026) ===== -->
+  <div id="tabBeranda" class="tab-content active">
+    
+    <!-- Hero Profile & Saldo Kehadiran (Mirip Gopay / E-Wallet Bar) -->
+    <div class="hero-welcome">
+      <div class="hero-welcome-left">
+        <h2 id="greetingText">Halo, Rexx! 👋</h2>
+        <p id="greetingSubtext">Portal Cerdas Presensi & Informasi Akademik SMK.</p>
+        <div class="hero-clock" id="liveClockWidget">
+          <span>🕒</span> <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
+        </div>
+      </div>
+      <div class="hero-welcome-right">
+        <div class="personal-status-pill belum" id="personalStatusPill">
+          <div class="status-icon-wrap" id="personalStatusIcon">⚡</div>
+          <div>
+            <div class="status-text-title">Status Presensi Anda</div>
+            <div class="status-text-val" id="personalStatusText">Memeriksa Kehadiran...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Promo Banner Carousel / Highlight Info (Mirip Banner Promo Tokopedia/Shopee) -->
+    <div class="ecom-banner-card">
+      <div style="z-index:2;">
+        <span class="ecom-banner-tag">🚀 UJIKOM RPL 2026</span>
+        <div class="ecom-banner-title">Sistem Presensi Kartu RFID Kelas Mandiri</div>
+        <div class="ecom-banner-desc">Kehadiran fisik terverifikasi secara realtime, transparan, dan anti-titip absen saat guru berhalangan mengajar.</div>
+        <button class="ecom-banner-btn" onclick="document.getElementById('btnTabKelas').click()">
+          🔍 Cek Presensi Kelas Sekarang →
+        </button>
+      </div>
+      <div class="ecom-banner-art">🎓</div>
+    </div>
+
+    <!-- Quick Services Grid (Ikon Menu Bulat/Kotak Layanan Gojek / E-Commerce) -->
+    <div class="school-services-grid">
+      <div class="service-item-btn" onclick="pilihTabCekJadwal()">
+        <div class="service-icon-box" style="background:#eff6ff; color:#2563eb;">📚</div>
+        <span class="service-label">Cek Jadwal</span>
+      </div>
+      <div class="service-item-btn" onclick="document.getElementById('btnTabKelas').click()">
+        <div class="service-icon-box" style="background:#ecfdf5; color:#059669;">👥</div>
+        <span class="service-label">Pantau Kelas</span>
+      </div>
+      <div class="service-item-btn" onclick="document.getElementById('btnTabPerijinan').click()">
+        <div class="service-icon-box" style="background:#fef3c7; color:#d97706;">📝</div>
+        <span class="service-label">Ajukan Izin</span>
+      </div>
+      <div class="service-item-btn" onclick="document.getElementById('btnTabRiwayatIjin').click()">
+        <div class="service-icon-box" style="background:#f3e8ff; color:#7c3aed;">💬</div>
+        <span class="service-label">Chat Admin</span>
+      </div>
+      <div class="service-item-btn" onclick="bukaModalJadwalPulang()">
+        <div class="service-icon-box" style="background:#fee2e2; color:#dc2626;">⏰</div>
+        <span class="service-label">Jam Pulang</span>
+      </div>
+      <div class="service-item-btn" onclick="bukaModalTataTertib()">
+        <div class="service-icon-box" style="background:#f1f5f9; color:#475569;">📜</div>
+        <span class="service-label">Tata Tertib</span>
+      </div>
+    </div>
+
+    <!-- Section Eksplor Jadwal Pelajaran (Bukan todong XII RPL 2 langsung, tapi sediakan selector kelas!) -->
+    <div class="home-section-card" id="sectionJadwalHome">
+      <div class="home-section-header">
+        <h3>📚 Eksplor Jadwal Pelajaran</h3>
+        <span id="homeJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4f46e5; background:#eff6ff; padding:5px 12px; border-radius:10px;">
+          Pilih kelas untuk melihat jadwal
+        </span>
+      </div>
+      
+      <!-- Selector Kelas Chips (User bisa pilih kelas mana yang mau diinspeksi) -->
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih kelas yang ingin dicek hari ini:</p>
+      <div class="class-chip-container" id="classChipsList">
+        <!-- Render dinamis via JS -->
+      </div>
+
+      <!-- Live Schedule Grid -->
+      <div class="schedule-timeline-grid" id="homeScheduleGrid">
+        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:16px;">
+          👈 Silakan klik salah satu kelas di atas untuk melihat jam pelajaran hari ini.
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Presensi Mandiri / Guru Berhalangan (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
+    <div class="guru-alert" id="bannerKelasMandiri" style="margin-bottom:24px; display:none;">
+      <div class="alert-icon">⚡</div>
+      <div>
+        <strong id="bannerMandiriTitle">Pemberitahuan Kelas Mandiri:</strong>
+        <span id="bannerMandiriText">Guru pengajar berhalangan hadir pada jam tertentu. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada scanner kelas agar kehadiran tetap terverifikasi sah.</span>
+      </div>
+    </div>
+
+    <!-- Section School Feed / Pengumuman Terkini (Produk Unggulan / Feed Sekolah) -->
+    <div class="home-section-card" style="margin-bottom:0;">
+      <div class="home-section-header">
+        <h3>📢 Pengumuman & Agenda Sekolah</h3>
+      </div>
+      <div class="school-feed-grid">
+        <div class="feed-card">
+          <div>
+            <span class="feed-badge event">Akademik</span>
+            <div class="feed-title">Uji Kompetensi Keahlian (UKK / Ujikom) 2026</div>
+            <div class="feed-desc">Pelaksanaan asesmen kompetensi Rekayasa Perangkat Lunak menggunakan sistem presensi RFID mandiri terintegrasi.</div>
+          </div>
+        </div>
+        <div class="feed-card">
+          <div>
+            <span class="feed-badge info">Presensi</span>
+            <div class="feed-title">Ketentuan Pengajuan Izin & Sakit Online</div>
+            <div class="feed-desc">Pengajuan izin sakit wajib melampirkan surat dokter. Dispensasi dinas/lomba divalidasi langsung oleh guru piket via chat.</div>
+          </div>
+        </div>
+        <div class="feed-card">
+          <div>
+            <span class="feed-badge penting">Disiplin</span>
+            <div class="feed-title">Waktu Presensi & Jam Pulang Sekolah</div>
+            <div class="feed-desc">Scan kartu masuk dilakukan saat pergantian jam pelajaran. Jam kepulangan sekolah resmi pukul 15:15 WIB.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ===== TAB 1: PANTAU KELAS ===== -->
-  <div id="tabKelas" class="tab-content active">
+  <div id="tabKelas" class="tab-content" style="display:none;">
     <div class="filter-bar">
       <select id="pilihKelasPantau"></select>
       <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">

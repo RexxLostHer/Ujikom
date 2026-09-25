@@ -1,4 +1,4 @@
-﻿// ===== DASHBOARD JS (UNIFIED 2026 EDITION) =====
+// ===== DASHBOARD JS (UNIFIED 2026 EDITION) =====
 let currentUser = null;
 
 firebase.auth().onAuthStateChanged(async function(fbUser) {
@@ -36,6 +36,9 @@ async function initDashboard(user) {
 
   // Set tanggal default ijin
   document.getElementById('perijinanTanggal').value = tanggalHariIni();
+
+  // Inisialisasi Beranda Overview
+  initBerandaOverview(user);
 
   // Populate dropdown daftar siswa untuk siapapun yang mengajukan perizinan
   populateDropdownSiswa(user);
@@ -293,4 +296,241 @@ function renderPantauKelas() {
   document.getElementById('countBelum').textContent = cb;
   document.getElementById('titleCountSudah').textContent = cs;
   document.getElementById('titleCountBelum').textContent = cb;
+}
+
+// ===================================================================
+// BERANDA OVERVIEW LOGIC (SMART HUB 2026)
+// ===================================================================
+let clockInterval = null;
+
+function initBerandaOverview(user) {
+  // 1. Greeting Dinamis
+  const hour = new Date().getHours();
+  let salam = 'Selamat Pagi';
+  if (hour >= 11 && hour < 15) salam = 'Selamat Siang';
+  else if (hour >= 15 && hour < 18) salam = 'Selamat Sore';
+  else if (hour >= 18 || hour < 5) salam = 'Selamat Malam';
+
+  const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
+  const greetingEl = document.getElementById('greetingText');
+  if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}! 👋`;
+
+  const subtextEl = document.getElementById('greetingSubtext');
+  if (subtextEl) {
+    if (user.kelas) {
+      subtextEl.textContent = `Siswa Kelas ${user.kelas} • NISN: ${user.nisn || '-'}`;
+    } else {
+      subtextEl.textContent = `Selamat datang di Smart School Presensi Hub.`;
+    }
+  }
+
+  // 2. Live Real-Time Clock
+  if (clockInterval) clearInterval(clockInterval);
+  const updateClock = () => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+    const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeEl = document.getElementById('liveClockTime');
+    const dateEl = document.getElementById('liveClockDate');
+    if (timeEl) timeEl.textContent = timeStr;
+    if (dateEl) dateEl.textContent = dateStr;
+  };
+  updateClock();
+  clockInterval = setInterval(updateClock, 1000);
+
+  // 3. Status Presensi Pribadi Hari Ini
+  const pillEl = document.getElementById('personalStatusPill');
+  const iconEl = document.getElementById('personalStatusIcon');
+  const textEl = document.getElementById('personalStatusText');
+
+  if (user.nisn && user.kelas) {
+    const today = tanggalHariIni();
+    db.ref(`presensi_jam/${user.kelas}/${today}`).on('value', snapshot => {
+      const data = snapshot.val() || {};
+      let waktuHadir = null;
+      let statusDitemukan = null;
+
+      // Cari status dari jam 1 s/d 4
+      ['1', '2', '3', '4'].forEach(jam => {
+        if (data[jam] && data[jam][user.nisn]) {
+          waktuHadir = data[jam][user.nisn].waktu;
+          statusDitemukan = data[jam][user.nisn].status;
+        }
+      });
+
+      if (pillEl && iconEl && textEl) {
+        if (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha')) {
+          pillEl.className = 'personal-status-pill hadir';
+          iconEl.textContent = '✓';
+          const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
+          textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
+        } else {
+          pillEl.className = 'personal-status-pill belum';
+          iconEl.textContent = '⚡';
+          textEl.textContent = 'Belum Scan Kartu Hari Ini';
+        }
+      }
+    });
+  } else {
+    // Mode ortu / umum
+    if (pillEl && iconEl && textEl) {
+      pillEl.className = 'personal-status-pill hadir';
+      iconEl.textContent = '👁️';
+      textEl.textContent = 'Mode Pemantau Aktif';
+    }
+  }
+
+  // 4. Inisialisasi Class Chips Selector (Tidak todong jadwal otomatis)
+  initClassChipsSelector(user);
+}
+
+function initClassChipsSelector(user) {
+  const container = document.getElementById('classChipsList');
+  if (!container) return;
+
+  db.ref('siswa').once('value').then(snap => {
+    const data = snap.val() || {};
+    const kelasSet = new Set(Object.values(data).map(s => s.kelas).filter(Boolean));
+    const listKelas = Array.from(kelasSet).sort();
+
+    container.innerHTML = '';
+    if (listKelas.length === 0) {
+      container.innerHTML = '<span style="color:#94a3b8; font-size:13px;">Belum ada kelas terdaftar.</span>';
+      return;
+    }
+
+    listKelas.forEach(kelas => {
+      const chip = document.createElement('button');
+      chip.className = 'class-chip';
+      chip.textContent = kelas;
+      chip.onclick = function() {
+        document.querySelectorAll('.class-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        muatJadwalBeranda(kelas);
+      };
+      container.appendChild(chip);
+    });
+
+    // Jika user punya kelas terdaftar, kita highlight chip miliknya tapi biarkan dia bebas klik kelas lain
+    if (user.kelas && kelasSet.has(user.kelas)) {
+      const defaultChip = Array.from(container.children).find(c => c.textContent === user.kelas);
+      if (defaultChip) {
+        defaultChip.classList.add('active');
+        muatJadwalBeranda(user.kelas);
+      }
+    }
+  });
+}
+
+function muatJadwalBeranda(kelas) {
+  const gridEl = document.getElementById('homeScheduleGrid');
+  const badgePulang = document.getElementById('homeJamPulangBadge');
+  const bannerMandiri = document.getElementById('bannerKelasMandiri');
+  const bannerText = document.getElementById('bannerMandiriText');
+
+  if (badgePulang) {
+    badgePulang.textContent = `Memeriksa ${kelas}...`;
+  }
+
+  // Jadwal Pelajaran & Auto-Sync Jam Pulang
+  db.ref(`jadwal_pelajaran/${kelas}`).on('value', snapshot => {
+    if (!gridEl) return;
+    const data = snapshot.val() || {};
+    gridEl.innerHTML = '';
+
+    const jamKeys = Object.keys(data).sort((a, b) => Number(a) - Number(b));
+    if (jamKeys.length === 0) {
+      gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${kelas}.</div>`;
+      if (bannerMandiri) bannerMandiri.style.display = 'none';
+      if (badgePulang) badgePulang.textContent = `Jam Pulang ${kelas}: -`;
+      return;
+    }
+
+    // Ambil jam selesai dari mapel paling terakhir
+    const keyTerakhir = jamKeys[jamKeys.length - 1];
+    const mapelTerakhir = data[keyTerakhir];
+    const jamSelesaiAkhir = (mapelTerakhir && mapelTerakhir.selesai) ? mapelTerakhir.selesai : '15:15';
+
+    if (badgePulang) {
+      badgePulang.textContent = `Jam Pulang ${kelas}: ${jamSelesaiAkhir} WIB`;
+    }
+
+    const jamSkrg = jamSekarang();
+    const listJamMandiri = [];
+
+    jamKeys.forEach(jamKe => {
+      const p = data[jamKe];
+      const card = document.createElement('div');
+      card.className = 'schedule-card';
+
+      // 1. Bersihkan nama mapel dari sisa teks statis lama
+      const namaMapelBersih = (p.mapel || 'Pelajaran')
+        .replace(/\s*\(Guru Ada Halangan \/ Mandiri\)/gi, '')
+        .trim();
+
+      // 2. Cek apakah ada konfirmasi resmi guru berhalangan hadir
+      const isGuruBerhalangan = p.guru_status === 'berhalangan' || p.guru_status === 'mandiri';
+      if (isGuruBerhalangan) {
+        listJamMandiri.push(`Jam ke-${jamKe} (${namaMapelBersih})`);
+      }
+
+      // 3. Cek apakah jam ini aktif sekarang
+      const isActive = p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg <= p.selesai;
+      if (isActive) {
+        card.classList.add('is-active');
+      }
+
+      card.innerHTML = `
+        ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}
+        <div class="schedule-jam">Jam Ke-${jamKe}</div>
+        <div class="schedule-mapel">${namaMapelBersih}</div>
+        <div class="schedule-waktu">⏰ ${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
+        ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;">⚡ Guru Berhalangan (Mandiri)</span></div>' : ''}
+      `;
+
+      gridEl.appendChild(card);
+    });
+
+    // 4. Atur tampilan banner secara dinamis
+    if (bannerMandiri) {
+      if (listJamMandiri.length > 0) {
+        bannerMandiri.style.display = 'flex';
+        if (bannerText) {
+          bannerText.innerHTML = `Guru pengajar pada <b>${listJamMandiri.join(', ')}</b> mengonfirmasi ada halangan. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada device kelas agar presensi jam tersebut terverifikasi sah.`;
+        }
+      } else {
+        bannerMandiri.style.display = 'none';
+      }
+    }
+  });
+}
+
+// ===== HELPER ACTIONS DARI SERVICE GRID =====
+function pilihTabCekJadwal() {
+  const target = document.getElementById('sectionJadwalHome');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function bukaModalJadwalPulang() {
+  db.ref('jadwal').once('value').then(snap => {
+    const data = snap.val() || {};
+    let info = 'Jadwal Kepulangan Resmi Sekolah:\n\n';
+    Object.entries(data).forEach(([kls, val]) => {
+      const jam = typeof val === 'string' ? val : '15:15';
+      info += `• ${kls}: Pukul ${jam} WIB\n`;
+    });
+    alert(info || 'Jam pulang resmi seluruh kelas: 15:15 WIB.');
+  });
+}
+
+function bukaModalTataTertib() {
+  alert(
+    "📜 TATA TERTIB PRESENSI KELAS MANDIRI:\n\n" +
+    "1. Siswa wajib hadir di dalam ruangan kelas sebelum jam pelajaran dimulai.\n" +
+    "2. Jika guru berhalangan hadir, siswa melakukan tap kartu RFID pada scanner kelas.\n" +
+    "3. Titip absen menggunakan kartu teman dinyatakan pelanggaran disiplin berat.\n" +
+    "4. Izin sakit/dispensasi harus diajukan melalui menu 'Ajukan Izin' disertai surat keterangan resmi."
+  );
 }

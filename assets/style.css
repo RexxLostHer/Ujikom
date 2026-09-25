@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --primary: #4f46e5;
@@ -523,6 +523,482 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* ===== BERANDA OVERVIEW STYLES ===== */
+.hero-welcome {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1.5px solid rgba(99, 102, 241, 0.2);
+  border-radius: 22px;
+  padding: 26px 28px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.hero-welcome-left h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.hero-welcome-left p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.hero-clock {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-top: 10px;
+}
+
+.hero-welcome-right {
+  display: flex;
+  align-items: center;
+}
+
+.personal-status-pill {
+  background: #fff;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 18px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-md);
+}
+
+.personal-status-pill .status-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.personal-status-pill.hadir .status-icon-wrap {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.personal-status-pill.belum .status-icon-wrap {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.personal-status-pill .status-text-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.personal-status-pill .status-text-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Quick Actions Grid */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.quick-action-card {
+  background: #fff;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+.quick-action-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.quick-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: background 0.2s;
+}
+
+.quick-action-card:hover .quick-action-icon {
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.quick-action-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.quick-action-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Section Container */
+.home-section-card {
+  background: #fff;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 22px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.home-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.home-section-header h3 {
+  font-size: 16.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Schedule Live Timeline */
+.schedule-timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.schedule-card {
+  background: #f8fafc;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.schedule-card.is-active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.schedule-card .live-pill {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #2563eb;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.schedule-card .live-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #60a5fa;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.schedule-jam {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.schedule-mapel {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 4px 0 8px;
+}
+
+.schedule-waktu {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* ===== E-COMMERCE SCHOOL PORTAL STYLES ===== */
+
+/* Promo Banner Slider Card */
+.ecom-banner-card {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+  border-radius: 22px;
+  padding: 24px 28px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px -5px rgba(49, 46, 129, 0.35);
+}
+
+.ecom-banner-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.ecom-banner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.ecom-banner-title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  line-height: 1.25;
+}
+
+.ecom-banner-desc {
+  font-size: 13.5px;
+  color: #c7d2fe;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.ecom-banner-btn {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #1e1b4b;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ecom-banner-btn:hover {
+  transform: translateY(-2px);
+  background: #f8fafc;
+}
+
+.ecom-banner-art {
+  font-size: 64px;
+  flex-shrink: 0;
+  margin-left: 20px;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.3));
+}
+
+/* Service Grid (Ala Kategori E-Commerce) */
+.school-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.service-item-btn {
+  background: #fff;
+  border: 1px solid var(--surface-border);
+  border-radius: 18px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.service-item-btn:hover {
+  transform: translateY(-3px);
+  border-color: #818cf8;
+  box-shadow: var(--shadow-md);
+}
+
+.service-icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 10px;
+  transition: transform 0.2s;
+}
+
+.service-item-btn:hover .service-icon-box {
+  transform: scale(1.08);
+}
+
+.service-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+/* Class Chips Filter */
+.class-chip-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 14px;
+  margin-bottom: 14px;
+}
+
+.class-chip {
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: 1.5px solid var(--surface-border);
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.class-chip:hover {
+  background: #f1f5f9;
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+.class-chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* School Feed / Announcement Cards (Ala Produk Pilihan) */
+.school-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.feed-card {
+  background: #fff;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s;
+}
+
+.feed-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
+}
+
+.feed-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.feed-badge.info { background: #eff6ff; color: #1d4ed8; }
+.feed-badge.penting { background: #fef2f2; color: #b91c1c; }
+.feed-badge.event { background: #f0fdf4; color: #15803d; }
+
+.feed-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+
+.feed-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .ecom-banner-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ecom-banner-art {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 20px 18px;
@@ -536,5 +1012,9 @@ body {
   }
   .view-tabs {
     overflow-x: auto;
+  }
+  .hero-welcome {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

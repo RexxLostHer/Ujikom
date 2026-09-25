@@ -1,242 +1,445 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa — Panel Admin</title>
-<link rel="stylesheet" href="assets/style.css">
+<title>Panel Admin — Presensi Siswa</title>
 <link rel="stylesheet" href="assets/admin.css">
 </head>
 <body>
-<div class="container admin-container" style="max-width:900px;">
-  <div class="header">
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:2px;">PANEL ADMIN / GURU</div>
-      <h1>⚙️ Sistem Presensi</h1>
-    </div>
-    <div class="header-actions">
-      <a href="dashboard.html" class="btn-secondary-link">📊 Dashboard</a>
-      <span id="adminNamaBadge" style="font-size:13px;color:#64748b;font-weight:600;"></span>
-      <button id="logoutBtn" class="logout">Keluar</button>
-    </div>
-  </div>
 
-  <!-- Badge notif perijinan -->
-  <div id="notifPerijinanBanner" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13.5px;color:#92400e;font-weight:600;">
-    🔔 Ada <span id="jumlahPending">0</span> perijinan yang menunggu respon admin.
-  </div>
-
-  <div class="tabs" style="flex-wrap:wrap;">
-    <button class="tab-btn active" data-tab="perijinan">📋 Perijinan Masuk</button>
-    <button class="tab-btn" data-tab="siswa">👤 Data Siswa</button>
-    <button class="tab-btn" data-tab="kartu">🪪 Kartu NFC</button>
-    <button class="tab-btn" data-tab="jadwal">🕐 Jadwal Pulang</button>
-    <button class="tab-btn" data-tab="pelajaran">📚 Jadwal Pelajaran</button>
-    <button class="tab-btn" data-tab="guru">👩‍🏫 Kelola Guru/Akun</button>
-    <button class="tab-btn" data-tab="simulasi">🧪 Simulasi Absen</button>
-  </div>
-
-  <!-- ===== TAB: PERIJINAN ===== -->
-  <div id="tab-perijinan" class="tab-panel active">
-    <div class="filter-bar" style="margin-bottom:16px;">
-      <select id="filterStatusPerijinan" onchange="refreshPerijinanAdmin()">
-        <option value="semua">Semua Status</option>
-        <option value="pending" selected>Menunggu Respon</option>
-        <option value="disetujui">Sudah Disetujui</option>
-        <option value="ditolak">Ditolak</option>
-      </select>
-    </div>
-    <div id="daftarPerijinanAdmin"></div>
-  </div>
-
-  <!-- ===== TAB: SISWA ===== -->
-  <div id="tab-siswa" class="tab-panel">
-    <form id="formSiswa" class="inline-form">
-      <input type="hidden" id="siswaEditingKey">
-      <div class="form-row">
-        <div>
-          <label for="siswaNisn">NISN</label>
-          <input type="text" id="siswaNisn" placeholder="Contoh: 0098263610" required>
-        </div>
-        <div>
-          <label for="siswaNama">Nama</label>
-          <input type="text" id="siswaNama" placeholder="Nama lengkap siswa" required>
-        </div>
-      </div>
-      <div class="form-row">
-        <div>
-          <label for="siswaKelas">Kelas</label>
-          <input type="text" id="siswaKelas" placeholder="Contoh: XII RPL 2" required>
-        </div>
-        <div>
-          <label for="siswaEmail">Email Google Siswa</label>
-          <input type="email" id="siswaEmail" placeholder="email@gmail.com">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="submit" id="siswaSubmitBtn">Tambah Siswa</button>
-        <button type="button" id="siswaCancelBtn" class="btn-secondary hidden">Batal Edit</button>
-      </div>
-    </form>
-    <p id="siswaMsg" class="msg"></p>
-    <table class="data-table">
-      <thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Email</th><th></th></tr></thead>
-      <tbody id="siswaTableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- ===== TAB: KARTU NFC ===== -->
-  <div id="tab-kartu" class="tab-panel">
-    <p class="tab-desc">Mapping kartu RFID ke siswa. Device ID opsional untuk anti-cloning.</p>
-    <form id="formKartu" class="inline-form">
-      <div class="form-row">
-        <div>
-          <label for="kartuId">ID Kartu RFID</label>
-          <input type="text" id="kartuId" placeholder="UID kartu dari scan" required>
-        </div>
-        <div>
-          <label for="kartuNisn">NISN Siswa</label>
-          <select id="kartuNisn" required></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div>
-          <label for="kartuDeviceId">Device ID (opsional)</label>
-          <input type="text" id="kartuDeviceId" placeholder="Contoh: rpi-12rpl2-01">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="submit">Simpan Mapping</button>
-      </div>
-    </form>
-    <p id="kartuMsg" class="msg"></p>
-    <table class="data-table">
-      <thead><tr><th>ID Kartu</th><th>NISN</th><th>Nama Siswa</th><th>Device ID</th><th></th></tr></thead>
-      <tbody id="kartuTableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- ===== TAB: JADWAL PULANG ===== -->
-  <div id="tab-jadwal" class="tab-panel">
-    <p class="tab-desc">Set jam pulang resmi per kelas. Format HH:MM (contoh: 15:15).</p>
-    <form id="formJadwal" class="inline-form">
-      <div class="form-row">
-        <div>
-          <label for="jadwalKelas">Kelas</label>
-          <input type="text" id="jadwalKelas" placeholder="Contoh: XII RPL 2" required>
-        </div>
-        <div>
-          <label for="jadwalJam">Jam Pulang</label>
-          <input type="time" id="jadwalJam" required>
-        </div>
-      </div>
-      <div class="form-actions"><button type="submit">Simpan Jadwal Pulang</button></div>
-    </form>
-    <p id="jadwalMsg" class="msg"></p>
-    <table class="data-table">
-      <thead><tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr></thead>
-      <tbody id="jadwalTableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- ===== TAB: JADWAL PELAJARAN ===== -->
-  <div id="tab-pelajaran" class="tab-panel">
-    <p class="tab-desc">Jadwal pelajaran per kelas dipakai untuk menentukan jam presensi aktif.</p>
-    <div class="form-row">
-      <div style="max-width:200px;">
-        <label for="pelajaranKelas">Kelas</label>
-        <select id="pelajaranKelas"></select>
+<div class="admin-wrap">
+  <!-- APP BAR -->
+  <div class="admin-appbar">
+    <div class="admin-brand">
+      <div class="admin-brand-icon">⚙️</div>
+      <div class="admin-brand-text">
+        <small>Panel Kontrol</small>
+        <strong>Sistem Presensi</strong>
       </div>
     </div>
-    <form id="formPelajaran" class="inline-form">
-      <div class="form-row">
-        <div>
-          <label for="pelajaranJamKe">Jam Ke-</label>
-          <input type="number" id="pelajaranJamKe" min="1" max="12" placeholder="1" required>
-        </div>
-        <div>
-          <label for="pelajaranMapel">Mata Pelajaran</label>
-          <input type="text" id="pelajaranMapel" placeholder="Nama mata pelajaran" required>
-        </div>
+    <div class="admin-appbar-right">
+      <div class="admin-user-pill">
+        <span class="dot"></span>
+        <span id="adminNamaBadge">Administrator</span>
       </div>
-      <div class="form-row">
-        <div>
-          <label for="pelajaranMulai">Mulai</label>
-          <input type="time" id="pelajaranMulai" required>
-        </div>
-        <div>
-          <label for="pelajaranSelesai">Selesai</label>
-          <input type="time" id="pelajaranSelesai" required>
-        </div>
-      </div>
-      <div class="form-actions"><button type="submit">Simpan Jam Pelajaran</button></div>
-    </form>
-    <p id="pelajaranMsg" class="msg"></p>
-    <table class="data-table">
-      <thead><tr><th>Jam Ke-</th><th>Mata Pelajaran</th><th>Mulai</th><th>Selesai</th><th></th></tr></thead>
-      <tbody id="pelajaranTableBody"></tbody>
-    </table>
+      <a href="dashboard.html" class="btn-nav">📊 Dashboard</a>
+      <button id="logoutBtn" class="btn-logout-admin">↩ Keluar</button>
+    </div>
   </div>
 
-  <!-- ===== TAB: KELOLA GURU / AKUN ===== -->
-  <div id="tab-guru" class="tab-panel">
-    <p class="tab-desc">Daftarkan email guru atau staf agar bisa login dan pantau presensi. Admin bisa ubah role user yang sudah login.</p>
-    <form id="formGuru" class="inline-form">
-      <div class="form-row">
-        <div>
-          <label for="guruEmail">Email Google (Guru/Staf)</label>
-          <input type="email" id="guruEmail" placeholder="guru@gmail.com" required>
-        </div>
-        <div>
-          <label for="guruNama">Nama</label>
-          <input type="text" id="guruNama" placeholder="Nama lengkap" required>
-        </div>
-      </div>
-      <div class="form-actions"><button type="submit" id="guruSubmitBtn">Daftarkan Guru</button></div>
-    </form>
-    <p id="guruMsg" class="msg"></p>
-    <p style="color:#64748b;font-size:13px;margin-top:20px;">Daftar User yang Sudah Login:</p>
-    <table class="data-table">
-      <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Aksi</th></tr></thead>
-      <tbody id="userTableBody"></tbody>
-    </table>
+  <!-- NOTIF PENDING BANNER -->
+  <div class="notif-pending-bar" id="notifPerijinanBanner">
+    🔔 Ada perijinan yang belum direspon!
+    <span class="notif-count" id="jumlahPending">0</span>
+    <a onclick="switchToTab('perijinan')">Lihat sekarang →</a>
   </div>
 
-  <!-- ===== TAB: SIMULASI ABSEN ===== -->
-  <div id="tab-simulasi" class="tab-panel">
-    <p class="tab-desc">Simulasi tap kartu RFID untuk testing. Data akan ditulis ke Firebase seolah-olah kartu di-scan.</p>
-    <form id="formSimulasi" class="inline-form">
-      <div class="form-row">
-        <div>
-          <label for="simulasiNisn">Siswa</label>
-          <select id="simulasiNisn" required></select>
+  <!-- LAYOUT SIDEBAR + KONTEN -->
+  <div class="admin-layout">
+
+    <!-- SIDEBAR NAVIGASI -->
+    <nav class="admin-sidebar">
+      <div class="sidebar-section-label">Manajemen</div>
+      <button class="sidebar-btn active" data-tab="perijinan" onclick="switchToTab('perijinan')">
+        <span class="icon">📋</span>
+        <span class="label">Perijinan Masuk</span>
+        <span class="badge" id="badgePerijinan" style="display:none">0</span>
+      </button>
+      <button class="sidebar-btn" data-tab="presensi" onclick="switchToTab('presensi')">
+        <span class="icon">✏️</span>
+        <span class="label">Edit Presensi</span>
+      </button>
+      <button class="sidebar-btn" data-tab="rekap" onclick="switchToTab('rekap')">
+        <span class="icon">📑</span>
+        <span class="label">Rekap & Laporan</span>
+      </button>
+      <button class="sidebar-btn" data-tab="siswa" onclick="switchToTab('siswa')">
+        <span class="icon">👤</span>
+        <span class="label">Data Siswa</span>
+      </button>
+      <button class="sidebar-btn" data-tab="kartu" onclick="switchToTab('kartu')">
+        <span class="icon">🪪</span>
+        <span class="label">Kartu NFC</span>
+      </button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Konfigurasi</div>
+      <button class="sidebar-btn" data-tab="jadwal" onclick="switchToTab('jadwal')">
+        <span class="icon">🕐</span>
+        <span class="label">Jadwal Pulang</span>
+      </button>
+      <button class="sidebar-btn" data-tab="pelajaran" onclick="switchToTab('pelajaran')">
+        <span class="icon">📚</span>
+        <span class="label">Jadwal Pelajaran</span>
+      </button>
+      <button class="sidebar-btn" data-tab="guru" onclick="switchToTab('guru')">
+        <span class="icon">👥</span>
+        <span class="label">Kelola Akun</span>
+      </button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Tools</div>
+      <button class="sidebar-btn" data-tab="simulasi" onclick="switchToTab('simulasi')">
+        <span class="icon">🧪</span>
+        <span class="label">Simulasi Absen</span>
+      </button>
+    </nav>
+
+    <!-- KONTEN UTAMA -->
+    <div class="admin-content">
+
+      <!-- ===== PERIJINAN MASUK ===== -->
+      <div id="tab-perijinan" class="tab-panel active">
+        <div class="content-header">
+          <h2>Perijinan Masuk</h2>
+          <p>Tinjau, setujui, atau tolak pengajuan ijin dari siswa / orang tua. Persetujuan otomatis mengubah status presensi di kelas.</p>
         </div>
-        <div>
-          <label for="simulasiStatus">Status</label>
-          <select id="simulasiStatus">
-            <option value="hadir">Hadir</option>
-            <option value="pulang">Pulang</option>
-          </select>
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="pending" onclick="setFilterPerijinan(this)">⏳ Menunggu</button>
+          <button class="filter-btn" data-filter="disetujui" onclick="setFilterPerijinan(this)">✅ Disetujui</button>
+          <button class="filter-btn" data-filter="ditolak" onclick="setFilterPerijinan(this)">❌ Ditolak</button>
+          <button class="filter-btn" data-filter="semua" onclick="setFilterPerijinan(this)">📋 Semua</button>
+        </div>
+        <div id="daftarPerijinanAdmin"></div>
+      </div>
+
+      <!-- ===== EDIT PRESENSI MANUAL ===== -->
+      <div id="tab-presensi" class="tab-panel">
+        <div class="content-header">
+          <h2>Edit Presensi Manual</h2>
+          <p>Ubah status kehadiran siswa secara langsung (misal siswa lupa bawa kartu atau ada kendala di alat reader).</p>
+        </div>
+        <div class="admin-form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pilih Kelas</label>
+              <select id="presensiKelas"></select>
+            </div>
+            <div class="form-group">
+              <label>Tanggal</label>
+              <input type="date" id="presensiTanggal">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Jam Ke-</label>
+              <select id="presensiJamKe">
+                <option value="1">Jam ke-1</option>
+                <option value="2">Jam ke-2</option>
+                <option value="3">Jam ke-3</option>
+                <option value="4">Jam ke-4</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pilih Siswa</label>
+              <select id="presensiSiswa"></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Status Baru</label>
+              <select id="presensiStatus">
+                <option value="hadir">✓ Hadir</option>
+                <option value="sakit">🤒 Sakit</option>
+                <option value="dispensasi">📄 Dispensasi</option>
+                <option value="ijin_kegiatan">🏆 Ijin Kegiatan</option>
+                <option value="alpha">✗ Alpha (Tanpa Keterangan)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="simpanPresensiManual()">💾 Simpan Perubahan</button>
+          </div>
+          <div class="msg" id="presensiManualMsg"></div>
         </div>
       </div>
-      <div class="form-actions"><button type="submit">🧪 Simulasikan Absen</button></div>
-    </form>
-    <p id="simulasiMsg" class="msg"></p>
-  </div>
-</div>
+
+      <!-- ===== REKAP & LAPORAN PRESENSI ===== -->
+      <div id="tab-rekap" class="tab-panel">
+        <div class="content-header">
+          <h2>Rekap & Laporan Presensi</h2>
+          <p>Tinjau rekapitulasi kehadiran siswa per kelas dan tanggal, cetak laporan resmi, atau ekspor ke file CSV/Excel.</p>
+        </div>
+        <div class="admin-form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pilih Kelas</label>
+              <select id="rekapKelas" onchange="muatRekapPresensi()"></select>
+            </div>
+            <div class="form-group">
+              <label>Tanggal</label>
+              <input type="date" id="rekapTanggal" onchange="muatRekapPresensi()">
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-primary" onclick="muatRekapPresensi()">🔍 Tampilkan Rekap</button>
+            <button class="btn-secondary" onclick="cetakLaporanPresensi()">🖨️ Cetak / Print PDF</button>
+            <button class="btn-secondary" onclick="exportCsvPresensi()">📥 Export CSV (Excel)</button>
+          </div>
+        </div>
+
+        <!-- STATS SUMMARY CARD -->
+        <div id="rekapSummaryCards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:20px;">
+          <div style="background:#f8fafc; border:1px solid var(--border); border-radius:14px; padding:14px; text-align:center;">
+            <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Siswa</span>
+            <h3 id="statTotalSiswa" style="font-size:22px; font-weight:800; color:var(--text); margin-top:4px;">0</h3>
+          </div>
+          <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:14px; padding:14px; text-align:center;">
+            <span style="font-size:11.5px; font-weight:700; color:#065f46; text-transform:uppercase;">Hadir</span>
+            <h3 id="statHadir" style="font-size:22px; font-weight:800; color:#059669; margin-top:4px;">0</h3>
+          </div>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:14px; padding:14px; text-align:center;">
+            <span style="font-size:11.5px; font-weight:700; color:#1e40af; text-transform:uppercase;">Sakit</span>
+            <h3 id="statSakit" style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">0</h3>
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:14px; text-align:center;">
+            <span style="font-size:11.5px; font-weight:700; color:#92400e; text-transform:uppercase;">Izin / Disp</span>
+            <h3 id="statIzin" style="font-size:22px; font-weight:800; color:#d97706; margin-top:4px;">0</h3>
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:14px; text-align:center;">
+            <span style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">Alpha</span>
+            <h3 id="statAlpha" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0</h3>
+          </div>
+        </div>
+
+        <!-- TABEL REKAP -->
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="tabelRekapCetak">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>NISN</th>
+                <th>Nama Siswa</th>
+                <th>Jam 1</th>
+                <th>Jam 2</th>
+                <th>Jam 3</th>
+                <th>Jam 4</th>
+                <th>Status Akhir</th>
+              </tr>
+            </thead>
+            <tbody id="rekapTableBody">
+              <tr><td colspan="8" class="empty-state"><div class="empty-icon">📊</div><p>Pilih kelas dan klik "Tampilkan Rekap" untuk memuat data.</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== DATA SISWA ===== -->
+      <div id="tab-siswa" class="tab-panel">
+        <div class="content-header">
+          <h2>Data Siswa</h2>
+          <p>Tambah, ubah, atau hapus data siswa. NISN dipakai sebagai key utama di database.</p>
+        </div>
+        <div class="admin-form-card">
+          <h3 id="siswaFormTitle">Tambah Siswa Baru</h3>
+          <input type="hidden" id="siswaEditingKey">
+          <div class="form-row">
+            <div class="form-group">
+              <label>NISN</label>
+              <input type="text" id="siswaNisn" placeholder="Contoh: 0098263610">
+            </div>
+            <div class="form-group">
+              <label>Nama Lengkap</label>
+              <input type="text" id="siswaNama" placeholder="Nama lengkap siswa">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kelas</label>
+              <input type="text" id="siswaKelas" placeholder="Contoh: XII RPL 2">
+            </div>
+            <div class="form-group">
+              <label>Email Gmail (Opsional)</label>
+              <input type="email" id="siswaEmail" placeholder="email@gmail.com">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="siswaSubmitBtn" onclick="submitSiswa()">+ Tambah Siswa</button>
+            <button class="btn-secondary hidden" id="siswaCancelBtn" onclick="resetFormSiswa()">Batal</button>
+          </div>
+          <div class="msg" id="siswaMsg"></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Email</th><th></th></tr></thead>
+          <tbody id="siswaTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== KARTU NFC ===== -->
+      <div id="tab-kartu" class="tab-panel">
+        <div class="content-header">
+          <h2>Mapping Kartu NFC / RFID</h2>
+          <p>Hubungkan UID kartu fisik RFID ke NISN siswa yang bersangkutan.</p>
+        </div>
+        <div class="admin-form-card">
+          <h3>Tambah Mapping Kartu</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>UID Kartu RFID</label>
+              <input type="text" id="kartuId" placeholder="Misal: 0067787337">
+            </div>
+            <div class="form-group">
+              <label>Siswa Pemilik Kartu</label>
+              <select id="kartuNisn"></select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="submitKartu()">🪪 Simpan Mapping</button>
+          </div>
+          <div class="msg" id="kartuMsg"></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>UID Kartu</th><th>NISN</th><th>Nama Siswa</th><th></th></tr></thead>
+          <tbody id="kartuTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== JADWAL PULANG ===== -->
+      <div id="tab-jadwal" class="tab-panel">
+        <div class="content-header">
+          <h2>Jadwal Pulang Per Kelas</h2>
+          <p>Tentukan jam pulang resmi tiap kelas. Format HH:MM (contoh: 15:15).</p>
+        </div>
+        <div class="admin-form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kelas</label>
+              <input type="text" id="jadwalKelas" placeholder="Contoh: XII RPL 2">
+            </div>
+            <div class="form-group">
+              <label>Jam Pulang</label>
+              <input type="time" id="jadwalJam">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="submitJadwal()">💾 Simpan Jadwal</button>
+          </div>
+          <div class="msg" id="jadwalMsg"></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr></thead>
+          <tbody id="jadwalTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== JADWAL PELAJARAN ===== -->
+      <div id="tab-pelajaran" class="tab-panel">
+        <div class="content-header">
+          <h2>Jadwal Pelajaran</h2>
+          <p>Jam pelajaran dipakai sistem untuk menentukan slot presensi yang aktif saat ini.</p>
+        </div>
+        <div class="admin-form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kelas</label>
+              <select id="pelajaranKelas"></select>
+            </div>
+            <div class="form-group">
+              <label>Jam Ke-</label>
+              <input type="number" id="pelajaranJamKe" min="1" max="12" placeholder="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mata Pelajaran</label>
+              <input type="text" id="pelajaranMapel" placeholder="Nama mata pelajaran">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mulai</label>
+              <input type="time" id="pelajaranMulai">
+            </div>
+            <div class="form-group">
+              <label>Selesai</label>
+              <input type="time" id="pelajaranSelesai">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="submitPelajaran()">+ Tambah Jam Pelajaran</button>
+          </div>
+          <div class="msg" id="pelajaranMsg"></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Jam Ke-</th><th>Mata Pelajaran</th><th>Mulai</th><th>Selesai</th><th></th></tr></thead>
+          <tbody id="pelajaranTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== KELOLA AKUN ===== -->
+      <div id="tab-guru" class="tab-panel">
+        <div class="content-header">
+          <h2>Kelola Akun & Role</h2>
+          <p>Daftarkan email guru atau staf baru, dan kelola role semua user yang pernah login ke sistem.</p>
+        </div>
+        <div class="admin-form-card">
+          <h3>Daftarkan Guru / Staf Baru</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email Gmail</label>
+              <input type="email" id="guruEmail" placeholder="guru@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Nama Lengkap</label>
+              <input type="text" id="guruNama" placeholder="Nama lengkap">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="submitGuru()">+ Daftarkan</button>
+          </div>
+          <div class="msg" id="guruMsg"></div>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:12px;">Semua Pengguna yang Sudah Login:</p>
+        <table class="data-table">
+          <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th></th></tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== SIMULASI ABSEN ===== -->
+      <div id="tab-simulasi" class="tab-panel">
+        <div class="content-header">
+          <h2>Simulasi Scan Kartu</h2>
+          <p>Tes sistem tanpa alat RFID fisik. Data ditulis ke Firebase seolah kartu di-tap langsung.</p>
+        </div>
+        <div class="simulasi-card">
+          ⚠️ Fitur ini khusus untuk <strong>testing & demo saja</strong>. Gunakan saat alat reader belum tersedia.
+        </div>
+        <div class="admin-form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pilih Siswa</label>
+              <select id="simulasiNisn"></select>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="simulasiStatus">
+                <option value="hadir">✓ Hadir</option>
+                <option value="pulang">🏠 Pulang</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="submitSimulasi()">🧪 Simulasikan Scan</button>
+          </div>
+          <div class="msg" id="simulasiMsg"></div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-layout -->
+</div><!-- /admin-wrap -->
 
 <!-- MODAL CHAT PERIJINAN -->
-<div id="modalChat" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000;padding:16px;">
-  <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-weight:700;font-size:15px;" id="modalChatJudul">Chat</span>
-      <button onclick="tutupModalChat()" style="width:auto;margin-top:0;padding:6px 14px;font-size:13px;background:#f1f5f9;color:#334155;">✕ Tutup</button>
+<div class="chat-modal-overlay" id="modalChat">
+  <div class="chat-modal-box">
+    <div class="chat-modal-header">
+      <span id="modalChatJudul">Chat Perijinan</span>
+      <button onclick="tutupModalChat()" class="btn-secondary" style="padding:6px 14px;font-size:13px;border:none;">✕ Tutup</button>
     </div>
-    <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
-    <div style="padding:12px 16px;border-top:1px solid #e2e8f0;display:flex;gap:8px;">
-      <input type="text" id="chatInputPesan" placeholder="Tulis pesan..." style="flex:1;"
-             onkeydown="if(event.key==='Enter') kirimPesanChat()">
-      <button onclick="kirimPesanChat()" style="width:auto;margin-top:0;padding:10px 16px;">Kirim</button>
+    <div class="chat-messages" id="chatBubbleContainer"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInputPesan" placeholder="Tulis balasan...">
+      <button class="btn-send" onclick="kirimPesanChat()">Kirim</button>
     </div>
   </div>
 </div>

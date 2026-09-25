@@ -1,26 +1,20 @@
-﻿// ===== PERIJINAN MODULE =====
-// Submit izin, upload surat, chat dengan admin
+// ===== PERIJINAN MODULE =====
+// Submit ijin, upload surat, chat dengan admin
 
-// Jenis perijinan
 const JENIS_PERIJINAN = {
   sakit: { label: 'Sakit', icon: '🤒', dokumenWajib: false },
   dispensasi: { label: 'Dispensasi', icon: '📄', dokumenWajib: true },
   ijin_kegiatan: { label: 'Ijin Kegiatan', icon: '🏆', dokumenWajib: true }
 };
 
-const STATUS_LABEL = {
-  pending: { label: 'Menunggu Respon', color: '#d97706', bg: '#fef3c7' },
-  disetujui: { label: 'Disetujui ✓', color: '#059669', bg: '#ecfdf5' },
-  ditolak: { label: 'Ditolak ✗', color: '#dc2626', bg: '#fef2f2' }
-};
-
-// Submit perijinan baru
+// ===================================================================
+// SUBMIT PERIJINAN BARU
+// ===================================================================
 async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   const perijinanRef = db.ref('perijinan').push();
   const pid = perijinanRef.key;
   let dokumen_url = null;
 
-  // Upload dokumen jika ada (Firebase Storage)
   if (fileInput && fileInput.files && fileInput.files[0]) {
     try {
       const file = fileInput.files[0];
@@ -34,72 +28,72 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   }
 
   const data = {
-    pid: pid,
-    uid: user.uid,
+    pid, uid: user.uid,
     nisn: user.nisn || '',
     nama: user.nama,
     kelas: user.kelas || '',
-    jenis: jenis,
-    alasan: alasan,
-    tanggal: tanggal,
+    jenis, alasan, tanggal,
     status: 'pending',
-    dokumen_url: dokumen_url,
+    dokumen_url,
     dibuat_pada: Date.now()
   };
 
   await perijinanRef.set(data);
-
-  // Kirim pesan pertama di chat (auto)
-  await kirimChatPerijinan(pid, user, 'Saya mengajukan ' + JENIS_PERIJINAN[jenis].label + ': ' + alasan);
-
+  await kirimChatPerijinan(pid, user, 'Saya mengajukan ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + ': ' + alasan);
   return pid;
 }
 
-// Kirim pesan chat di thread perijinan
+// ===================================================================
+// CHAT PERIJINAN
+// ===================================================================
 async function kirimChatPerijinan(pid, user, pesan) {
   await db.ref('chat_perijinan/' + pid).push({
     pengirim: user.role === 'admin' ? 'admin' : 'siswa',
     nama_pengirim: user.nama,
-    pesan: pesan,
+    pesan,
     waktu: Date.now()
   });
 }
 
-// Render daftar perijinan saya
+// ===================================================================
+// RENDER PERIJINAN — USER (dashboard)
+// ===================================================================
 function renderDaftarPerijinanSaya(containerId, user) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  db.ref('perijinan').orderByChild('uid').equalTo(user.uid).on('value', function(snapshot) {
+  db.ref('perijinan').orderByChild('uid').equalTo(user.uid).on('value', function (snapshot) {
     const data = snapshot.val() || {};
     const list = Object.values(data).sort((a, b) => b.dibuat_pada - a.dibuat_pada);
     container.innerHTML = '';
 
     if (list.length === 0) {
-      container.innerHTML = '<p class="kosong-msg">Belum ada pengajuan perijinan.</p>';
+      container.innerHTML = '<p style="color:#94a3b8;font-size:14px;text-align:center;padding:24px;">Belum ada pengajuan perijinan.</p>';
       return;
     }
 
-    list.forEach(function(p) {
-      const st = STATUS_LABEL[p.status] || STATUS_LABEL.pending;
+    list.forEach(function (p) {
       const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '📋' };
+      const statusLabel = p.status === 'disetujui' ? '✅ Disetujui' : p.status === 'ditolak' ? '❌ Ditolak' : '⏳ Menunggu';
       const el = document.createElement('div');
-      el.className = 'perijinan-card';
+      el.className = 'perijinan-card status-' + (p.status || 'pending');
       el.innerHTML =
         '<div class="perijinan-card-top">' +
-          '<span class="perijinan-jenis">' + jn.icon + ' ' + jn.label + '</span>' +
-          '<span class="perijinan-status-pill" style="background:' + st.bg + ';color:' + st.color + ';">' + st.label + '</span>' +
+          '<span class="perijinan-jenis-badge">' + jn.icon + ' ' + jn.label + '</span>' +
+          '<span class="status-pill ' + (p.status || 'pending') + '">' + statusLabel + '</span>' +
         '</div>' +
-        '<div class="perijinan-tanggal">📅 ' + p.tanggal + '</div>' +
-        '<div class="perijinan-alasan">' + p.alasan + '</div>' +
+        '<div class="perijinan-meta">📅 Tanggal: <strong>' + p.tanggal + '</strong></div>' +
+        '<div class="perijinan-alasan-box">' + p.alasan + '</div>' +
         (p.dokumen_url ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank">📎 Lihat Dokumen</a>' : '') +
-        '<button class="btn-chat-open" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Lihat / Balas Chat</button>';
+        '<div class="action-row"><button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Chat Admin</button></div>';
       container.appendChild(el);
     });
   });
 }
 
-// Render daftar semua perijinan (admin)
+// ===================================================================
+// RENDER PERIJINAN — ADMIN
+// ===================================================================
 function renderDaftarPerijinanAdmin(containerId, filterStatus) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -109,7 +103,7 @@ function renderDaftarPerijinanAdmin(containerId, filterStatus) {
     ref = ref.orderByChild('status').equalTo(filterStatus);
   }
 
-  ref.on('value', function(snapshot) {
+  ref.on('value', function (snapshot) {
     const data = snapshot.val() || {};
     const list = Object.values(data).sort((a, b) => b.dibuat_pada - a.dibuat_pada);
     container.innerHTML = '';
@@ -119,124 +113,133 @@ function renderDaftarPerijinanAdmin(containerId, filterStatus) {
       : list;
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p class="kosong-msg">Tidak ada perijinan ' + (filterStatus === 'pending' ? 'yang menunggu respon' : '') + '.</p>';
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-icon">📋</div>' +
+          '<p>' + (filterStatus === 'pending' ? 'Tidak ada perijinan yang menunggu. 🎉' : 'Belum ada data perijinan.') + '</p>' +
+        '</div>';
       return;
     }
 
-    filtered.forEach(function(p) {
-      const st = STATUS_LABEL[p.status] || STATUS_LABEL.pending;
+    filtered.forEach(function (p) {
       const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '📋' };
+      const statusLabel = p.status === 'disetujui' ? '✅ Disetujui' : p.status === 'ditolak' ? '❌ Ditolak' : '⏳ Menunggu';
+
       const el = document.createElement('div');
-      el.className = 'perijinan-card admin-card';
+      el.className = 'perijinan-card status-' + (p.status || 'pending');
       el.innerHTML =
         '<div class="perijinan-card-top">' +
           '<div>' +
-            '<span class="perijinan-nama-siswa">' + p.nama + '</span>' +
-            '<span class="perijinan-kelas-badge">' + (p.kelas || '-') + '</span>' +
+            '<span class="perijinan-nama">' + p.nama + '</span>' +
+            '<span class="perijinan-kelas-tag">' + (p.kelas || '-') + '</span>' +
           '</div>' +
-          '<span class="perijinan-status-pill" style="background:' + st.bg + ';color:' + st.color + ';">' + st.label + '</span>' +
+          '<span class="status-pill ' + (p.status || 'pending') + '">' + statusLabel + '</span>' +
         '</div>' +
-        '<div class="perijinan-jenis">' + jn.icon + ' ' + jn.label + ' — 📅 ' + p.tanggal + '</div>' +
-        '<div class="perijinan-alasan">' + p.alasan + '</div>' +
-        (p.dokumen_url ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank">📎 Lihat Dokumen/Surat</a>' : '') +
-        '<div class="admin-action-row">' +
+        '<div class="perijinan-jenis-badge">' + jn.icon + ' ' + jn.label + '</div>' +
+        '<div class="perijinan-meta">📅 Tanggal: <strong>' + p.tanggal + '</strong></div>' +
+        '<div class="perijinan-alasan-box">' + p.alasan + '</div>' +
+        (p.dokumen_url
+          ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank">📎 Lihat Dokumen/Surat</a>'
+          : '') +
+        '<div class="action-row">' +
           (p.status === 'pending'
             ? '<button class="btn-approve" onclick="adminApprove(\'' + p.pid + '\', \'' + p.nisn + '\', \'' + p.tanggal + '\', \'' + p.jenis + '\')">✅ Setujui</button>' +
               '<button class="btn-tolak" onclick="adminTolak(\'' + p.pid + '\')">❌ Tolak</button>'
             : '') +
-          '<button class="btn-chat-open" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Chat</button>' +
+          '<button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Chat</button>' +
         '</div>';
       container.appendChild(el);
     });
   });
 }
 
-// Admin: approve perijinan → update status + update presensi_jam
+// ===================================================================
+// APPROVE / TOLAK
+// ===================================================================
 async function adminApprove(pid, nisn, tanggal, jenis) {
   const adminUser = getSessionUser();
   if (!adminUser) return;
 
   await db.ref('perijinan/' + pid + '/status').set('disetujui');
-  await kirimChatPerijinan(pid, adminUser, 'Perijinan Anda telah DISETUJUI. Kehadiran Anda tercatat sebagai ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + '.');
+  await kirimChatPerijinan(pid, adminUser,
+    'Perijinan Anda telah DISETUJUI ✅. Kehadiran tercatat sebagai ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + '.');
 
-  // Update presensi_jam semua jam pada tanggal tersebut
   if (nisn && tanggal) {
-    // Cari kelas siswa
     const siswaSnap = await db.ref('siswa/' + nisn).once('value');
     const siswa = siswaSnap.val();
     if (siswa && siswa.kelas) {
       const kelas = siswa.kelas;
       const jadwalSnap = await db.ref('jadwal_pelajaran/' + kelas).once('value');
       const jadwal = jadwalSnap.val() || {};
-      const jamList = Object.keys(jadwal);
       const updates = {};
-      jamList.forEach(function(jamKe) {
+      Object.keys(jadwal).forEach(function (jamKe) {
         updates['presensi_jam/' + kelas + '/' + tanggal + '/' + jamKe + '/' + nisn] = {
           status: jenis,
           waktu: '00:00:00'
         };
       });
-      if (Object.keys(updates).length > 0) {
-        await db.ref().update(updates);
-      }
+      if (Object.keys(updates).length > 0) await db.ref().update(updates);
     }
   }
-  alert('Perijinan disetujui dan status kehadiran diperbarui.');
 }
 
-// Admin: tolak perijinan
 async function adminTolak(pid) {
   const adminUser = getSessionUser();
   if (!adminUser) return;
   const alasan = prompt('Alasan penolakan (opsional):') || 'Perijinan ditolak.';
   await db.ref('perijinan/' + pid + '/status').set('ditolak');
-  await kirimChatPerijinan(pid, adminUser, 'Maaf, perijinan Anda DITOLAK. ' + alasan);
-  alert('Perijinan ditolak.');
+  await kirimChatPerijinan(pid, adminUser, 'Maaf, perijinan Anda DITOLAK ❌. ' + alasan);
 }
 
-// ===== MODAL CHAT =====
+// ===================================================================
+// MODAL CHAT
+// ===================================================================
 let chatListener = null;
 let chatPidAktif = null;
 
 function bukaModalChat(pid, namaSiswa) {
   chatPidAktif = pid;
-  document.getElementById('modalChatJudul').textContent = '💬 Chat — ' + namaSiswa;
-  document.getElementById('modalChat').style.display = 'flex';
+  const judul = document.getElementById('modalChatJudul');
+  if (judul) judul.textContent = '💬 Chat — ' + namaSiswa;
+  const overlay = document.getElementById('modalChat');
+  if (overlay) overlay.classList.add('open');
   renderChat(pid);
 }
 
 function tutupModalChat() {
-  if (chatListener) {
+  if (chatListener && chatPidAktif) {
     db.ref('chat_perijinan/' + chatPidAktif).off('value', chatListener);
     chatListener = null;
   }
   chatPidAktif = null;
-  document.getElementById('modalChat').style.display = 'none';
+  const overlay = document.getElementById('modalChat');
+  if (overlay) overlay.classList.remove('open');
 }
 
 function renderChat(pid) {
   const container = document.getElementById('chatBubbleContainer');
+  if (!container) return;
   container.innerHTML = '';
 
-  if (chatListener) {
+  if (chatListener && chatPidAktif) {
     db.ref('chat_perijinan/' + chatPidAktif).off('value', chatListener);
   }
 
   const user = getSessionUser();
-  chatListener = function(snapshot) {
+  chatListener = function (snapshot) {
     const data = snapshot.val() || {};
     const pesan = Object.values(data).sort((a, b) => a.waktu - b.waktu);
     container.innerHTML = '';
-    pesan.forEach(function(m) {
-      const isSaya = (user.role === 'admin' && m.pengirim === 'admin') ||
-                     (user.role !== 'admin' && m.pengirim === 'siswa');
+    pesan.forEach(function (m) {
+      const isSaya = (user && user.role === 'admin' && m.pengirim === 'admin') ||
+                     (user && user.role !== 'admin' && m.pengirim === 'siswa');
       const bubble = document.createElement('div');
       bubble.className = 'chat-bubble ' + (isSaya ? 'saya' : 'lawan');
       const waktu = new Date(m.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       bubble.innerHTML =
-        '<div class="chat-nama">' + m.nama_pengirim + '</div>' +
-        '<div class="chat-pesan">' + m.pesan + '</div>' +
-        '<div class="chat-waktu">' + waktu + '</div>';
+        '<span class="bubble-name">' + m.nama_pengirim + '</span>' +
+        m.pesan +
+        '<div class="bubble-time">' + waktu + '</div>';
       container.appendChild(bubble);
     });
     container.scrollTop = container.scrollHeight;
@@ -246,6 +249,7 @@ function renderChat(pid) {
 
 function kirimPesanChat() {
   const input = document.getElementById('chatInputPesan');
+  if (!input) return;
   const pesan = input.value.trim();
   if (!pesan || !chatPidAktif) return;
   const user = getSessionUser();
