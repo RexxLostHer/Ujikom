@@ -48,97 +48,21 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  /* SISI KIRI: 3D INTERACTIVE EMBLEM SHOWCASE */
+  /* SISI KIRI: 3D INTERACTIVE EMBLEM SHOWCASE (BERSIH DARI DISTRAKSI TEKS) */
   .showcase-side {
     flex: 1;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: center;
     position: relative;
     padding: 10px 0;
-  }
-
-  .showcase-header {
-    margin-bottom: 20px;
-    min-height: 120px;
-    transition: all 0.35s ease;
-  }
-
-  .badge-iot-pulse {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(96, 165, 250, 0.35);
-    color: #60a5fa;
-    padding: 6px 14px;
-    border-radius: 9999px;
-    font-size: 11.5px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    backdrop-filter: blur(8px);
-    transition: all 0.3s ease;
-  }
-
-  .badge-iot-pulse.rpl-mode {
-    background: rgba(168, 85, 247, 0.15);
-    border-color: rgba(192, 132, 252, 0.35);
-    color: #c084fc;
-  }
-
-  .pulsing-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 10px currentColor;
-    animation: dotPulse 1.8s infinite;
-  }
-
-  @keyframes dotPulse {
-    0%, 100% { transform: scale(0.9); opacity: 0.8; }
-    50% { transform: scale(1.3); opacity: 1; }
-  }
-
-  .showcase-title {
-    font-size: 32px;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.025em;
-    line-height: 1.25;
-    margin-bottom: 8px;
-    transition: color 0.3s ease;
-  }
-
-  .showcase-title .highlight-text {
-    background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    transition: all 0.3s ease;
-  }
-
-  .showcase-title.rpl-mode .highlight-text {
-    background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .showcase-desc {
-    font-size: 14px;
-    color: #94a3b8;
-    line-height: 1.6;
-    max-width: 460px;
-    margin: 0;
-    transition: color 0.3s ease;
   }
 
   /* 3D WEBGL STAGE */
   .stage-3d-container {
     position: relative;
     width: 100%;
-    height: 410px;
+    height: 520px;
     border-radius: 28px;
     overflow: hidden;
     background: radial-gradient(circle at center, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 70%, transparent 100%);
@@ -428,9 +352,118 @@
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
   }
 
-  .input-with-icon input:focus + .input-icon,
-  .form-group-item:focus-within label {
+  .input-with-icon.has-toggle input {
+    padding-right: 44px;
+  }
+
+  .btn-toggle-eye {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
+  }
+
+  .btn-toggle-eye:hover {
     color: #4f46e5;
+    background: #eef2ff;
+  }
+
+  .btn-toggle-eye svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  .forgot-pass-link {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4f46e5;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .forgot-pass-link:hover {
+    color: #3730a3;
+    text-decoration: underline;
+  }
+
+  /* MODAL RESET PASSWORD */
+  .modal-reset-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 16px;
+  }
+
+  .modal-reset-card {
+    background: #ffffff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 420px;
+    padding: 28px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+  }
+
+  .modal-reset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .modal-reset-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .modal-reset-header p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0 0;
+    line-height: 1.45;
+  }
+
+  .btn-close-modal {
+    background: #f1f5f9;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-close-modal:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
   /* SUBMIT BUTTON DENGAN SHIMMER */
@@ -606,22 +639,9 @@
 
   <div class="portal-auth-container">
 
-    <!-- SISI KIRI: 3D REALTIME MEDALLION SHOWCASE (SMKN 1 SUMEDANG / RPL) -->
+    <!-- SISI KIRI: 3D REALTIME MEDALLION SHOWCASE (SMKN 1 SUMEDANG / RPL - BERSIH 100%) -->
     <div class="showcase-side">
-      <div class="showcase-header">
-        <div class="badge-iot-pulse" id="sideBadgeTag">
-          <span class="pulsing-dot"></span>
-          <span id="badgeTagText">SMK NEGERI 1 SUMEDANG</span>
-        </div>
-        <h2 class="showcase-title" id="sideTitle">
-          Presensi Siswa <span class="highlight-text" id="sideHighlight">NESAS RFID</span>
-        </h2>
-        <p class="showcase-desc" id="sideDesc">
-          Verifikasi kehadiran fisik di kelas berlangsung realtime, transparan, dan anti-titip absen melalui sensor RFID terintegrasi.
-        </p>
-      </div>
-
-      <!-- STAGE 3D INTERAKTIF (BERSIH DARI WATERMARK & BADGE BAWAH) -->
+      <!-- STAGE 3D INTERAKTIF (BERSIH DARI DISTRAKSI HEADER & BADGE) -->
       <div class="stage-3d-container" id="stage3dContainer">
         <canvas id="canvas3d"></canvas>
       </div>
@@ -680,10 +700,23 @@
             </div>
 
             <div class="form-group-item">
-              <label for="loginPassword">Kata Sandi</label>
-              <div class="input-with-icon">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <label for="loginPassword" style="margin-bottom:0;">Kata Sandi</label>
+                <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" class="forgot-pass-link">Lupa kata sandi?</a>
+              </div>
+              <div class="input-with-icon has-toggle">
                 <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
                 <span class="input-icon">🔒</span>
+                <button type="button" class="btn-toggle-eye" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi" title="Lihat/Sembunyikan Kata Sandi">
+                  <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -710,9 +743,19 @@
 
             <div class="form-group-item">
               <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
-              <div class="input-with-icon">
+              <div class="input-with-icon has-toggle">
                 <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
                 <span class="input-icon">🔒</span>
+                <button type="button" class="btn-toggle-eye" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi" title="Lihat/Sembunyikan Kata Sandi">
+                  <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -731,6 +774,30 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- MODAL PEMULIHAN KATA SANDI / LUPA PASSWORD -->
+  <div id="modalLupaPassword" class="modal-reset-overlay" style="display:none;">
+    <div class="modal-reset-card">
+      <div class="modal-reset-header">
+        <div>
+          <h3>Pemulihan Kata Sandi</h3>
+          <p>Tautan reset kata sandi resmi akan dikirim ke alamat email Gmail Anda.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="tutupModalLupaPassword()" title="Tutup">✕</button>
+      </div>
+      <form onsubmit="handleKirimResetPassword(event)">
+        <div class="form-group-item" style="margin-bottom:14px;">
+          <label for="resetEmail">Email Gmail Terdaftar</label>
+          <div class="input-with-icon">
+            <input type="email" id="resetEmail" placeholder="nama@gmail.com" required autocomplete="email">
+            <span class="input-icon">✉️</span>
+          </div>
+        </div>
+        <div id="resetNotifBox" style="display:none;font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:10px;margin-bottom:14px;line-height:1.45;"></div>
+        <button type="submit" class="btn-submit-action" id="btnKirimReset">Kirim Link Pemulihan</button>
+      </form>
+    </div>
   </div>
 
   <!-- SCRIPTS -->
@@ -1101,11 +1168,6 @@
       const cardTitle = document.getElementById('cardTitle');
       const cardSub = document.getElementById('cardSubtitle');
 
-      const sideBadge = document.getElementById('sideBadgeTag');
-      const badgeText = document.getElementById('badgeTagText');
-      const sideTitle = document.getElementById('sideTitle');
-      const sideDesc = document.getElementById('sideDesc');
-
       bersihkanNotif();
 
       if (mode === 'login') {
@@ -1128,12 +1190,6 @@
         cardTitle.textContent = 'Presensi Siswa';
         cardSub.textContent = 'Portal Presensi RFID & Akademik SMKN 1 Sumedang';
         cap.innerHTML = 'Belum punya akun? <a onclick="gantiTab(\'register\')">Daftar akun RPL</a>';
-
-        // Update Side Showcase Content ke NESAS
-        sideBadge.classList.remove('rpl-mode');
-        badgeText.textContent = 'SMK NEGERI 1 SUMEDANG';
-        sideTitle.innerHTML = 'Presensi Siswa <span class="highlight-text">NESAS RFID</span>';
-        sideDesc.textContent = 'Verifikasi kehadiran fisik di kelas berlangsung realtime, transparan, dan anti-titip absen melalui sensor RFID terintegrasi.';
       } else {
         // Flip 3D Medallion 180 Derajat ke Belakang (RPL)
         targetRotationY = Math.PI;
@@ -1154,12 +1210,75 @@
         cardTitle.textContent = 'Pendaftaran Akun';
         cardSub.textContent = 'Kompetensi Keahlian Rekayasa Perangkat Lunak (RPL)';
         cap.innerHTML = 'Sudah punya akun? <a onclick="gantiTab(\'login\')">Masuk ke akun</a>';
+      }
+    }
 
-        // Update Side Showcase Content ke RPL
-        sideBadge.classList.add('rpl-mode');
-        badgeText.textContent = 'KOMPETENSI KEAHLIAN RPL';
-        sideTitle.innerHTML = 'Rekayasa <span class="highlight-text">Perangkat Lunak</span>';
-        sideDesc.textContent = 'Portal pendaftaran resmi siswa dan orang tua siswa jurusan RPL SMKN 1 Sumedang (Nesas Tech).';
+    // Toggle Lihat / Sembunyikan Kata Sandi (Anti Typo)
+    function togglePassword(inputId, btn) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const isPass = inp.type === 'password';
+      inp.type = isPass ? 'text' : 'password';
+      const openIcon = btn.querySelector('.eye-open');
+      const closedIcon = btn.querySelector('.eye-closed');
+      if (openIcon && closedIcon) {
+        openIcon.style.display = isPass ? 'none' : 'block';
+        closedIcon.style.display = isPass ? 'block' : 'none';
+      }
+      btn.setAttribute('aria-label', isPass ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
+    }
+
+    // Modal Pemulihan / Lupa Password
+    function bukaModalLupaPassword() {
+      const emailField = document.getElementById('loginEmail');
+      const resetEmailField = document.getElementById('resetEmail');
+      if (emailField && resetEmailField && emailField.value.trim()) {
+        resetEmailField.value = emailField.value.trim();
+      }
+      const b = document.getElementById('resetNotifBox');
+      if (b) { b.style.display = 'none'; b.textContent = ''; }
+      document.getElementById('modalLupaPassword').style.display = 'flex';
+    }
+
+    function tutupModalLupaPassword() {
+      document.getElementById('modalLupaPassword').style.display = 'none';
+    }
+
+    async function handleKirimResetPassword(e) {
+      e.preventDefault();
+      const email = document.getElementById('resetEmail').value.trim();
+      const notif = document.getElementById('resetNotifBox');
+      const btn = document.getElementById('btnKirimReset');
+
+      btn.disabled = true;
+      btn.textContent = 'Mengirim Tautan...';
+      try {
+        await kirimResetPassword(email);
+        notif.style.display = 'block';
+        notif.style.background = '#ecfdf5';
+        notif.style.color = '#059669';
+        notif.style.border = '1px solid #a7f3d0';
+        notif.textContent = 'Link pemulihan kata sandi telah dikirim ke ' + email + '. Silakan periksa inbox / spam di Gmail Anda.';
+        btn.textContent = 'Terkirim ✓';
+        setTimeout(() => {
+          tutupModalLupaPassword();
+          btn.disabled = false;
+          btn.textContent = 'Kirim Link Pemulihan';
+        }, 4000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Kirim Link Pemulihan';
+        notif.style.display = 'block';
+        notif.style.background = '#fef2f2';
+        notif.style.color = '#dc2626';
+        notif.style.border = '1px solid #fecaca';
+        if (err.code === 'auth/user-not-found') {
+          notif.textContent = 'Email belum terdaftar di sistem presensi.';
+        } else if (err.code === 'auth/invalid-email') {
+          notif.textContent = 'Format email tidak valid.';
+        } else {
+          notif.textContent = err.message || 'Gagal mengirim link pemulihan.';
+        }
       }
     }
 
