@@ -765,11 +765,11 @@ body {
   color: #475569;
 }
 
-/* ===== E-COMMERCE SCHOOL PORTAL STYLES ===== */
+/* ===== ACADEMIC & IOT PORTAL STYLES ===== */
 
-/* Promo Banner Slider Card */
-.ecom-banner-card {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+/* IoT RFID Infrastructure Banner */
+.iot-telemetry-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
   border-radius: 22px;
   padding: 24px 28px;
   color: #fff;
@@ -779,128 +779,167 @@ body {
   position: relative;
   overflow: hidden;
   margin-bottom: 24px;
-  box-shadow: 0 10px 25px -5px rgba(49, 46, 129, 0.35);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.ecom-banner-card::before {
+.iot-telemetry-banner::before {
   content: '';
   position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%);
+  top: -50px;
+  right: -50px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
 }
 
-.ecom-banner-tag {
+.iot-telemetry-left {
+  z-index: 2;
+  max-width: 620px;
+}
+
+.iot-badge-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  padding: 4px 12px;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  padding: 5px 12px;
   border-radius: 20px;
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
-.ecom-banner-title {
-  font-size: 21px;
+.iot-badge-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.iot-telemetry-title {
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 6px;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
-.ecom-banner-desc {
+.iot-telemetry-desc {
   font-size: 13.5px;
-  color: #c7d2fe;
-  max-width: 480px;
+  color: #cbd5e1;
   line-height: 1.5;
+  margin-bottom: 16px;
 }
 
-.ecom-banner-btn {
-  margin-top: 14px;
+.iot-spec-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.iot-spec-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: #fff;
-  color: #1e1b4b;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 9px 18px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #e2e8f0;
+  font-weight: 600;
 }
 
-.ecom-banner-btn:hover {
-  transform: translateY(-2px);
-  background: #f8fafc;
-}
-
-.ecom-banner-art {
-  font-size: 64px;
+.iot-telemetry-icon {
+  font-size: 58px;
   flex-shrink: 0;
   margin-left: 20px;
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.3));
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+  z-index: 2;
 }
 
-/* Service Grid (Ala Kategori E-Commerce) */
-.school-services-grid {
+/* Academic Services Grid (Clean, Elevated Action Cards) */
+.academic-services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
   margin-bottom: 28px;
 }
 
-.service-item-btn {
-  background: #fff;
-  border: 1px solid var(--surface-border);
+.academic-service-card {
+  background: #ffffff;
+  border: 1.5px solid var(--surface-border);
   border-radius: 18px;
-  padding: 16px 10px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  text-decoration: none;
+  color: inherit;
 }
 
-.service-item-btn:hover {
+.academic-service-card:hover {
   transform: translateY(-3px);
   border-color: #818cf8;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.15);
 }
 
-.service-icon-box {
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
+.academic-service-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.academic-service-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-bottom: 10px;
-  transition: transform 0.2s;
+  font-size: 20px;
+  font-weight: 700;
+  transition: transform 0.2s ease;
 }
 
-.service-item-btn:hover .service-icon-box {
+.academic-service-card:hover .academic-service-icon {
   transform: scale(1.08);
 }
 
-.service-label {
-  font-size: 12px;
+.academic-service-arrow {
+  color: #94a3b8;
+  font-size: 14px;
   font-weight: 700;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.academic-service-card:hover .academic-service-arrow {
+  transform: translateX(3px);
+  color: var(--primary);
+}
+
+.academic-service-title {
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text-main);
   line-height: 1.3;
+}
+
+.academic-service-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 /* Class Chips Filter */
@@ -990,11 +1029,11 @@ body {
 }
 
 @media (max-width: 768px) {
-  .ecom-banner-card {
+  .iot-telemetry-banner {
     flex-direction: column;
     align-items: flex-start;
   }
-  .ecom-banner-art {
+  .iot-telemetry-icon {
     display: none;
   }
 }

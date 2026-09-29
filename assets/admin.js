@@ -748,18 +748,32 @@ function submitSimulasi() {
 function submitGuru() {
   const email = document.getElementById('guruEmail').value.trim().toLowerCase();
   const nama  = document.getElementById('guruNama').value.trim();
+  const nip   = document.getElementById('guruNip') ? document.getElementById('guruNip').value.trim() : '';
+  const mapel = document.getElementById('guruMapel') ? document.getElementById('guruMapel').value.trim() : '';
 
   if (!email || !nama) {
-    showMsg('guruMsg', 'Email dan nama wajib diisi.', 'error');
+    showMsg('guruMsg', 'Email dan nama guru wajib diisi.', 'error');
     return;
   }
 
   const encoded = email.replace(/\./g, ',').replace(/@/g, '(at)');
-  db.ref('email_mapping/' + encoded).set({ nisn: null, nama, kelas: null, role: 'guru', email })
+  const payloadGuru = {
+    nisn: null,
+    nama,
+    kelas: null,
+    role: 'guru',
+    email,
+    nip: nip || null,
+    mapel: mapel || null
+  };
+
+  db.ref('email_mapping/' + encoded).set(payloadGuru)
     .then(function () {
-      showMsg('guruMsg', '✅ ' + nama + ' berhasil didaftarkan sebagai guru.', 'success');
+      showMsg('guruMsg', '✅ ' + nama + ' berhasil didaftarkan sebagai Guru.', 'success');
       document.getElementById('guruEmail').value = '';
       document.getElementById('guruNama').value = '';
+      if (document.getElementById('guruNip')) document.getElementById('guruNip').value = '';
+      if (document.getElementById('guruMapel')) document.getElementById('guruMapel').value = '';
     })
     .catch(function (err) { showMsg('guruMsg', 'Gagal: ' + err.message, 'error'); });
 }

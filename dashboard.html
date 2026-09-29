@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa — Smart Dashboard 2026</title>
+<title>Portal Siswa & Wali Murid — Presensi IoT RFID</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -15,11 +15,12 @@
       <div class="user-avatar" id="avatarUser">?</div>
       <div class="user-info">
         <h1 id="namaUser">Memuat Profil...</h1>
-        <p id="infoSubUser">Portal Presensi & Perijinan</p>
+        <p id="infoSubUser">Portal Presensi & Informasi Siswa</p>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="admin.html" id="linkAdmin" style="display:none;" class="btn-logout" style="color:#4f46e5;border-color:#c7d2fe;">⚙️ Panel Admin</a>
+      <a href="dashboard-guru.html" id="linkGuru" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">👨‍🏫 Portal Guru</a>
+      <a href="admin.html" id="linkAdmin" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
       <button class="btn-logout" onclick="logout()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         Keluar
@@ -27,30 +28,30 @@
     </div>
   </div>
 
-  <!-- TABS UNIFIED (UNTUK SEMUA PENGGUNA) -->
+  <!-- TABS NAVIGASI UTAMA -->
   <div class="view-tabs">
     <button class="view-tab-btn active" id="btnTabBeranda" onclick="switchTab('tabBeranda', this)">
       <span>🏠</span> Beranda
     </button>
     <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
-      <span>👥</span> Pantau Kelas
+      <span>👥</span> Pantau Presensi Kelas
     </button>
     <button class="view-tab-btn" id="btnTabPerijinan" onclick="switchTab('tabPerijinan', this)">
-      <span>📝</span> Ajukan Ijin / Dispen
+      <span>📝</span> Ajukan Izin / Dispen
     </button>
     <button class="view-tab-btn" id="btnTabRiwayatIjin" onclick="switchTab('tabRiwayatIjin', this)">
-      <span>💬</span> Chat & Status Ijin
+      <span>💬</span> Status Perizinan
     </button>
   </div>
 
-  <!-- ===== TAB 0: BERANDA (PORTAL SUPER APP SEKOLAH 2026) ===== -->
+  <!-- ===== TAB 0: BERANDA (PORTAL AKADEMIK & IOT RFID TERPADU) ===== -->
   <div id="tabBeranda" class="tab-content active">
     
-    <!-- Hero Profile & Saldo Kehadiran (Mirip Gopay / E-Wallet Bar) -->
+    <!-- Hero Profile Greeting & Live Clock -->
     <div class="hero-welcome">
       <div class="hero-welcome-left">
-        <h2 id="greetingText">Halo, Rexx! 👋</h2>
-        <p id="greetingSubtext">Portal Cerdas Presensi & Informasi Akademik SMK.</p>
+        <h2 id="greetingText">Selamat Datang! 👋</h2>
+        <p id="greetingSubtext">Portal Terpadu Presensi Siswa & Informasi Akademik SMK.</p>
         <div class="hero-clock" id="liveClockWidget">
           <span>🕒</span> <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
         </div>
@@ -66,57 +67,90 @@
       </div>
     </div>
 
-    <!-- Promo Banner Carousel / Highlight Info (Mirip Banner Promo Tokopedia/Shopee) -->
-    <div class="ecom-banner-card">
-      <div style="z-index:2;">
-        <span class="ecom-banner-tag">🚀 UJIKOM RPL 2026</span>
-        <div class="ecom-banner-title">Sistem Presensi Kartu RFID Kelas Mandiri</div>
-        <div class="ecom-banner-desc">Kehadiran fisik terverifikasi secara realtime, transparan, dan anti-titip absen saat guru berhalangan mengajar.</div>
-        <button class="ecom-banner-btn" onclick="document.getElementById('btnTabKelas').click()">
-          🔍 Cek Presensi Kelas Sekarang →
-        </button>
+    <!-- IoT RFID Infrastructure Telemetry Banner -->
+    <div class="iot-telemetry-banner">
+      <div class="iot-telemetry-left">
+        <div class="iot-badge-status">Sistem Gateway IoT Aktif</div>
+        <div class="iot-telemetry-title">Infrastruktur Presensi Kartu RFID Kelas Mandiri</div>
+        <div class="iot-telemetry-desc">
+          Verifikasi kehadiran fisik di ruangan kelas berlangsung realtime, transparan, dan anti-titip absen saat guru pengajar berhalangan hadir.
+        </div>
+        <div class="iot-spec-chips">
+          <span class="iot-spec-item">📡 NFC / Mifare 13.56 MHz</span>
+          <span class="iot-spec-item">⚡ Latensi Realtime &lt; 50ms</span>
+          <span class="iot-spec-item">🛡️ Anti-Passback Terverifikasi</span>
+          <span class="iot-spec-item">🏫 Mode Kelas Mandiri Siaga</span>
+        </div>
       </div>
-      <div class="ecom-banner-art">🎓</div>
+      <div class="iot-telemetry-icon">📡</div>
     </div>
 
-    <!-- Quick Services Grid (Ikon Menu Bulat/Kotak Layanan Gojek / E-Commerce) -->
-    <div class="school-services-grid">
-      <div class="service-item-btn" onclick="pilihTabCekJadwal()">
-        <div class="service-icon-box" style="background:#eff6ff; color:#2563eb;">📚</div>
-        <span class="service-label">Cek Jadwal</span>
+    <!-- Academic Services Shortcuts -->
+    <div class="academic-services-grid">
+      <div class="academic-service-card" onclick="document.getElementById('btnTabKelas').click()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#eff6ff; color:#2563eb;">👥</div>
+          <span class="academic-service-arrow">→</span>
+        </div>
+        <div class="academic-service-title">Pantau Presensi Kelas</div>
+        <div class="academic-service-desc">Monitoring realtime siswa yang sudah tap kartu dan belum scan di kelas.</div>
       </div>
-      <div class="service-item-btn" onclick="document.getElementById('btnTabKelas').click()">
-        <div class="service-icon-box" style="background:#ecfdf5; color:#059669;">👥</div>
-        <span class="service-label">Pantau Kelas</span>
+
+      <div class="academic-service-card" onclick="pilihTabCekJadwal()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#ecfdf5; color:#059669;">📚</div>
+          <span class="academic-service-arrow">↓</span>
+        </div>
+        <div class="academic-service-title">Jadwal Pelajaran</div>
+        <div class="academic-service-desc">Lihat mata pelajaran aktif, jam ke berapa, dan info guru pengajar.</div>
       </div>
-      <div class="service-item-btn" onclick="document.getElementById('btnTabPerijinan').click()">
-        <div class="service-icon-box" style="background:#fef3c7; color:#d97706;">📝</div>
-        <span class="service-label">Ajukan Izin</span>
+
+      <div class="academic-service-card" onclick="document.getElementById('btnTabPerijinan').click()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#fef3c7; color:#d97706;">📝</div>
+          <span class="academic-service-arrow">→</span>
+        </div>
+        <div class="academic-service-title">Pengajuan Izin</div>
+        <div class="academic-service-desc">Formulir izin sakit, dispensasi dinas, atau izin kegiatan sekolah.</div>
       </div>
-      <div class="service-item-btn" onclick="document.getElementById('btnTabRiwayatIjin').click()">
-        <div class="service-icon-box" style="background:#f3e8ff; color:#7c3aed;">💬</div>
-        <span class="service-label">Chat Admin</span>
+
+      <div class="academic-service-card" onclick="document.getElementById('btnTabRiwayatIjin').click()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#f3e8ff; color:#7c3aed;">💬</div>
+          <span class="academic-service-arrow">→</span>
+        </div>
+        <div class="academic-service-title">Status Perizinan</div>
+        <div class="academic-service-desc">Pantau konfirmasi dan catatan verifikasi persetujuan surat izin.</div>
       </div>
-      <div class="service-item-btn" onclick="bukaModalJadwalPulang()">
-        <div class="service-icon-box" style="background:#fee2e2; color:#dc2626;">⏰</div>
-        <span class="service-label">Jam Pulang</span>
+
+      <div class="academic-service-card" onclick="bukaModalJadwalPulang()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#fee2e2; color:#dc2626;">⏰</div>
+          <span class="academic-service-arrow">ⓘ</span>
+        </div>
+        <div class="academic-service-title">Jam Pulang Sekolah</div>
+        <div class="academic-service-desc">Ketentuan waktu kepulangan resmi berdasarkan sinkronisasi jadwal.</div>
       </div>
-      <div class="service-item-btn" onclick="bukaModalTataTertib()">
-        <div class="service-icon-box" style="background:#f1f5f9; color:#475569;">📜</div>
-        <span class="service-label">Tata Tertib</span>
+
+      <div class="academic-service-card" onclick="bukaModalTataTertib()">
+        <div class="academic-service-header">
+          <div class="academic-service-icon" style="background:#f1f5f9; color:#475569;">📜</div>
+          <span class="academic-service-arrow">ⓘ</span>
+        </div>
+        <div class="academic-service-title">Tata Tertib Presensi</div>
+        <div class="academic-service-desc">Pedoman penggunaan kartu RFID dan kepatuhan jam kehadiran siswa.</div>
       </div>
     </div>
 
-    <!-- Section Eksplor Jadwal Pelajaran (Bukan todong XII RPL 2 langsung, tapi sediakan selector kelas!) -->
+    <!-- Section Eksplor Jadwal Pelajaran -->
     <div class="home-section-card" id="sectionJadwalHome">
       <div class="home-section-header">
-        <h3>📚 Eksplor Jadwal Pelajaran</h3>
+        <h3>📚 Jadwal Pelajaran & Monitoring Jam Aktif</h3>
         <span id="homeJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4f46e5; background:#eff6ff; padding:5px 12px; border-radius:10px;">
           Pilih kelas untuk melihat jadwal
         </span>
       </div>
       
-      <!-- Selector Kelas Chips (User bisa pilih kelas mana yang mau diinspeksi) -->
       <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih kelas yang ingin dicek hari ini:</p>
       <div class="class-chip-container" id="classChipsList">
         <!-- Render dinamis via JS -->
@@ -125,12 +159,12 @@
       <!-- Live Schedule Grid -->
       <div class="schedule-timeline-grid" id="homeScheduleGrid">
         <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:16px;">
-          👈 Silakan klik salah satu kelas di atas untuk melihat jam pelajaran hari ini.
+          Silakan pilih kelas di atas untuk melihat jam pelajaran hari ini.
         </div>
       </div>
     </div>
 
-    <!-- Info Presensi Mandiri / Guru Berhalangan (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
+    <!-- Info Kelas Mandiri (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
     <div class="guru-alert" id="bannerKelasMandiri" style="margin-bottom:24px; display:none;">
       <div class="alert-icon">⚡</div>
       <div>
@@ -139,31 +173,31 @@
       </div>
     </div>
 
-    <!-- Section School Feed / Pengumuman Terkini (Produk Unggulan / Feed Sekolah) -->
+    <!-- Section Papan Pengumuman Sekolah -->
     <div class="home-section-card" style="margin-bottom:0;">
       <div class="home-section-header">
-        <h3>📢 Pengumuman & Agenda Sekolah</h3>
+        <h3>📢 Pengumuman & Agenda Akademik Sekolah</h3>
       </div>
       <div class="school-feed-grid">
         <div class="feed-card">
           <div>
             <span class="feed-badge event">Akademik</span>
             <div class="feed-title">Uji Kompetensi Keahlian (UKK / Ujikom) 2026</div>
-            <div class="feed-desc">Pelaksanaan asesmen kompetensi Rekayasa Perangkat Lunak menggunakan sistem presensi RFID mandiri terintegrasi.</div>
+            <div class="feed-desc">Pelaksanaan asesmen kompetensi keahlian Rekayasa Perangkat Lunak dengan integrasi sistem presensi RFID mandiri.</div>
           </div>
         </div>
         <div class="feed-card">
           <div>
             <span class="feed-badge info">Presensi</span>
             <div class="feed-title">Ketentuan Pengajuan Izin & Sakit Online</div>
-            <div class="feed-desc">Pengajuan izin sakit wajib melampirkan surat dokter. Dispensasi dinas/lomba divalidasi langsung oleh guru piket via chat.</div>
+            <div class="feed-desc">Pengajuan izin sakit wajib melampirkan surat dokter. Dispensasi dinas divalidasi langsung oleh guru piket dan admin.</div>
           </div>
         </div>
         <div class="feed-card">
           <div>
             <span class="feed-badge penting">Disiplin</span>
-            <div class="feed-title">Waktu Presensi & Jam Pulang Sekolah</div>
-            <div class="feed-desc">Scan kartu masuk dilakukan saat pergantian jam pelajaran. Jam kepulangan sekolah resmi pukul 15:15 WIB.</div>
+            <div class="feed-title">Ketentuan Tap Kartu RFID Gerbang & Kelas</div>
+            <div class="feed-desc">Siswa wajib melakukan tap kartu saat masuk gerbang dan saat pergantian jam pelajaran di kelas. Titip kartu dinyatakan pelanggaran disiplin.</div>
           </div>
         </div>
       </div>
@@ -171,7 +205,7 @@
 
   </div>
 
-  <!-- ===== TAB 1: PANTAU KELAS ===== -->
+  <!-- ===== TAB 1: PANTAU PRESENSI KELAS ===== -->
   <div id="tabKelas" class="tab-content" style="display:none;">
     <div class="filter-bar">
       <select id="pilihKelasPantau"></select>
@@ -212,12 +246,12 @@
     <div class="siswa-grid" id="gridBelumAbsen"></div>
   </div>
 
-  <!-- ===== TAB 2: AJUKAN IJIN (SETIAP ORANG BISA AJUKAN SISWA) ===== -->
+  <!-- ===== TAB 2: AJUKAN IJIN ===== -->
   <div id="tabPerijinan" class="tab-content" style="display:none;">
     <div class="form-card">
-      <h2>Pengajuan Perijinan Siswa</h2>
+      <h2>Pengajuan Perizinan Siswa</h2>
       <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
-        Pilih nama siswa yang ingin diizinkan (sakit, dispensasi kegiatan, atau dinas). Admin akan memverifikasi dan merespon via chat.
+        Pilih nama siswa yang ingin diizinkan (sakit, dispensasi kegiatan, atau dinas). Guru dan admin akan memverifikasi dan memberikan status persetujuan.
       </p>
 
       <div class="form-group">
@@ -226,16 +260,16 @@
       </div>
 
       <div class="form-group">
-        <label for="perijinanJenis">Kategori Perijinan</label>
+        <label for="perijinanJenis">Kategori Perizinan</label>
         <select id="perijinanJenis">
-          <option value="sakit">🤒 Ijin Sakit (Surat Dokter / Konfirmasi)</option>
+          <option value="sakit">🤒 Izin Sakit (Surat Dokter / Keterangan)</option>
           <option value="dispensasi">📄 Dispensasi Kegiatan / Dinas (Wajib Surat)</option>
-          <option value="ijin_kegiatan">🏆 Ijin Lomba / Event Sekolah (Wajib Surat)</option>
+          <option value="ijin_kegiatan">🏆 Izin Lomba / Event Sekolah (Wajib Surat)</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label for="perijinanTanggal">Tanggal Berlaku Ijin</label>
+        <label for="perijinanTanggal">Tanggal Berlaku Izin</label>
         <input type="date" id="perijinanTanggal">
       </div>
 
@@ -245,31 +279,31 @@
       </div>
 
       <div class="form-group" id="uploadDokumenWrap">
-        <label for="perijinanFile">📎 Lampirkan Bukti / Surat Ijin (Foto / PDF)</label>
+        <label for="perijinanFile">📎 Lampirkan Bukti / Surat Izin (Foto / PDF)</label>
         <input type="file" id="perijinanFile" accept=".pdf,.jpg,.jpeg,.png">
         <small style="color:#94a3b8;font-size:12px;margin-top:4px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
       </div>
 
       <button class="btn-primary-action" onclick="handleSubmitPerijinan()" id="btnSubmitPerijinan">
-        Kirim Pengajuan ke Admin
+        Kirim Pengajuan Izin
       </button>
       <p id="perijinanMsg" style="margin-top:14px;font-size:13.5px;font-weight:700;"></p>
     </div>
   </div>
 
-  <!-- ===== TAB 3: RIWAYAT IJIN & CHAT CS ===== -->
+  <!-- ===== TAB 3: RIWAYAT & STATUS PERIZINAN ===== -->
   <div id="tabRiwayatIjin" class="tab-content" style="display:none;">
-    <div class="section-title">Riwayat Pengajuan & Chat dengan Admin</div>
+    <div class="section-title">Riwayat Pengajuan & Konfirmasi Izin</div>
     <div id="daftarPerijinanSaya"></div>
   </div>
 
 </div>
 
-<!-- MODAL CHAT CS -->
+<!-- MODAL CHAT PERIZINAN -->
 <div id="modalChat" class="chat-modal-overlay">
   <div class="chat-modal-box">
     <div class="chat-modal-header">
-      <span style="font-weight:800;font-size:15px;color:#1e293b;" id="modalChatJudul">Chat Bantuan & Konfirmasi</span>
+      <span style="font-weight:800;font-size:15px;color:#1e293b;" id="modalChatJudul">Konfirmasi & Chat Perizinan</span>
       <button onclick="tutupModalChat()" style="background:#f1f5f9;border:none;padding:6px 12px;border-radius:8px;font-weight:700;cursor:pointer;">✕ Tutup</button>
     </div>
     <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:#f8fafc;"></div>

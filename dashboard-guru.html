@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Siswa — Portal Guru</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .badge-role-guru {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .counter-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    margin-left: 6px;
+  }
+  .jam-banner-guru {
+    background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+    border: 1px solid #c7d2fe;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .jam-banner-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #312e81;
+  }
+  .jam-banner-sub {
+    font-size: 13px;
+    color: #4f46e5;
+    margin-top: 3px;
+  }
+  .student-grid-guru {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .card-siswa-guru {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: all 0.2s;
+  }
+  .card-siswa-guru:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  }
+  .card-siswa-guru.hadir {
+    border-left: 5px solid #10b981;
+    background: #f0fdf4;
+  }
+  .card-siswa-guru.izin-sakit {
+    border-left: 5px solid #f59e0b;
+    background: #fffbeb;
+  }
+  .card-siswa-guru.belum {
+    border-left: 5px solid #ef4444;
+  }
+  .btn-mini-action {
+    padding: 6px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-mini-hadir {
+    background: #10b981;
+    color: white;
+  }
+  .btn-mini-hadir:hover { background: #059669; }
+  .btn-mini-izin {
+    background: #f59e0b;
+    color: white;
+  }
+  .btn-mini-izin:hover { background: #d97706; }
+
+  /* Izin Cards */
+  .card-izin-guru {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  }
+  .card-izin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .status-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-transform: capitalize;
+  }
+  .status-tag.pending { background: #fef3c7; color: #b45309; }
+  .status-tag.disetujui { background: #ecfdf5; color: #065f46; }
+  .status-tag.ditolak { background: #fef2f2; color: #991b1b; }
+
+  /* Modal preview */
+  .modal-preview {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-preview.show { display: flex; }
+  .modal-preview-content {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 540px;
+    width: 100%;
+    padding: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="user-badge">
+      <div class="user-avatar" id="avatarUser">👨‍🏫</div>
+      <div class="user-info">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h1 id="namaUser">Memuat Profil Guru...</h1>
+          <span class="badge-role-guru">Portal Guru</span>
+        </div>
+        <p id="infoSubUser">NIP: - • Mapel: -</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="dashboard.html" class="btn-logout" style="border-color:#e2e8f0;text-decoration:none;">🎓 Mode Siswa</a>
+      <button class="btn-logout" onclick="logout()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Keluar
+      </button>
+    </div>
+  </div>
+
+  <!-- TABS GURU -->
+  <div class="view-tabs">
+    <button class="view-tab-btn active" id="btnTabAbsenGuru" onclick="switchGuruTab('tabAbsenGuru', this)">
+      <span>🏢</span> Presensi Mandiri Guru
+    </button>
+    <button class="view-tab-btn" id="btnTabLiveGuru" onclick="switchGuruTab('tabLiveGuru', this)">
+      <span>📡</span> Radar Mengajar Kelas
+    </button>
+    <button class="view-tab-btn" id="btnTabApprovalIzin" onclick="switchGuruTab('tabApprovalIzin', this)">
+      <span>📬</span> Validasi Perizinan <span class="counter-badge" id="countPendingIzin" style="display:none;">0</span>
+    </button>
+    <button class="view-tab-btn" id="btnTabRekapGuru" onclick="switchGuruTab('tabRekapGuru', this)">
+      <span>📊</span> Rekapitulasi Presensi
+    </button>
+  </div>
+
+  <!-- ===== TAB 0: PRESENSI MANDIRI GURU ===== -->
+  <div id="tabAbsenGuru" class="tab-content" style="display:block;">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h2 style="font-size:18px;font-weight:800;color:#0f172a;">📍 Presensi Kehadiran Dinas Guru</h2>
+          <p style="font-size:13px;color:#64748b;margin-top:2px;">Catat kehadiran masuk dan pulang kedinasan mengajar Anda hari ini.</p>
+        </div>
+        <div style="background:#f1f5f9;padding:6px 14px;border-radius:12px;font-size:13px;font-weight:700;color:#334155;">
+          📅 <span id="labelTglAbsenGuru">-</span>
+        </div>
+      </div>
+
+      <!-- Card Status Absen Guru Hari Ini -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:20px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;">Jam Masuk Dinas</div>
+          <div style="font-size:22px;font-weight:800;color:#10b981;margin-top:6px;" id="guruJamMasuk">--:--:--</div>
+          <div style="font-size:11.5px;color:#059669;margin-top:4px;" id="guruStatusMasuk">Belum Absen Masuk</div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;">Jam Pulang Dinas</div>
+          <div style="font-size:22px;font-weight:800;color:#3b82f6;margin-top:6px;" id="guruJamPulang">--:--:--</div>
+          <div style="font-size:11.5px;color:#2563eb;margin-top:4px;" id="guruStatusPulang">Belum Absen Pulang</div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;">Status Harian</div>
+          <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:6px;" id="guruStatusHarian">Belum Hadir</div>
+          <div style="font-size:11.5px;color:#64748b;margin-top:4px;" id="guruKeteranganDinas">-</div>
+        </div>
+      </div>
+
+      <!-- Tombol Aksi Presensi Guru -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button id="btnCheckInGuru" onclick="catatAbsenGuru('masuk')" class="btn-submit-action" style="flex:1;min-width:180px;background:#10b981;padding:12px 18px;margin-top:0;">
+          📍 Check-In Masuk Sekolah
+        </button>
+        <button id="btnCheckOutGuru" onclick="catatAbsenGuru('pulang')" class="btn-submit-action" style="flex:1;min-width:180px;background:#3b82f6;padding:12px 18px;margin-top:0;">
+          🏠 Check-Out Pulang Dinas
+        </button>
+        <button onclick="catatIzinDinasGuru()" class="btn-submit-action" style="flex:1;min-width:180px;background:#f59e0b;padding:12px 18px;margin-top:0;">
+          📋 Tugas Luar / Izin Dinas
+        </button>
+      </div>
+      <div id="msgAbsenGuru" style="margin-top:12px;font-size:13px;font-weight:600;display:none;"></div>
+    </div>
+
+    <!-- Riwayat Presensi Guru -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:14px;">📅 Riwayat Kehadiran Guru</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f1f5f9;color:#475569;text-align:left;border-bottom:1.5px solid #e2e8f0;">
+              <th style="padding:10px 12px;">Tanggal</th>
+              <th style="padding:10px 12px;">Jam Masuk</th>
+              <th style="padding:10px 12px;">Jam Pulang</th>
+              <th style="padding:10px 12px;">Status</th>
+              <th style="padding:10px 12px;">Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="bodyRiwayatAbsenGuru">
+            <tr><td colspan="5" style="text-align:center;padding:18px;color:#94a3b8;">Memuat riwayat kehadiran...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 1: RADAR MENGAJAR KELAS ===== -->
+  <div id="tabLiveGuru" class="tab-content" style="display:none;">
+    
+    <!-- Pilih Kelas & Tanggal -->
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+      <div>
+        <label style="display:block;font-size:12.5px;font-weight:700;color:#475569;margin-bottom:6px;">📚 Pilih Kelas yang Diajar</label>
+        <select id="pilihKelasGuru" onchange="muatDataPresensiKelas()" style="padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:14px;font-weight:700;color:#1e293b;background:#fff;">
+          <option value="">Memuat daftar kelas...</option>
+        </select>
+      </div>
+
+      <div style="margin-left:auto;text-align:right;">
+        <span style="font-size:12px;font-weight:600;color:#64748b;">Tanggal Hari Ini:</span>
+        <div id="labelTanggalHariIni" style="font-size:14px;font-weight:700;color:#0f172a;">-</div>
+      </div>
+    </div>
+
+    <!-- Banner Info Jam Pelajaran Berjalan -->
+    <div class="jam-banner-guru" id="bannerJamGuru">
+      <div>
+        <div class="jam-banner-title" id="jamGuruTitle">🕒 Memeriksa Jam Pelajaran Aktif...</div>
+        <div class="jam-banner-sub" id="jamGuruSub">Sinkronisasi data Raspberry Pi & Firebase...</div>
+      </div>
+      <div>
+        <button onclick="muatDataPresensiKelas()" class="btn-mini-action" style="background:#4f46e5;color:#fff;padding:8px 14px;font-size:12.5px;">🔄 Segarkan Data</button>
+      </div>
+    </div>
+
+    <!-- Stat Ringkasan -->
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="stat-card" style="border-left:4px solid #10b981;">
+        <div class="stat-num" id="statHadirGuru" style="color:#10b981;">0</div>
+        <div class="stat-label">Hadir / Sudah Scan</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #f59e0b;">
+        <div class="stat-num" id="statIzinGuru" style="color:#f59e0b;">0</div>
+        <div class="stat-label">Izin / Sakit Terverifikasi</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #ef4444;">
+        <div class="stat-num" id="statBelumGuru" style="color:#ef4444;">0</div>
+        <div class="stat-label">Belum Absen / Belum Tap</div>
+      </div>
+    </div>
+
+    <!-- Daftar Siswa -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="font-size:16px;font-weight:800;color:#1e293b;">Daftar Siswa Kelas</h3>
+        <span style="font-size:12.5px;color:#64748b;">Gunakan tombol aksi cepat jika siswa lupa membawa kartu NFC.</span>
+      </div>
+      <div id="gridSiswaGuru" class="student-grid-guru">
+        <div style="color:#64748b;font-size:14px;padding:20px 0;">Memilih kelas untuk memuat siswa...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 2: VALIDASI PERIZINAN SISWA ===== -->
+  <div id="tabApprovalIzin" class="tab-content" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;color:#1e293b;">Pengajuan Izin & Sakit Siswa</h2>
+        <p style="font-size:13px;color:#64748b;">Tinjau surat izin, bukti foto, dan beri persetujuan resmi.</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-mini-action" onclick="filterIzinGuru('semua')" id="btnFilterSemua" style="background:#e2e8f0;color:#334155;">Semua</button>
+        <button class="btn-mini-action" onclick="filterIzinGuru('pending')" id="btnFilterPending" style="background:#4f46e5;color:#fff;">Menunggu</button>
+        <button class="btn-mini-action" onclick="filterIzinGuru('disetujui')" id="btnFilterDisetujui" style="background:#e2e8f0;color:#334155;">Disetujui</button>
+      </div>
+    </div>
+
+    <div id="listApprovalIzin">
+      <div style="text-align:center;padding:30px;color:#64748b;">Memuat daftar perizinan siswa...</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: REKAPITULASI PRESENSI ===== -->
+  <div id="tabRekapGuru" class="tab-content" style="display:none;">
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:12px;">📊 Filter Laporan Presensi</h3>
+      <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Pilih Kelas</label>
+          <select id="rekapKelas" style="padding:8px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:700;"></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Tanggal</label>
+          <input type="date" id="rekapTanggal" style="padding:8px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:600;">
+        </div>
+        <button onclick="generateRekapGuru()" class="btn-mini-action" style="background:#4f46e5;color:#fff;padding:9px 16px;font-size:13px;">Tampilkan Rekap</button>
+        <button onclick="window.print()" class="btn-mini-action" style="background:#10b981;color:#fff;padding:9px 16px;font-size:13px;">🖨️ Cetak / PDF</button>
+      </div>
+    </div>
+
+    <div id="containerTabelRekap" style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">
+        <thead>
+          <tr style="background:#f1f5f9;color:#334155;text-align:left;border-bottom:1.5px solid #e2e8f0;">
+            <th style="padding:12px 14px;">No</th>
+            <th style="padding:12px 14px;">NISN</th>
+            <th style="padding:12px 14px;">Nama Siswa</th>
+            <th style="padding:12px 14px;">Status Kehadiran</th>
+            <th style="padding:12px 14px;">Waktu Masuk / Scan</th>
+            <th style="padding:12px 14px;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody id="bodyTabelRekap">
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Pilih kelas dan tanggal lalu klik Tampilkan Rekap.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL PREVIEW BUKTI IZIN -->
+<div class="modal-preview" id="modalBuktiIzin">
+  <div class="modal-preview-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;" id="modalBuktiTitle">Bukti Lampiran Izin</h3>
+      <button onclick="tutupModalBukti()" style="border:none;background:none;font-size:20px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div id="modalBuktiBody" style="text-align:center;max-height:400px;overflow-y:auto;">
+      <img id="modalBuktiImg" src="" alt="Bukti" style="max-width:100%;border-radius:12px;display:none;">
+      <p id="modalBuktiText" style="color:#64748b;font-size:14px;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/jadwal-util.js"></script>
+<script src="assets/dashboard-guru.js"></script>
+</body>
+</html>

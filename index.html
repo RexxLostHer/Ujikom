@@ -1,56 +1,257 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa — Masuk / Daftar</title>
+<title>Presensi Siswa — SMK Negeri 1 Sumedang</title>
 <link rel="stylesheet" href="assets/style.css">
 <style>
+  :root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --dark-bg: #070b14;
+    --card-bg: rgba(255, 255, 255, 0.98);
+  }
+
   body {
-    align-items: center;
     min-height: 100vh;
-    background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-                #0f172a;
-    padding: 24px 16px;
-  }
-  .login-card {
-    background: rgba(255, 255, 255, 0.98);
-    border-radius: 28px;
-    padding: 36px 32px;
-    max-width: 440px;
-    width: 100%;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  }
-  .brand-header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-  .brand-logo {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-    border-radius: 18px;
-    display: inline-flex;
+    margin: 0;
+    padding: 24px;
+    background: radial-gradient(at 15% 15%, rgba(37, 99, 235, 0.22) 0px, transparent 55%),
+                radial-gradient(at 85% 85%, rgba(124, 58, 237, 0.2) 0px, transparent 55%),
+                var(--dark-bg);
+    display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
-    margin-bottom: 12px;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
+
+  /* CONTAINER SPLIT 2-KOLOM DESKTOP */
+  .portal-auth-container {
+    width: 100%;
+    max-width: 1060px;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+    animation: containerEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes containerEntrance {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* SISI KIRI: 3D INTERACTIVE EMBLEM SHOWCASE */
+  .showcase-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding: 10px 0;
+  }
+
+  .showcase-header {
+    margin-bottom: 20px;
+    min-height: 120px;
+    transition: all 0.35s ease;
+  }
+
+  .badge-iot-pulse {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    color: #60a5fa;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+
+  .badge-iot-pulse.rpl-mode {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(192, 132, 252, 0.35);
+    color: #c084fc;
+  }
+
+  .pulsing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    animation: dotPulse 1.8s infinite;
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+
+  .showcase-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    transition: color 0.3s ease;
+  }
+
+  .showcase-title .highlight-text {
+    background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: all 0.3s ease;
+  }
+
+  .showcase-title.rpl-mode .highlight-text {
+    background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .showcase-desc {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.6;
+    max-width: 460px;
+    margin: 0;
+    transition: color 0.3s ease;
+  }
+
+  /* 3D WEBGL STAGE */
+  .stage-3d-container {
+    position: relative;
+    width: 100%;
+    height: 410px;
+    border-radius: 28px;
+    overflow: hidden;
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 70%, transparent 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .stage-3d-container:active {
+    cursor: grabbing;
+  }
+
+  #canvas3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+  }
+
+  /* SISI KANAN: ELEVATED LOGIN CARD */
+  .auth-card-side {
+    width: 100%;
+    max-width: 440px;
+    flex-shrink: 0;
+  }
+
+  .login-card {
+    background: var(--card-bg);
+    border-radius: 28px;
+    padding: 36px 32px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brand-header {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+
+  .brand-logo-flipper {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px;
+    perspective: 800px;
+  }
+
+  .flipper-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .flipper-inner.is-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .logo-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 24px -4px rgba(79, 70, 229, 0.35);
+  }
+
+  .logo-face.front-nesas {
+    background: #ffffff;
+    border: 2px solid #e0e7ff;
+  }
+
+  .logo-face.back-rpl {
+    background: #0f172a;
+    border: 2px solid #818cf8;
+    transform: rotateY(180deg);
+    box-shadow: 0 10px 24px -4px rgba(129, 140, 248, 0.4);
+  }
+
+  .logo-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
   .brand-header h1 {
     font-size: 22px;
     font-weight: 800;
     color: #0f172a;
     letter-spacing: -0.02em;
+    margin: 0;
   }
+
   .brand-header p {
     font-size: 13.5px;
     color: #64748b;
     margin-top: 4px;
+    margin-bottom: 0;
   }
 
+  /* TOMBOL GOOGLE 1-KLIK */
   .btn-google-smart {
     display: flex;
     align-items: center;
@@ -62,112 +263,220 @@
     color: #1e293b;
     border: 1.5px solid #e2e8f0;
     border-radius: 14px;
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
   }
+
   .btn-google-smart:hover {
     border-color: #4285f4;
     background: #f8faff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px -2px rgba(66, 133, 244, 0.2);
   }
-  .btn-google-smart img { width: 20px; height: 20px; }
 
+  .btn-google-smart:active {
+    transform: translateY(0);
+  }
+
+  .btn-google-smart img {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* SEPARATOR LINE */
   .sep-line {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin: 20px 0;
+    margin: 18px 0;
   }
+
   .sep-line::before, .sep-line::after {
     content: '';
     flex: 1;
     height: 1px;
     background: #e2e8f0;
   }
+
   .sep-line span {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
-  /* Tab Masuk / Daftar */
-  .switch-tabs {
+  /* TAB SLIDER SMOOTH */
+  .switch-tabs-wrap {
+    position: relative;
     display: flex;
     background: #f1f5f9;
     padding: 4px;
     border-radius: 14px;
-    margin-bottom: 22px;
-    gap: 4px;
+    margin-bottom: 20px;
+    user-select: none;
   }
+
+  .tab-slider {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+  }
+
+  .switch-tabs-wrap.is-register .tab-slider {
+    transform: translateX(100%);
+  }
+
   .switch-btn {
+    position: relative;
+    z-index: 2;
     flex: 1;
-    padding: 10px;
-    font-size: 14px;
+    padding: 10px 0;
+    font-size: 13.5px;
     font-weight: 700;
     color: #64748b;
     border: none;
-    border-radius: 10px;
     background: transparent;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease;
+    text-align: center;
   }
+
   .switch-btn.active {
-    background: #ffffff;
     color: #4f46e5;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  /* FORM VIEW TRANSITIONS */
+  .form-view-container {
+    position: relative;
+    min-height: 200px;
+  }
+
+  .form-view {
+    opacity: 0;
+    transform: translateY(8px);
+    display: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .form-view.active {
+    display: block;
+    animation: formFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes formFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .form-group-item {
     margin-bottom: 14px;
   }
+
   .form-group-item label {
     display: block;
     font-size: 12.5px;
     font-weight: 700;
     color: #334155;
     margin-bottom: 6px;
+    transition: color 0.2s;
   }
-  .form-group-item input {
+
+  .input-with-icon {
+    position: relative;
+  }
+
+  .input-with-icon input {
     width: 100%;
-    padding: 12px 14px;
+    padding: 12px 14px 12px 38px;
     border-radius: 12px;
     border: 1.5px solid #e2e8f0;
     font-size: 14px;
     background: #f8fafc;
-    transition: all 0.2s;
-  }
-  .form-group-item input:focus {
-    outline: none;
-    background: #fff;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    transition: all 0.22s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: #0f172a;
   }
 
+  .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #94a3b8;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+
+  .input-with-icon input:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+  }
+
+  .input-with-icon input:focus + .input-icon,
+  .form-group-item:focus-within label {
+    color: #4f46e5;
+  }
+
+  /* SUBMIT BUTTON DENGAN SHIMMER */
   .btn-submit-action {
     width: 100%;
     margin-top: 10px;
     padding: 13px;
     background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-    color: #fff;
+    color: #ffffff;
     border: none;
     border-radius: 12px;
     font-size: 14.5px;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-    transition: all 0.2s;
-  }
-  .btn-submit-action:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
   }
 
+  .btn-submit-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -2px rgba(79, 70, 229, 0.45);
+  }
+
+  .btn-submit-action:active {
+    transform: translateY(0);
+  }
+
+  .btn-submit-action::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transform: skewX(-20deg);
+  }
+
+  .btn-submit-action:hover::after {
+    left: 200%;
+    transition: left 0.7s ease;
+  }
+
+  /* TOAST ALERT */
   #notifBox {
     margin-top: 14px;
     font-size: 12.5px;
@@ -176,13 +485,21 @@
     border-radius: 10px;
     display: none;
     line-height: 1.45;
+    animation: notifSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  @keyframes notifSlideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   #notifBox.error {
     display: block;
     background: #fef2f2;
     border: 1px solid #fecaca;
     color: #dc2626;
   }
+
   #notifBox.success {
     display: block;
     background: #ecfdf5;
@@ -196,140 +513,653 @@
     color: #64748b;
     text-align: center;
   }
+
   .switch-caption a {
     color: #4f46e5;
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
   }
+
   .switch-caption a:hover {
+    color: #4338ca;
     text-decoration: underline;
   }
 
+  /* LOADING OVERLAY */
   #loadingBox {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px);
+    background: rgba(7, 11, 20, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     justify-content: center;
     align-items: center;
     flex-direction: column;
     z-index: 1000;
     font-size: 14px;
     font-weight: 600;
-    color: #334155;
-    gap: 12px;
+    color: #ffffff;
+    gap: 14px;
   }
+
   #loadingBox.show { display: flex; }
+
   .spin-wheel {
-    width: 36px;
-    height: 36px;
-    border: 3.5px solid #e2e8f0;
-    border-top-color: #4f46e5;
+    width: 40px;
+    height: 40px;
+    border: 3.5px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #818cf8;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
+
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSIVE LAYOUT */
+  @media (max-width: 960px) {
+    .portal-auth-container {
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+    .showcase-side {
+      width: 100%;
+      text-align: center;
+      padding: 0;
+    }
+    .showcase-desc {
+      max-width: 100%;
+    }
+    .stage-3d-container {
+      height: 270px;
+    }
+    .auth-card-side {
+      max-width: 440px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 16px 12px;
+    }
+    .login-card {
+      padding: 28px 20px;
+      border-radius: 22px;
+    }
+    .showcase-title {
+      font-size: 24px;
+    }
+    .stage-3d-container {
+      height: 220px;
+    }
+  }
 </style>
 </head>
 <body>
+  <!-- LOADING OVERLAY -->
   <div id="loadingBox">
     <div class="spin-wheel"></div>
     <span id="loadingCaption">Memproses...</span>
   </div>
 
-  <div class="login-card">
-    <div class="brand-header">
-      <div class="brand-logo">⚡</div>
-      <h1>Presensi Siswa</h1>
-      <p>Sistem Absensi & Perijinan Kelas</p>
+  <div class="portal-auth-container">
+
+    <!-- SISI KIRI: 3D REALTIME MEDALLION SHOWCASE (SMKN 1 SUMEDANG / RPL) -->
+    <div class="showcase-side">
+      <div class="showcase-header">
+        <div class="badge-iot-pulse" id="sideBadgeTag">
+          <span class="pulsing-dot"></span>
+          <span id="badgeTagText">SMK NEGERI 1 SUMEDANG</span>
+        </div>
+        <h2 class="showcase-title" id="sideTitle">
+          Presensi Siswa <span class="highlight-text" id="sideHighlight">NESAS RFID</span>
+        </h2>
+        <p class="showcase-desc" id="sideDesc">
+          Verifikasi kehadiran fisik di kelas berlangsung realtime, transparan, dan anti-titip absen melalui sensor RFID terintegrasi.
+        </p>
+      </div>
+
+      <!-- STAGE 3D INTERAKTIF (BERSIH DARI WATERMARK & BADGE BAWAH) -->
+      <div class="stage-3d-container" id="stage3dContainer">
+        <canvas id="canvas3d"></canvas>
+      </div>
     </div>
 
-    <!-- Opsi 1: Google Langsung 1-Klik -->
-    <button class="btn-google-smart" id="btnGoogle" onclick="handleGoogleLogin()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-      Masuk dengan Google
-    </button>
+    <!-- SISI KANAN: LOGIN & REGISTER CARD -->
+    <div class="auth-card-side">
+      <div class="login-card">
+        
+        <!-- BRAND HEADER DENGAN 3D LOGO FLIPPER -->
+        <div class="brand-header">
+          <div class="brand-logo-flipper">
+            <div class="flipper-inner" id="brandLogoFlipper">
+              <!-- MUKA DEPAN: LOGO NESAS (LOGIN) -->
+              <div class="logo-face front-nesas">
+                <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang (NESAS)">
+              </div>
+              <!-- MUKA BELAKANG: LOGO RPL (REGISTER) -->
+              <div class="logo-face back-rpl">
+                <img src="assets/logo-rpl.png" alt="Logo Jurusan RPL Nesas">
+              </div>
+            </div>
+          </div>
+          <h1 id="cardTitle">Presensi Siswa</h1>
+          <p id="cardSubtitle">Portal Presensi RFID & Akademik SMKN 1 Sumedang</p>
+        </div>
 
-    <div class="sep-line">
-      <span>atau</span>
+        <!-- 1-KLIK GOOGLE SIGN-IN -->
+        <button class="btn-google-smart" id="btnGoogle" onclick="handleGoogleLogin()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Masuk dengan Google
+        </button>
+
+        <div class="sep-line">
+          <span>atau dengan email</span>
+        </div>
+
+        <!-- SEGMENTED TABS DENGAN SLIDER HALUS -->
+        <div class="switch-tabs-wrap" id="switchTabsWrap">
+          <div class="tab-slider" id="tabSlider"></div>
+          <button class="switch-btn active" id="tabMasuk" onclick="gantiTab('login')">Masuk</button>
+          <button class="switch-btn" id="tabDaftar" onclick="gantiTab('register')">Daftar</button>
+        </div>
+
+        <!-- FORM CONTAINER -->
+        <div class="form-view-container">
+          
+          <!-- FORM LOGIN -->
+          <form id="formLogin" class="form-view active" onsubmit="handleLoginEmail(event)">
+            <div class="form-group-item">
+              <label for="loginEmail">Email Gmail</label>
+              <div class="input-with-icon">
+                <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
+                <span class="input-icon">✉️</span>
+              </div>
+            </div>
+
+            <div class="form-group-item">
+              <label for="loginPassword">Kata Sandi</label>
+              <div class="input-with-icon">
+                <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
+                <span class="input-icon">🔒</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit-action" id="btnActionLogin">Masuk Sekarang</button>
+          </form>
+
+          <!-- FORM REGISTER (Khusus Siswa & Wali Murid RPL: Hanya 3 Input Bersih) -->
+          <form id="formRegister" class="form-view" onsubmit="handleRegisterEmail(event)">
+            <div class="form-group-item">
+              <label for="regNama">Nama Lengkap</label>
+              <div class="input-with-icon">
+                <input type="text" id="regNama" placeholder="Nama lengkap siswa atau wali murid" required autocomplete="name">
+                <span class="input-icon">👤</span>
+              </div>
+            </div>
+
+            <div class="form-group-item">
+              <label for="regEmail">Email Gmail</label>
+              <div class="input-with-icon">
+                <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
+                <span class="input-icon">✉️</span>
+              </div>
+            </div>
+
+            <div class="form-group-item">
+              <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
+              <div class="input-with-icon">
+                <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
+                <span class="input-icon">🔒</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit-action" id="btnActionRegister">Daftar Akun RPL</button>
+          </form>
+
+        </div>
+
+        <!-- NOTIFIKASI TOAST -->
+        <div id="notifBox"></div>
+
+        <!-- CAPTION SWITCH BAWAH -->
+        <div class="switch-caption" id="captionBawah">
+          Belum punya akun? <a onclick="gantiTab('register')">Daftar akun RPL</a>
+        </div>
+      </div>
     </div>
 
-    <!-- Tab Masuk / Daftar -->
-    <div class="switch-tabs">
-      <button class="switch-btn active" id="tabMasuk" onclick="gantiTab('login')">Masuk</button>
-      <button class="switch-btn" id="tabDaftar" onclick="gantiTab('register')">Daftar</button>
-    </div>
-
-    <!-- FORM LOGIN -->
-    <form id="formLogin" onsubmit="handleLoginEmail(event)">
-      <div class="form-group-item">
-        <label for="loginEmail">Email Gmail</label>
-        <input type="email" id="loginEmail" placeholder="nama@gmail.com" required>
-      </div>
-
-      <div class="form-group-item">
-        <label for="loginPassword">Kata Sandi</label>
-        <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required>
-      </div>
-
-      <button type="submit" class="btn-submit-action" id="btnActionLogin">Masuk</button>
-    </form>
-
-    <!-- FORM REGISTER -->
-    <form id="formRegister" style="display:none;" onsubmit="handleRegisterEmail(event)">
-      <div class="form-group-item">
-        <label for="regNama">Nama Lengkap</label>
-        <input type="text" id="regNama" placeholder="Nama siswa atau orang tua" required>
-      </div>
-
-      <div class="form-group-item">
-        <label for="regEmail">Email Gmail</label>
-        <input type="email" id="regEmail" placeholder="nama@gmail.com" required>
-      </div>
-
-      <div class="form-group-item">
-        <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
-        <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required>
-      </div>
-
-      <button type="submit" class="btn-submit-action" id="btnActionRegister">Daftar</button>
-    </form>
-
-    <div id="notifBox"></div>
-
-    <div class="switch-caption" id="captionBawah">
-      Belum punya akun? <a onclick="gantiTab('register')">Daftar</a>
-    </div>
   </div>
 
+  <!-- SCRIPTS -->
+  <script src="assets/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="assets/firebase-config.js"></script>
   <script src="assets/auth.js"></script>
+
+  <!-- 3D ENGINE & TAB CONTROLLER -->
   <script>
+    // ===== 1. KONTROLER 3D THREE.JS MEDALLION (NESAS & RPL) =====
+    let scene, camera, renderer;
+    let medallionGroup;
+    let targetRotationY = 0;
+    let currentRotationY = 0;
+    let isDragging = false;
+    let previousMouseX = 0;
+    let mouseTiltX = 0;
+    let mouseTiltY = 0;
+    let currentTiltX = 0;
+    let currentTiltY = 0;
+    let orbitalRing1, orbitalRing2, particleField;
+
+    function init3DScene() {
+      const container = document.getElementById('stage3dContainer');
+      const canvas = document.getElementById('canvas3d');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+      camera.position.set(0, 0, 9.2);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Lighting Setup
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      dirLight.position.set(5, 8, 7);
+      scene.add(dirLight);
+
+      const bluePointLight = new THREE.PointLight(0x3b82f6, 2.5, 16);
+      bluePointLight.position.set(-4, -2, 5);
+      scene.add(bluePointLight);
+
+      const purplePointLight = new THREE.PointLight(0x8b5cf6, 2.5, 16);
+      purplePointLight.position.set(4, 3, -4);
+      scene.add(purplePointLight);
+
+      // Root Medallion Group
+      medallionGroup = new THREE.Group();
+      scene.add(medallionGroup);
+
+      // 1. Cyber Cylinder Rim (Metallic Edge)
+      const rimGeom = new THREE.CylinderGeometry(2.85, 2.85, 0.36, 64, 1, true);
+      rimGeom.rotateX(Math.PI / 2);
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.95,
+        roughness: 0.15
+      });
+      const rimMesh = new THREE.Mesh(rimGeom, rimMat);
+      medallionGroup.add(rimMesh);
+
+      // 2. Beveled Metallic Rings Front & Back
+      const bevelGeom = new THREE.TorusGeometry(2.86, 0.05, 16, 64);
+      const bevelMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        metalness: 0.9,
+        roughness: 0.2,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.25
+      });
+      const bevelFront = new THREE.Mesh(bevelGeom, bevelMat);
+      bevelFront.position.z = 0.18;
+      medallionGroup.add(bevelFront);
+
+      const bevelBack = new THREE.Mesh(bevelGeom, bevelMat);
+      bevelBack.position.z = -0.18;
+      medallionGroup.add(bevelBack);
+
+      // 3. Face Textures (NESAS & RPL)
+      const textureNesas = createMedalCanvasTexture('assets/logo-nesas.png', 'NESAS', 'SMKN 1 SUMEDANG', '#2563eb', '#0f172a', '#1e293b');
+      const textureRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'REKAYASA PERANGKAT LUNAK', 'NESAS TECH', '#8b5cf6', '#0f0b1e', '#1e1035');
+
+      const faceGeom = new THREE.CircleGeometry(2.83, 64);
+
+      // Face Front (NESAS)
+      const faceMatFront = new THREE.MeshStandardMaterial({
+        map: textureNesas,
+        roughness: 0.25,
+        metalness: 0.3
+      });
+      const faceFront = new THREE.Mesh(faceGeom, faceMatFront);
+      faceFront.position.z = 0.185;
+      medallionGroup.add(faceFront);
+
+      // Face Back (RPL)
+      const faceMatBack = new THREE.MeshStandardMaterial({
+        map: textureRpl,
+        roughness: 0.25,
+        metalness: 0.3
+      });
+      const faceBack = new THREE.Mesh(faceGeom, faceMatBack);
+      faceBack.position.z = -0.185;
+      faceBack.rotation.y = Math.PI; // Orientasi tepat saat dibalik
+      medallionGroup.add(faceBack);
+
+      // 4. Gyroscopic Orbital Rings
+      const ringGeom1 = new THREE.TorusGeometry(3.45, 0.025, 16, 80);
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+      orbitalRing1 = new THREE.Mesh(ringGeom1, ringMat1);
+      orbitalRing1.rotation.x = 1.15;
+      scene.add(orbitalRing1);
+
+      const ringGeom2 = new THREE.TorusGeometry(3.95, 0.02, 16, 80);
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.5 });
+      orbitalRing2 = new THREE.Mesh(ringGeom2, ringMat2);
+      orbitalRing2.rotation.y = 0.75;
+      orbitalRing2.rotation.x = -0.4;
+      scene.add(orbitalRing2);
+
+      // 5. Star Particle Dust Field
+      const partCount = 45;
+      const partGeom = new THREE.BufferGeometry();
+      const posArray = new Float32Array(partCount * 3);
+      for (let i = 0; i < partCount * 3; i += 3) {
+        posArray[i] = (Math.random() - 0.5) * 12;
+        posArray[i + 1] = (Math.random() - 0.5) * 8;
+        posArray[i + 2] = (Math.random() - 0.5) * 6;
+      }
+      partGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const partMat = new THREE.PointsMaterial({ size: 0.04, color: 0x93c5fd, transparent: true, opacity: 0.7 });
+      particleField = new THREE.Points(partGeom, partMat);
+      scene.add(particleField);
+
+      // Event Listeners untuk Interaksi Mouse / Touch
+      setupInteractions(container);
+
+      // Window Resize Listener
+      window.addEventListener('resize', onWindowResize);
+
+      // Start Animation Loop
+      animate3D();
+    }
+
+    // Helper untuk membuat Texture Canvas Lingkaran Beresolusi Tinggi
+    function createMedalCanvasTexture(imgSrc, title, subtitle, ringColor, bgCenter, bgEdge) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      const cx = 512, cy = 512, r = 490;
+
+      function drawTexture(img) {
+        ctx.clearRect(0, 0, 1024, 1024);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.clip();
+
+        // Latar Belakang Gradasi Radial
+        const bgGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, r);
+        bgGrad.addColorStop(0, bgCenter);
+        bgGrad.addColorStop(0.7, bgEdge);
+        bgGrad.addColorStop(1, '#050811');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Lingkaran Konsentris Tech
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.lineWidth = 2;
+        for (let rad = 140; rad < 460; rad += 45) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Cincin Luar Neon Glow
+        ctx.strokeStyle = ringColor;
+        ctx.lineWidth = 16;
+        ctx.shadowColor = ringColor;
+        ctx.shadowBlur = 28;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Cincin Metalik Dalam
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 38, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Gambar Logo Asli di Tengah
+        if (img) {
+          const sz = 460;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+          ctx.shadowBlur = 30;
+          ctx.shadowOffsetY = 15;
+          ctx.drawImage(img, cx - sz / 2, cy - sz / 2 - 35, sz, sz);
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+        }
+
+        // Teks Badge Bawah
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.letterSpacing = '1.5px';
+        ctx.fillText(title, cx, 840);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText(subtitle, cx, 885);
+
+        // Pantulan Glossy Kaca (Sheen Curve)
+        const sheen = ctx.createLinearGradient(0, 0, 1024, 600);
+        sheen.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+        sheen.addColorStop(0.35, 'rgba(255, 255, 255, 0.05)');
+        sheen.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = sheen;
+        ctx.beginPath();
+        ctx.ellipse(cx, 300, 480, 240, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      drawTexture(null);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.anisotropy = 8;
+
+      const img = new Image();
+      img.src = imgSrc;
+      img.onload = () => {
+        drawTexture(img);
+        texture.needsUpdate = true;
+      };
+
+      return texture;
+    }
+
+    function setupInteractions(container) {
+      // Parallax Mouse Tilt
+      window.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth) * 2 - 1;
+        const y = -(e.clientY / window.innerHeight) * 2 + 1;
+        mouseTiltX = y * 0.22;
+        mouseTiltY = x * 0.26;
+      });
+
+      // Drag to rotate 3D
+      container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousMouseX = e.clientX;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - previousMouseX;
+        currentRotationY += deltaX * 0.012;
+        previousMouseX = e.clientX;
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+        }
+      });
+
+      // Touch Drag support
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          previousMouseX = e.touches[0].clientX;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const deltaX = e.touches[0].clientX - previousMouseX;
+        currentRotationY += deltaX * 0.012;
+        previousMouseX = e.touches[0].clientX;
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => { isDragging = false; });
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('stage3dContainer');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    let clock = new THREE.Clock();
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // Smooth Lerp Spring ke Target Rotation jika sedang tidak di-drag
+      if (!isDragging) {
+        currentRotationY += (targetRotationY - currentRotationY) * 0.065;
+      }
+
+      currentTiltX += (mouseTiltX - currentTiltX) * 0.08;
+      currentTiltY += (mouseTiltY - currentTiltY) * 0.08;
+
+      if (medallionGroup) {
+        // Rotasi Utama + Mouse Parallax
+        medallionGroup.rotation.y = currentRotationY + currentTiltY;
+        medallionGroup.rotation.x = currentTiltX;
+
+        // Efek Melayang Lembut (Levitation)
+        medallionGroup.position.y = Math.sin(elapsedTime * 1.6) * 0.16;
+      }
+
+      // Rotasi Cincin Orbit
+      if (orbitalRing1) {
+        orbitalRing1.rotation.z += 0.007;
+        orbitalRing1.position.y = Math.sin(elapsedTime * 1.6) * 0.1;
+      }
+      if (orbitalRing2) {
+        orbitalRing2.rotation.z -= 0.005;
+        orbitalRing2.position.y = Math.sin(elapsedTime * 1.6) * 0.1;
+      }
+
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    // Inisialisasi 3D saat DOM selesai
+    window.addEventListener('DOMContentLoaded', () => {
+      init3DScene();
+    });
+
+    // ===== 2. KONTROLER TAB & ANIMASI TRANSISI (MASUK / DAFTAR) =====
     function gantiTab(mode) {
       const fLog = document.getElementById('formLogin');
       const fReg = document.getElementById('formRegister');
       const tLog = document.getElementById('tabMasuk');
       const tReg = document.getElementById('tabDaftar');
+      const wrap = document.getElementById('switchTabsWrap');
       const cap = document.getElementById('captionBawah');
+      const flipper = document.getElementById('brandLogoFlipper');
+      const cardTitle = document.getElementById('cardTitle');
+      const cardSub = document.getElementById('cardSubtitle');
+
+      const sideBadge = document.getElementById('sideBadgeTag');
+      const badgeText = document.getElementById('badgeTagText');
+      const sideTitle = document.getElementById('sideTitle');
+      const sideDesc = document.getElementById('sideDesc');
+
       bersihkanNotif();
 
       if (mode === 'login') {
+        // Flip 3D Medallion ke Depan (NESAS)
+        targetRotationY = 0;
+
+        // Form View Cross-Fade
         fLog.style.display = 'block';
         fReg.style.display = 'none';
+        setTimeout(() => {
+          fLog.classList.add('active');
+          fReg.classList.remove('active');
+        }, 10);
+
         tLog.classList.add('active');
         tReg.classList.remove('active');
-        cap.innerHTML = 'Belum punya akun? <a onclick=\"gantiTab(\'register\')\">Daftar</a>';
+        wrap.classList.remove('is-register');
+        flipper.classList.remove('is-flipped');
+
+        cardTitle.textContent = 'Presensi Siswa';
+        cardSub.textContent = 'Portal Presensi RFID & Akademik SMKN 1 Sumedang';
+        cap.innerHTML = 'Belum punya akun? <a onclick="gantiTab(\'register\')">Daftar akun RPL</a>';
+
+        // Update Side Showcase Content ke NESAS
+        sideBadge.classList.remove('rpl-mode');
+        badgeText.textContent = 'SMK NEGERI 1 SUMEDANG';
+        sideTitle.innerHTML = 'Presensi Siswa <span class="highlight-text">NESAS RFID</span>';
+        sideDesc.textContent = 'Verifikasi kehadiran fisik di kelas berlangsung realtime, transparan, dan anti-titip absen melalui sensor RFID terintegrasi.';
       } else {
+        // Flip 3D Medallion 180 Derajat ke Belakang (RPL)
+        targetRotationY = Math.PI;
+
+        // Form View Cross-Fade
         fLog.style.display = 'none';
         fReg.style.display = 'block';
+        setTimeout(() => {
+          fReg.classList.add('active');
+          fLog.classList.remove('active');
+        }, 10);
+
         tLog.classList.remove('active');
         tReg.classList.add('active');
-        cap.innerHTML = 'Sudah punya akun? <a onclick=\"gantiTab(\'login\')\">Masuk</a>';
+        wrap.classList.add('is-register');
+        flipper.classList.add('is-flipped');
+
+        cardTitle.textContent = 'Pendaftaran Akun';
+        cardSub.textContent = 'Kompetensi Keahlian Rekayasa Perangkat Lunak (RPL)';
+        cap.innerHTML = 'Sudah punya akun? <a onclick="gantiTab(\'login\')">Masuk ke akun</a>';
+
+        // Update Side Showcase Content ke RPL
+        sideBadge.classList.add('rpl-mode');
+        badgeText.textContent = 'KOMPETENSI KEAHLIAN RPL';
+        sideTitle.innerHTML = 'Rekayasa <span class="highlight-text">Perangkat Lunak</span>';
+        sideDesc.textContent = 'Portal pendaftaran resmi siswa dan orang tua siswa jurusan RPL SMKN 1 Sumedang (Nesas Tech).';
       }
     }
 
@@ -354,7 +1184,7 @@
     // Auto redirect jika session aktif
     const userSession = getSessionUser();
     if (userSession) {
-      window.location.href = userSession.role === 'admin' ? 'admin.html' : 'dashboard.html';
+      window.location.href = getDashboardUrlByRole(userSession.role);
     }
 
     // Login Google
@@ -364,11 +1194,11 @@
       try {
         const result = await loginDenganGoogle();
         const userData = await prosesLoginUser(result.user);
-        window.location.href = userData.role === 'admin' ? 'admin.html' : 'dashboard.html';
+        window.location.href = getDashboardUrlByRole(userData.role);
       } catch (e) {
         loading(false);
         if (e.code === 'auth/unauthorized-domain') {
-          tampilNotif('Harap tambahkan 127.0.0.1 ke Firebase Console -> Auth -> Settings -> Authorized domains.', 'error');
+          tampilNotif('Harap tambahkan domain lokal ke Firebase Console -> Auth -> Settings -> Authorized domains.', 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
           tampilNotif('Login dibatalkan.', 'error');
         } else {
@@ -388,20 +1218,20 @@
       try {
         const fbUser = await loginDenganEmail(email, pass);
         const userData = await prosesLoginUser(fbUser);
-        window.location.href = userData.role === 'admin' ? 'admin.html' : 'dashboard.html';
+        window.location.href = getDashboardUrlByRole(userData.role);
       } catch (err) {
         loading(false);
         if (err.code === 'auth/email-not-verified') {
           tampilNotif('Email belum diverifikasi. Cek kotak masuk atau spam di Gmail Anda.', 'error');
         } else if (err.code === 'auth/operation-not-allowed') {
-          tampilNotif('PENTING: Nyalakan Email/Password di Firebase Console -> Authentication -> Sign-in method -> Email/Password -> Enable.', 'error');
+          tampilNotif('PENTING: Aktifkan Email/Password di Firebase Console -> Authentication -> Sign-in method.', 'error');
         } else {
           tampilNotif('Email atau kata sandi salah / belum terdaftar.', 'error');
         }
       }
     }
 
-    // Register Email
+    // Register Email (Khusus Siswa & Wali Murid RPL: Hanya 3 Isian)
     async function handleRegisterEmail(e) {
       e.preventDefault();
       bersihkanNotif();
@@ -413,7 +1243,7 @@
       try {
         await registerDenganEmail(email, pass, nama);
         loading(false);
-        tampilNotif('Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik verifikasi, lalu masuk.', 'success');
+        tampilNotif('Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik tautan verifikasi, lalu masuk.', 'success');
         document.getElementById('formRegister').reset();
         setTimeout(() => gantiTab('login'), 3500);
       } catch (err) {

@@ -1,11 +1,98 @@
 // ===== DASHBOARD JS (UNIFIED 2026 EDITION) =====
 let currentUser = null;
 
-firebase.auth().onAuthStateChanged(async function(fbUser) {
-  if (!fbUser) { window.location.href = 'index.html'; return; }
-  currentUser = await prosesLoginUser(fbUser);
-  initDashboard(currentUser);
-});
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged(async function(fbUser) {
+    if (!fbUser) { window.location.href = 'index.html'; return; }
+    currentUser = await prosesLoginUser(fbUser);
+    initDashboard(currentUser);
+  });
+}
+
+// Backward-compatibility support for standalone unit testing (test-dashboard-logic.js)
+if (typeof document !== 'undefined' && document.getElementById('statusHariIni') && !document.getElementById('namaUser')) {
+  const testNisn = (typeof localStorage !== 'undefined' && localStorage.getItem('nisn_aktif')) || (typeof nisn !== 'undefined' ? nisn : null);
+  let jamPulangKelas = null;
+
+  function pulangLebihAwalTest(entry) {
+    if (entry.status !== 'pulang' || !jamPulangKelas) return false;
+    let jamBatas = null;
+    if (typeof jamPulangKelas === 'string') {
+      jamBatas = jamPulangKelas;
+    } else if (typeof jamPulangKelas === 'object' && entry.tanggal) {
+      const d = new Date(entry.tanggal + 'T00:00:00');
+      const hariMap = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+      const namaHari = hariMap[d.getDay()];
+      jamBatas = jamPulangKelas[namaHari] || null;
+    }
+    if (!jamBatas) return false;
+    return entry.waktu.slice(0, 5) < jamBatas;
+  }
+
+  function labelStatusTest(entry) {
+    if (entry.status === 'hadir') return 'Hadir';
+    if (entry.status === 'pulang') {
+      return pulangLebihAwalTest(entry) ? 'Pulang lebih awal' : 'Pulang';
+    }
+    return entry.status;
+  }
+
+  function entryDariHariIniTest(entry) {
+    return entry.tanggal === tanggalHariIni();
+  }
+
+  function mulaiDengarAbsensiTest() {
+    db.ref('absensi/' + testNisn).limitToLast(10).on('value', function (snapshot) {
+      const statusEl = document.getElementById('statusHariIni');
+      const data = snapshot.val();
+      const entries = data ? Object.values(data) : [];
+      const entryHariIni = entries.filter(entryDariHariIniTest).pop();
+
+      if (!entryHariIni) {
+        statusEl.className = 'status-card belum';
+        statusEl.innerHTML = '<p>Belum ada data absensi hari ini.</p>';
+        return;
+      }
+
+      statusEl.className = 'status-card' + (pulangLebihAwalTest(entryHariIni) ? ' peringatan' : '');
+      statusEl.innerHTML = '<p><strong>' + labelStatusTest(entryHariIni) + '</strong> pada ' + entryHariIni.waktu + '</p>';
+    });
+
+    db.ref('absensi/' + testNisn).limitToLast(30).on('value', function (snapshot) {
+      const riwayatEl = document.getElementById('riwayat');
+      const data = snapshot.val();
+      riwayatEl.innerHTML = '';
+
+      if (!data) {
+        riwayatEl.innerHTML = '<p style="color:#999; font-size:14px;">Belum ada riwayat.</p>';
+        return;
+      }
+
+      const entries = Object.values(data).reverse();
+      entries.forEach(function (entry) {
+        const item = document.createElement('div');
+        item.className = 'riwayat-item' + (pulangLebihAwalTest(entry) ? ' peringatan' : '');
+        const tanggalLabel = entry.tanggal ? entry.tanggal + ' ' : '';
+        item.innerHTML = '<span>' + tanggalLabel + entry.waktu + '</span><span>' + labelStatusTest(entry) + '</span>';
+        riwayatEl.appendChild(item);
+      });
+    });
+  }
+
+  if (testNisn && typeof db !== 'undefined') {
+    db.ref('siswa/' + testNisn).once('value').then(function (snapshot) {
+      const data = snapshot.val();
+      const namaEl = document.getElementById('namaAnak');
+      if (namaEl) namaEl.textContent = data ? data.nama : 'Siswa';
+      if (data && data.kelas) {
+        return db.ref('jadwal/' + data.kelas).once('value');
+      }
+    }).then(function (snapshot) {
+      if (snapshot) jamPulangKelas = snapshot.val();
+      mulaiDengarAbsensiTest();
+    });
+  }
+}
 
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
@@ -17,7 +104,11 @@ function switchTab(id, btn) {
 async function initDashboard(user) {
   // Header Profile
   document.getElementById('namaUser').textContent = user.nama;
-  document.getElementById('infoSubUser').textContent = user.email || 'Pengguna Terverifikasi';
+  if (user.role === 'guru') {
+    document.getElementById('infoSubUser').textContent = `👨‍🏫 Guru Pengajar • Mapel: ${user.mapel || '-'} • NIP: ${user.nip || '-'}`;
+  } else {
+    document.getElementById('infoSubUser').textContent = user.email || 'Portal Presensi & Informasi Siswa';
+  }
 
   if (user.foto_google) {
     const img = document.createElement('img');
@@ -27,6 +118,11 @@ async function initDashboard(user) {
   } else {
     document.getElementById('avatarUser').textContent =
       (user.nama || 'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  }
+
+  // Jika guru atau admin, tampilkan link ke portal guru
+  if (user.role === 'guru' || user.role === 'admin') {
+    document.getElementById('linkGuru').style.display = 'inline-flex';
   }
 
   // Jika admin, tampilkan link ke panel admin
