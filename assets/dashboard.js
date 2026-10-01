@@ -398,29 +398,38 @@ function renderPantauKelas() {
 // BERANDA OVERVIEW LOGIC (SMART HUB 2026)
 // ===================================================================
 let clockInterval = null;
+let rekapUserCache = [];
+let rekapRangeAktif = 'hari_ini';
 
 function initBerandaOverview(user) {
-  // 1. Greeting Dinamis
+  const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru');
+
+  // 1. Banner Pengunjung
+  const bannerGuest = document.getElementById('bannerGuestVerifikasi');
+  if (bannerGuest) {
+    bannerGuest.style.display = isPengunjung ? 'flex' : 'none';
+  }
+
+  // 2. Greeting Dinamis
   const hour = new Date().getHours();
   let salam = 'Selamat Pagi';
   if (hour >= 11 && hour < 15) salam = 'Selamat Siang';
   else if (hour >= 15 && hour < 18) salam = 'Selamat Sore';
   else if (hour >= 18 || hour < 5) salam = 'Selamat Malam';
 
-  const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
   const greetingEl = document.getElementById('greetingText');
-  if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}! 👋`;
-
   const subtextEl = document.getElementById('greetingSubtext');
-  if (subtextEl) {
-    if (user.kelas) {
-      subtextEl.textContent = `Siswa Kelas ${user.kelas} • NISN: ${user.nisn || '-'}`;
-    } else {
-      subtextEl.textContent = `Selamat datang di Smart School Presensi Hub.`;
-    }
+
+  if (isPengunjung) {
+    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Pengunjung'}! 👋`;
+    if (subtextEl) subtextEl.textContent = `Status Akun: Pengunjung / Tamu Sekolah (Belum Terverifikasi)`;
+  } else {
+    const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
+    if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}! 👋`;
+    if (subtextEl) subtextEl.textContent = `Siswa Kelas ${user.kelas || 'XII RPL 2'} • NISN: ${user.nisn || '-'}`;
   }
 
-  // 2. Live Real-Time Clock
+  // 3. Live Real-Time Clock
   if (clockInterval) clearInterval(clockInterval);
   const updateClock = () => {
     const now = new Date();
@@ -434,7 +443,8 @@ function initBerandaOverview(user) {
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
 
-  // 3. Status Presensi Pribadi & Smart Student ID Card Realtime
+  // 4. Status Presensi Pribadi & Smart Student ID Card Realtime
+  const cardEl   = document.getElementById('smartStudentCard');
   const cardNama = document.getElementById('smartCardNama');
   const cardMeta = document.getElementById('smartCardMeta');
   const cardImg  = document.getElementById('smartCardImg');
@@ -446,66 +456,269 @@ function initBerandaOverview(user) {
   const iconEl   = document.getElementById('personalStatusIcon');
   const textEl   = document.getElementById('personalStatusText');
 
-  const nisnAktif = user.nisn || '0098263610';
-  const kelasAktif = user.kelas || 'XII RPL 2';
-  const namaAktif = user.nama || 'M. IHSAN ATHALLAH';
+  if (isPengunjung) {
+    // Mode Pengunjung: Tampilkan kartu tamu, jangan bocorkan data siswa lain
+    if (cardNama) cardNama.textContent = user.nama || 'Tamu Pengunjung';
+    if (cardMeta) cardMeta.textContent = 'Status: Pengunjung • Belum Tertaut NISN';
+    if (cardImg) {
+      if (user.foto_google) {
+        cardImg.src = user.foto_google;
+      } else {
+        cardImg.onerror = null;
+        cardImg.src = '';
+        if (cardImg.parentElement) cardImg.parentElement.textContent = (user.nama || 'P').charAt(0).toUpperCase();
+      }
+    }
+    if (cardUid) cardUid.textContent = 'BELUM TERDAFTAR';
+    if (cardBadge && cardIcon && cardText) {
+      cardBadge.className = 'smart-card-status-badge belum';
+      cardIcon.textContent = '⚡';
+      cardText.textContent = 'Akun Pengunjung (Belum Terverifikasi)';
+    }
+    if (cardEl) {
+      cardEl.style.cursor = 'pointer';
+      cardEl.title = 'Klik untuk Konfirmasi NISN Siswa di Menu Profil';
+      cardEl.onclick = function() {
+        if (typeof bukaModalProfilDenganTabNisn === 'function') bukaModalProfilDenganTabNisn();
+        else bukaModalProfil();
+      };
+    }
 
-  if (cardNama) cardNama.textContent = namaAktif;
-  if (cardMeta) cardMeta.textContent = `NISN: ${nisnAktif} • ${kelasAktif}`;
-  if (cardImg) {
-    cardImg.src = `assets/foto/${nisnAktif}.jpg`;
-    cardImg.alt = namaAktif;
-  }
-  if (cardUid) {
-    cardUid.textContent = (nisnAktif === '0082104129') ? '04D4E5F6' : '04A1B2C3';
-  }
+    // Inisialisasi status rekap untuk pengunjung
+    initRekapPresensiSiswa(user);
+  } else {
+    // Mode Siswa Terverifikasi
+    const nisnAktif = user.nisn;
+    const kelasAktif = user.kelas || 'XII RPL 2';
+    const namaAktif = user.nama;
 
-  const today = tanggalHariIni();
-  db.ref(`presensi_jam/${kelasAktif}/${today}`).on('value', snapshot => {
-    const data = snapshot.val() || {};
-    let waktuHadir = null;
-    let statusDitemukan = null;
+    if (cardNama) cardNama.textContent = namaAktif;
+    if (cardMeta) cardMeta.textContent = `NISN: ${nisnAktif} • ${kelasAktif}`;
+    if (cardImg) {
+      cardImg.src = `assets/foto/${nisnAktif}.jpg`;
+      cardImg.alt = namaAktif;
+    }
+    if (cardUid) {
+      cardUid.textContent = (nisnAktif === '0082104129') ? '04D4E5F6' : '04A1B2C3';
+    }
+    if (cardEl) {
+      cardEl.style.cursor = 'default';
+      cardEl.onclick = null;
+      cardEl.title = '';
+    }
 
-    // Cari status kehadiran di semua jam pelajaran aktif (1 s/d 8)
-    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(jam => {
-      if (data[jam] && data[jam][nisnAktif]) {
-        waktuHadir = data[jam][nisnAktif].waktu;
-        statusDitemukan = data[jam][nisnAktif].status;
+    const today = tanggalHariIni();
+    db.ref(`presensi_jam/${kelasAktif}/${today}`).on('value', snapshot => {
+      const data = snapshot.val() || {};
+      let waktuHadir = null;
+      let statusDitemukan = null;
+
+      ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(jam => {
+        if (data[jam] && data[jam][nisnAktif]) {
+          waktuHadir = data[jam][nisnAktif].waktu;
+          statusDitemukan = data[jam][nisnAktif].status;
+        }
+      });
+
+      const isHadir = (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha'));
+      const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
+
+      if (cardBadge && cardIcon && cardText) {
+        if (isHadir) {
+          cardBadge.className = 'smart-card-status-badge hadir';
+          cardIcon.textContent = '✓';
+          cardText.textContent = `Terverifikasi Hadir${jamStr}`;
+        } else {
+          cardBadge.className = 'smart-card-status-badge belum';
+          cardIcon.textContent = '⚡';
+          cardText.textContent = 'Belum Scan Hari Ini';
+        }
+      }
+
+      if (pillEl && iconEl && textEl) {
+        if (isHadir) {
+          pillEl.className = 'personal-status-pill hadir';
+          iconEl.textContent = '✓';
+          textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
+        } else {
+          pillEl.className = 'personal-status-pill belum';
+          iconEl.textContent = '⚡';
+          textEl.textContent = 'Belum Scan Kartu Hari Ini';
+        }
       }
     });
 
-    const isHadir = (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha'));
-    const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
+    // Inisialisasi Rekap & Riwayat Presensi Siswa (1 Tahun Terakhir)
+    initRekapPresensiSiswa(user);
+  }
 
-    // Update Smart Student ID Card
-    if (cardBadge && cardIcon && cardText) {
-      if (isHadir) {
-        cardBadge.className = 'smart-card-status-badge hadir';
-        cardIcon.textContent = '✓';
-        cardText.textContent = `Terverifikasi Hadir${jamStr}`;
-      } else {
-        cardBadge.className = 'smart-card-status-badge belum';
-        cardIcon.textContent = '⚡';
-        cardText.textContent = 'Belum Scan Hari Ini';
-      }
+  // 5. Inisialisasi Class Chips Selector
+  initClassChipsSelector(user);
+}
+
+// ===================================================================
+// SISTEM REKAPITULASI PRESENSI 1 TAHUN TERAKHIR
+// ===================================================================
+function initRekapPresensiSiswa(user) {
+  const alertPengunjung = document.getElementById('rekapPengunjungAlert');
+  const contentSiswa = document.getElementById('rekapContentSiswa');
+
+  if (!user || !user.nisn) {
+    if (alertPengunjung) alertPengunjung.style.display = 'flex';
+    if (contentSiswa) contentSiswa.style.display = 'none';
+    return;
+  }
+
+  if (alertPengunjung) alertPengunjung.style.display = 'none';
+  if (contentSiswa) contentSiswa.style.display = 'block';
+
+  db.ref('absensi/' + user.nisn).on('value', snapshot => {
+    const rawData = snapshot.val() || {};
+    let list = [];
+    if (Array.isArray(rawData)) {
+      list = rawData.filter(Boolean);
+    } else {
+      list = Object.values(rawData);
     }
 
-    // Update Pill jika ada
-    if (pillEl && iconEl && textEl) {
-      if (isHadir) {
-        pillEl.className = 'personal-status-pill hadir';
-        iconEl.textContent = '✓';
-        textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
-      } else {
-        pillEl.className = 'personal-status-pill belum';
-        iconEl.textContent = '⚡';
-        textEl.textContent = 'Belum Scan Kartu Hari Ini';
-      }
+    list.sort((a, b) => {
+      const da = (a.tanggal || '') + ' ' + (a.waktu || '');
+      const db_ = (b.tanggal || '') + ' ' + (b.waktu || '');
+      return db_.localeCompare(da);
+    });
+
+    rekapUserCache = list;
+    renderRekapSiswaUI(rekapRangeAktif);
+  });
+}
+
+function filterRekapSiswa(range, btn) {
+  document.querySelectorAll('#tabRekap .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  rekapRangeAktif = range;
+  renderRekapSiswaUI(range);
+}
+
+function renderRekapSiswaUI(range) {
+  const tbody = document.getElementById('tabelRekapSiswaBody');
+  const labelPeriode = document.getElementById('rekapPeriodeLabel');
+  if (!tbody) return;
+
+  const today = tanggalHariIni();
+  const dToday = new Date(today + 'T00:00:00');
+
+  let filtered = [];
+  let periodeText = '';
+
+  if (range === 'hari_ini') {
+    filtered = rekapUserCache.filter(e => e.tanggal === today);
+    periodeText = 'Data Hari Ini (' + formatTanggalIndo(today) + ')';
+  } else if (range === '7_hari') {
+    const d7 = new Date(dToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filtered = rekapUserCache.filter(e => {
+      if (!e.tanggal) return false;
+      const d = new Date(e.tanggal + 'T00:00:00');
+      return d >= d7 && d <= dToday;
+    });
+    periodeText = '7 Hari Terakhir';
+  } else if (range === 'bulan_ini') {
+    const yyyymm = today.slice(0, 7);
+    filtered = rekapUserCache.filter(e => e.tanggal && e.tanggal.startsWith(yyyymm));
+    periodeText = 'Bulan Ini (' + yyyymm + ')';
+  } else {
+    // 1 Tahun Terakhir / Penuh
+    const d365 = new Date(dToday.getTime() - 365 * 24 * 60 * 60 * 1000);
+    filtered = rekapUserCache.filter(e => {
+      if (!e.tanggal) return false;
+      const d = new Date(e.tanggal + 'T00:00:00');
+      return d >= d365 && d <= dToday;
+    });
+    periodeText = 'Tahun Ajaran 2025/2026 (1 Tahun Terakhir)';
+  }
+
+  if (labelPeriode) labelPeriode.textContent = periodeText + ' • Total ' + filtered.length + ' Catatan';
+
+  // Hitung Statistik
+  let hitungHadir = 0;
+  let hitungSakit = 0;
+  let hitungIzin = 0;
+  let hitungAlpha = 0;
+
+  const perTanggal = {};
+  filtered.forEach(e => {
+    const t = e.tanggal || 'unknown';
+    if (!perTanggal[t]) perTanggal[t] = [];
+    perTanggal[t].push(e);
+  });
+
+  Object.values(perTanggal).forEach(logs => {
+    const statuses = logs.map(l => l.status);
+    if (statuses.includes('hadir') || statuses.includes('pulang')) {
+      hitungHadir++;
+    } else if (statuses.includes('sakit')) {
+      hitungSakit++;
+    } else if (statuses.includes('dispensasi') || statuses.includes('ijin') || statuses.includes('ijin_kegiatan')) {
+      hitungIzin++;
+    } else {
+      hitungAlpha++;
     }
   });
 
-  // 4. Inisialisasi Class Chips Selector (Tidak todong jadwal otomatis)
-  initClassChipsSelector(user);
+  const totalHari = hitungHadir + hitungSakit + hitungIzin + hitungAlpha;
+  const persen = totalHari > 0 ? Math.round((hitungHadir / totalHari) * 100) : 100;
+
+  const statPersen = document.getElementById('rekapStatPersen');
+  const statHadir  = document.getElementById('rekapStatHadir');
+  const statSakit  = document.getElementById('rekapStatSakit');
+  const statIzin   = document.getElementById('rekapStatIzin');
+  const statAlpha  = document.getElementById('rekapStatAlpha');
+
+  if (statPersen) statPersen.textContent = persen + '%';
+  if (statHadir) statHadir.textContent = hitungHadir + ' Hari';
+  if (statSakit) statSakit.textContent = hitungSakit + ' Hari';
+  if (statIzin) statIzin.textContent = hitungIzin + ' Hari';
+  if (statAlpha) statAlpha.textContent = hitungAlpha + ' Hari';
+
+  tbody.innerHTML = '';
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon">📅</div><p>Belum ada catatan presensi pada periode ini.</p></td></tr>';
+    return;
+  }
+
+  const tglKeys = Object.keys(perTanggal).sort().reverse();
+  tglKeys.forEach(tgl => {
+    const logs = perTanggal[tgl];
+    const logMasuk = logs.find(l => l.status === 'hadir') || logs[0];
+    const logPulang = logs.find(l => l.status === 'pulang');
+
+    const dt = new Date(tgl + 'T00:00:00');
+    const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][dt.getDay()] || '-';
+
+    let statusPill = '<span class="status-pill sudah">✓ Hadir</span>';
+    let ket = 'Hadir tepat waktu di kelas via kartu RFID';
+
+    if (logMasuk.status === 'sakit') {
+      statusPill = '<span class="status-pill pending">🤒 Sakit</span>';
+      ket = logMasuk.keterangan || 'Surat keterangan dokter terlampir';
+    } else if (logMasuk.status === 'dispensasi' || logMasuk.status === 'ijin_kegiatan') {
+      statusPill = '<span class="status-pill pending">📄 Izin / Dispen</span>';
+      ket = logMasuk.keterangan || 'Dispensasi kegiatan kejuaraan/sekolah';
+    } else if (logMasuk.status === 'alpha') {
+      statusPill = '<span class="status-pill belum">✗ Alpha</span>';
+      ket = 'Tanpa keterangan';
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${tgl}</strong></td>
+      <td>${namaHari}</td>
+      <td><span style="color:#059669; font-weight:700;">${logMasuk.waktu ? logMasuk.waktu.slice(0, 5) + ' WIB' : '-'}</span></td>
+      <td><span style="color:#6366f1; font-weight:700;">${logPulang && logPulang.waktu ? logPulang.waktu.slice(0, 5) + ' WIB' : '15:30 WIB'}</span></td>
+      <td>${statusPill}</td>
+      <td style="font-size:12.5px; color:#64748b;">${ket}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 function initClassChipsSelector(user) {

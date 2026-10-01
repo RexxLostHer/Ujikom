@@ -37,6 +37,9 @@
     <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
       <span>👥</span> Pantau Presensi Kelas
     </button>
+    <button class="view-tab-btn" id="btnTabRekap" onclick="switchTab('tabRekap', this)">
+      <span>📊</span> Rekap & Riwayat Presensi
+    </button>
     <button class="view-tab-btn" id="btnTabPerijinan" onclick="switchTab('tabPerijinan', this)">
       <span>📝</span> Ajukan Izin / Dispen
     </button>
@@ -50,6 +53,18 @@
 
   <!-- ===== TAB 0: BERANDA (PORTAL AKADEMIK & IOT RFID TERPADU) ===== -->
   <div id="tabBeranda" class="tab-content active">
+
+    <!-- BANNER KHUSUS PENGUNJUNG / AKUN BELUM TERVERIFIKASI -->
+    <div class="guest-verification-banner" id="bannerGuestVerifikasi" style="display:none;">
+      <div class="guest-banner-left">
+        <div class="guest-banner-icon">ℹ️</div>
+        <div class="guest-banner-text">
+          <strong>Akun Pengunjung / Belum Terverifikasi</strong>
+          <p>Akun ini belum ditautkan dengan data resmi siswa SMKN 1 Sumedang. Tautkan NISN Anda untuk mengaktifkan kartu pintar digital dan pencatatan presensi RFID.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN Siswa</button>
+    </div>
     
     <!-- Hero Profile Greeting & Smart Student ID Card RFID -->
     <div class="hero-welcome">
@@ -412,6 +427,82 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ===== TAB 5: REKAP & RIWAYAT PRESENSI (1 TAHUN TERAKHIR) ===== -->
+  <div id="tabRekap" class="tab-content" style="display:none;">
+    <div class="content-header" style="margin-bottom:20px;">
+      <h2>📊 Rekap & Riwayat Presensi</h2>
+      <p>Tinjau akumulasi kehadiran, persentase kehadiran setahun terakhir, serta log presensi harian RFID.</p>
+    </div>
+
+    <!-- Peringatan jika Pengunjung -->
+    <div id="rekapPengunjungAlert" class="guest-verification-banner" style="display:none;">
+      <div class="guest-banner-left">
+        <div class="guest-banner-icon">🔒</div>
+        <div class="guest-banner-text">
+          <strong>Riwayat Presensi Belum Tersedia</strong>
+          <p>Fitur ini memerlukan verifikasi identitas siswa. Silakan konfirmasi NISN Anda melalui tombol di samping.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN</button>
+    </div>
+
+    <div id="rekapContentSiswa">
+      <!-- STATISTIK KEHADIRAN 1 TAHUN -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px;">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; text-align:center;">
+          <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Persentase Hadir</span>
+          <h3 id="rekapStatPersen" style="font-size:24px; font-weight:800; color:#4f46e5; margin-top:4px;">0%</h3>
+        </div>
+        <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:14px; padding:16px; text-align:center;">
+          <span style="font-size:11.5px; font-weight:700; color:#065f46; text-transform:uppercase;">Total Hadir</span>
+          <h3 id="rekapStatHadir" style="font-size:24px; font-weight:800; color:#059669; margin-top:4px;">0 Hari</h3>
+        </div>
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:14px; padding:16px; text-align:center;">
+          <span style="font-size:11.5px; font-weight:700; color:#1e40af; text-transform:uppercase;">Sakit</span>
+          <h3 id="rekapStatSakit" style="font-size:24px; font-weight:800; color:#2563eb; margin-top:4px;">0 Hari</h3>
+        </div>
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:16px; text-align:center;">
+          <span style="font-size:11.5px; font-weight:700; color:#92400e; text-transform:uppercase;">Izin / Dispen</span>
+          <h3 id="rekapStatIzin" style="font-size:24px; font-weight:800; color:#d97706; margin-top:4px;">0 Hari</h3>
+        </div>
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:16px; text-align:center;">
+          <span style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">Alpha</span>
+          <h3 id="rekapStatAlpha" style="font-size:24px; font-weight:800; color:#dc2626; margin-top:4px;">0 Hari</h3>
+        </div>
+      </div>
+
+      <!-- FILTER RENTANG WAKTU -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="filter-btn active" data-range="hari_ini" onclick="filterRekapSiswa('hari_ini', this)">Hari Ini</button>
+          <button type="button" class="filter-btn" data-range="7_hari" onclick="filterRekapSiswa('7_hari', this)">7 Hari Terakhir</button>
+          <button type="button" class="filter-btn" data-range="bulan_ini" onclick="filterRekapSiswa('bulan_ini', this)">Bulan Ini</button>
+          <button type="button" class="filter-btn" data-range="setahun" onclick="filterRekapSiswa('setahun', this)">1 Tahun Terakhir (TA 2025/2026)</button>
+        </div>
+        <span id="rekapPeriodeLabel" style="font-size:13px; font-weight:700; color:#64748b;">Memuat data...</span>
+      </div>
+
+      <!-- TABEL RIWAYAT LOG PRESENSI -->
+      <div style="overflow-x:auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px;">
+        <table class="data-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Hari</th>
+              <th>Jam Masuk (Tap)</th>
+              <th>Jam Pulang</th>
+              <th>Status Kehadiran</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="tabelRekapSiswaBody">
+            <tr><td colspan="6" class="empty-state"><p>Memuat riwayat kehadiran...</p></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>

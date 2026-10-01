@@ -20,9 +20,10 @@ function bukaModalProfil() {
   const fbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
   const isGoogle = (fbUser && fbUser.providerData && fbUser.providerData.some(p => p.providerId === 'google.com')) || (user.foto_google && !user.isPasswordAuth);
   
+  const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru');
   const initial = (user.nama ? user.nama.charAt(0) : (user.email ? user.email.charAt(0) : '?')).toUpperCase();
-  const roleLabel = user.role === 'admin' ? 'Administrator Sistem' : (user.role === 'guru' ? 'Guru Pengajar RPL' : 'Siswa / Wali Murid RPL');
-  const roleBadgeClass = user.role === 'admin' ? 'role-admin' : (user.role === 'guru' ? 'role-guru' : 'role-siswa');
+  const roleLabel = user.role === 'admin' ? 'Administrator Sistem' : (user.role === 'guru' ? 'Guru Pengajar RPL' : (isPengunjung ? 'Pengunjung / Tamu Sekolah' : 'Siswa SMKN 1 Sumedang'));
+  const roleBadgeClass = user.role === 'admin' ? 'role-admin' : (user.role === 'guru' ? 'role-guru' : (isPengunjung ? 'role-pengunjung' : 'role-siswa'));
 
   overlay.innerHTML = `
     <div class="profile-modal-card">
@@ -46,6 +47,33 @@ function bukaModalProfil() {
         <!-- Notifikasi Feedback -->
         <div id="profilNotifBox" class="profile-notif-box" style="display:none;"></div>
 
+        <!-- Section 0: Konfirmasi NISN Siswa (Khusus Akun Pengunjung / Belum Terverifikasi) -->
+        ${isPengunjung ? `
+        <div class="profile-section-box" style="border: 1.5px solid #818cf8; background: #f8faff;">
+          <h3 class="profile-section-title" style="color: #3730a3;">🎓 Konfirmasi & Tautkan Identitas Siswa</h3>
+          <p style="font-size: 13px; color: #4338ca; line-height: 1.5; margin-bottom: 14px;">
+            Akun Anda saat ini tercatat sebagai <strong>Pengunjung</strong>. Masukkan 10 digit NISN Anda untuk menghubungkan akun ini dengan data resmi siswa SMKN 1 Sumedang serta mengaktifkan kartu pintar presensi RFID.
+          </p>
+          <div class="profile-field-row">
+            <label for="inputNisnVerif">Nomor Induk Siswa Nasional (NISN)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Contoh: 0098263610 atau 0082104129" maxlength="12"
+                     onkeydown="if(event.key==='Enter') handlePeriksaNisn()">
+              <button type="button" class="profile-btn-action" onclick="handlePeriksaNisn()" id="btnCekNisn">🔍 Periksa</button>
+            </div>
+          </div>
+          <div id="boxPreviewSiswa" style="display:none; margin-top:14px; padding:14px; background:#ffffff; border:1px solid #c7d2fe; border-radius:12px;">
+            <div style="font-size:11.5px; font-weight:700; color:#6366f1; text-transform:uppercase; margin-bottom:4px;">Data Siswa Ditemukan:</div>
+            <div style="font-size:15px; font-weight:800; color:#1e293b;" id="previewNamaSiswa">-</div>
+            <div style="font-size:13px; color:#64748b; margin-top:2px;" id="previewMetaSiswa">-</div>
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanNisn()" id="btnTautkanNisn" style="background:#059669; border-color:#059669;">✓ Ya, Hubungkan Akun Saya</button>
+              <button type="button" class="profile-btn-secondary" onclick="batalPreviewNisn()">Batal</button>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
         <!-- Section 1: Informasi Akun -->
         <div class="profile-section-box">
           <h3 class="profile-section-title">👤 Informasi Akun & Identitas</h3>
@@ -61,7 +89,10 @@ function bukaModalProfil() {
           ${user.nisn ? `
           <div class="profile-field-row">
             <label>Nomor Induk Siswa (NISN)</label>
-            <div class="profile-read-only-field">${user.nisn}</div>
+            <div class="profile-read-only-field">
+              <span>${user.nisn}</span>
+              <span class="profile-verified-pill">✓ Terdaftar</span>
+            </div>
           </div>
           ` : ''}
 
@@ -93,6 +124,7 @@ function bukaModalProfil() {
               <button class="profile-btn-action" onclick="handleSimpanNamaProfil()" id="btnSimpanNama">Simpan</button>
             </div>
           </div>
+        </div>
         </div>
 
         <!-- Section 2: Keamanan & Kata Sandi -->
@@ -284,3 +316,79 @@ async function handleKirimResetEmailProfil() {
     tampilProfilNotif(err.message || 'Gagal mengirim link reset kata sandi.', 'error');
   }
 }
+
+// ===== HANDLER KONFIRMASI NISN SISWA =====
+let dataSiswaTerverifikasiCache = null;
+
+async function handlePeriksaNisn() {
+  const inp = document.getElementById('inputNisnVerif');
+  const btn = document.getElementById('btnCekNisn');
+  const box = document.getElementById('boxPreviewSiswa');
+  if (!inp || !btn) return;
+
+  const nisn = inp.value.trim();
+  if (!nisn) {
+    tampilProfilNotif('Harap masukkan NISN Anda.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Memeriksa...';
+  try {
+    const hasil = await periksaNisnSiswa(nisn);
+    dataSiswaTerverifikasiCache = hasil;
+    document.getElementById('previewNamaSiswa').textContent = hasil.nama;
+    document.getElementById('previewMetaSiswa').textContent = `NISN: ${hasil.nisn} • Kelas: ${hasil.kelas} • Jurusan: ${hasil.jurusan}`;
+    if (box) box.style.display = 'block';
+    tampilProfilNotif('Data siswa ditemukan! Silakan klik tombol konfirmasi di bawah.', 'success');
+  } catch (err) {
+    if (box) box.style.display = 'none';
+    dataSiswaTerverifikasiCache = null;
+    tampilProfilNotif(err.message || 'Gagal memeriksa NISN.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Periksa';
+  }
+}
+
+function batalPreviewNisn() {
+  const box = document.getElementById('boxPreviewSiswa');
+  if (box) box.style.display = 'none';
+  dataSiswaTerverifikasiCache = null;
+}
+
+async function handleKonfirmasiTautkanNisn() {
+  if (!dataSiswaTerverifikasiCache) {
+    tampilProfilNotif('Harap periksa NISN terlebih dahulu.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnTautkanNisn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Menghubungkan...';
+  }
+
+  try {
+    const updated = await konfirmasiTautkanNisn(dataSiswaTerverifikasiCache.nisn);
+    tampilProfilNotif('Selamat! Akun Anda berhasil ditautkan sebagai Siswa (' + updated.nama + '). Halaman akan diperbarui...', 'success');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1200);
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '✓ Ya, Hubungkan Akun Saya';
+    }
+    tampilProfilNotif(err.message || 'Gagal menautkan NISN.', 'error');
+  }
+}
+
+function bukaModalProfilDenganTabNisn() {
+  bukaModalProfil();
+  setTimeout(() => {
+    const inp = document.getElementById('inputNisnVerif');
+    if (inp) inp.focus();
+  }, 300);
+}
+

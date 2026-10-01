@@ -168,7 +168,14 @@
               <select id="rekapKelas" onchange="muatRekapPresensi()"></select>
             </div>
             <div class="form-group">
-              <label>Tanggal</label>
+              <label>Periode Rekapitulasi</label>
+              <select id="rekapPeriodeAdmin" onchange="togglePeriodeAdmin()">
+                <option value="harian">Harian (Per Tanggal)</option>
+                <option value="tahunan">1 Tahun Terakhir (TA 2025/2026)</option>
+              </select>
+            </div>
+            <div class="form-group" id="groupRekapTanggal">
+              <label>Tanggal Presensi</label>
               <input type="date" id="rekapTanggal" onchange="muatRekapPresensi()">
             </div>
           </div>
@@ -229,7 +236,7 @@
         <div style="overflow-x:auto;">
           <table class="data-table" id="tabelRekapCetak">
             <thead>
-              <tr>
+              <tr id="rekapTheadRow">
                 <th>No</th>
                 <th>NISN</th>
                 <th>Nama Siswa</th>

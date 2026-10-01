@@ -56,7 +56,7 @@ async function registerDenganEmail(email, password, nama) {
     kelas: mapped ? mapped.kelas : null,
     nip: mapped ? mapped.nip : null,
     mapel: mapped ? mapped.mapel : null,
-    role: (mapped && (mapped.role === 'guru' || mapped.role === 'admin')) ? mapped.role : 'siswa',
+    role: (mapped && (mapped.role === 'guru' || mapped.role === 'admin')) ? mapped.role : (mapped && mapped.nisn ? 'siswa' : 'pengunjung'),
     foto_google: null
   };
 
@@ -146,10 +146,10 @@ async function prosesLoginUser(firebaseUser) {
       userData = {
         uid: uid,
         email: email,
-        nama: firebaseUser.displayName || (email ? email.split('@')[0] : 'Pengguna'),
+        nama: firebaseUser.displayName || (email ? email.split('@')[0] : 'Pengunjung'),
         nisn: null,
         kelas: null,
-        role: 'siswa',
+        role: 'pengunjung',
         foto_google: firebaseUser.photoURL || null
       };
     }
@@ -160,6 +160,10 @@ async function prosesLoginUser(firebaseUser) {
       console.warn('Penyimpanan users/{uid} dilewati:', errWrite.message);
     }
   } else {
+    // Normalisasi: jika bukan guru/admin dan belum punya NISN, pastikan role adalah pengunjung
+    if (userData.role !== 'admin' && userData.role !== 'guru' && !userData.nisn) {
+      userData.role = 'pengunjung';
+    }
     if (firebaseUser.photoURL && userData.foto_google !== firebaseUser.photoURL) {
       try {
         await db.ref('users/' + uid + '/foto_google').set(firebaseUser.photoURL);
@@ -170,6 +174,85 @@ async function prosesLoginUser(firebaseUser) {
 
   setSessionUser(userData);
   return userData;
+}
+
+// 5b. Validasi dan Konfirmasi NISN Siswa
+async function periksaNisnSiswa(nisn) {
+  const cleanNisn = (nisn || '').trim();
+  if (!cleanNisn) throw new Error('Harap masukkan 10 digit NISN.');
+  if (!/^\d{8,12}$/.test(cleanNisn)) throw new Error('Format NISN tidak valid (harus 8-12 angka).');
+
+  // Cek di master data siswa
+  const snapSiswa = await db.ref('siswa/' + cleanNisn).once('value');
+  const siswa = snapSiswa.val();
+  if (!siswa) {
+    throw new Error('NISN ' + cleanNisn + ' tidak terdaftar di database SMKN 1 Sumedang. Pastikan NISN sudah benar atau hubungi admin sekolah.');
+  }
+
+  // Cek apakah NISN sudah diklaim oleh akun lain
+  const snapClaimed = await db.ref('nisn_claimed/' + cleanNisn).once('value');
+  const claimData = snapClaimed.val();
+  const currentFbUser = firebase.auth().currentUser;
+
+  if (claimData) {
+    const claimedUid = typeof claimData === 'string' ? claimData : claimData.uid;
+    if (currentFbUser && claimedUid !== currentFbUser.uid) {
+      const emailMask = claimData.email ? ' (' + claimData.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') + ')' : '';
+      throw new Error('NISN ' + cleanNisn + ' telah ditautkan ke akun lain' + emailMask + '. Hubungi tata usaha jika ini kekeliruan.');
+    }
+  }
+
+  return {
+    nisn: cleanNisn,
+    nama: siswa.nama,
+    kelas: siswa.kelas || 'XII RPL 2',
+    jurusan: siswa.jurusan || 'Rekayasa Perangkat Lunak',
+    email_terdaftar: siswa.email || null
+  };
+}
+
+async function konfirmasiTautkanNisn(nisn) {
+  const currentFbUser = firebase.auth().currentUser;
+  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
+
+  const dataSiswa = await periksaNisnSiswa(nisn);
+  const uid = currentFbUser.uid;
+  const email = currentFbUser.email || '';
+  const encoded = encodeEmail(email);
+
+  const updatedData = {
+    uid: uid,
+    email: email,
+    nama: dataSiswa.nama,
+    nisn: dataSiswa.nisn,
+    kelas: dataSiswa.kelas,
+    role: 'siswa',
+    nisn_verified_at: new Date().toISOString(),
+    foto_google: currentFbUser.photoURL || null
+  };
+
+  await db.ref('users/' + uid).update(updatedData);
+
+  await db.ref('nisn_claimed/' + dataSiswa.nisn).set({
+    uid: uid,
+    email: email,
+    nama: dataSiswa.nama,
+    waktu: new Date().toISOString()
+  });
+
+  if (encoded) {
+    try {
+      await db.ref('email_mapping/' + encoded).set({
+        nama: dataSiswa.nama,
+        nisn: dataSiswa.nisn,
+        kelas: dataSiswa.kelas,
+        role: 'siswa'
+      });
+    } catch (e) {}
+  }
+
+  setSessionUser(updatedData);
+  return updatedData;
 }
 
 function getDashboardUrlByRole(role) {

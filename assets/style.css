@@ -1337,6 +1337,67 @@ body {
 .profile-role-badge.role-admin { background: #fee2e2; color: #b91c1c; }
 .profile-role-badge.role-guru { background: #e0e7ff; color: #4338ca; }
 .profile-role-badge.role-siswa { background: #ecfdf5; color: #065f46; }
+.profile-role-badge.role-pengunjung { background: #fef3c7; color: #b45309; }
+
+/* Guest Banner */
+.guest-verification-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fde68a;
+  border-left: 5px solid #f59e0b;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+}
+
+.guest-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.guest-banner-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.guest-banner-text strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 2px;
+}
+
+.guest-banner-text p {
+  font-size: 13px;
+  color: #b45309;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.btn-guest-verify {
+  background: #d97706;
+  color: #ffffff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+}
+
+.btn-guest-verify:hover {
+  background: #b45309;
+  transform: translateY(-1px);
+}
 
 .profile-auth-tag {
   font-size: 11px;
