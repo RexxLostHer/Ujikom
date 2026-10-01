@@ -434,47 +434,75 @@ function initBerandaOverview(user) {
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
 
-  // 3. Status Presensi Pribadi Hari Ini
-  const pillEl = document.getElementById('personalStatusPill');
-  const iconEl = document.getElementById('personalStatusIcon');
-  const textEl = document.getElementById('personalStatusText');
+  // 3. Status Presensi Pribadi & Smart Student ID Card Realtime
+  const cardNama = document.getElementById('smartCardNama');
+  const cardMeta = document.getElementById('smartCardMeta');
+  const cardImg  = document.getElementById('smartCardImg');
+  const cardBadge = document.getElementById('smartCardBadge');
+  const cardIcon = document.getElementById('smartCardStatusIcon');
+  const cardText = document.getElementById('smartCardStatusText');
+  const cardUid  = document.getElementById('smartCardUidTag');
+  const pillEl   = document.getElementById('personalStatusPill');
+  const iconEl   = document.getElementById('personalStatusIcon');
+  const textEl   = document.getElementById('personalStatusText');
 
-  if (user.nisn && user.kelas) {
-    const today = tanggalHariIni();
-    db.ref(`presensi_jam/${user.kelas}/${today}`).on('value', snapshot => {
-      const data = snapshot.val() || {};
-      let waktuHadir = null;
-      let statusDitemukan = null;
+  const nisnAktif = user.nisn || '0098263610';
+  const kelasAktif = user.kelas || 'XII RPL 2';
+  const namaAktif = user.nama || 'M. IHSAN ATHALLAH';
 
-      // Cari status dari jam 1 s/d 4
-      ['1', '2', '3', '4'].forEach(jam => {
-        if (data[jam] && data[jam][user.nisn]) {
-          waktuHadir = data[jam][user.nisn].waktu;
-          statusDitemukan = data[jam][user.nisn].status;
-        }
-      });
+  if (cardNama) cardNama.textContent = namaAktif;
+  if (cardMeta) cardMeta.textContent = `NISN: ${nisnAktif} • ${kelasAktif}`;
+  if (cardImg) {
+    cardImg.src = `assets/foto/${nisnAktif}.jpg`;
+    cardImg.alt = namaAktif;
+  }
+  if (cardUid) {
+    cardUid.textContent = (nisnAktif === '0082104129') ? '04D4E5F6' : '04A1B2C3';
+  }
 
-      if (pillEl && iconEl && textEl) {
-        if (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha')) {
-          pillEl.className = 'personal-status-pill hadir';
-          iconEl.textContent = '✓';
-          const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
-          textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
-        } else {
-          pillEl.className = 'personal-status-pill belum';
-          iconEl.textContent = '⚡';
-          textEl.textContent = 'Belum Scan Kartu Hari Ini';
-        }
+  const today = tanggalHariIni();
+  db.ref(`presensi_jam/${kelasAktif}/${today}`).on('value', snapshot => {
+    const data = snapshot.val() || {};
+    let waktuHadir = null;
+    let statusDitemukan = null;
+
+    // Cari status kehadiran di semua jam pelajaran aktif (1 s/d 8)
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(jam => {
+      if (data[jam] && data[jam][nisnAktif]) {
+        waktuHadir = data[jam][nisnAktif].waktu;
+        statusDitemukan = data[jam][nisnAktif].status;
       }
     });
-  } else {
-    // Mode ortu / umum
-    if (pillEl && iconEl && textEl) {
-      pillEl.className = 'personal-status-pill hadir';
-      iconEl.textContent = '👁️';
-      textEl.textContent = 'Mode Pemantau Aktif';
+
+    const isHadir = (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha'));
+    const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
+
+    // Update Smart Student ID Card
+    if (cardBadge && cardIcon && cardText) {
+      if (isHadir) {
+        cardBadge.className = 'smart-card-status-badge hadir';
+        cardIcon.textContent = '✓';
+        cardText.textContent = `Terverifikasi Hadir${jamStr}`;
+      } else {
+        cardBadge.className = 'smart-card-status-badge belum';
+        cardIcon.textContent = '⚡';
+        cardText.textContent = 'Belum Scan Hari Ini';
+      }
     }
-  }
+
+    // Update Pill jika ada
+    if (pillEl && iconEl && textEl) {
+      if (isHadir) {
+        pillEl.className = 'personal-status-pill hadir';
+        iconEl.textContent = '✓';
+        textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
+      } else {
+        pillEl.className = 'personal-status-pill belum';
+        iconEl.textContent = '⚡';
+        textEl.textContent = 'Belum Scan Kartu Hari Ini';
+      }
+    }
+  });
 
   // 4. Inisialisasi Class Chips Selector (Tidak todong jadwal otomatis)
   initClassChipsSelector(user);
@@ -482,63 +510,65 @@ function initBerandaOverview(user) {
 
 function initClassChipsSelector(user) {
   const container = document.getElementById('classChipsList');
-  if (!container) return;
+  const containerTab = document.getElementById('classChipsListTab');
 
   db.ref('siswa').once('value').then(snap => {
     const data = snap.val() || {};
     const kelasSet = new Set(Object.values(data).map(s => s.kelas).filter(Boolean));
+    kelasSet.add('XII RPL 2');
     const listKelas = Array.from(kelasSet).sort();
 
-    container.innerHTML = '';
-    if (listKelas.length === 0) {
-      container.innerHTML = '<span style="color:#94a3b8; font-size:13px;">Belum ada kelas terdaftar.</span>';
-      return;
-    }
+    [container, containerTab].forEach(cnt => {
+      if (!cnt) return;
+      cnt.innerHTML = '';
+      listKelas.forEach(kelas => {
+        const chip = document.createElement('button');
+        chip.className = 'class-chip';
+        chip.textContent = kelas;
+        chip.onclick = function() {
+          document.querySelectorAll('.class-chip').forEach(c => {
+            if (c.textContent === kelas) c.classList.add('active');
+            else c.classList.remove('active');
+          });
+          muatJadwalBeranda(kelas);
+        };
+        cnt.appendChild(chip);
+      });
 
-    listKelas.forEach(kelas => {
-      const chip = document.createElement('button');
-      chip.className = 'class-chip';
-      chip.textContent = kelas;
-      chip.onclick = function() {
-        document.querySelectorAll('.class-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        muatJadwalBeranda(kelas);
-      };
-      container.appendChild(chip);
-    });
-
-    // Jika user punya kelas terdaftar, kita highlight chip miliknya tapi biarkan dia bebas klik kelas lain
-    if (user.kelas && kelasSet.has(user.kelas)) {
-      const defaultChip = Array.from(container.children).find(c => c.textContent === user.kelas);
+      const targetKelas = user.kelas || 'XII RPL 2';
+      const defaultChip = Array.from(cnt.children).find(c => c.textContent === targetKelas);
       if (defaultChip) {
         defaultChip.classList.add('active');
-        muatJadwalBeranda(user.kelas);
       }
-    }
+    });
+
+    muatJadwalBeranda(user.kelas || 'XII RPL 2');
   });
 }
 
 function muatJadwalBeranda(kelas) {
   const gridEl = document.getElementById('homeScheduleGrid');
+  const gridTabEl = document.getElementById('tabScheduleGrid');
   const badgePulang = document.getElementById('homeJamPulangBadge');
+  const badgePulangTab = document.getElementById('tabJamPulangBadge');
   const bannerMandiri = document.getElementById('bannerKelasMandiri');
   const bannerText = document.getElementById('bannerMandiriText');
 
-  if (badgePulang) {
-    badgePulang.textContent = `Memeriksa ${kelas}...`;
-  }
+  if (badgePulang) badgePulang.textContent = `Memeriksa ${kelas}...`;
+  if (badgePulangTab) badgePulangTab.textContent = `Memeriksa ${kelas}...`;
 
   // Jadwal Pelajaran & Auto-Sync Jam Pulang
   db.ref(`jadwal_pelajaran/${kelas}`).on('value', snapshot => {
-    if (!gridEl) return;
     const data = snapshot.val() || {};
-    gridEl.innerHTML = '';
+    [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = ''; });
 
     const jamKeys = Object.keys(data).sort((a, b) => Number(a) - Number(b));
     if (jamKeys.length === 0) {
-      gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${kelas}.</div>`;
+      const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${kelas}.</div>`;
+      [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = emptyHtml; });
       if (bannerMandiri) bannerMandiri.style.display = 'none';
-      if (badgePulang) badgePulang.textContent = `Jam Pulang ${kelas}: -`;
+      if (badgePulang) badgePulang.textContent = `Jam Pulang: -`;
+      if (badgePulangTab) badgePulangTab.textContent = `Jam Pulang: -`;
       return;
     }
 
@@ -547,17 +577,15 @@ function muatJadwalBeranda(kelas) {
     const mapelTerakhir = data[keyTerakhir];
     const jamSelesaiAkhir = (mapelTerakhir && mapelTerakhir.selesai) ? mapelTerakhir.selesai : '15:15';
 
-    if (badgePulang) {
-      badgePulang.textContent = `Jam Pulang ${kelas}: ${jamSelesaiAkhir} WIB`;
-    }
+    const jamPulangStr = `Jam Pulang ${kelas}: ${jamSelesaiAkhir} WIB`;
+    if (badgePulang) badgePulang.textContent = jamPulangStr;
+    if (badgePulangTab) badgePulangTab.textContent = jamPulangStr;
 
     const jamSkrg = jamSekarang();
     const listJamMandiri = [];
 
     jamKeys.forEach(jamKe => {
       const p = data[jamKe];
-      const card = document.createElement('div');
-      card.className = 'schedule-card';
 
       // 1. Bersihkan nama mapel dari sisa teks statis lama
       const namaMapelBersih = (p.mapel || 'Pelajaran')
@@ -572,19 +600,23 @@ function muatJadwalBeranda(kelas) {
 
       // 3. Cek apakah jam ini aktif sekarang
       const isActive = p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg <= p.selesai;
-      if (isActive) {
-        card.classList.add('is-active');
-      }
 
-      card.innerHTML = `
+      const cardHtml = `
         ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}
         <div class="schedule-jam">Jam Ke-${jamKe}</div>
         <div class="schedule-mapel">${namaMapelBersih}</div>
         <div class="schedule-waktu">⏰ ${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
+        ${p.guru ? `<div style="font-size:12px;color:#64748b;margin-top:4px;">👨‍🏫 ${p.guru}</div>` : ''}
         ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;">⚡ Guru Berhalangan (Mandiri)</span></div>' : ''}
       `;
 
-      gridEl.appendChild(card);
+      [gridEl, gridTabEl].forEach(g => {
+        if (!g) return;
+        const card = document.createElement('div');
+        card.className = 'schedule-card' + (isActive ? ' is-active' : '');
+        card.innerHTML = cardHtml;
+        g.appendChild(card);
+      });
     });
 
     // 4. Atur tampilan banner secara dinamis

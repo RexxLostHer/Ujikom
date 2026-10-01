@@ -203,6 +203,28 @@
           </div>
         </div>
 
+        <!-- KOP SURAT RESMI UNTUK CETAK LAPORAN -->
+        <div class="print-only kop-surat" id="kopSuratPrint">
+          <div class="kop-header">
+            <img src="assets/logo-nesas.png" alt="Logo Nesas SMKN 1 Sumedang" class="kop-logo">
+            <div class="kop-text">
+              <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT</h4>
+              <h4>DINAS PENDIDIKAN</h4>
+              <h3>CABANG DINAS PENDIDIKAN WILAYAH VIII</h3>
+              <h2>SMK NEGERI 1 SUMEDANG</h2>
+              <p class="kop-alamat">Jl. Mayor Abdurakhman No. 209 Telp./Fax (0261) 201777 Kotak Pos 35 Sumedang 45322</p>
+              <p class="kop-kontak">Website: www.smkn1sumedang.sch.id &bull; Pos-el: smkn1smd@gmail.com</p>
+            </div>
+            <img src="assets/logo-rpl.png" alt="Logo RPL" class="kop-logo kop-logo-rpl">
+          </div>
+          <div class="kop-divider-thick"></div>
+          <div class="kop-divider-thin"></div>
+          <div class="kop-judul-dokumen">
+            <h3>LAPORAN REKAPITULASI PRESENSI HARIAN RFID SISWA</h3>
+            <p id="printPeriodeInfo">Kelas: - | Tanggal: -</p>
+          </div>
+        </div>
+
         <!-- TABEL REKAP -->
         <div style="overflow-x:auto;">
           <table class="data-table" id="tabelRekapCetak">
@@ -222,6 +244,24 @@
               <tr><td colspan="8" class="empty-state"><div class="empty-icon">📊</div><p>Pilih kelas dan klik "Tampilkan Rekap" untuk memuat data.</p></td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- TANDA TANGAN RESMI CETAK LAPORAN -->
+        <div class="print-only ttd-container" id="ttdContainerPrint">
+          <div class="ttd-box">
+            <p>Mengetahui,</p>
+            <p>Kepala SMK Negeri 1 Sumedang</p>
+            <div class="ttd-space"></div>
+            <p><strong>H. Dedi Junaedi, M.Pd.</strong></p>
+            <p>NIP. 19680512 199403 1 004</p>
+          </div>
+          <div class="ttd-box">
+            <p id="ttdTanggalPrint">Sumedang, -</p>
+            <p>Guru Pembimbing / Penguji UKK</p>
+            <div class="ttd-space"></div>
+            <p><strong>Rexx LostHer, S.Kom.</strong></p>
+            <p>NIP. - / Penguji Ahli RPL</p>
+          </div>
         </div>
       </div>
 
@@ -277,12 +317,16 @@
           <div class="form-row">
             <div class="form-group">
               <label>UID Kartu RFID</label>
-              <input type="text" id="kartuId" placeholder="Misal: 0067787337">
+              <input type="text" id="kartuId" placeholder="Misal: 04A1B2C3 atau tap kartu">
             </div>
             <div class="form-group">
               <label>Siswa Pemilik Kartu</label>
               <select id="kartuNisn"></select>
             </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="pilihSiswaQuick('0098263610')">⚡ Pilih M. Ihsan Athallah (0098263610)</button>
+            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="pilihSiswaQuick('0082104129')">⚡ Pilih Rizky Ramadani (0082104129)</button>
           </div>
           <div class="form-actions">
             <button class="btn-primary" onclick="submitKartu()">🪪 Simpan Mapping</button>

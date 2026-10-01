@@ -1264,3 +1264,222 @@ body {
   width: 18px;
   height: 18px;
 }
+
+/* ============================================================
+   OFFICIAL SMKN 1 SUMEDANG LETTERHEAD & PRINT SYSTEM
+   ============================================================ */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    font-size: 11pt !important;
+  }
+
+  /* Sembunyikan elemen dashboard & form admin */
+  .admin-appbar,
+  .admin-sidebar,
+  .content-header,
+  .admin-form-card,
+  .form-actions,
+  #notifPerijinanBanner,
+  #rekapSummaryCards,
+  .btn-row-edit,
+  .btn-row-delete,
+  .tab-panel:not(#tab-rekap) {
+    display: none !important;
+  }
+
+  .admin-layout {
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .admin-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .admin-content {
+    padding: 0 !important;
+  }
+
+  #tab-rekap {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* KOP SURAT */
+  .kop-surat {
+    margin-bottom: 18px;
+    text-align: center;
+  }
+
+  .kop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 6px;
+  }
+
+  .kop-logo {
+    width: 75px;
+    height: 75px;
+    object-fit: contain;
+  }
+
+  .kop-logo-rpl {
+    width: 75px;
+    height: 75px;
+    object-fit: contain;
+  }
+
+  .kop-text {
+    flex: 1;
+    text-align: center;
+  }
+
+  .kop-text h4 {
+    font-size: 13pt;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+  }
+
+  .kop-text h3 {
+    font-size: 13.5pt;
+    font-weight: 800;
+    margin: 1px 0;
+    line-height: 1.25;
+  }
+
+  .kop-text h2 {
+    font-size: 16pt;
+    font-weight: 900;
+    margin: 2px 0 4px 0;
+    letter-spacing: 0.04em;
+  }
+
+  .kop-text .kop-alamat,
+  .kop-text .kop-kontak {
+    font-size: 8.5pt;
+    color: #222;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .kop-divider-thick {
+    border-top: 3px solid #000;
+    margin-top: 4px;
+    margin-bottom: 1.5px;
+  }
+
+  .kop-divider-thin {
+    border-top: 1px solid #000;
+    margin-bottom: 14px;
+  }
+
+  .kop-judul-dokumen {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .kop-judul-dokumen h3 {
+    font-size: 13pt;
+    font-weight: 800;
+    text-decoration: underline;
+    margin: 0 0 3px 0;
+  }
+
+  .kop-judul-dokumen p {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  /* TABEL CETAK */
+  #tabelRekapCetak {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 8px !important;
+  }
+
+  #tabelRekapCetak th,
+  #tabelRekapCetak td {
+    border: 1px solid #000 !important;
+    padding: 6px 8px !important;
+    font-size: 10pt !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  #tabelRekapCetak th {
+    background-color: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: 800 !important;
+    text-align: center !important;
+  }
+
+  #tabelRekapCetak td:first-child,
+  #tabelRekapCetak td:nth-child(2),
+  #tabelRekapCetak td:nth-child(4),
+  #tabelRekapCetak td:nth-child(5),
+  #tabelRekapCetak td:nth-child(6),
+  #tabelRekapCetak td:nth-child(7),
+  #tabelRekapCetak td:nth-child(8) {
+    text-align: center !important;
+  }
+
+  .status-pill {
+    border: none !important;
+    padding: 0 !important;
+    font-weight: 700 !important;
+    font-size: 10pt !important;
+  }
+
+  /* TANDA TANGAN */
+  .ttd-container {
+    display: flex !important;
+    justify-content: space-between;
+    margin-top: 40px;
+    page-break-inside: avoid;
+  }
+
+  .ttd-box {
+    width: 250px;
+    text-align: center;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  .ttd-box p {
+    margin: 0;
+  }
+
+  .ttd-space {
+    height: 65px;
+  }
+}

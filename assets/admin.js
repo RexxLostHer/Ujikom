@@ -309,6 +309,14 @@ function cetakLaporanPresensi() {
     alert('Tampilkan rekap terlebih dahulu sebelum mencetak.');
     return;
   }
+  const infoEl = document.getElementById('printPeriodeInfo');
+  if (infoEl) {
+    infoEl.textContent = 'Kelas: ' + (kelas || '-') + ' | Tanggal: ' + (tgl || '-');
+  }
+  const ttdEl = document.getElementById('ttdTanggalPrint');
+  if (ttdEl) {
+    ttdEl.textContent = 'Sumedang, ' + (tgl || '-');
+  }
   window.print();
 }
 
@@ -513,6 +521,25 @@ function hapusKartu(idKartu) {
   db.ref('kartu/' + idKartu).remove()
     .then(function () { showMsg('kartuMsg', 'Mapping dihapus.', 'success'); })
     .catch(function (err) { showMsg('kartuMsg', 'Gagal: ' + err.message, 'error'); });
+}
+
+function pilihSiswaQuick(nisn) {
+  const sel = document.getElementById('kartuNisn');
+  if (sel) {
+    sel.value = nisn;
+    if (!sel.value && siswaCache[nisn]) {
+      const opt = document.createElement('option');
+      opt.value = nisn;
+      opt.textContent = nisn + ' — ' + (siswaCache[nisn].nama || '');
+      sel.appendChild(opt);
+      sel.value = nisn;
+    }
+  }
+  const kartuInput = document.getElementById('kartuId');
+  if (kartuInput) {
+    kartuInput.focus();
+    kartuInput.placeholder = 'Tempelkan kartu RFID sekarang...';
+  }
 }
 
 function renderKartuTable(data) {

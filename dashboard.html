@@ -43,26 +43,75 @@
     <button class="view-tab-btn" id="btnTabRiwayatIjin" onclick="switchTab('tabRiwayatIjin', this)">
       <span>💬</span> Status Perizinan
     </button>
+    <button class="view-tab-btn" id="btnTabJadwalTataTertib" onclick="switchTab('tabJadwalTataTertib', this)">
+      <span>📚</span> Jadwal & Tata Tertib
+    </button>
   </div>
 
   <!-- ===== TAB 0: BERANDA (PORTAL AKADEMIK & IOT RFID TERPADU) ===== -->
   <div id="tabBeranda" class="tab-content active">
     
-    <!-- Hero Profile Greeting & Live Clock -->
+    <!-- Hero Profile Greeting & Smart Student ID Card RFID -->
     <div class="hero-welcome">
       <div class="hero-welcome-left">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(79,70,229,0.1);border:1px solid rgba(99,102,241,0.25);padding:5px 12px;border-radius:999px;font-size:11.5px;font-weight:800;color:#4338ca;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">
+          <span>🏫</span> SMK NEGERI 1 SUMEDANG • REKAYASA PERANGKAT LUNAK
+        </div>
         <h2 id="greetingText">Selamat Datang! 👋</h2>
         <p id="greetingSubtext">Portal Terpadu Presensi Siswa & Informasi Akademik SMK.</p>
         <div class="hero-clock" id="liveClockWidget">
           <span>🕒</span> <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
         </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;background:#fff;border:1px solid #e2e8f0;padding:4px 10px;border-radius:8px;color:#475569;">
+            📡 Gateway RFID Siaga
+          </span>
+          <span style="font-size:12px;font-weight:700;background:#eff6ff;border:1px solid #bfdbfe;padding:4px 10px;border-radius:8px;color:#1e40af;">
+            🏫 Kelas XII RPL 2
+          </span>
+          <span style="font-size:12px;font-weight:700;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 10px;border-radius:8px;color:#065f46;">
+            🛡️ Anti-Passback Aktif
+          </span>
+        </div>
       </div>
       <div class="hero-welcome-right">
-        <div class="personal-status-pill belum" id="personalStatusPill">
-          <div class="status-icon-wrap" id="personalStatusIcon">⚡</div>
-          <div>
-            <div class="status-text-title">Status Presensi Anda</div>
-            <div class="status-text-val" id="personalStatusText">Memeriksa Kehadiran...</div>
+        <!-- KARTU PELAJAR PINTAR RFID DIGITAL (REAL-TIME SMART ID) -->
+        <div class="smart-student-card" id="smartStudentCard">
+          <div class="smart-card-top">
+            <div class="smart-card-brand">
+              <img src="assets/logo-nesas.png" alt="Logo NESAS">
+              <div class="smart-card-brand-text">
+                SMK NEGERI 1 SUMEDANG<br>
+                <span style="opacity:0.75; font-size:9px;">KOMPETENSI KEAHLIAN RPL</span>
+              </div>
+            </div>
+            <div class="smart-card-nfc-indicator">
+              <span class="pulsing-dot" style="width:6px;height:6px;"></span>
+              <span>RFID 13.56 MHz</span>
+            </div>
+          </div>
+          
+          <div class="smart-card-chip"></div>
+          
+          <div class="smart-card-main">
+            <div class="smart-card-avatar" id="smartCardAvatar">
+              <img id="smartCardImg" src="assets/foto/0098263610.jpg" alt="Foto Siswa" onerror="this.onerror=null; this.src=''; this.parentElement.textContent='MI';">
+            </div>
+            <div class="smart-card-info">
+              <div class="smart-card-name" id="smartCardNama">M. IHSAN ATHALLAH</div>
+              <div class="smart-card-meta" id="smartCardMeta">NISN: 0098263610 • XII RPL 2</div>
+              <div style="margin-top:8px;">
+                <div class="smart-card-status-badge belum" id="smartCardBadge">
+                  <span id="smartCardStatusIcon">⚡</span>
+                  <span id="smartCardStatusText">Belum Scan Hari Ini</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="smart-card-barcode-row">
+            <span>UID: <strong id="smartCardUidTag">04A1B2C3</strong></span>
+            <span>SMART CARD PRESENSI NESAS</span>
           </div>
         </div>
       </div>
@@ -97,10 +146,10 @@
         <div class="academic-service-desc">Monitoring realtime siswa yang sudah tap kartu dan belum scan di kelas.</div>
       </div>
 
-      <div class="academic-service-card" onclick="pilihTabCekJadwal()">
+      <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
           <div class="academic-service-icon" style="background:#ecfdf5; color:#059669;">📚</div>
-          <span class="academic-service-arrow">↓</span>
+          <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Jadwal Pelajaran</div>
         <div class="academic-service-desc">Lihat mata pelajaran aktif, jam ke berapa, dan info guru pengajar.</div>
@@ -124,19 +173,19 @@
         <div class="academic-service-desc">Pantau konfirmasi dan catatan verifikasi persetujuan surat izin.</div>
       </div>
 
-      <div class="academic-service-card" onclick="bukaModalJadwalPulang()">
+      <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
           <div class="academic-service-icon" style="background:#fee2e2; color:#dc2626;">⏰</div>
-          <span class="academic-service-arrow">ⓘ</span>
+          <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Jam Pulang Sekolah</div>
         <div class="academic-service-desc">Ketentuan waktu kepulangan resmi berdasarkan sinkronisasi jadwal.</div>
       </div>
 
-      <div class="academic-service-card" onclick="bukaModalTataTertib()">
+      <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
           <div class="academic-service-icon" style="background:#f1f5f9; color:#475569;">📜</div>
-          <span class="academic-service-arrow">ⓘ</span>
+          <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Tata Tertib Presensi</div>
         <div class="academic-service-desc">Pedoman penggunaan kartu RFID dan kepatuhan jam kehadiran siswa.</div>
@@ -296,6 +345,73 @@
   <div id="tabRiwayatIjin" class="tab-content" style="display:none;">
     <div class="section-title">Riwayat Pengajuan & Konfirmasi Izin</div>
     <div id="daftarPerijinanSaya"></div>
+  </div>
+
+  <!-- ===== TAB 4: JADWAL & TATA TERTIB SEKOLAH ===== -->
+  <div id="tabJadwalTataTertib" class="tab-content" style="display:none;">
+    
+    <!-- Hero Header Jadwal & Disiplin -->
+    <div class="home-section-card">
+      <div class="home-section-header">
+        <div>
+          <h3>📚 Jadwal Pelajaran & Monitoring Jam Sekolah</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
+            Jadwal kegiatan belajar mengajar resmi Kompetensi Keahlian Rekayasa Perangkat Lunak SMKN 1 Sumedang.
+          </p>
+        </div>
+        <span id="tabJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4f46e5; background:#eff6ff; padding:6px 14px; border-radius:10px;">
+          ⏰ Jam Pulang: 15:30 WIB
+        </span>
+      </div>
+
+      <!-- Class selector -->
+      <div style="margin-top:14px; margin-bottom:12px;">
+        <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Rombongan Belajar (Kelas):</label>
+        <div class="class-chip-container" id="classChipsListTab">
+          <!-- Render dinamis via JS -->
+        </div>
+      </div>
+
+      <div class="schedule-timeline-grid" id="tabScheduleGrid">
+        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:16px;">
+          Silakan pilih kelas di atas untuk melihat jam pelajaran hari ini.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tata Tertib & Ketentuan Presensi RFID -->
+    <div class="home-section-card" style="margin-top:24px;">
+      <div class="home-section-header">
+        <h3>📜 Tata Tertib & Pedoman Presensi RFID SMKN 1 Sumedang</h3>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-top:12px;">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+          <div style="font-size:14.5px; font-weight:800; color:#1e293b; margin-bottom:6px;">1. Kewajiban Kartu Fisik</div>
+          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+            Setiap siswa wajib membawa kartu pelajar RFID masing-masing setiap hari sekolah. Kartu tidak boleh dipindahtangankan, dipinjamkan, atau dirusak.
+          </p>
+        </div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+          <div style="font-size:14.5px; font-weight:800; color:#1e293b; margin-bottom:6px;">2. Waktu Tap Gerbang & Kelas</div>
+          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+            Tap Masuk dilakukan di gerbang sekolah maksimal pukul <strong>07.00 WIB</strong>. Keterlambatan akan tercatat otomatis dengan tanda merah di laporan presensi.
+          </p>
+        </div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+          <div style="font-size:14.5px; font-weight:800; color:#b91c1c; margin-bottom:6px;">3. Larangan Titip Kartu</div>
+          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+            Sistem dilengkapi sensor <em>Anti-Passback Hardware</em>. Menitipkan kartu kepada orang lain dinyatakan sebagai pelanggaran berat dengan sanksi kedisiplinan sekolah.
+          </p>
+        </div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+          <div style="font-size:14.5px; font-weight:800; color:#059669; margin-bottom:6px;">4. Pengajuan Izin Sakit / Dinas</div>
+          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+            Siswa yang berhalangan hadir wajib melampirkan surat dokter atau surat tugas resmi melalui menu <strong>Pengajuan Izin</strong> di portal ini paling lambat pukul 08.00 WIB.
+          </p>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
