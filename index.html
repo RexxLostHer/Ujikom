@@ -980,12 +980,16 @@
       <div class="daevora-auth-card emerald-glow" id="cardRegisterWrap">
         
         <div class="card-top-header">
-          <div class="card-logo-thumb" style="border-color: rgba(16, 185, 129, 0.4);">
-            <img src="assets/logo-rpl.png" alt="Logo Jurusan RPL Nesas">
+          <div class="card-logo-thumb" style="border-color: rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.08);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
           </div>
           <div class="card-title-group">
             <h2>Pendaftaran Akun</h2>
-            <p>Khusus Siswa & Wali Murid Rekayasa Perangkat Lunak (RPL)</p>
+            <p>Jaringan Presensi & Akademik Siswa / Wali Murid RPL</p>
           </div>
         </div>
 
@@ -1151,14 +1155,14 @@
     let scene, camera, renderer;
     let login3DGroup, register3DGroup, gridPlane, particleField;
     let bluePointLight, purplePointLight, laserRing;
-    let regWireframe, regCrystal, regGimbal1, regGimbal2, regGimbal3, regSatellites = [];
+    let cyberGlobeData = null;
     let isDragging = false, previousMouseX = 0, currentRotationY = 0;
     let mouseTiltX = 0, mouseTiltY = 0, curTiltX = 0, curTiltY = 0;
 
     const CAPTIONS = [
       [0.00, '01 — BLUEPRINT GATEWAY'],
       [0.22, '02 — RFID LOGIN PORTAL'],
-      [0.58, '03 — RPL QUANTUM MATRIX'],
+      [0.58, '03 — CYBER INTERNET GLOBE'],
       [0.88, '04 — TERMINAL & PRESENSI']
     ];
 
@@ -1282,87 +1286,211 @@
       login3DGroup.add(laserRing);
 
       // ==========================================
-      // MODEL 2: REGISTER (QUANTUM POLYHEDRON & RPL MATRIX)
-      // Visual 100% Berbeda Khusus Registrasi RPL
+      // MODEL 2: REGISTER (HOLOGRAPHIC CYBER INTERNET GLOBE & GLOBAL DATA NETWORK)
       // ==========================================
       register3DGroup = new THREE.Group();
       register3DGroup.scale.set(0.001, 0.001, 0.001);
       scene.add(register3DGroup);
 
-      // Wireframe Icosahedron Neon Emerald
-      const wireGeom = new THREE.IcosahedronGeometry(2.4, 1);
-      const wireMat = new THREE.MeshStandardMaterial({
-        color: 0x10b981,
-        wireframe: true,
-        emissive: 0x059669,
-        emissiveIntensity: 0.8,
-        roughness: 0.2
-      });
-      regWireframe = new THREE.Mesh(wireGeom, wireMat);
-      register3DGroup.add(regWireframe);
+      const globeRadius = 2.45;
 
-      // Inner Crystal Violet
-      const crystalGeom = new THREE.OctahedronGeometry(1.85, 0);
-      const crystalMat = new THREE.MeshStandardMaterial({
-        color: 0x7c3aed,
-        emissive: 0x4c1d95,
-        emissiveIntensity: 0.6,
-        metalness: 0.9,
-        roughness: 0.15,
+      // 1. Globe Dot Matrix (Fibonacci Golden Spiral Sphere)
+      const dotCount = 1350;
+      const dotGeom = new THREE.BufferGeometry();
+      const dotPositions = new Float32Array(dotCount * 3);
+      const goldenPhi = Math.PI * (3 - Math.sqrt(5));
+
+      for (let i = 0; i < dotCount; i++) {
+        const y = 1 - (i / (dotCount - 1)) * 2;
+        const rAtY = Math.sqrt(Math.max(0, 1 - y * y));
+        const theta = goldenPhi * i;
+        dotPositions[i * 3] = Math.cos(theta) * rAtY * globeRadius;
+        dotPositions[i * 3 + 1] = y * globeRadius;
+        dotPositions[i * 3 + 2] = Math.sin(theta) * rAtY * globeRadius;
+      }
+      dotGeom.setAttribute('position', new THREE.BufferAttribute(dotPositions, 3));
+
+      const dotMat = new THREE.PointsMaterial({
+        color: 0x00f0ff,
+        size: 0.055,
         transparent: true,
         opacity: 0.85
       });
-      regCrystal = new THREE.Mesh(crystalGeom, crystalMat);
-      register3DGroup.add(regCrystal);
+      const dotsMesh = new THREE.Points(dotGeom, dotMat);
+      register3DGroup.add(dotsMesh);
 
-      // Central RPL Logo Emblem
-      const texRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'RPL INNOVATION', 'SMKN 1 SUMEDANG', '#10b981', '#064e3b', '#031f17');
-      const rplPlate = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: texRpl,
-        roughness: 0.2,
-        metalness: 0.4,
-        transparent: true,
-        opacity: 0.95
-      }));
-      rplPlate.scale.set(0.68, 0.68, 0.68);
-      rplPlate.position.z = 0.02;
-      register3DGroup.add(rplPlate);
+      // 2. Wireframe Meridian & Latitude Lines
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.35 });
+      const equatorMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 });
 
-      const rplPlateBack = rplPlate.clone();
-      rplPlateBack.position.z = -0.02;
-      rplPlateBack.rotation.y = Math.PI;
-      register3DGroup.add(rplPlateBack);
-
-      // Triple Quantum Gimbal Rings
-      const gMat1 = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.75 });
-      regGimbal1 = new THREE.Mesh(new THREE.TorusGeometry(3.1, 0.03, 16, 80), gMat1);
-      regGimbal1.rotation.x = Math.PI / 3;
-      register3DGroup.add(regGimbal1);
-
-      const gMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.7 });
-      regGimbal2 = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.025, 16, 80), gMat2);
-      regGimbal2.rotation.y = Math.PI / 4;
-      register3DGroup.add(regGimbal2);
-
-      const gMat3 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
-      regGimbal3 = new THREE.Mesh(new THREE.TorusGeometry(3.9, 0.02, 16, 80), gMat3);
-      regGimbal3.rotation.z = Math.PI / 6;
-      register3DGroup.add(regGimbal3);
-
-      // Orbiting Satellite Data Nodes
-      regSatellites = [];
-      const satGeom = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-      for (let i = 0; i < 6; i++) {
-        const satMat = new THREE.MeshStandardMaterial({
-          color: (i % 2 === 0) ? 0x10b981 : 0xa855f7,
-          emissive: (i % 2 === 0) ? 0x059669 : 0x7c3aed,
-          emissiveIntensity: 0.7,
-          metalness: 0.8
-        });
-        const satMesh = new THREE.Mesh(satGeom, satMat);
-        register3DGroup.add(satMesh);
-        regSatellites.push(satMesh);
+      // Equator
+      const eqGeom = new THREE.BufferGeometry();
+      const eqPts = [];
+      for (let a = 0; a <= Math.PI * 2 + 0.1; a += Math.PI / 32) {
+        eqPts.push(Math.cos(a) * globeRadius, 0, Math.sin(a) * globeRadius);
       }
+      eqGeom.setAttribute('position', new THREE.Float32BufferAttribute(eqPts, 3));
+      register3DGroup.add(new THREE.Line(eqGeom, equatorMat));
+
+      // Parallels (Latitudes)
+      [-0.55, 0.55, -0.82, 0.82].forEach(latNorm => {
+        const latY = latNorm * globeRadius;
+        const rLat = Math.sqrt(Math.max(0, globeRadius * globeRadius - latY * latY));
+        const lGeom = new THREE.BufferGeometry();
+        const lPts = [];
+        for (let a = 0; a <= Math.PI * 2 + 0.1; a += Math.PI / 32) {
+          lPts.push(Math.cos(a) * rLat, latY, Math.sin(a) * rLat);
+        }
+        lGeom.setAttribute('position', new THREE.Float32BufferAttribute(lPts, 3));
+        register3DGroup.add(new THREE.Line(lGeom, lineMat));
+      });
+
+      // Longitudes (Meridians - 6 Great Circles)
+      for (let m = 0; m < 6; m++) {
+        const ang = (m * Math.PI) / 6;
+        const mGeom = new THREE.BufferGeometry();
+        const mPts = [];
+        for (let a = 0; a <= Math.PI * 2 + 0.1; a += Math.PI / 32) {
+          const px = Math.cos(a) * globeRadius;
+          const py = Math.sin(a) * globeRadius;
+          mPts.push(px * Math.cos(ang), py, px * Math.sin(ang));
+        }
+        mGeom.setAttribute('position', new THREE.Float32BufferAttribute(mPts, 3));
+        register3DGroup.add(new THREE.Line(mGeom, lineMat));
+      }
+
+      // 3. Inner Holographic Core (Translucent Glowing Atmosphere)
+      const coreGeom = new THREE.SphereGeometry(globeRadius * 0.94, 32, 32);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x04192e,
+        transparent: true,
+        opacity: 0.6
+      });
+      const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+      register3DGroup.add(coreMesh);
+
+      // 4. Global Cyber Data Arcs (3D Bezier Traffic Flights Across World)
+      function latLonToVec3(lat, lon, r) {
+        const phi = (90 - lat) * (Math.PI / 180);
+        const theta = (lon + 180) * (Math.PI / 180);
+        const x = -(r * Math.sin(phi) * Math.cos(theta));
+        const z = (r * Math.sin(phi) * Math.sin(theta));
+        const y = (r * Math.cos(phi));
+        return new THREE.Vector3(x, y, z);
+      }
+
+      const worldNodes = [
+        [-6.85, 107.92], // 0: Sumedang IoT Central Hub
+        [1.35, 103.82],  // 1: Singapore Core
+        [35.68, 139.76], // 2: Tokyo
+        [37.77, -122.42],// 3: Silicon Valley
+        [51.51, -0.12],  // 4: London
+        [50.11, 8.68],   // 5: Frankfurt
+        [-33.86, 151.20],// 6: Sydney
+        [25.20, 55.27],  // 7: Dubai
+        [-22.90, -43.17] // 8: Rio
+      ];
+
+      const arcPairs = [
+        [0, 1], [0, 2], [0, 6], [1, 7], [7, 5], [5, 4], [4, 3], [3, 2], [3, 0], [1, 3]
+      ];
+
+      const arcPackets = [];
+      const packetGeom = new THREE.SphereGeometry(0.045, 8, 8);
+      const packetMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+      arcPairs.forEach(([fIdx, tIdx], idx) => {
+        const vFrom = latLonToVec3(worldNodes[fIdx][0], worldNodes[fIdx][1], globeRadius);
+        const vTo = latLonToVec3(worldNodes[tIdx][0], worldNodes[tIdx][1], globeRadius);
+        const vMid = new THREE.Vector3().addVectors(vFrom, vTo).multiplyScalar(0.5);
+        const dist = vFrom.distanceTo(vTo);
+        vMid.normalize().multiplyScalar(globeRadius + dist * 0.32);
+
+        const curve = new THREE.QuadraticBezierCurve3(vFrom, vMid, vTo);
+        const curvePts = curve.getPoints(36);
+        const cGeom = new THREE.BufferGeometry().setFromPoints(curvePts);
+        const cMat = new THREE.LineBasicMaterial({
+          color: (idx % 2 === 0) ? 0x00f0ff : 0x38bdf8,
+          transparent: true,
+          opacity: 0.55
+        });
+        register3DGroup.add(new THREE.Line(cGeom, cMat));
+
+        const pkt = new THREE.Mesh(packetGeom, packetMat);
+        register3DGroup.add(pkt);
+        arcPackets.push({
+          mesh: pkt,
+          curve: curve,
+          speed: 0.2 + (idx % 4) * 0.06,
+          offset: (idx * 0.11) % 1
+        });
+      });
+
+      // 5. City Node Pins & Sumedang Radar Ping
+      worldNodes.forEach((coord, i) => {
+        const pos = latLonToVec3(coord[0], coord[1], globeRadius);
+        const pinGeom = new THREE.SphereGeometry(i === 0 ? 0.08 : 0.045, 12, 12);
+        const pinMat = new THREE.MeshBasicMaterial({ color: i === 0 ? 0x10b981 : 0x00f0ff });
+        const pin = new THREE.Mesh(pinGeom, pinMat);
+        pin.position.copy(pos);
+        register3DGroup.add(pin);
+      });
+
+      // Sumedang Radar Ping Ring
+      const sumedangPos = latLonToVec3(worldNodes[0][0], worldNodes[0][1], globeRadius + 0.015);
+      const pingGeom = new THREE.RingGeometry(0.04, 0.085, 24);
+      const pingMat = new THREE.MeshBasicMaterial({
+        color: 0x10b981,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.85
+      });
+      const pingMesh = new THREE.Mesh(pingGeom, pingMat);
+      pingMesh.position.copy(sumedangPos);
+      pingMesh.lookAt(sumedangPos.clone().multiplyScalar(2));
+      register3DGroup.add(pingMesh);
+
+      // 6. Outer Cyber Communication Rings & Orbiting Satellites
+      const oRingGeom1 = new THREE.TorusGeometry(globeRadius * 1.35, 0.018, 16, 80);
+      const oRingMat1 = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.45 });
+      const oRing1 = new THREE.Mesh(oRingGeom1, oRingMat1);
+      oRing1.rotation.x = Math.PI / 3;
+      oRing1.rotation.y = Math.PI / 6;
+      register3DGroup.add(oRing1);
+
+      const oRingGeom2 = new THREE.TorusGeometry(globeRadius * 1.55, 0.015, 16, 80);
+      const oRingMat2 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 });
+      const oRing2 = new THREE.Mesh(oRingGeom2, oRingMat2);
+      oRing2.rotation.x = -Math.PI / 4;
+      oRing2.rotation.z = Math.PI / 5;
+      register3DGroup.add(oRing2);
+
+      const globeSatellites = [];
+      const satBodyGeom = new THREE.BoxGeometry(0.12, 0.07, 0.07);
+      const satBodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 });
+      const satWingGeom = new THREE.BoxGeometry(0.36, 0.02, 0.08);
+      const satWingMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+
+      for (let i = 0; i < 4; i++) {
+        const sat = new THREE.Group();
+        sat.add(new THREE.Mesh(satBodyGeom, satBodyMat));
+        sat.add(new THREE.Mesh(satWingGeom, satWingMat));
+        register3DGroup.add(sat);
+        globeSatellites.push({
+          mesh: sat,
+          orbitRadius: (i % 2 === 0) ? globeRadius * 1.35 : globeRadius * 1.55,
+          tiltX: (i % 2 === 0) ? Math.PI / 3 : -Math.PI / 4,
+          tiltZ: (i % 2 === 0) ? Math.PI / 6 : Math.PI / 5,
+          speed: 0.55 + i * 0.15,
+          angleOffset: i * (Math.PI / 2)
+        });
+      }
+
+      cyberGlobeData = {
+        arcPackets: arcPackets,
+        pingMesh: pingMesh,
+        satellites: globeSatellites
+      };
 
       // Floating Particle Dust
       const pCount = 70;
@@ -1651,7 +1779,7 @@
         }
       }
 
-      // Model 2: Register Quantum Polyhedron Scale & Placement
+      // Model 2: Register (Holographic Cyber Internet Globe Scale & Placement)
       let targetRegScale = 0.001;
       let targetRegX = isMobile ? 0 : 1.8;
       if (p >= 0.58 && p < 0.88) {
@@ -1668,38 +1796,47 @@
         register3DGroup.scale.z = register3DGroup.scale.x;
 
         if (register3DGroup.scale.x > 0.02) {
-          register3DGroup.rotation.y = currentRotationY + p * 4.2 + elapsedTime * 0.3;
-          register3DGroup.position.y = Math.cos(elapsedTime * 1.6) * 0.16;
+          register3DGroup.rotation.y = currentRotationY + p * 3.8 + elapsedTime * 0.22;
+          register3DGroup.rotation.x = Math.sin(elapsedTime * 0.6) * 0.08 + curTiltX;
+          register3DGroup.position.y = Math.cos(elapsedTime * 1.4) * 0.14;
 
-          if (regWireframe) {
-            regWireframe.rotation.x += 0.008;
-            regWireframe.rotation.y -= 0.01;
+          // Animate Cyber Data Packets along Global Flight Arcs
+          if (cyberGlobeData && cyberGlobeData.arcPackets) {
+            cyberGlobeData.arcPackets.forEach(pkt => {
+              const t = (elapsedTime * pkt.speed + pkt.offset) % 1;
+              const pt = pkt.curve.getPointAt(t);
+              pkt.mesh.position.copy(pt);
+            });
           }
-          if (regCrystal) {
-            regCrystal.rotation.x -= 0.01;
-            regCrystal.rotation.z += 0.008;
-          }
-          if (regGimbal1) regGimbal1.rotation.z += 0.012;
-          if (regGimbal2) regGimbal2.rotation.x -= 0.009;
-          if (regGimbal3) regGimbal3.rotation.y += 0.007;
 
-          regSatellites.forEach((sat, i) => {
-            const angle = elapsedTime * 1.5 + (i * Math.PI / 3);
-            const radius = 3.2 + Math.sin(elapsedTime + i) * 0.25;
-            sat.position.x = Math.cos(angle) * radius;
-            sat.position.z = Math.sin(angle) * radius;
-            sat.position.y = Math.sin(angle * 2) * 0.7;
-            sat.rotation.x += 0.02;
-            sat.rotation.y += 0.03;
-          });
+          // Animate Sumedang IoT Central Radar Ping
+          if (cyberGlobeData && cyberGlobeData.pingMesh) {
+            const pingCycle = (elapsedTime * 1.5) % 1;
+            cyberGlobeData.pingMesh.scale.setScalar(1 + pingCycle * 2.5);
+            cyberGlobeData.pingMesh.material.opacity = Math.max(0, 0.85 * (1 - pingCycle));
+          }
+
+          // Animate Orbiting Satellites Around Cyber Rings
+          if (cyberGlobeData && cyberGlobeData.satellites) {
+            cyberGlobeData.satellites.forEach(sat => {
+              const angle = elapsedTime * sat.speed + sat.angleOffset;
+              const r = sat.orbitRadius;
+              const x = Math.cos(angle) * r;
+              const z = Math.sin(angle) * r;
+              sat.mesh.position.set(x, 0, z);
+              sat.mesh.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), sat.tiltX);
+              sat.mesh.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), sat.tiltZ);
+              sat.mesh.rotation.y += 0.02;
+            });
+          }
         }
       }
 
-      // Dynamic Color Shifting Lights
+      // Dynamic Color Shifting Lights (Electric Cyan & Neon Emerald for Cyber Globe)
       if (bluePointLight && purplePointLight) {
         if (p >= 0.58 && p < 0.88) {
-          bluePointLight.color.lerp(new THREE.Color(0x10b981), 0.08); // Emerald
-          purplePointLight.color.lerp(new THREE.Color(0xa855f7), 0.08); // Purple
+          bluePointLight.color.lerp(new THREE.Color(0x00f0ff), 0.08); // Electric Cyan
+          purplePointLight.color.lerp(new THREE.Color(0x10b981), 0.08); // Neon Emerald
         } else {
           bluePointLight.color.lerp(new THREE.Color(0x38bdf8), 0.08); // Sky blue
           purplePointLight.color.lerp(new THREE.Color(0x0284c7), 0.08); // Indigo
