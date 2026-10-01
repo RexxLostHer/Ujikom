@@ -240,6 +240,7 @@ let listenerPresensiKelas = null;
 let sudahAbsenSet = new Set();
 let detailAbsensiSiswa = {};
 let kartuNisnSet = new Set();
+let kartuDataLoaded = false;
 
 var DAFTAR_KELAS_RESMI = (typeof window !== 'undefined' && window.DAFTAR_KELAS_RESMI) ? window.DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 
@@ -356,6 +357,7 @@ function initPantauKelas(user) {
         kartuNisnSet.add(v);
       }
     });
+    kartuDataLoaded = true;
     renderPantauKelas();
     renderPantauBeranda();
   });
@@ -496,7 +498,7 @@ function renderPantauKelas() {
   let cs = 0, cb = 0;
 
   list.forEach(function([sNisn, s]) {
-    const punyaKartu = kartuNisnSet.has(sNisn);
+    const punyaKartu = kartuDataLoaded ? kartuNisnSet.has(sNisn) : true;
     const isSudah = punyaKartu ? sudahAbsenSet.has(sNisn) : true;
     const isDummy = !punyaKartu;
     const card = document.createElement('div');
@@ -590,7 +592,7 @@ function renderPantauBeranda() {
   let cs = 0, cb = 0;
 
   list.forEach(function([sNisn, s]) {
-    const punyaKartu = kartuNisnSet.has(sNisn);
+    const punyaKartu = kartuDataLoaded ? kartuNisnSet.has(sNisn) : true;
     const isSudah = punyaKartu ? sudahAbsenSet.has(sNisn) : true;
     const isDummy = !punyaKartu;
     const card = document.createElement('div');

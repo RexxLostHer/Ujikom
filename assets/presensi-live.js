@@ -17,6 +17,7 @@ let listenerPresensiJam = null;
 let sudahAbsenSet = new Set();
 let detailAbsensi = {};
 let kartuNisnSet = new Set();
+let kartuDataLoaded = false;
 
 const kelasSelect = document.getElementById('kelasSelect');
 const infoJam = document.getElementById('infoJam');
@@ -98,7 +99,7 @@ function renderRoster() {
     : 'Rekap Hari Ini';
 
   daftarSiswaKelas.forEach(function ([nisn, s]) {
-    const punyaKartu = kartuNisnSet.has(nisn);
+    const punyaKartu = kartuDataLoaded ? kartuNisnSet.has(nisn) : true;
     const isSudah = punyaKartu ? sudahAbsenSet.has(nisn) : true;
     const isDummy = !punyaKartu;
     const card = buatSiswaCard(nisn, s, isSudah, isDummy);
@@ -256,5 +257,6 @@ db.ref('kartu').on('value', function (snapshot) {
       kartuNisnSet.add(v);
     }
   });
+  kartuDataLoaded = true;
   renderRoster();
 });
