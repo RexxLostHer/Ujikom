@@ -1154,14 +1154,15 @@
     // ===== 2. THREE.JS SCROLL 3D ENGINE (ALA DAEVORA.ID) =====
     let scene, camera, renderer;
     let login3DGroup, register3DGroup, gridPlane, particleField;
-    let bluePointLight, purplePointLight, laserRing;
+    let bluePointLight, purplePointLight;
+    let cyberComputerData = null;
     let cyberGlobeData = null;
     let isDragging = false, previousMouseX = 0, currentRotationY = 0;
     let mouseTiltX = 0, mouseTiltY = 0, curTiltX = 0, curTiltY = 0;
 
     const CAPTIONS = [
       [0.00, '01 — BLUEPRINT GATEWAY'],
-      [0.22, '02 — RFID LOGIN PORTAL'],
+      [0.22, '02 — CYBER WORKSTATION TERMINAL'],
       [0.58, '03 — CYBER INTERNET GLOBE'],
       [0.88, '04 — TERMINAL & PRESENSI']
     ];
@@ -1210,80 +1211,231 @@
       scene.add(gridHelper);
 
       // ==========================================
-      // MODEL 1: LOGIN (CYBER MEDALLION & RFID GATEWAY)
+      // MODEL 1: 3D CYBER COMPUTER WORKSTATION & TERMINAL
       // ==========================================
       login3DGroup = new THREE.Group();
       scene.add(login3DGroup);
 
-      // Rim Silinder Metalik
-      const rimGeom = new THREE.CylinderGeometry(2.7, 2.7, 0.35, 64, 1, true);
-      rimGeom.rotateX(Math.PI / 2);
-      const rimMat = new THREE.MeshStandardMaterial({
-        color: 0x0f172a,
-        metalness: 0.95,
-        roughness: 0.15
+      const baseW = 4.2, baseH = 0.16, baseD = 2.8;
+      const baseGeom = new THREE.BoxGeometry(baseW, baseH, baseD);
+      const chassisMat = new THREE.MeshStandardMaterial({
+        color: 0x070d1a,
+        metalness: 0.92,
+        roughness: 0.2
       });
-      const rimMesh = new THREE.Mesh(rimGeom, rimMat);
-      login3DGroup.add(rimMesh);
+      const baseMesh = new THREE.Mesh(baseGeom, chassisMat);
+      baseMesh.position.y = -0.08;
+      login3DGroup.add(baseMesh);
 
-      // Cincin Bevel Neon
-      const bevelGeom = new THREE.TorusGeometry(2.71, 0.05, 16, 64);
-      const bevelMat = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        metalness: 0.9,
-        roughness: 0.2,
-        emissive: 0x0284c7,
-        emissiveIntensity: 0.5
-      });
-      const bevelFront = new THREE.Mesh(bevelGeom, bevelMat);
-      bevelFront.position.z = 0.175;
-      login3DGroup.add(bevelFront);
+      // Chassis Glowing Neon Bevel Wireframe
+      const baseEdges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(baseGeom),
+        new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 })
+      );
+      baseMesh.add(baseEdges);
 
-      const bevelBack = new THREE.Mesh(bevelGeom, bevelMat);
-      bevelBack.position.z = -0.175;
-      login3DGroup.add(bevelBack);
+      // Keyboard & Trackpad Surface (Canvas Texture)
+      const kbCanvas = document.createElement('canvas');
+      kbCanvas.width = 1024;
+      kbCanvas.height = 512;
+      const kbCtx = kbCanvas.getContext('2d');
+      kbCtx.fillStyle = '#060a12';
+      kbCtx.fillRect(0, 0, 1024, 512);
 
-      // Tekstur Emblem NESAS Depan & Belakang
-      const texNesasFront = createMedalCanvasTexture('assets/logo-nesas.png', 'NESAS', 'SMKN 1 SUMEDANG', '#38bdf8', '#1e3a8a', '#0b1329');
-      const texNesasBack = createMedalCanvasTexture('assets/logo-nesas.png', 'RFID GATEWAY', 'PRESENSI IOT SYSTEM', '#0284c7', '#0f172a', '#060911');
+      const rows = 5, cols = 14, keyW = 60, keyH = 50, startX = 40, startY = 30;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const kx = startX + c * 68;
+          const ky = startY + r * 60;
+          kbCtx.fillStyle = '#0e1726';
+          kbCtx.fillRect(kx, ky, keyW, keyH);
+          kbCtx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+          kbCtx.lineWidth = 2;
+          kbCtx.strokeRect(kx, ky, keyW, keyH);
+          kbCtx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+          kbCtx.fillRect(kx + 6, ky + 6, keyW - 12, keyH - 12);
+        }
+      }
+      // Spacebar
+      kbCtx.fillStyle = 'rgba(16, 185, 129, 0.6)';
+      kbCtx.fillRect(startX + 68 * 4, startY + 60 * 4, 320, keyH);
+      // Trackpad
+      kbCtx.strokeStyle = '#00f0ff';
+      kbCtx.lineWidth = 3;
+      kbCtx.strokeRect(380, 360, 264, 130);
+      kbCtx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+      kbCtx.fillRect(380, 360, 264, 130);
 
-      const faceGeom = new THREE.CircleGeometry(2.68, 64);
-      const faceFront = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: texNesasFront,
-        roughness: 0.25,
-        metalness: 0.3
-      }));
-      faceFront.position.z = 0.18;
-      login3DGroup.add(faceFront);
+      const kbTexture = new THREE.CanvasTexture(kbCanvas);
+      const kbPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(baseW * 0.94, baseD * 0.9),
+        new THREE.MeshBasicMaterial({ map: kbTexture })
+      );
+      kbPlane.rotation.x = -Math.PI / 2;
+      kbPlane.position.set(0, 0.005, 0);
+      login3DGroup.add(kbPlane);
 
-      const faceBack = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: texNesasBack,
-        roughness: 0.25,
-        metalness: 0.3
-      }));
-      faceBack.position.z = -0.18;
-      faceBack.rotation.y = Math.PI;
-      login3DGroup.add(faceBack);
+      // Display Lid Panel (Upper Screen Unit)
+      const screenW = 4.2, screenH = 2.7, screenD = 0.08;
+      const lidGroup = new THREE.Group();
+      lidGroup.position.set(0, 0.02, -baseD / 2);
+      lidGroup.rotation.x = -Math.PI * 0.58; // Ergonomic 105 degree open angle
+      login3DGroup.add(lidGroup);
 
-      // Gyroscopic Orbital Rings
-      const ringGeom1 = new THREE.TorusGeometry(3.3, 0.025, 16, 80);
-      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
-      const ring1 = new THREE.Mesh(ringGeom1, ringMat1);
-      ring1.rotation.x = 1.15;
-      login3DGroup.add(ring1);
+      const lidBackGeom = new THREE.BoxGeometry(screenW, screenH, screenD);
+      const lidBackMesh = new THREE.Mesh(lidBackGeom, chassisMat);
+      lidBackMesh.position.set(0, screenH / 2, 0);
+      lidGroup.add(lidBackMesh);
 
-      const ringGeom2 = new THREE.TorusGeometry(3.75, 0.02, 16, 80);
-      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45 });
-      const ring2 = new THREE.Mesh(ringGeom2, ringMat2);
-      ring2.rotation.y = 0.75;
-      ring2.rotation.x = -0.4;
-      login3DGroup.add(ring2);
+      const lidEdges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(lidBackGeom),
+        new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6 })
+      );
+      lidBackMesh.add(lidEdges);
 
-      // Scanning Laser Ring
-      const laserGeom = new THREE.TorusGeometry(2.85, 0.015, 8, 64);
-      const laserMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
-      laserRing = new THREE.Mesh(laserGeom, laserMat);
-      login3DGroup.add(laserRing);
+      // Metallic Hinge
+      const hingeGeom = new THREE.CylinderGeometry(0.08, 0.08, baseW * 0.85, 24);
+      hingeGeom.rotateZ(Math.PI / 2);
+      const hingeMesh = new THREE.Mesh(hingeGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.95 }));
+      lidGroup.add(hingeMesh);
+
+      // Live Holographic Screen Glass (Terminal OS Canvas)
+      const screenCanvas = document.createElement('canvas');
+      screenCanvas.width = 1024;
+      screenCanvas.height = 680;
+      const scrCtx = screenCanvas.getContext('2d');
+      let screenScanY = 0;
+
+      function renderScreenTerminal(t = 0) {
+        scrCtx.fillStyle = '#030816';
+        scrCtx.fillRect(0, 0, 1024, 680);
+
+        // Faint Cyber Grid
+        scrCtx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+        scrCtx.lineWidth = 1;
+        for (let x = 0; x < 1024; x += 40) {
+          scrCtx.beginPath(); scrCtx.moveTo(x, 0); scrCtx.lineTo(x, 680); scrCtx.stroke();
+        }
+        for (let y = 0; y < 680; y += 40) {
+          scrCtx.beginPath(); scrCtx.moveTo(0, y); scrCtx.lineTo(1024, y); scrCtx.stroke();
+        }
+
+        // Top Terminal Bar
+        scrCtx.fillStyle = '#0a1428';
+        scrCtx.fillRect(0, 0, 1024, 64);
+        scrCtx.strokeStyle = '#00f0ff';
+        scrCtx.lineWidth = 2;
+        scrCtx.beginPath(); scrCtx.moveTo(0, 64); scrCtx.lineTo(1024, 64); scrCtx.stroke();
+
+        // Window Controls
+        scrCtx.fillStyle = '#ef4444'; scrCtx.beginPath(); scrCtx.arc(36, 32, 7, 0, Math.PI * 2); scrCtx.fill();
+        scrCtx.fillStyle = '#f59e0b'; scrCtx.beginPath(); scrCtx.arc(60, 32, 7, 0, Math.PI * 2); scrCtx.fill();
+        scrCtx.fillStyle = '#10b981'; scrCtx.beginPath(); scrCtx.arc(84, 32, 7, 0, Math.PI * 2); scrCtx.fill();
+
+        scrCtx.fillStyle = '#ffffff';
+        scrCtx.font = 'bold 20px "IBM Plex Mono", monospace';
+        scrCtx.fillText('NESAS CYBER TERMINAL v4.2 // RFID GATEWAY ONLINE', 120, 39);
+
+        // Center RFID Reticle & Radar Scanner
+        const cx = 512, cy = 330;
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        scrCtx.lineWidth = 2;
+        scrCtx.beginPath(); scrCtx.arc(cx, cy, 140, 0, Math.PI * 2); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.arc(cx, cy, 80, 0, Math.PI * 2); scrCtx.stroke();
+
+        // Crosshairs
+        scrCtx.beginPath();
+        scrCtx.moveTo(cx - 160, cy); scrCtx.lineTo(cx + 160, cy);
+        scrCtx.moveTo(cx, cy - 160); scrCtx.lineTo(cx, cy + 160);
+        scrCtx.stroke();
+
+        // Rotating Radar Sweep Line
+        const radarAngle = t * 2.2;
+        scrCtx.strokeStyle = '#10b981';
+        scrCtx.lineWidth = 3;
+        scrCtx.beginPath();
+        scrCtx.moveTo(cx, cy);
+        scrCtx.lineTo(cx + Math.cos(radarAngle) * 140, cy + Math.sin(radarAngle) * 140);
+        scrCtx.stroke();
+
+        // Central Badge Text
+        scrCtx.fillStyle = '#00f0ff';
+        scrCtx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+        scrCtx.textAlign = 'center';
+        scrCtx.fillText('SMK NEGERI 1 SUMEDANG', cx, cy - 25);
+        scrCtx.fillStyle = '#34d399';
+        scrCtx.font = 'bold 16px "IBM Plex Mono", monospace';
+        scrCtx.fillText('[ RFID SCANNER READY ]', cx, cy + 10);
+        scrCtx.fillStyle = 'rgba(255,255,255,0.7)';
+        scrCtx.font = '14px "IBM Plex Mono", monospace';
+        scrCtx.fillText('69 SISWA // ESP32 NODE SYNCED', cx, cy + 34);
+
+        // Live Code Terminal Outputs at the Bottom
+        scrCtx.textAlign = 'left';
+        scrCtx.fillStyle = '#38bdf8';
+        scrCtx.font = '15px "IBM Plex Mono", monospace';
+        scrCtx.fillText('> [AUTH] GATEWAY INITIALIZED ON PORT 8080 (WS SECURE)', 50, 560);
+        scrCtx.fillText('> [DB] FIREBASE REALTIME DATABASE LISTENER ATTACHED', 50, 588);
+        scrCtx.fillText('> [SYSTEM] AWAITING STUDENT RFID BADGE SCAN...', 50, 616);
+
+        // Moving Scanning Laser Bar
+        screenScanY = (screenScanY + 3.5) % 680;
+        scrCtx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+        scrCtx.fillRect(0, screenScanY, 1024, 12);
+        scrCtx.fillStyle = '#00f0ff';
+        scrCtx.fillRect(0, screenScanY + 11, 1024, 2);
+      }
+
+      renderScreenTerminal(0);
+      const screenTexture = new THREE.CanvasTexture(screenCanvas);
+      screenTexture.anisotropy = 8;
+      const screenMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(screenW * 0.95, screenH * 0.92),
+        new THREE.MeshBasicMaterial({ map: screenTexture })
+      );
+      screenMesh.position.set(0, screenH / 2, screenD / 2 + 0.005);
+      lidGroup.add(screenMesh);
+
+      // Floating Holographic HUD Panels in Air
+      const floatHud1 = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.6, 1.2, 4, 3),
+        new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.28, wireframe: true })
+      );
+      floatHud1.position.set(-2.0, 1.6, 0.5);
+      floatHud1.rotation.y = 0.35;
+      login3DGroup.add(floatHud1);
+
+      const floatHud2 = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.4, 1.1, 4, 3),
+        new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25, wireframe: true })
+      );
+      floatHud2.position.set(2.1, 1.8, 0.4);
+      floatHud2.rotation.y = -0.35;
+      login3DGroup.add(floatHud2);
+
+      // Micro Cyber Floating Data Cubes
+      const compDataBits = [];
+      const bitGeom = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+      const bitMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.75 });
+      for (let b = 0; b < 10; b++) {
+        const bit = new THREE.Mesh(bitGeom, bitMat);
+        login3DGroup.add(bit);
+        compDataBits.push({
+          mesh: bit,
+          orbitR: 2.6 + (b % 4) * 0.3,
+          speed: 0.5 + (b % 3) * 0.2,
+          offset: b * 0.65,
+          yBase: (b % 5) * 0.4 - 0.4
+        });
+      }
+
+      cyberComputerData = {
+        renderScreen: renderScreenTerminal,
+        screenTexture: screenTexture,
+        floatHud1: floatHud1,
+        floatHud2: floatHud2,
+        dataBits: compDataBits
+      };
 
       // ==========================================
       // MODEL 2: REGISTER (HOLOGRAPHIC CYBER INTERNET GLOBE & GLOBAL DATA NETWORK)
@@ -1511,93 +1663,6 @@
       window.addEventListener('resize', onResize);
     }
 
-    function createMedalCanvasTexture(imgSrc, title, subtitle, ringColor, bgCenter, bgEdge) {
-      const c = document.createElement('canvas');
-      c.width = 1024;
-      c.height = 1024;
-      const ctx = c.getContext('2d');
-      const cx = 512, cy = 512, r = 490;
-
-      function render(img) {
-        ctx.clearRect(0, 0, 1024, 1024);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.clip();
-
-        // Background Radial
-        const bgGrad = ctx.createRadialGradient(cx, cy, 60, cx, cy, r);
-        bgGrad.addColorStop(0, bgCenter);
-        bgGrad.addColorStop(0.7, bgEdge);
-        bgGrad.addColorStop(1, '#030712');
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, 1024, 1024);
-
-        // Tech Rings
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.lineWidth = 2;
-        for (let rad = 140; rad < 460; rad += 45) {
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        // Outer Glow Ring
-        ctx.strokeStyle = ringColor;
-        ctx.lineWidth = 14;
-        ctx.shadowColor = ringColor;
-        ctx.shadowBlur = 24;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r - 12, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Image
-        if (img) {
-          const sz = 460;
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-          ctx.shadowBlur = 26;
-          ctx.shadowOffsetY = 12;
-          ctx.drawImage(img, cx - sz / 2, cy - sz / 2 - 35, sz, sz);
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
-        }
-
-        // Title & Subtitle
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.letterSpacing = '1.5px';
-        ctx.fillText(title, cx, 840);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText(subtitle, cx, 885);
-
-        // Glass Sheen Curve
-        const sheen = ctx.createLinearGradient(0, 0, 1024, 600);
-        sheen.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
-        sheen.addColorStop(0.35, 'rgba(255, 255, 255, 0.04)');
-        sheen.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = sheen;
-        ctx.beginPath();
-        ctx.ellipse(cx, 300, 480, 240, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-      }
-
-      render(null);
-      const texture = new THREE.CanvasTexture(c);
-      texture.anisotropy = 8;
-      const img = new Image();
-      img.src = imgSrc;
-      img.onload = () => {
-        render(img);
-        texture.needsUpdate = true;
-      };
-      return texture;
-    }
 
     function setupPointerInteractions() {
       window.addEventListener('mousemove', (e) => {
@@ -1748,15 +1813,15 @@
       camera.position.z += (targetCamZ - camera.position.z) * 0.08;
       camera.lookAt(targetLookX, targetLookY, targetLookZ);
 
-      // Model 1: Login Medallion Scale & Placement
+      // Model 1: Login (Cyber Computer Workstation & Terminal)
       let targetLoginScale = 0.001;
-      let targetLoginX = isMobile ? 0 : -1.8;
+      let targetLoginX = isMobile ? 0 : -2.1;
       if (p < 0.22) {
         targetLoginScale = 1.0;
         targetLoginX = 0;
       } else if (p < 0.58) {
         targetLoginScale = 1.0;
-        targetLoginX = isMobile ? 0 : -1.8;
+        targetLoginX = isMobile ? 0 : -2.1;
       } else {
         targetLoginScale = 0.001;
       }
@@ -1768,13 +1833,33 @@
         login3DGroup.scale.z = login3DGroup.scale.x;
 
         if (login3DGroup.scale.x > 0.02) {
-          login3DGroup.rotation.y = currentRotationY + p * 3.5 + Math.sin(elapsedTime * 0.8) * 0.15;
-          login3DGroup.rotation.x = Math.sin(elapsedTime * 1.2) * 0.08;
-          login3DGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.15;
+          // Ergonomic 3D Isometric View of Cyber Computer
+          login3DGroup.rotation.y = currentRotationY + (p < 0.22 ? 0.35 : 0.55) + Math.sin(elapsedTime * 0.7) * 0.1 + curTiltY;
+          login3DGroup.rotation.x = 0.26 + Math.sin(elapsedTime * 0.9) * 0.04 + curTiltX;
+          login3DGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.12 - 0.2;
 
-          if (laserRing) {
-            laserRing.position.z = Math.sin(elapsedTime * 3) * 0.2;
-            laserRing.scale.setScalar(1 + Math.sin(elapsedTime * 4) * 0.05);
+          // Render Active Holographic Screen Terminal
+          if (cyberComputerData) {
+            cyberComputerData.renderScreen(elapsedTime);
+            cyberComputerData.screenTexture.needsUpdate = true;
+
+            if (cyberComputerData.floatHud1) {
+              cyberComputerData.floatHud1.position.y = 1.6 + Math.sin(elapsedTime * 1.8) * 0.08;
+              cyberComputerData.floatHud1.rotation.z = Math.sin(elapsedTime * 1.2) * 0.05;
+            }
+            if (cyberComputerData.floatHud2) {
+              cyberComputerData.floatHud2.position.y = 1.8 + Math.cos(elapsedTime * 1.6) * 0.08;
+              cyberComputerData.floatHud2.rotation.z = -Math.sin(elapsedTime * 1.1) * 0.05;
+            }
+
+            cyberComputerData.dataBits.forEach(b => {
+              const ang = elapsedTime * b.speed + b.offset;
+              b.mesh.position.x = Math.cos(ang) * b.orbitR;
+              b.mesh.position.z = Math.sin(ang) * b.orbitR;
+              b.mesh.position.y = b.yBase + Math.sin(elapsedTime * 2 + b.offset) * 0.18;
+              b.mesh.rotation.x += 0.02;
+              b.mesh.rotation.y += 0.03;
+            });
           }
         }
       }
