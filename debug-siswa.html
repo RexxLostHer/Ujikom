@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Debug Data Siswa</title></head>
+<body>
+<h2>Debug: Data Siswa dari Firebase</h2>
+<pre id="output">Loading...</pre>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script>
+db.ref('siswa').once('value').then(function(snap) {
+  const raw = snap.val();
+  const el = document.getElementById('output');
+  
+  let info = '';
+  info += 'Type: ' + typeof raw + '\n';
+  info += 'Is Array: ' + Array.isArray(raw) + '\n\n';
+  
+  if (Array.isArray(raw)) {
+    info += 'Array length: ' + raw.length + '\n';
+    info += 'Non-null entries: ' + raw.filter(Boolean).length + '\n\n';
+    raw.forEach(function(item, i) {
+      if (item) {
+        info += '[' + i + '] ' + JSON.stringify(item).slice(0, 120) + '\n';
+      }
+    });
+  } else if (typeof raw === 'object' && raw !== null) {
+    const keys = Object.keys(raw);
+    info += 'Total keys: ' + keys.length + '\n\n';
+    keys.slice(0, 80).forEach(function(k) {
+      const v = raw[k];
+      const kelas = (v && typeof v === 'object') ? (v.kelas || v.Kelas || v.rombel || '?') : '?';
+      const nama = (v && typeof v === 'object') ? (v.nama || v.Nama || '?') : v;
+      info += k + ' => ' + nama + ' | kelas: ' + kelas + '\n';
+    });
+  }
+  
+  el.textContent = info;
+});
+</script>
+</body></html>
