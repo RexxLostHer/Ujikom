@@ -16,12 +16,13 @@ let jamKeAktifSekarang = null;
 let listenerPresensiJam = null;
 let sudahAbsenSet = new Set();
 let detailAbsensi = {};
+let kartuNisnSet = new Set();
 
 const kelasSelect = document.getElementById('kelasSelect');
 const infoJam = document.getElementById('infoJam');
 
 // ---- Helper Foto ----
-function buatSiswaCard(nisn, s, statusSudah) {
+function buatSiswaCard(nisn, s, statusSudah, isDummy) {
   const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
   const card = document.createElement('div');
@@ -57,8 +58,12 @@ function buatSiswaCard(nisn, s, statusSudah) {
   const pill = document.createElement('span');
   pill.className = 'status-pill ' + (statusSudah ? 'sudah' : 'belum');
   if (statusSudah) {
-    const waktu = detailAbsensi[nisn]?.waktu || '';
-    pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
+    if (isDummy) {
+      pill.textContent = '✓ Hadir (Otomatis)';
+    } else {
+      const waktu = detailAbsensi[nisn]?.waktu || '';
+      pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
+    }
   } else {
     pill.textContent = '✗ Belum Scan Kartu';
   }
@@ -93,8 +98,10 @@ function renderRoster() {
     : 'Rekap Hari Ini';
 
   daftarSiswaKelas.forEach(function ([nisn, s]) {
-    const isSudah = sudahAbsenSet.has(nisn);
-    const card = buatSiswaCard(nisn, s, isSudah);
+    const punyaKartu = kartuNisnSet.has(nisn);
+    const isSudah = punyaKartu ? sudahAbsenSet.has(nisn) : true;
+    const isDummy = !punyaKartu;
+    const card = buatSiswaCard(nisn, s, isSudah, isDummy);
     if (isSudah) {
       sudahEl.appendChild(card);
       jumlahSudah++;
@@ -145,39 +152,36 @@ function pasangListenerPresensiJam(kelas) {
     return;
   }
 
-  if (jamKeAktifSekarang) {
-    // Jam aktif → pantau jam ini saja secara real-time
-    const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni() + '/' + jamKeAktifSekarang.jam_ke;
-    const ref = db.ref(path);
-    const callback = function (snapshot) {
-      const data = snapshot.val() || {};
-      sudahAbsenSet = new Set(Object.keys(data).filter(k => /^\d+$/.test(k)));
-      detailAbsensi = data;
-      renderRoster();
-    };
-    ref.on('value', callback);
-    listenerPresensiJam = { ref, callback };
-  } else {
-    // Di luar jam → gabungkan semua jam hari ini (kumulatif)
-    const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni();
-    const ref = db.ref(path);
-    const callback = function (snapshot) {
-      const semuaJam = snapshot.val() || {};
-      const gabungan = {};
-      Object.values(semuaJam).forEach(function(jamData) {
-        if (jamData && typeof jamData === 'object') {
-          Object.entries(jamData).forEach(function([n, v]) {
-            if (/^\d+$/.test(n)) gabungan[n] = v;
-          });
-        }
-      });
-      sudahAbsenSet = new Set(Object.keys(gabungan));
-      detailAbsensi = gabungan;
-      renderRoster();
-    };
-    ref.on('value', callback);
-    listenerPresensiJam = { ref, callback };
-  }
+  // Dengarkan seluruh data presensi jam hari ini secara kumulatif
+  const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni();
+  const ref = db.ref(path);
+  const callback = function (snapshot) {
+    const semuaJam = snapshot.val() || {};
+    const gabungan = {};
+
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(function(j) {
+      const jamData = semuaJam[j];
+      if (jamData && typeof jamData === 'object') {
+        Object.entries(jamData).forEach(function([n, v]) {
+          if (v && typeof v === 'object') {
+            gabungan[n] = v;
+          }
+        });
+      }
+    });
+
+    Object.entries(semuaJam).forEach(function([k, v]) {
+      if (v && typeof v === 'object' && v.status) {
+        gabungan[k] = v;
+      }
+    });
+
+    sudahAbsenSet = new Set(Object.keys(gabungan));
+    detailAbsensi = gabungan;
+    renderRoster();
+  };
+  ref.on('value', callback);
+  listenerPresensiJam = { ref, callback };
 }
 
 function cekJamAktifTerkini() {
@@ -240,4 +244,17 @@ db.ref('siswa').on('value', function (snapshot) {
   }
 
   pindahKelas(kelasSelect.value);
+});
+
+db.ref('kartu').on('value', function (snapshot) {
+  kartuNisnSet = new Set();
+  var data = snapshot.val() || {};
+  Object.values(data).forEach(function(v) {
+    if (v && typeof v === 'object' && v.nisn) {
+      kartuNisnSet.add(String(v.nisn));
+    } else if (typeof v === 'string') {
+      kartuNisnSet.add(v);
+    }
+  });
+  renderRoster();
 });

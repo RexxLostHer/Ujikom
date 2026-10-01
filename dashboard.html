@@ -19,6 +19,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
+      <a href="presensi-live.html" class="btn-profile-header" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10b981;color:white;border:none;">📡 Presensi Live</a>
       <a href="dashboard-guru.html" id="linkGuru" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">👨‍🏫 Portal Guru</a>
       <a href="admin.html" id="linkAdmin" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
       <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Saya</button>
@@ -204,6 +205,63 @@
         </div>
         <div class="academic-service-title">Tata Tertib Presensi</div>
         <div class="academic-service-desc">Pedoman penggunaan kartu RFID dan kepatuhan jam kehadiran siswa.</div>
+      </div>
+    </div>
+
+    <!-- Section Live Monitoring Kehadiran Kelas (Akses Terbuka untuk Pengunjung, Siswa, Guru & Admin) -->
+    <div class="home-section-card" id="sectionPantauLiveHome" style="margin-bottom:24px; border:1.5px solid #c7d2fe; box-shadow:0 4px 20px rgba(99,102,241,0.06);">
+      <div class="home-section-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; color:#065f46; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:999px; margin-bottom:6px; text-transform:uppercase;">
+            <span class="pulsing-dot" style="background:#10b981; width:6px; height:6px;"></span> Akses Terbuka Real-Time
+          </div>
+          <h3 style="margin:0;">👥 Monitoring Kehadiran Siswa Hari Ini</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0 0;">
+            Data kehadiran siswa yang sudah tap kartu RFID dan yang belum scan. Terbuka transparan untuk Pengunjung, Siswa, Guru, dan Admin.
+          </p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select id="pilihKelasHome" style="padding:8px 14px; border-radius:10px; border:1px solid #cbd5e1; font-weight:700; font-size:13px; color:#1e293b; background:#f8fafc; cursor:pointer;">
+            <option value="XII RPL 1">Kelas XII RPL 1</option>
+            <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
+            <option value="XII TKJ 1">Kelas XII TKJ 1</option>
+          </select>
+          <button type="button" class="btn-guest-verify" onclick="switchTab('tabKelas', document.getElementById('btnTabKelas'))" style="margin:0; font-size:12px; padding:7px 12px;">
+            Layar Penuh ↗
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Counters -->
+      <div class="ringkasan-grid" style="margin: 16px 0 20px 0;">
+        <div class="stat-box sudah">
+          <div class="stat-icon">✓</div>
+          <div>
+            <div class="stat-number" id="homeCountSudah">0</div>
+            <div class="stat-label">Siswa Sudah Hadir (Scan Masuk)</div>
+          </div>
+        </div>
+        <div class="stat-box belum">
+          <div class="stat-icon">!</div>
+          <div>
+            <div class="stat-number" id="homeCountBelum">0</div>
+            <div class="stat-label">Siswa Belum Scan Hari Ini</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Roster List -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:13.5px; font-weight:700; color:#1e293b;">
+            Daftar Kehadiran Siswa: <span id="homeNamaKelasLabel" style="color:#4f46e5;">Kelas XII RPL 2</span>
+          </div>
+          <input type="text" id="cariNamaSiswaHome" placeholder="Cari nama atau NISN..." style="padding:7px 14px; font-size:12.5px; border:1px solid #cbd5e1; border-radius:10px; min-width:220px;">
+        </div>
+
+        <div class="siswa-grid" id="homeGridPresensi" style="max-height:420px; overflow-y:auto; padding-right:4px;">
+          <!-- Rendered live via JS -->
+        </div>
       </div>
     </div>
 
@@ -545,11 +603,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_5"></script>
-<script src="assets/jadwal-util.js?v=20261001_5"></script>
-<script src="assets/auth.js?v=20261001_5"></script>
-<script src="assets/perijinan.js?v=20261001_5"></script>
-<script src="assets/dashboard.js?v=20261001_5"></script>
-<script src="assets/profile-modal.js?v=20261001_5"></script>
+<script src="assets/firebase-config.js?v=20261001_6"></script>
+<script src="assets/jadwal-util.js?v=20261001_6"></script>
+<script src="assets/auth.js?v=20261001_6"></script>
+<script src="assets/perijinan.js?v=20261001_6"></script>
+<script src="assets/dashboard.js?v=20261001_7"></script>
+<script src="assets/profile-modal.js?v=20261001_6"></script>
 </body>
 </html>

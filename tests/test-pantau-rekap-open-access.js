@@ -49,7 +49,10 @@ assert(html.includes('id="pilihKelasPantau"'), 'Dropdown pilihKelasPantau harus 
 assert(html.includes('value="XII RPL 2"'), 'Dropdown pilihKelasPantau harus memiliki opsi XII RPL 2 secara default');
 assert(html.includes('id="pilihSiswaRekap"'), 'Dropdown pilihSiswaRekap harus ada untuk memilih siswa dalam rekap presensi');
 assert(html.includes('Mode Peninjau Presensi Terbuka'), 'Banner mode peninjau terbuka harus terpasang');
-console.log('✓ [Test 1] Struktur DOM dashboard.html untuk pantau kelas dan rekap terbuka valid.');
+assert(html.includes('id="sectionPantauLiveHome"'), 'Section pantau live di Beranda harus ada');
+assert(html.includes('id="homeGridPresensi"'), 'Grid presensi di Beranda harus ada');
+assert(html.includes('presensi-live.html'), 'Tombol shortcut Presensi Live di header harus ada');
+console.log('✓ [Test 1] Struktur DOM dashboard.html untuk pantau kelas di Beranda dan rekap terbuka valid.');
 
 // 2. Simulasi Inisialisasi Pantau Kelas untuk Pengunjung (User tanpa kelas/nisn)
 const userPengunjung = {

@@ -304,10 +304,19 @@ async function muatDataPresensiKelas() {
     return;
   }
 
+  const snapKartu = await db.ref('kartu').once('value');
+  const dataKartu = snapKartu.val() || {};
+  const kartuNisnGuruSet = new Set();
+  Object.values(dataKartu).forEach(v => {
+    if (v && typeof v === 'object' && v.nisn) kartuNisnGuruSet.add(String(v.nisn));
+    else if (typeof v === 'string') kartuNisnGuruSet.add(v);
+  });
+
   siswaKelas.sort((a,b) => a[1].nama.localeCompare(b[1].nama)).forEach(([nisn, s]) => {
     const card = document.createElement('div');
     const absen = presensiHariIni[nisn];
     const izin = izinHariIni[nisn];
+    const punyaKartu = kartuNisnGuruSet.has(nisn);
 
     if (absen && absen.status === 'hadir') {
       totalHadir++;
@@ -337,6 +346,21 @@ async function muatDataPresensiKelas() {
         </div>
         <div style="font-size:12px;color:#d97706;font-weight:600;margin-top:10px;">
           📝 Izin Disetujui: "${izin.alasan}"
+        </div>
+      `;
+    } else if (!punyaKartu) {
+      totalHadir++;
+      card.className = 'card-siswa-guru hadir';
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-weight:800;font-size:15px;color:#0f172a;">${s.nama}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+          </div>
+          <span style="background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;">✓ HADIR</span>
+        </div>
+        <div style="font-size:12px;color:#059669;font-weight:600;margin-top:10px;">
+          ✓ Hadir Otomatis (Tanpa Kartu RFID)
         </div>
       `;
     } else {

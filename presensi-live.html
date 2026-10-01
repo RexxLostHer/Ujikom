@@ -42,12 +42,13 @@
 <div class="container admin-container">
   <div class="header">
     <div>
-      <div class="header-brand">SISTEM PRESENSI — AKSES ADMIN/GURU</div>
+      <div class="header-brand">MONITORING PRESENSI RFID — AKSES TERBUKA (SISWA, GURU & PENGUNJUNG)</div>
       <h1>📡 Presensi Live</h1>
     </div>
     <div class="header-actions">
-      <a href="admin.html" class="btn-secondary-link">⚙️ Panel Admin</a>
-      <button id="logoutBtn" class="logout">Keluar</button>
+      <a href="dashboard.html" class="btn-secondary-link">🏠 Dashboard Siswa/Tamu</a>
+      <a href="admin.html" class="btn-secondary-link" id="linkAdminLive" style="display:none;">⚙️ Panel Admin</a>
+      <button id="logoutBtn" class="logout" onclick="window.location.href='index.html'">Keluar</button>
     </div>
   </div>
 
@@ -91,6 +92,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="assets/firebase-config.js?v=20261001_5"></script>
 <script src="assets/jadwal-util.js?v=20261001_5"></script>
-<script src="assets/presensi-live.js?v=20261001_5"></script>
+<script src="assets/presensi-live.js?v=20261001_7"></script>
 </body>
 </html>

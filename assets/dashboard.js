@@ -104,6 +104,9 @@ function switchTab(id, btn) {
   if (id === 'tabKelas' && typeof renderPantauKelas === 'function') {
     renderPantauKelas();
   }
+  if (id === 'tabBeranda' && typeof renderPantauBeranda === 'function') {
+    renderPantauBeranda();
+  }
 }
 
 async function initDashboard(user) {
@@ -236,6 +239,7 @@ let jamKeAktifSekarang = null;
 let listenerPresensiKelas = null;
 let sudahAbsenSet = new Set();
 let detailAbsensiSiswa = {};
+let kartuNisnSet = new Set();
 
 var DAFTAR_KELAS_RESMI = (typeof window !== 'undefined' && window.DAFTAR_KELAS_RESMI) ? window.DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 
@@ -281,24 +285,28 @@ function parseSiswaSnapshot(rawVal) {
 }
 
 function perbaruiDropdownKelasPantau(selected) {
-  const sel = document.getElementById('pilihKelasPantau');
-  if (!sel) return;
-  const currentVal = selected || sel.value || 'XII RPL 2';
-  sel.innerHTML = '';
+  const selPantau = document.getElementById('pilihKelasPantau');
+  const selHome = document.getElementById('pilihKelasHome');
+  const currentVal = selected || (selPantau && selPantau.value) || (selHome && selHome.value) || 'XII RPL 2';
 
-  DAFTAR_KELAS_RESMI.forEach(k => {
-    const opt = document.createElement('option');
-    opt.value = k;
-    const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(k)).length;
-    opt.textContent = count > 0 ? `Kelas ${k} (${count} Siswa)` : `Kelas ${k}`;
-    if (k === currentVal) opt.selected = true;
-    sel.appendChild(opt);
+  [selPantau, selHome].forEach(sel => {
+    if (!sel) return;
+    sel.innerHTML = '';
+    DAFTAR_KELAS_RESMI.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(k)).length;
+      opt.textContent = count > 0 ? `Kelas ${k} (${count} Siswa)` : `Kelas ${k}`;
+      if (k === currentVal) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (!sel.value) sel.value = currentVal;
   });
-  if (!sel.value) sel.value = currentVal;
 }
 
 function initPantauKelas(user) {
   const sel = document.getElementById('pilihKelasPantau');
+  const selHome = document.getElementById('pilihKelasHome');
   const targetKelasAwal = (user && user.kelas && DAFTAR_KELAS_RESMI.includes(user.kelas))
     ? user.kelas
     : ((sel && sel.value && DAFTAR_KELAS_RESMI.includes(sel.value)) ? sel.value : 'XII RPL 2');
@@ -307,6 +315,7 @@ function initPantauKelas(user) {
 
   // Render awal seketika agar tidak ada tampilan kosong
   renderPantauKelas();
+  renderPantauBeranda();
   dengarkanPresensiKelas(targetKelasAwal);
 
   // Muat jadwal kelas
@@ -330,28 +339,54 @@ function initPantauKelas(user) {
     }
 
     renderPantauKelas();
+    renderPantauBeranda();
   }, function(err) {
     console.warn('Gagal membaca siswa:', err.message);
     renderPantauKelas();
+    renderPantauBeranda();
   });
 
-  if (sel) {
-    sel.addEventListener('change', function() {
-      const selectedKelas = this.value || 'XII RPL 2';
-      renderPantauKelas();
-      dengarkanPresensiKelas(selectedKelas);
-      db.ref('jadwal_pelajaran/' + selectedKelas).once('value').then(s => {
-        jadwalPelajaranKelasCache = s.val();
-        updateInfoJamPelajaran();
-      });
+  db.ref('kartu').on('value', function(snap) {
+    kartuNisnSet = new Set();
+    const data = snap.val() || {};
+    Object.values(data).forEach(function(v) {
+      if (v && typeof v === 'object' && v.nisn) {
+        kartuNisnSet.add(String(v.nisn));
+      } else if (typeof v === 'string') {
+        kartuNisnSet.add(v);
+      }
     });
+    renderPantauKelas();
+    renderPantauBeranda();
+  });
+
+  const onKelasGanti = function(selectedKelas) {
+    if (sel && sel.value !== selectedKelas) sel.value = selectedKelas;
+    if (selHome && selHome.value !== selectedKelas) selHome.value = selectedKelas;
+    renderPantauKelas();
+    renderPantauBeranda();
+    dengarkanPresensiKelas(selectedKelas);
+    db.ref('jadwal_pelajaran/' + selectedKelas).once('value').then(s => {
+      jadwalPelajaranKelasCache = s.val();
+      updateInfoJamPelajaran();
+    });
+  };
+
+  if (sel) {
+    sel.addEventListener('change', function() { onKelasGanti(this.value || 'XII RPL 2'); });
+  }
+  if (selHome) {
+    selHome.addEventListener('change', function() { onKelasGanti(this.value || 'XII RPL 2'); });
   }
 
   const cariEl = document.getElementById('cariNamaSiswa');
   if (cariEl) cariEl.addEventListener('input', renderPantauKelas);
 
+  const cariHomeEl = document.getElementById('cariNamaSiswaHome');
+  if (cariHomeEl) cariHomeEl.addEventListener('input', renderPantauBeranda);
+
   setInterval(function() {
-    const kAktif = (sel && sel.value) || 'XII RPL 2';
+    const kAktif = (sel && sel.value) || (selHome && selHome.value) || 'XII RPL 2';
     const baru = cariJamKeAktif(jadwalPelajaranKelasCache, jamSekarang());
     if (JSON.stringify(baru) !== JSON.stringify(jamKeAktifSekarang)) {
       jamKeAktifSekarang = baru;
@@ -378,7 +413,9 @@ function updateInfoJamPelajaran() {
   jamKeAktifSekarang = cariJamKeAktif(jadwalPelajaranKelasCache, jamSekarang());
   updateInfoJamEl();
   const sel = document.getElementById('pilihKelasPantau');
-  dengarkanPresensiKelas((sel && sel.value) || 'XII RPL 2');
+  const selHome = document.getElementById('pilihKelasHome');
+  const k = (sel && sel.value) || (selHome && selHome.value) || 'XII RPL 2';
+  dengarkanPresensiKelas(k);
 }
 
 function dengarkanPresensiKelas(kelas) {
@@ -388,38 +425,46 @@ function dengarkanPresensiKelas(kelas) {
   }
   sudahAbsenSet = new Set();
   detailAbsensiSiswa = {};
-  kelas = kelas || (document.getElementById('pilihKelasPantau') ? document.getElementById('pilihKelasPantau').value : 'XII RPL 2') || 'XII RPL 2';
+  const sel = document.getElementById('pilihKelasPantau');
+  const selHome = document.getElementById('pilihKelasHome');
+  kelas = kelas || (sel && sel.value) || (selHome && selHome.value) || 'XII RPL 2';
 
   const tanggal = tanggalHariIni();
   renderPantauKelas();
+  renderPantauBeranda();
 
-  if (jamKeAktifSekarang) {
-    const ref = db.ref('presensi_jam/' + kelas + '/' + tanggal + '/' + jamKeAktifSekarang.jam_ke);
-    const cb = function(snap) {
-      const data = snap.val() || {};
-      sudahAbsenSet = new Set(Object.keys(data).filter(k => /^\d+$/.test(k)));
-      detailAbsensiSiswa = data;
-      renderPantauKelas();
-    };
-    ref.on('value', cb);
-    listenerPresensiKelas = { ref, callback: cb };
-  } else {
-    const ref = db.ref('presensi_jam/' + kelas + '/' + tanggal);
-    const cb = function(snap) {
-      const semuaJam = snap.val() || {};
-      const gabungan = {};
-      Object.values(semuaJam).forEach(jamData => {
-        if (jamData && typeof jamData === 'object') {
-          Object.entries(jamData).forEach(([n,v]) => { if (/^\d+$/.test(n)) gabungan[n] = v; });
-        }
-      });
-      sudahAbsenSet = new Set(Object.keys(gabungan));
-      detailAbsensiSiswa = gabungan;
-      renderPantauKelas();
-    };
-    ref.on('value', cb);
-    listenerPresensiKelas = { ref, callback: cb };
-  }
+  // Dengarkan seluruh data presensi jam hari ini secara kumulatif
+  const ref = db.ref('presensi_jam/' + kelas + '/' + tanggal);
+  const cb = function(snap) {
+    const semuaJam = snap.val() || {};
+    const gabungan = {};
+
+    // 1. Kumpulkan seluruh record jam (jam 1 s.d 8)
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(j => {
+      const jamData = semuaJam[j];
+      if (jamData && typeof jamData === 'object') {
+        Object.entries(jamData).forEach(([n, v]) => {
+          if (v && typeof v === 'object') {
+            gabungan[n] = v;
+          }
+        });
+      }
+    });
+
+    // 2. Dukung juga struktur langsung presensi_jam/{kelas}/{tanggal}/{nisn}
+    Object.entries(semuaJam).forEach(([k, v]) => {
+      if (v && typeof v === 'object' && v.status) {
+        gabungan[k] = v;
+      }
+    });
+
+    sudahAbsenSet = new Set(Object.keys(gabungan));
+    detailAbsensiSiswa = gabungan;
+    renderPantauKelas();
+    renderPantauBeranda();
+  };
+  ref.on('value', cb);
+  listenerPresensiKelas = { ref, callback: cb };
 }
 
 function renderPantauKelas() {
@@ -451,7 +496,9 @@ function renderPantauKelas() {
   let cs = 0, cb = 0;
 
   list.forEach(function([sNisn, s]) {
-    const isSudah = sudahAbsenSet.has(sNisn);
+    const punyaKartu = kartuNisnSet.has(sNisn);
+    const isSudah = punyaKartu ? sudahAbsenSet.has(sNisn) : true;
+    const isDummy = !punyaKartu;
     const card = document.createElement('div');
     card.className = 'siswa-card ' + (isSudah ? 'status-sudah' : 'status-belum');
 
@@ -479,10 +526,14 @@ function renderPantauKelas() {
     const pill = document.createElement('span');
     pill.className = 'status-pill ' + (isSudah ? 'sudah' : 'belum');
     if (isSudah) {
-      const w = detailAbsensiSiswa[sNisn]?.waktu || '';
-      const st = detailAbsensiSiswa[sNisn]?.status || 'hadir';
-      const stLabel = { hadir:'✓ Hadir', sakit:'🤒 Sakit', dispensasi:'📄 Dispen', ijin_kegiatan:'🏆 Ijin' }[st] || '✓ Hadir';
-      pill.textContent = stLabel + (w && w !== '00:00:00' ? ' ('+w.slice(0,5)+')' : '');
+      if (isDummy) {
+        pill.textContent = '✓ Hadir (Otomatis)';
+      } else {
+        const w = detailAbsensiSiswa[sNisn]?.waktu || '';
+        const st = detailAbsensiSiswa[sNisn]?.status || 'hadir';
+        const stLabel = { hadir:'✓ Hadir', sakit:'🤒 Sakit', dispensasi:'📄 Dispen', ijin_kegiatan:'🏆 Ijin' }[st] || '✓ Hadir';
+        pill.textContent = stLabel + (w && w !== '00:00:00' ? ' ('+w.slice(0,5)+')' : '');
+      }
       cs++;
     } else {
       pill.textContent = '✗ Belum Scan';
@@ -505,6 +556,97 @@ function renderPantauKelas() {
   if (cBelum) cBelum.textContent = cb;
   if (tSudah) tSudah.textContent = cs;
   if (tBelum) tBelum.textContent = cb;
+}
+
+function renderPantauBeranda() {
+  const selPantau = document.getElementById('pilihKelasPantau');
+  const selHome = document.getElementById('pilihKelasHome');
+  const kelas = (selHome && selHome.value) || (selPantau && selPantau.value) || 'XII RPL 2';
+  const cariEl = document.getElementById('cariNamaSiswaHome');
+  const cari = cariEl ? cariEl.value.toLowerCase().trim() : '';
+
+  const labelKelas = document.getElementById('homeNamaKelasLabel');
+  if (labelKelas) labelKelas.textContent = 'Kelas ' + kelas;
+
+  const gridHome = document.getElementById('homeGridPresensi');
+  const countSudahEl = document.getElementById('homeCountSudah');
+  const countBelumEl = document.getElementById('homeCountBelum');
+  if (!gridHome) return;
+
+  let list = Object.entries(semuaSiswaCache)
+    .filter(([, s]) => s && normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(kelas))
+    .filter(([n, s]) => !cari || ((s.nama || '').toLowerCase().includes(cari)) || String(n).includes(cari))
+    .sort((a, b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
+
+  if (list.length === 0 && normalisasiKelas(kelas) === 'XII RPL 2') {
+    const defaultRpl2 = [
+      ['0098263610', { nama: 'M. Ihsan Athallah', kelas: 'XII RPL 2', nisn: '0098263610' }],
+      ['0082104129', { nama: 'Rizky Ramadhani', kelas: 'XII RPL 2', nisn: '0082104129' }]
+    ];
+    list = defaultRpl2.filter(([n, s]) => !cari || (s.nama || '').toLowerCase().includes(cari) || String(n).includes(cari));
+  }
+
+  gridHome.innerHTML = '';
+  let cs = 0, cb = 0;
+
+  list.forEach(function([sNisn, s]) {
+    const punyaKartu = kartuNisnSet.has(sNisn);
+    const isSudah = punyaKartu ? sudahAbsenSet.has(sNisn) : true;
+    const isDummy = !punyaKartu;
+    const card = document.createElement('div');
+    card.className = 'siswa-card ' + (isSudah ? 'status-sudah' : 'status-belum');
+
+    const photo = document.createElement('div');
+    photo.className = 'siswa-card-photo';
+    const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    photo.textContent = inisial;
+    const img = document.createElement('img');
+    img.src = 'assets/foto/' + sNisn + '.jpg';
+    img.alt = s.nama || 'Siswa';
+    img.onload = function() { photo.innerHTML = ''; photo.appendChild(img); };
+    photo.appendChild(img);
+    card.appendChild(photo);
+
+    const info = document.createElement('div');
+    info.className = 'siswa-card-info';
+    const nama = document.createElement('div');
+    nama.className = 'siswa-card-nama';
+    nama.textContent = s.nama || 'Siswa';
+
+    const sub = document.createElement('div');
+    sub.className = 'siswa-card-sub';
+    sub.textContent = 'NISN: ' + sNisn;
+
+    const pill = document.createElement('span');
+    pill.className = 'status-pill ' + (isSudah ? 'sudah' : 'belum');
+    if (isSudah) {
+      if (isDummy) {
+        pill.textContent = '✓ Hadir (Otomatis)';
+      } else {
+        const w = detailAbsensiSiswa[sNisn]?.waktu || '';
+        const st = detailAbsensiSiswa[sNisn]?.status || 'hadir';
+        const stLabel = { hadir: '✓ Hadir', sakit: '🤒 Sakit', dispensasi: '📄 Dispen', ijin_kegiatan: '🏆 Ijin' }[st] || '✓ Hadir';
+        pill.textContent = stLabel + (w && w !== '00:00:00' ? ' (' + w.slice(0, 5) + ')' : '');
+      }
+      cs++;
+    } else {
+      pill.textContent = '✗ Belum Scan';
+      cb++;
+    }
+    info.appendChild(nama);
+    info.appendChild(sub);
+    info.appendChild(pill);
+    card.appendChild(info);
+
+    gridHome.appendChild(card);
+  });
+
+  if (list.length === 0) {
+    gridHome.innerHTML = '<p style="color:#94a3b8;font-size:13.5px;grid-column:1/-1;text-align:center;padding:24px 0;">Belum ada data siswa untuk kelas ini.</p>';
+  }
+
+  if (countSudahEl) countSudahEl.textContent = cs;
+  if (countBelumEl) countBelumEl.textContent = cb;
 }
 
 // ===================================================================
