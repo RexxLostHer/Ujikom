@@ -54,7 +54,7 @@
     font-family: var(--sans);
     overflow-x: hidden;
     position: relative;
-    min-height: 420vh; /* Track scroll panjang ala daevora.id */
+    min-height: 320vh; /* Track scroll ala daevora.id untuk 3 scene */
   }
 
   .mono { font-family: var(--mono); }
@@ -106,21 +106,6 @@
     pointer-events: none;
     border: 1px solid var(--hair);
     transition: border-color 0.4s;
-  }
-  #sheet .tb {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    border-left: 1px solid var(--hair);
-    border-top: 1px solid var(--hair);
-    padding: 0.65rem 0.95rem;
-    font-size: 0.58rem;
-    letter-spacing: 0.16em;
-    line-height: 1.8;
-    color: var(--ink-mut);
-    text-transform: uppercase;
-    background: rgba(6, 9, 17, 0.6);
-    backdrop-filter: blur(4px);
   }
 
   .grain {
@@ -422,13 +407,6 @@
     padding-left: 7vw;
   }
 
-  /* SCENE 04: TERMINAL SUMMARY (TENGAH BAWAH) */
-  #sceneTerminal {
-    justify-content: center;
-    align-items: center;
-    padding: 0 4vw;
-  }
-
   /* ELEVATED GLASSMORPHIC AUTH CARD */
   .daevora-auth-card {
     width: 100%;
@@ -682,44 +660,6 @@
     color: #34d399;
   }
 
-  /* Terminal Card */
-  .terminal-card {
-    max-width: 600px;
-    text-align: center;
-    background: rgba(11, 17, 33, 0.9);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 28px;
-    padding: 38px 36px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(56, 189, 248, 0.15);
-  }
-  .terminal-card .mono-badge {
-    font-size: 0.65rem;
-    letter-spacing: 0.28em;
-    color: var(--blue);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .terminal-card h2 {
-    font-family: var(--serif);
-    font-size: clamp(2rem, 4vw, 3rem);
-    color: #ffffff;
-    margin-bottom: 10px;
-    letter-spacing: 0.08em;
-  }
-  .terminal-card p {
-    font-size: 13.5px;
-    color: var(--ink-mut);
-    line-height: 1.6;
-    margin-bottom: 24px;
-  }
-  .terminal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
   /* MODAL RESET PASSWORD */
   .modal-overlay {
     position: fixed;
@@ -817,7 +757,6 @@
   /* RESPONSIVE BREAKPOINTS */
   @media (max-width: 900px) {
     #sheet { inset: 10px; }
-    #sheet .tb { display: none; }
     .hud-center-meta { display: none; }
     .hud-top { padding: 1rem 4vw; }
     #sceneLogin, #sceneRegister {
@@ -847,14 +786,7 @@
     <div id="gridOverlay"></div>
     
     <!-- Architectural Border Framing -->
-    <div id="sheet">
-      <div class="tb mono">
-        SISTEM — PRESENSI IOT RFID<br>
-        SMKN 1 SUMEDANG — RPL<br>
-        LEMBAR P-101 → GATEWAY<br>
-        DIGERAKKAN OLEH SCROLL ANDA
-      </div>
-    </div>
+    <div id="sheet"></div>
     
     <div class="grain"></div>
     <div id="bar"></div>
@@ -876,7 +808,6 @@
         <button type="button" class="hud-nav-btn active" id="navBtnHero" onclick="goScene('hero')">01 PORTAL</button>
         <button type="button" class="hud-nav-btn" id="navBtnLogin" onclick="goScene('login')">02 MASUK</button>
         <button type="button" class="hud-nav-btn" id="navBtnRegister" onclick="goScene('register')">03 DAFTAR</button>
-        <button type="button" class="hud-nav-btn" id="navBtnTerminal" onclick="goScene('terminal')">04 TERMINAL</button>
         <a href="presensi-live.html" class="hud-nav-btn live-pill">📡 PANTAU LIVE</a>
       </nav>
     </header>
@@ -1036,24 +967,6 @@
       </div>
     </div>
 
-    <!-- ──────────────────────────────────────────────
-         SCENE 04: TERMINAL & REKAP SUMMARY (Scroll 0.90 – 1.00)
-         ────────────────────────────────────────────── -->
-    <div class="scene-overlay" id="sceneTerminal">
-      <div class="terminal-card">
-        <p class="mono-badge mono">Scene 04 — Terminal & Data Presensi</p>
-        <h2>INTEGRASI IOT SMKN 1 SUMEDANG</h2>
-        <p>
-          Sistem Presensi RFID IoT terhubung langsung ke Firebase Realtime Database.<br>
-          Memantau 69 Data Siswa (XII RPL 1, XII RPL 2, XII TKJ 1) secara transparan dan terbuka.
-        </p>
-        <div class="terminal-actions">
-          <a href="presensi-live.html" class="btn-hero-live">📡 Buka Presensi Live (Tanpa Login)</a>
-          <button type="button" class="btn-hero-primary" onclick="goScene('login')">↑ Masuk ke Akun</button>
-          <button type="button" class="btn-hero-ghost" onclick="goScene('hero')">↺ Ulangi Dari Awal</button>
-        </div>
-      </div>
-    </div>
 
   </section>
 
@@ -1134,9 +1047,8 @@
 
     function goScene(sceneName) {
       if (sceneName === 'hero') scrollToProgress(0.0);
-      else if (sceneName === 'login') scrollToProgress(0.38);
-      else if (sceneName === 'register') scrollToProgress(0.72);
-      else if (sceneName === 'terminal' || sceneName === 'rekap') scrollToProgress(0.98);
+      else if (sceneName === 'login') scrollToProgress(0.45);
+      else if (sceneName === 'register') scrollToProgress(0.90);
     }
 
     // Live Clock UTC+7 (WIB)
@@ -1162,9 +1074,8 @@
 
     const CAPTIONS = [
       [0.00, '01 — BLUEPRINT GATEWAY'],
-      [0.22, '02 — CYBER WORKSTATION TERMINAL'],
-      [0.58, '03 — CYBER INTERNET GLOBE'],
-      [0.88, '04 — TERMINAL & PRESENSI']
+      [0.28, '02 — CYBER WORKSTATION TERMINAL'],
+      [0.68, '03 — CYBER INTERNET GLOBE']
     ];
 
     function init3D() {
@@ -1888,34 +1799,30 @@
         hintEl.style.opacity = p > 0.03 ? '0' : '1';
       }
 
-      // Update Active Navigation Buttons
+      // Update Active Navigation Buttons (3 Scenes)
       const navHero = document.getElementById('navBtnHero');
       const navLogin = document.getElementById('navBtnLogin');
       const navRegister = document.getElementById('navBtnRegister');
-      const navTerminal = document.getElementById('navBtnTerminal');
-      [navHero, navLogin, navRegister, navTerminal].forEach(btn => btn && btn.classList.remove('active'));
-      if (p < 0.22 && navHero) navHero.classList.add('active');
-      else if (p >= 0.22 && p < 0.58 && navLogin) navLogin.classList.add('active');
-      else if (p >= 0.58 && p < 0.88 && navRegister) navRegister.classList.add('active');
-      else if (p >= 0.88 && navTerminal) navTerminal.classList.add('active');
+      [navHero, navLogin, navRegister].forEach(btn => btn && btn.classList.remove('active'));
+      if (p < 0.25 && navHero) navHero.classList.add('active');
+      else if (p >= 0.25 && p < 0.65 && navLogin) navLogin.classList.add('active');
+      else if (p >= 0.65 && navRegister) navRegister.classList.add('active');
 
       // Update Scene Overlays Crossfade
       const sHero = document.getElementById('sceneHero');
       const sLogin = document.getElementById('sceneLogin');
       const sRegister = document.getElementById('sceneRegister');
-      const sTerminal = document.getElementById('sceneTerminal');
 
-      if (sHero) sHero.classList.toggle('is-active', p < 0.20);
-      if (sLogin) sLogin.classList.toggle('is-active', p >= 0.22 && p < 0.58);
-      if (sRegister) sRegister.classList.toggle('is-active', p >= 0.58 && p < 0.88);
-      if (sTerminal) sTerminal.classList.toggle('is-active', p >= 0.88);
+      if (sHero) sHero.classList.toggle('is-active', p < 0.22);
+      if (sLogin) sLogin.classList.toggle('is-active', p >= 0.25 && p < 0.65);
+      if (sRegister) sRegister.classList.toggle('is-active', p >= 0.65);
 
       // Smooth Pointer Tilt
       curTiltX += (mouseTiltX - curTiltX) * 0.08;
       curTiltY += (mouseTiltY - curTiltY) * 0.08;
 
       // ==========================================
-      // SCROLL-DRIVEN CAMERA & 3D OBJECT CHOREOGRAPHY
+      // SCROLL-DRIVEN CAMERA & 3D OBJECT CHOREOGRAPHY (3 SCENES)
       // ==========================================
       const isMobile = window.innerWidth < 900;
 
@@ -1923,31 +1830,23 @@
       let targetCamX = 0, targetCamY = 0, targetCamZ = 9.8;
       let targetLookX = 0, targetLookY = 0, targetLookZ = 0;
 
-      if (p < 0.22) {
+      if (p < 0.25) {
         // Scene 1: Hero (Center Focus)
         targetCamX = 0;
         targetCamY = 0.2;
         targetCamZ = isMobile ? 11.2 : 9.8;
-      } else if (p < 0.58) {
+      } else if (p < 0.65) {
         // Scene 2: Login (Geser Kamera ke Kiri, Model di Kiri, Form di Kanan)
-        const t = (p - 0.22) / 0.36;
         targetCamX = isMobile ? 0 : -2.3;
         targetCamY = 0.2;
         targetCamZ = isMobile ? 11.5 : 8.2;
         targetLookX = isMobile ? 0 : -0.5;
-      } else if (p < 0.88) {
+      } else {
         // Scene 3: Register (Geser Kamera ke Kanan, Model di Kanan, Form di Kiri)
-        const t = (p - 0.58) / 0.30;
         targetCamX = isMobile ? 0 : 2.3;
         targetCamY = -0.1;
         targetCamZ = isMobile ? 11.5 : 8.2;
         targetLookX = isMobile ? 0 : 0.5;
-      } else {
-        // Scene 4: Terminal (Overview Tinggi Ala Arsitektur)
-        targetCamX = 0;
-        targetCamY = 4.8;
-        targetCamZ = isMobile ? 11.0 : 8.8;
-        targetLookY = 0;
       }
 
       camera.position.x += (targetCamX + curTiltY - camera.position.x) * 0.08;
@@ -1958,10 +1857,10 @@
       // Model 1: Login (Cyber Computer Workstation & Terminal)
       let targetLoginScale = 0.001;
       let targetLoginX = isMobile ? 0 : -2.1;
-      if (p < 0.22) {
+      if (p < 0.25) {
         targetLoginScale = 1.0;
         targetLoginX = 0;
-      } else if (p < 0.58) {
+      } else if (p < 0.65) {
         targetLoginScale = 1.0;
         targetLoginX = isMobile ? 0 : -2.1;
       } else {
@@ -2000,7 +1899,7 @@
       // Model 2: Register (Holographic Cyber Internet Globe Scale & Placement)
       let targetRegScale = 0.001;
       let targetRegX = isMobile ? 0 : 1.8;
-      if (p >= 0.58 && p < 0.88) {
+      if (p >= 0.65) {
         targetRegScale = 1.0;
         targetRegX = isMobile ? 0 : 1.8;
       } else {
