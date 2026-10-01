@@ -97,8 +97,13 @@ if (typeof document !== 'undefined' && document.getElementById('statusHariIni') 
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.view-tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).style.display = 'block';
-  btn.classList.add('active');
+  const target = document.getElementById(id);
+  if (target) target.style.display = 'block';
+  if (btn) btn.classList.add('active');
+
+  if (id === 'tabKelas' && typeof renderPantauKelas === 'function') {
+    renderPantauKelas();
+  }
 }
 
 async function initDashboard(user) {
@@ -223,67 +228,86 @@ async function handleSubmitPerijinan() {
   }
 }
 
-// ----- PANTAU KELAS REALTIME -----
+// ----- PANTAU KELAS REALTIME (3 KELAS RESMI: XII RPL 1, XII RPL 2, XII TKJ 1) -----
+const DAFTAR_KELAS_RESMI = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 let semuaSiswaCache = {};
 let jadwalPelajaranKelasCache = null;
 let jamKeAktifSekarang = null;
 let listenerPresensiKelas = null;
 let sudahAbsenSet = new Set();
 let detailAbsensiSiswa = {};
-const DEFAULT_DAFTAR_KELAS = ['XII RPL 2', 'XII RPL 1', 'XI RPL 1', 'XI RPL 2', 'X PPLG 1', 'X PPLG 2'];
+
+function normalisasiKelas(k) {
+  if (!k) return '';
+  return String(k).trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
+function parseSiswaSnapshot(rawVal) {
+  const result = {};
+  if (!rawVal) return result;
+  if (Array.isArray(rawVal)) {
+    rawVal.forEach((s, idx) => {
+      if (s) {
+        const nisn = s.nisn || String(idx);
+        result[nisn] = { ...s, nisn };
+      }
+    });
+  } else if (typeof rawVal === 'object') {
+    Object.entries(rawVal).forEach(([k, s]) => {
+      if (s && typeof s === 'object') {
+        const nisn = s.nisn || k;
+        result[nisn] = { ...s, nisn };
+      }
+    });
+  }
+  return result;
+}
 
 function initPantauKelas(user) {
   const sel = document.getElementById('pilihKelasPantau');
-  const targetKelasAwal = (user && user.kelas) ? user.kelas : ((sel && sel.value) ? sel.value : 'XII RPL 2');
+  const targetKelasAwal = (user && user.kelas && DAFTAR_KELAS_RESMI.includes(user.kelas))
+    ? user.kelas
+    : ((sel && sel.value && DAFTAR_KELAS_RESMI.includes(sel.value)) ? sel.value : 'XII RPL 2');
 
-  // Pastikan dropdown selalu memiliki opsi lengkap sejak awal
-  if (sel && sel.options.length === 0) {
-    DEFAULT_DAFTAR_KELAS.forEach(k => {
+  // Pastikan dropdown hanya berisi 3 rombel resmi
+  if (sel) {
+    sel.innerHTML = '';
+    DAFTAR_KELAS_RESMI.forEach(k => {
       const opt = document.createElement('option');
       opt.value = k;
       opt.textContent = 'Kelas ' + k;
       if (k === targetKelasAwal) opt.selected = true;
       sel.appendChild(opt);
     });
+    sel.value = targetKelasAwal;
   }
-  if (sel) sel.value = targetKelasAwal;
 
-  // Inisialisasi listener presensi dan render awal seketika
+  // Render awal seketika agar tidak ada tampilan kosong
+  renderPantauKelas();
   dengarkanPresensiKelas(targetKelasAwal);
 
-  // Muat jadwal kelas awal
+  // Muat jadwal kelas
   db.ref('jadwal_pelajaran/' + targetKelasAwal).once('value').then(s => {
     jadwalPelajaranKelasCache = s.val();
     updateInfoJamPelajaran();
   });
 
-  // Sinkronisasi realtime master data siswa
+  // Sinkronisasi realtime master data siswa dari Firebase
   db.ref('siswa').on('value', function(snap) {
-    semuaSiswaCache = snap.val() || {};
-    const kelasSet = new Set(DEFAULT_DAFTAR_KELAS);
-    Object.values(semuaSiswaCache).forEach(s => {
-      if (s && s.kelas) kelasSet.add(s.kelas);
-    });
-
-    const cur = (sel && sel.value) || targetKelasAwal;
-    if (sel) {
-      sel.innerHTML = '';
-      Array.from(kelasSet).sort().forEach(k => {
-        const opt = document.createElement('option');
-        opt.value = k;
-        opt.textContent = 'Kelas ' + k;
-        if (k === cur) opt.selected = true;
-        sel.appendChild(opt);
-      });
-      if (!sel.value) sel.value = cur;
+    const parsed = parseSiswaSnapshot(snap.val());
+    if (Object.keys(parsed).length > 0) {
+      semuaSiswaCache = parsed;
     }
-
+    renderPantauKelas();
+  }, function(err) {
+    console.warn('Gagal membaca siswa:', err.message);
     renderPantauKelas();
   });
 
   if (sel) {
     sel.addEventListener('change', function() {
       const selectedKelas = this.value || 'XII RPL 2';
+      renderPantauKelas();
       dengarkanPresensiKelas(selectedKelas);
       db.ref('jadwal_pelajaran/' + selectedKelas).once('value').then(s => {
         jadwalPelajaranKelasCache = s.val();
@@ -336,6 +360,7 @@ function dengarkanPresensiKelas(kelas) {
   kelas = kelas || (document.getElementById('pilihKelasPantau') ? document.getElementById('pilihKelasPantau').value : 'XII RPL 2') || 'XII RPL 2';
 
   const tanggal = tanggalHariIni();
+  renderPantauKelas();
 
   if (jamKeAktifSekarang) {
     const ref = db.ref('presensi_jam/' + kelas + '/' + tanggal + '/' + jamKeAktifSekarang.jam_ke);
@@ -373,16 +398,17 @@ function renderPantauKelas() {
   const cari = cariEl ? cariEl.value.toLowerCase().trim() : '';
 
   let list = Object.entries(semuaSiswaCache)
-    .filter(([,s]) => s && s.kelas === kelas)
-    .filter(([n,s]) => !cari || (s.nama && s.nama.toLowerCase().includes(cari)) || n.includes(cari))
+    .filter(([,s]) => s && normalisasiKelas(s.kelas || s.rombel) === normalisasiKelas(kelas))
+    .filter(([n,s]) => !cari || ((s.nama || '').toLowerCase().includes(cari)) || String(n).includes(cari))
     .sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
 
-  // Fallback awal jika database siswa belum tersinkronisasi dan kelas adalah XII RPL 2
-  if (list.length === 0 && Object.keys(semuaSiswaCache).length === 0 && kelas === 'XII RPL 2') {
-    list = [
-      ['0098263610', { nama: 'M. Ihsan Athallah', kelas: 'XII RPL 2' }],
-      ['0082104129', { nama: 'Rizky Ramadhani', kelas: 'XII RPL 2' }]
-    ].filter(([n,s]) => !cari || s.nama.toLowerCase().includes(cari) || n.includes(cari));
+  // Fallback data resmi jika di kelas XII RPL 2 belum ada siswa terdeteksi
+  if (list.length === 0 && normalisasiKelas(kelas) === 'XII RPL 2') {
+    const defaultRpl2 = [
+      ['0098263610', { nama: 'M. Ihsan Athallah', kelas: 'XII RPL 2', nisn: '0098263610' }],
+      ['0082104129', { nama: 'Rizky Ramadhani', kelas: 'XII RPL 2', nisn: '0082104129' }]
+    ];
+    list = defaultRpl2.filter(([n,s]) => !cari || (s.nama || '').toLowerCase().includes(cari) || String(n).includes(cari));
   }
 
   const gridSudah = document.getElementById('gridSudahAbsen');
@@ -404,7 +430,7 @@ function renderPantauKelas() {
     photo.textContent = inisial;
     const img = document.createElement('img');
     img.src = 'assets/foto/' + sNisn + '.jpg';
-    img.alt = s.nama;
+    img.alt = s.nama || 'Siswa';
     img.onload = function() { photo.innerHTML=''; photo.appendChild(img); };
     photo.appendChild(img);
     card.appendChild(photo);
@@ -413,7 +439,7 @@ function renderPantauKelas() {
     info.className = 'siswa-card-info';
     const nama = document.createElement('div');
     nama.className = 'siswa-card-nama';
-    nama.textContent = s.nama;
+    nama.textContent = s.nama || 'Siswa';
     
     const sub = document.createElement('div');
     sub.className = 'siswa-card-sub';
@@ -842,39 +868,34 @@ function renderRekapSiswaUI(range) {
 function initClassChipsSelector(user) {
   const container = document.getElementById('classChipsList');
   const containerTab = document.getElementById('classChipsListTab');
+  const listKelas = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 
-  db.ref('siswa').once('value').then(snap => {
-    const data = snap.val() || {};
-    const kelasSet = new Set(Object.values(data).map(s => s.kelas).filter(Boolean));
-    kelasSet.add('XII RPL 2');
-    const listKelas = Array.from(kelasSet).sort();
-
-    [container, containerTab].forEach(cnt => {
-      if (!cnt) return;
-      cnt.innerHTML = '';
-      listKelas.forEach(kelas => {
-        const chip = document.createElement('button');
-        chip.className = 'class-chip';
-        chip.textContent = kelas;
-        chip.onclick = function() {
-          document.querySelectorAll('.class-chip').forEach(c => {
-            if (c.textContent === kelas) c.classList.add('active');
-            else c.classList.remove('active');
-          });
-          muatJadwalBeranda(kelas);
-        };
-        cnt.appendChild(chip);
-      });
-
-      const targetKelas = user.kelas || 'XII RPL 2';
-      const defaultChip = Array.from(cnt.children).find(c => c.textContent === targetKelas);
-      if (defaultChip) {
-        defaultChip.classList.add('active');
-      }
+  [container, containerTab].forEach(cnt => {
+    if (!cnt) return;
+    cnt.innerHTML = '';
+    listKelas.forEach(kelas => {
+      const chip = document.createElement('button');
+      chip.className = 'class-chip';
+      chip.textContent = kelas;
+      chip.onclick = function() {
+        document.querySelectorAll('.class-chip').forEach(c => {
+          if (c.textContent === kelas) c.classList.add('active');
+          else c.classList.remove('active');
+        });
+        muatJadwalBeranda(kelas);
+      };
+      cnt.appendChild(chip);
     });
 
-    muatJadwalBeranda(user.kelas || 'XII RPL 2');
+    const targetKelas = (user && user.kelas && listKelas.includes(user.kelas)) ? user.kelas : 'XII RPL 2';
+    const defaultChip = Array.from(cnt.children).find(c => c.textContent === targetKelas);
+    if (defaultChip) {
+      defaultChip.classList.add('active');
+    }
   });
+
+  const targetAwal = (user && user.kelas && listKelas.includes(user.kelas)) ? user.kelas : 'XII RPL 2';
+  muatJadwalBeranda(targetAwal);
 }
 
 function muatJadwalBeranda(kelas) {

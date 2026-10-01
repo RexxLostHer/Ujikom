@@ -83,8 +83,8 @@ const domMock = {
   rekapStatAlpha: buatElement('h3')
 };
 
-// Default classes
-['XII RPL 2', 'XII RPL 1', 'XI RPL 1'].forEach(k => {
+// 3 Official Classes
+['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'].forEach(k => {
   const opt = buatElement('option');
   opt.value = k;
   opt.textContent = 'Kelas ' + k;
