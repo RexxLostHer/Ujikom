@@ -1625,3 +1625,135 @@ body {
   width: 18px;
   height: 18px;
 }
+
+/* ===================================================================
+   SMOOTH INTERACTIVE DASHBOARD ANIMATIONS (SISWA & GURU) 2026
+   =================================================================== */
+
+/* 1. Tab Panel Smooth Fade & Slide-Up */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: tabFadeSlideUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tabFadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 2. Interactive 3D Holographic Smart Student Card */
+.smart-student-card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.smart-student-card:hover {
+  box-shadow: 0 24px 50px -10px rgba(79, 70, 229, 0.45), 0 0 0 1px rgba(129, 140, 248, 0.4);
+}
+
+.smart-card-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  z-index: 5;
+}
+
+.smart-student-card:hover .smart-card-glare {
+  opacity: 1;
+}
+
+/* 3. Smooth Student Roster Cards (Hover Lift & Glow) */
+.siswa-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  cursor: pointer;
+}
+
+.siswa-card:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.1), 0 0 0 1.5px rgba(79, 70, 229, 0.25);
+}
+
+.siswa-card:active {
+  transform: translateY(-1px) scale(1.005);
+}
+
+/* 4. Stat Counter Cards Interactive Elevation */
+.pantau-stat-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+}
+
+.pantau-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -6px rgba(15, 23, 42, 0.08);
+}
+
+/* 5. Live NFC & RFID Pulsing Dot Indicator */
+.pulsing-dot {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  animation: liveDotPulse 2s infinite ease-out;
+}
+
+@keyframes liveDotPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  60% {
+    box-shadow: 0 0 0 9px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* 6. Button Interactive Spring Feedback */
+.view-tab-btn, .btn-action, .btn-submit-action, .btn-mini-action, .btn-logout, .btn-profile-header {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.view-tab-btn:hover {
+  transform: translateY(-2px);
+}
+
+.view-tab-btn:active, .btn-action:active, .btn-submit-action:active {
+  transform: scale(0.97);
+}
+
+/* 7. Teacher Dashboard Smooth Card Transitions */
+.card-siswa-guru {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.card-siswa-guru:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 30px -6px rgba(0, 0, 0, 0.09);
+}
+
+.btn-mini-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px -2px rgba(0, 0, 0, 0.15);
+}
+
+.btn-mini-action:active {
+  transform: scale(0.96);
+}
+

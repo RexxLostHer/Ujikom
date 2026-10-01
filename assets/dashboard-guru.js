@@ -33,9 +33,16 @@ firebase.auth().onAuthStateChanged(async function(fbUser) {
 });
 
 function switchGuruTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
   document.querySelectorAll('.view-tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).style.display = 'block';
+  const target = document.getElementById(id);
+  if (target) {
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
   btn.classList.add('active');
 }
 

@@ -95,10 +95,16 @@ if (typeof document !== 'undefined' && document.getElementById('statusHariIni') 
 }
 
 function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
   document.querySelectorAll('.view-tab-btn').forEach(b => b.classList.remove('active'));
   const target = document.getElementById(id);
-  if (target) target.style.display = 'block';
+  if (target) {
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
   if (btn) btn.classList.add('active');
 
   if (id === 'tabKelas' && typeof renderPantauKelas === 'function') {
@@ -107,6 +113,36 @@ function switchTab(id, btn) {
   if (id === 'tabBeranda' && typeof renderPantauBeranda === 'function') {
     renderPantauBeranda();
   }
+}
+
+// Interaktivitas 3D Tilt & Hologram Glare pada Kartu Pelajar RFID Siswa
+function initInteractive3DCard() {
+  const card = document.getElementById('smartStudentCard');
+  if (!card) return;
+
+  let glare = card.querySelector('.smart-card-glare');
+  if (!glare) {
+    glare = document.createElement('div');
+    glare.className = 'smart-card-glare';
+    card.appendChild(glare);
+  }
+
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 14;
+
+    card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-4px) scale3d(1.025, 1.025, 1.025)`;
+    glare.style.background = `radial-gradient(circle at ${(x / rect.width * 100).toFixed(1)}% ${(y / rect.height * 100).toFixed(1)}%, rgba(255,255,255,0.28) 0%, transparent 65%)`;
+  });
+
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0) scale3d(1, 1, 1)';
+  });
 }
 
 async function initDashboard(user) {
@@ -152,6 +188,9 @@ async function initDashboard(user) {
 
   // Inisialisasi pantau kelas
   initPantauKelas(user);
+
+  // Inisialisasi 3D Tilt Kartu Siswa
+  initInteractive3DCard();
 }
 
 function populateDropdownSiswa(user) {

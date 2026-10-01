@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presensi Siswa — SMK Negeri 1 Sumedang</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=20261001_9">
 <style>
   :root {
     --primary: #4f46e5;
@@ -102,6 +102,28 @@
     box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
     position: relative;
     overflow: hidden;
+    transform-style: preserve-3d;
+    transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s ease;
+  }
+
+  .login-card.card-morph-to-reg {
+    animation: cardMorphToReg 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .login-card.card-morph-to-log {
+    animation: cardMorphToLog 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes cardMorphToReg {
+    0% { transform: perspective(1200px) rotateY(0deg) scale(1); }
+    35% { transform: perspective(1200px) rotateY(10deg) translateX(12px) scale(0.96); box-shadow: 0 35px 70px -15px rgba(124, 58, 237, 0.4); }
+    100% { transform: perspective(1200px) rotateY(0deg) translateX(0) scale(1); }
+  }
+
+  @keyframes cardMorphToLog {
+    0% { transform: perspective(1200px) rotateY(0deg) scale(1); }
+    35% { transform: perspective(1200px) rotateY(-10deg) translateX(-12px) scale(0.96); box-shadow: 0 35px 70px -15px rgba(37, 99, 235, 0.4); }
+    100% { transform: perspective(1200px) rotateY(0deg) translateX(0) scale(1); }
   }
 
   .brand-header {
@@ -810,9 +832,12 @@
 
   <!-- 3D ENGINE & TAB CONTROLLER -->
   <script>
-    // ===== 1. KONTROLER 3D THREE.JS MEDALLION (NESAS & RPL) =====
+    // ===== 1. KONTROLER 3D THREE.JS (DUAL SCENE: LOGIN & REGISTER WAJIB BEDA) =====
     let scene, camera, renderer;
-    let medallionGroup;
+    let login3DGroup, register3DGroup;
+    let currentAuthMode = 'login';
+    let loginScale = 1.0, targetLoginScale = 1.0;
+    let registerScale = 0.001, targetRegisterScale = 0.001;
     let targetRotationY = 0;
     let currentRotationY = 0;
     let isDragging = false;
@@ -822,6 +847,8 @@
     let currentTiltX = 0;
     let currentTiltY = 0;
     let orbitalRing1, orbitalRing2, particleField;
+    let bluePointLight, purplePointLight;
+    let regWireframe, regCrystal, regGimbal1, regGimbal2, regGimbal3, regSatellites = [];
 
     function init3DScene() {
       const container = document.getElementById('stage3dContainer');
@@ -844,24 +871,26 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
       scene.add(ambientLight);
 
       const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
       dirLight.position.set(5, 8, 7);
       scene.add(dirLight);
 
-      const bluePointLight = new THREE.PointLight(0x3b82f6, 2.5, 16);
+      bluePointLight = new THREE.PointLight(0x2563eb, 2.8, 16);
       bluePointLight.position.set(-4, -2, 5);
       scene.add(bluePointLight);
 
-      const purplePointLight = new THREE.PointLight(0x8b5cf6, 2.5, 16);
+      purplePointLight = new THREE.PointLight(0x06b6d4, 2.8, 16);
       purplePointLight.position.set(4, 3, -4);
       scene.add(purplePointLight);
 
-      // Root Medallion Group
-      medallionGroup = new THREE.Group();
-      scene.add(medallionGroup);
+      // ==========================================
+      // MODEL 3D #1: LOGIN (CYBER MEDALLION RFID GATEWAY)
+      // ==========================================
+      login3DGroup = new THREE.Group();
+      scene.add(login3DGroup);
 
       // 1. Cyber Cylinder Rim (Metallic Edge)
       const rimGeom = new THREE.CylinderGeometry(2.85, 2.85, 0.36, 64, 1, true);
@@ -872,7 +901,7 @@
         roughness: 0.15
       });
       const rimMesh = new THREE.Mesh(rimGeom, rimMat);
-      medallionGroup.add(rimMesh);
+      login3DGroup.add(rimMesh);
 
       // 2. Beveled Metallic Rings Front & Back
       const bevelGeom = new THREE.TorusGeometry(2.86, 0.05, 16, 64);
@@ -881,59 +910,151 @@
         metalness: 0.9,
         roughness: 0.2,
         emissive: 0x0284c7,
-        emissiveIntensity: 0.25
+        emissiveIntensity: 0.3
       });
       const bevelFront = new THREE.Mesh(bevelGeom, bevelMat);
       bevelFront.position.z = 0.18;
-      medallionGroup.add(bevelFront);
+      login3DGroup.add(bevelFront);
 
       const bevelBack = new THREE.Mesh(bevelGeom, bevelMat);
       bevelBack.position.z = -0.18;
-      medallionGroup.add(bevelBack);
+      login3DGroup.add(bevelBack);
 
-      // 3. Face Textures (NESAS & RPL)
+      // 3. Face Textures (NESAS Official Emblem)
       const textureNesas = createMedalCanvasTexture('assets/logo-nesas.png', 'NESAS', 'SMKN 1 SUMEDANG', '#2563eb', '#0f172a', '#1e293b');
-      const textureRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'REKAYASA PERANGKAT LUNAK', 'NESAS TECH', '#8b5cf6', '#0f0b1e', '#1e1035');
+      const textureNesasBack = createMedalCanvasTexture('assets/logo-nesas.png', 'SECURITY GATEWAY', 'SMART RFID ACCESS', '#0284c7', '#090d16', '#1e293b');
 
       const faceGeom = new THREE.CircleGeometry(2.83, 64);
 
-      // Face Front (NESAS)
-      const faceMatFront = new THREE.MeshStandardMaterial({
+      const faceFront = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
         map: textureNesas,
         roughness: 0.25,
         metalness: 0.3
-      });
-      const faceFront = new THREE.Mesh(faceGeom, faceMatFront);
+      }));
       faceFront.position.z = 0.185;
-      medallionGroup.add(faceFront);
+      login3DGroup.add(faceFront);
 
-      // Face Back (RPL)
-      const faceMatBack = new THREE.MeshStandardMaterial({
-        map: textureRpl,
+      const faceBack = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
+        map: textureNesasBack,
         roughness: 0.25,
         metalness: 0.3
-      });
-      const faceBack = new THREE.Mesh(faceGeom, faceMatBack);
+      }));
       faceBack.position.z = -0.185;
-      faceBack.rotation.y = Math.PI; // Orientasi tepat saat dibalik
-      medallionGroup.add(faceBack);
+      faceBack.rotation.y = Math.PI;
+      login3DGroup.add(faceBack);
 
-      // 4. Gyroscopic Orbital Rings
+      // 4. Gyroscopic Orbital Rings for Login
       const ringGeom1 = new THREE.TorusGeometry(3.45, 0.025, 16, 80);
-      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 });
       orbitalRing1 = new THREE.Mesh(ringGeom1, ringMat1);
       orbitalRing1.rotation.x = 1.15;
-      scene.add(orbitalRing1);
+      login3DGroup.add(orbitalRing1);
 
       const ringGeom2 = new THREE.TorusGeometry(3.95, 0.02, 16, 80);
-      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.5 });
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.5 });
       orbitalRing2 = new THREE.Mesh(ringGeom2, ringMat2);
       orbitalRing2.rotation.y = 0.75;
       orbitalRing2.rotation.x = -0.4;
-      scene.add(orbitalRing2);
+      login3DGroup.add(orbitalRing2);
 
-      // 5. Star Particle Dust Field
-      const partCount = 45;
+      // ==========================================
+      // MODEL 3D #2: REGISTER (QUANTUM POLYHEDRON & INNOVATION MATRIX)
+      // Visual 100% Berbeda Khusus Pendaftaran Kejuruan RPL
+      // ==========================================
+      register3DGroup = new THREE.Group();
+      register3DGroup.scale.set(0.001, 0.001, 0.001);
+      scene.add(register3DGroup);
+
+      // 1. Outer Wireframe Cyber Polyhedron (Emerald Neon)
+      const wireGeom = new THREE.IcosahedronGeometry(2.4, 1);
+      const wireMat = new THREE.MeshStandardMaterial({
+        color: 0x10b981,
+        wireframe: true,
+        emissive: 0x059669,
+        emissiveIntensity: 0.7,
+        roughness: 0.2
+      });
+      regWireframe = new THREE.Mesh(wireGeom, wireMat);
+      register3DGroup.add(regWireframe);
+
+      // 2. Inner Faceted Quantum Crystal (Cyber Violet)
+      const crystalGeom = new THREE.OctahedronGeometry(1.85, 0);
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed,
+        emissive: 0x4c1d95,
+        emissiveIntensity: 0.55,
+        metalness: 0.9,
+        roughness: 0.15,
+        transparent: true,
+        opacity: 0.88
+      });
+      regCrystal = new THREE.Mesh(crystalGeom, crystalMat);
+      register3DGroup.add(regCrystal);
+
+      // 3. Central RPL Hologram Plate
+      const textureRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'RPL INNOVATION', 'REKAYASA PERANGKAT LUNAK', '#10b981', '#0f0b1e', '#064e3b');
+      const rplPlateFront = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
+        map: textureRpl,
+        roughness: 0.2,
+        metalness: 0.4,
+        transparent: true,
+        opacity: 0.95
+      }));
+      rplPlateFront.position.z = 0.02;
+      rplPlateFront.scale.set(0.68, 0.68, 0.68);
+      register3DGroup.add(rplPlateFront);
+
+      const rplPlateBack = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
+        map: textureRpl,
+        roughness: 0.2,
+        metalness: 0.4,
+        transparent: true,
+        opacity: 0.95
+      }));
+      rplPlateBack.position.z = -0.02;
+      rplPlateBack.rotation.y = Math.PI;
+      rplPlateBack.scale.set(0.68, 0.68, 0.68);
+      register3DGroup.add(rplPlateBack);
+
+      // 4. Three Intersecting Quantum Gimbal Rings (RGB Precision Spectrum)
+      const gimbalGeom1 = new THREE.TorusGeometry(3.1, 0.03, 16, 80);
+      const gimbalMat1 = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.75 });
+      regGimbal1 = new THREE.Mesh(gimbalGeom1, gimbalMat1);
+      regGimbal1.rotation.x = Math.PI / 3;
+      register3DGroup.add(regGimbal1);
+
+      const gimbalGeom2 = new THREE.TorusGeometry(3.5, 0.025, 16, 80);
+      const gimbalMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.7 });
+      regGimbal2 = new THREE.Mesh(gimbalGeom2, gimbalMat2);
+      regGimbal2.rotation.y = Math.PI / 4;
+      register3DGroup.add(regGimbal2);
+
+      const gimbalGeom3 = new THREE.TorusGeometry(3.9, 0.02, 16, 80);
+      const gimbalMat3 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
+      regGimbal3 = new THREE.Mesh(gimbalGeom3, gimbalMat3);
+      regGimbal3.rotation.z = Math.PI / 6;
+      register3DGroup.add(regGimbal3);
+
+      // 5. Floating Satellite Data Nodes (Micro Cubes in Dynamic Orbit)
+      regSatellites = [];
+      const satGeom = new THREE.BoxGeometry(0.24, 0.24, 0.24);
+      for (let i = 0; i < 6; i++) {
+        const satMat = new THREE.MeshStandardMaterial({
+          color: (i % 2 === 0) ? 0x10b981 : 0xa855f7,
+          emissive: (i % 2 === 0) ? 0x059669 : 0x7c3aed,
+          emissiveIntensity: 0.6,
+          metalness: 0.8,
+          roughness: 0.2
+        });
+        const satMesh = new THREE.Mesh(satGeom, satMat);
+        register3DGroup.add(satMesh);
+        regSatellites.push(satMesh);
+      }
+
+      // ==========================================
+      // GLOBAL PARTICLE DUST FIELD
+      // ==========================================
+      const partCount = 55;
       const partGeom = new THREE.BufferGeometry();
       const posArray = new Float32Array(partCount * 3);
       for (let i = 0; i < partCount * 3; i += 3) {
@@ -942,17 +1063,13 @@
         posArray[i + 2] = (Math.random() - 0.5) * 6;
       }
       partGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-      const partMat = new THREE.PointsMaterial({ size: 0.04, color: 0x93c5fd, transparent: true, opacity: 0.7 });
+      const partMat = new THREE.PointsMaterial({ size: 0.04, color: 0x93c5fd, transparent: true, opacity: 0.75 });
       particleField = new THREE.Points(partGeom, partMat);
       scene.add(particleField);
 
-      // Event Listeners untuk Interaksi Mouse / Touch
+      // Event Listeners
       setupInteractions(container);
-
-      // Window Resize Listener
       window.addEventListener('resize', onWindowResize);
-
-      // Start Animation Loop
       animate3D();
     }
 
@@ -1057,7 +1174,6 @@
     }
 
     function setupInteractions(container) {
-      // Parallax Mouse Tilt
       window.addEventListener('mousemove', (e) => {
         const x = (e.clientX / window.innerWidth) * 2 - 1;
         const y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -1065,7 +1181,6 @@
         mouseTiltY = x * 0.26;
       });
 
-      // Drag to rotate 3D
       container.addEventListener('mousedown', (e) => {
         isDragging = true;
         previousMouseX = e.clientX;
@@ -1078,13 +1193,8 @@
         previousMouseX = e.clientX;
       });
 
-      window.addEventListener('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-        }
-      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
 
-      // Touch Drag support
       container.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
           isDragging = true;
@@ -1127,23 +1237,64 @@
       currentTiltX += (mouseTiltX - currentTiltX) * 0.08;
       currentTiltY += (mouseTiltY - currentTiltY) * 0.08;
 
-      if (medallionGroup) {
-        // Rotasi Utama + Mouse Parallax
-        medallionGroup.rotation.y = currentRotationY + currentTiltY;
-        medallionGroup.rotation.x = currentTiltX;
+      // Dynamic scale transition between Login & Register 3D models
+      loginScale += (targetLoginScale - loginScale) * 0.075;
+      registerScale += (targetRegisterScale - registerScale) * 0.075;
 
-        // Efek Melayang Lembut (Levitation)
-        medallionGroup.position.y = Math.sin(elapsedTime * 1.6) * 0.16;
+      // 1. Model Login (Medallion) Animation
+      if (login3DGroup) {
+        login3DGroup.scale.set(loginScale, loginScale, loginScale);
+        if (loginScale > 0.01) {
+          login3DGroup.rotation.y = currentRotationY + currentTiltY;
+          login3DGroup.rotation.x = currentTiltX;
+          login3DGroup.position.y = Math.sin(elapsedTime * 1.6) * 0.16;
+
+          if (orbitalRing1) orbitalRing1.rotation.z += 0.007;
+          if (orbitalRing2) orbitalRing2.rotation.z -= 0.005;
+        }
       }
 
-      // Rotasi Cincin Orbit
-      if (orbitalRing1) {
-        orbitalRing1.rotation.z += 0.007;
-        orbitalRing1.position.y = Math.sin(elapsedTime * 1.6) * 0.1;
+      // 2. Model Register (Quantum Polyhedron) Animation
+      if (register3DGroup) {
+        register3DGroup.scale.set(registerScale, registerScale, registerScale);
+        if (registerScale > 0.01) {
+          register3DGroup.rotation.y = currentRotationY + currentTiltY + elapsedTime * 0.35;
+          register3DGroup.rotation.x = currentTiltX + Math.sin(elapsedTime * 0.9) * 0.12;
+          register3DGroup.position.y = Math.cos(elapsedTime * 1.8) * 0.16;
+
+          if (regWireframe) {
+            regWireframe.rotation.x += 0.008;
+            regWireframe.rotation.y -= 0.01;
+          }
+          if (regCrystal) {
+            regCrystal.rotation.x -= 0.01;
+            regCrystal.rotation.z += 0.008;
+          }
+          if (regGimbal1) regGimbal1.rotation.z += 0.012;
+          if (regGimbal2) regGimbal2.rotation.x -= 0.009;
+          if (regGimbal3) regGimbal3.rotation.y += 0.007;
+
+          regSatellites.forEach((sat, i) => {
+            const angle = elapsedTime * 1.4 + (i * Math.PI / 3);
+            const radius = 3.2 + Math.sin(elapsedTime + i) * 0.25;
+            sat.position.x = Math.cos(angle) * radius;
+            sat.position.z = Math.sin(angle) * radius;
+            sat.position.y = Math.sin(angle * 2) * 0.7;
+            sat.rotation.x += 0.02;
+            sat.rotation.y += 0.03;
+          });
+        }
       }
-      if (orbitalRing2) {
-        orbitalRing2.rotation.z -= 0.005;
-        orbitalRing2.position.y = Math.sin(elapsedTime * 1.6) * 0.1;
+
+      // Smooth Dynamic Lighting Transition
+      if (bluePointLight && purplePointLight) {
+        if (currentAuthMode === 'login') {
+          bluePointLight.color.lerp(new THREE.Color(0x2563eb), 0.06);
+          purplePointLight.color.lerp(new THREE.Color(0x06b6d4), 0.06);
+        } else {
+          bluePointLight.color.lerp(new THREE.Color(0xa855f7), 0.06);
+          purplePointLight.color.lerp(new THREE.Color(0x10b981), 0.06);
+        }
       }
 
       if (renderer && scene && camera) {
@@ -1151,7 +1302,6 @@
       }
     }
 
-    // Inisialisasi 3D saat DOM selesai
     window.addEventListener('DOMContentLoaded', () => {
       init3DScene();
     });
@@ -1167,12 +1317,22 @@
       const flipper = document.getElementById('brandLogoFlipper');
       const cardTitle = document.getElementById('cardTitle');
       const cardSub = document.getElementById('cardSubtitle');
+      const cardEl = document.querySelector('.login-card');
 
       bersihkanNotif();
 
       if (mode === 'login') {
-        // Flip 3D Medallion ke Depan (NESAS)
+        currentAuthMode = 'login';
+        targetLoginScale = 1.0;
+        targetRegisterScale = 0.001;
         targetRotationY = 0;
+
+        // Smooth 3D Card Morph Transition
+        if (cardEl) {
+          cardEl.classList.remove('card-morph-to-reg');
+          cardEl.classList.add('card-morph-to-log');
+          setTimeout(() => cardEl.classList.remove('card-morph-to-log'), 650);
+        }
 
         // Form View Cross-Fade
         fLog.style.display = 'block';
@@ -1191,8 +1351,17 @@
         cardSub.textContent = 'Portal Presensi RFID & Akademik SMKN 1 Sumedang';
         cap.innerHTML = 'Belum punya akun? <a onclick="gantiTab(\'register\')">Daftar akun RPL</a>';
       } else {
-        // Flip 3D Medallion 180 Derajat ke Belakang (RPL)
-        targetRotationY = Math.PI;
+        currentAuthMode = 'register';
+        targetLoginScale = 0.001;
+        targetRegisterScale = 1.0;
+        targetRotationY = 0;
+
+        // Smooth 3D Card Morph Transition
+        if (cardEl) {
+          cardEl.classList.remove('card-morph-to-log');
+          cardEl.classList.add('card-morph-to-reg');
+          setTimeout(() => cardEl.classList.remove('card-morph-to-reg'), 650);
+        }
 
         // Form View Cross-Fade
         fLog.style.display = 'none';
