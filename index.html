@@ -4,825 +4,1080 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presensi Siswa — SMK Negeri 1 Sumedang</title>
-<link rel="stylesheet" href="assets/style.css?v=20261001_9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
   :root {
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --dark-bg: #070b14;
-    --card-bg: rgba(255, 255, 255, 0.98);
+    --bg: #060911;
+    --bg-card: rgba(15, 23, 42, 0.88);
+    --ink: #f8fafc;
+    --ink-mut: #94a3b8;
+    --hair: rgba(255, 255, 255, 0.12);
+    --hair-active: rgba(56, 189, 248, 0.4);
+    --blue: #38bdf8;
+    --indigo: #4f46e5;
+    --emerald: #10b981;
+    --purple: #a855f7;
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: auto;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.28);
+    border-radius: 4px;
   }
 
   body {
-    min-height: 100vh;
-    margin: 0;
-    padding: 24px;
-    background: radial-gradient(at 15% 15%, rgba(37, 99, 235, 0.22) 0px, transparent 55%),
-                radial-gradient(at 85% 85%, rgba(124, 58, 237, 0.2) 0px, transparent 55%),
-                var(--dark-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    color: #0f172a;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
     overflow-x: hidden;
-    box-sizing: border-box;
-  }
-
-  /* CONTAINER SPLIT 2-KOLOM DESKTOP */
-  .portal-auth-container {
-    width: 100%;
-    max-width: 1060px;
-    min-height: 600px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 40px;
     position: relative;
-    z-index: 1;
-    animation: containerEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    min-height: 420vh; /* Track scroll panjang ala daevora.id */
   }
 
-  @keyframes containerEntrance {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
+  .mono { font-family: var(--mono); }
+  .serif { font-family: var(--serif); }
 
-  /* SISI KIRI: 3D INTERACTIVE EMBLEM SHOWCASE (BERSIH DARI DISTRAKSI TEKS) */
-  .showcase-side {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    padding: 10px 0;
-  }
-
-  /* 3D WEBGL STAGE */
-  .stage-3d-container {
-    position: relative;
-    width: 100%;
-    height: 520px;
-    border-radius: 28px;
+  /* ============================================================
+     PINNED 3D STAGE & ARCHITECTURAL HUD (ala DAEVORA)
+     ============================================================ */
+  #film {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
-    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 70%, transparent 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
-    user-select: none;
+    z-index: 10;
+    pointer-events: none;
   }
 
-  .stage-3d-container:active {
-    cursor: grabbing;
-  }
-
-  #canvas3d {
+  #gl {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     display: block;
-    outline: none;
+    z-index: 0;
+    pointer-events: auto;
+    cursor: grab;
+  }
+  #gl:active {
+    cursor: grabbing;
   }
 
-  /* SISI KANAN: ELEVATED LOGIN CARD */
-  .auth-card-side {
-    width: 100%;
-    max-width: 440px;
-    flex-shrink: 0;
-  }
-
-  .login-card {
-    background: var(--card-bg);
-    border-radius: 28px;
-    padding: 36px 32px;
-    width: 100%;
-    box-sizing: border-box;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
-    position: relative;
-    overflow: hidden;
-    transform-style: preserve-3d;
-    transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s ease;
-  }
-
-  .login-card.card-morph-to-reg {
-    animation: cardMorphToReg 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .login-card.card-morph-to-log {
-    animation: cardMorphToLog 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes cardMorphToReg {
-    0% { transform: perspective(1200px) rotateY(0deg) scale(1); }
-    35% { transform: perspective(1200px) rotateY(10deg) translateX(12px) scale(0.96); box-shadow: 0 35px 70px -15px rgba(124, 58, 237, 0.4); }
-    100% { transform: perspective(1200px) rotateY(0deg) translateX(0) scale(1); }
-  }
-
-  @keyframes cardMorphToLog {
-    0% { transform: perspective(1200px) rotateY(0deg) scale(1); }
-    35% { transform: perspective(1200px) rotateY(-10deg) translateX(-12px) scale(0.96); box-shadow: 0 35px 70px -15px rgba(37, 99, 235, 0.4); }
-    100% { transform: perspective(1200px) rotateY(0deg) translateX(0) scale(1); }
-  }
-
-  .brand-header {
-    text-align: center;
-    margin-bottom: 22px;
-  }
-
-  .brand-logo-flipper {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 12px;
-    perspective: 800px;
-  }
-
-  .flipper-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .flipper-inner.is-flipped {
-    transform: rotateY(180deg);
-  }
-
-  .logo-face {
+  /* Blueprint Grid Overlay */
+  #gridOverlay {
     position: absolute;
     inset: 0;
-    border-radius: 20px;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+    z-index: 1;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(56, 189, 248, 0.035) 0 1px, transparent 1px 72px),
+      repeating-linear-gradient(90deg, rgba(56, 189, 248, 0.035) 0 1px, transparent 1px 72px);
+  }
+
+  /* Sheet Framing with Engineering Metadata Stamp */
+  #sheet {
+    position: absolute;
+    inset: 18px;
+    z-index: 2;
+    pointer-events: none;
+    border: 1px solid var(--hair);
+    transition: border-color 0.4s;
+  }
+  #sheet .tb {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border-left: 1px solid var(--hair);
+    border-top: 1px solid var(--hair);
+    padding: 0.65rem 0.95rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    line-height: 1.8;
+    color: var(--ink-mut);
+    text-transform: uppercase;
+    background: rgba(6, 9, 17, 0.6);
+    backdrop-filter: blur(4px);
+  }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+
+  /* Progress Bar di Atas Layar */
+  #bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--emerald), var(--purple));
+    transform: scaleX(0);
+    transform-origin: left;
+    z-index: 50;
+    transition: transform 0.08s linear;
+  }
+
+  /* Top HUD */
+  .hud-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 3.5vw;
+    pointer-events: none;
+  }
+
+  .hud-brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-nesas {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    letter-spacing: 0.22em;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+
+  .badge-chip {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--blue);
+    text-transform: uppercase;
+  }
+
+  .hud-center-meta {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-mut);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hud-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    pointer-events: auto;
+  }
+
+  .hud-nav-btn {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mut);
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+  }
+  .hud-nav-btn:hover, .hud-nav-btn.active {
+    color: #ffffff;
+    border-color: var(--hair-active);
+    background: rgba(56, 189, 248, 0.08);
+  }
+  .hud-nav-btn.live-pill {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #34d399;
+  }
+  .hud-nav-btn.live-pill:hover {
+    background: rgba(16, 185, 129, 0.28);
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+  }
+
+  /* Bottom HUD */
+  .hud-bot {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 3.5vw 2.8vh;
+    pointer-events: none;
+  }
+  .hud-bot .mono {
+    font-size: 0.64rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-mut);
+  }
+
+  /* Animated Scroll Hint Indicator */
+  #hint {
+    position: absolute;
+    left: 50%;
+    bottom: 3.2vh;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  #hint span {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--ink-mut);
+  }
+  #hint i {
+    display: block;
+    width: 1px;
+    height: 42px;
+    background: linear-gradient(180deg, var(--blue), transparent);
+    animation: scrollDrop 2.2s ease-in-out infinite;
+  }
+  @keyframes scrollDrop {
+    0% { transform: scaleY(0); transform-origin: top; }
+    45% { transform: scaleY(1); transform-origin: top; }
+    55% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* ============================================================
+     SCENE OVERLAYS (DIKENDALIKAN LANGSUNG OLEH SCROLL)
+     ============================================================ */
+  .scene-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(24px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.5s;
+  }
+  .scene-overlay.is-active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* SCENE 01: HERO PORTAL INTRO */
+  #sceneHero {
+    justify-content: center;
+    text-align: center;
+    padding: 0 6vw;
+  }
+  .hero-content {
+    max-width: 860px;
+  }
+  .hero-content .kick {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.36em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 1.2rem;
+  }
+  .hero-content h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(3.2rem, 8.5vw, 6.8rem);
+    line-height: 0.96;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    margin-bottom: 1.2rem;
+    text-shadow: 0 0 35px rgba(56, 189, 248, 0.25);
+  }
+  .hero-content .hero-t2 {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 2.2rem;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .btn-hero-primary {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    padding: 14px 26px;
+    background: linear-gradient(135deg, #2563eb, #0284c7);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+    transition: all 0.25s ease;
+  }
+  .btn-hero-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 32px -4px rgba(56, 189, 248, 0.5);
+  }
+  .btn-hero-ghost {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    padding: 14px 26px;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    color: var(--ink);
+    border: 1px solid var(--hair);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .btn-hero-ghost:hover {
+    border-color: var(--blue);
+    background: rgba(56, 189, 248, 0.1);
+  }
+  .btn-hero-live {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    padding: 14px 24px;
+    background: rgba(16, 185, 129, 0.14);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-hero-live:hover {
+    background: rgba(16, 185, 129, 0.28);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  }
+
+  /* SCENE 02: LOGIN CARD (TERLETAK DI KANAN VIEWPORT) */
+  #sceneLogin {
+    justify-content: flex-end;
+    padding-right: 7vw;
+  }
+
+  /* SCENE 03: REGISTER CARD (TERLETAK DI KIRI VIEWPORT) */
+  #sceneRegister {
+    justify-content: flex-start;
+    padding-left: 7vw;
+  }
+
+  /* SCENE 04: TERMINAL SUMMARY (TENGAH BAWAH) */
+  #sceneTerminal {
+    justify-content: center;
+    align-items: center;
+    padding: 0 4vw;
+  }
+
+  /* ELEVATED GLASSMORPHIC AUTH CARD */
+  .daevora-auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(11, 17, 33, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 26px;
+    padding: 34px 30px;
+    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8),
+                0 0 40px -10px rgba(56, 189, 248, 0.2);
+    position: relative;
+    overflow: hidden;
+    pointer-events: auto;
+  }
+  .daevora-auth-card.emerald-glow {
+    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8),
+                0 0 40px -10px rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  /* Card Header */
+  .card-top-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .card-logo-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    box-sizing: border-box;
-    box-shadow: 0 10px 24px -4px rgba(79, 70, 229, 0.35);
+    flex-shrink: 0;
   }
-
-  .logo-face.front-nesas {
-    background: #ffffff;
-    border: 2px solid #e0e7ff;
-  }
-
-  .logo-face.back-rpl {
-    background: #0f172a;
-    border: 2px solid #818cf8;
-    transform: rotateY(180deg);
-    box-shadow: 0 10px 24px -4px rgba(129, 140, 248, 0.4);
-  }
-
-  .logo-face img {
+  .card-logo-thumb img {
     width: 100%;
     height: 100%;
     object-fit: contain;
   }
-
-  .brand-header h1 {
-    font-size: 22px;
+  .card-title-group h2 {
+    font-size: 19px;
     font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-    margin: 0;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .card-title-group p {
+    font-size: 12.5px;
+    color: var(--ink-mut);
+    line-height: 1.35;
   }
 
-  .brand-header p {
-    font-size: 13.5px;
-    color: #64748b;
-    margin-top: 4px;
-    margin-bottom: 0;
-  }
-
-  /* TOMBOL GOOGLE 1-KLIK */
-  .btn-google-smart {
+  /* Google 1-Click Button */
+  .btn-google-glow {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     width: 100%;
-    padding: 13px;
+    padding: 12px;
     background: #ffffff;
-    color: #1e293b;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
-    font-size: 14px;
+    color: #0f172a;
+    border: none;
+    border-radius: 12px;
+    font-size: 13.5px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    user-select: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    transition: all 0.22s ease;
   }
-
-  .btn-google-smart:hover {
-    border-color: #4285f4;
-    background: #f8faff;
+  .btn-google-glow:hover {
+    background: #f1f5f9;
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px -2px rgba(66, 133, 244, 0.2);
+    box-shadow: 0 8px 24px rgba(66, 133, 244, 0.3);
+  }
+  .btn-google-glow img {
+    width: 18px;
+    height: 18px;
   }
 
-  .btn-google-smart:active {
-    transform: translateY(0);
-  }
-
-  .btn-google-smart img {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* SEPARATOR LINE */
-  .sep-line {
+  /* Separator Line */
+  .card-sep {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin: 18px 0;
+    gap: 12px;
+    margin: 16px 0;
   }
-
-  .sep-line::before, .sep-line::after {
+  .card-sep::before, .card-sep::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: #e2e8f0;
+    background: var(--hair);
   }
-
-  .sep-line span {
-    font-size: 11px;
-    font-weight: 700;
-    color: #94a3b8;
+  .card-sep span {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-mut);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
   }
 
-  /* TAB SLIDER SMOOTH */
-  .switch-tabs-wrap {
-    position: relative;
+  /* Scene Switcher Tab */
+  .scene-switch-tabs {
     display: flex;
-    background: #f1f5f9;
+    background: rgba(15, 23, 42, 0.7);
     padding: 4px;
-    border-radius: 14px;
-    margin-bottom: 20px;
-    user-select: none;
+    border-radius: 12px;
+    border: 1px solid var(--hair);
+    margin-bottom: 18px;
   }
-
-  .tab-slider {
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc(50% - 4px);
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1;
-  }
-
-  .switch-tabs-wrap.is-register .tab-slider {
-    transform: translateX(100%);
-  }
-
-  .switch-btn {
-    position: relative;
-    z-index: 2;
+  .scene-tab-btn {
     flex: 1;
-    padding: 10px 0;
-    font-size: 13.5px;
+    padding: 8px 0;
+    font-size: 13px;
     font-weight: 700;
-    color: #64748b;
+    color: var(--ink-mut);
     border: none;
     background: transparent;
     cursor: pointer;
-    transition: color 0.2s ease;
+    border-radius: 8px;
+    transition: all 0.22s ease;
     text-align: center;
   }
-
-  .switch-btn.active {
-    color: #4f46e5;
+  .scene-tab-btn.active {
+    background: rgba(56, 189, 248, 0.18);
+    color: var(--blue);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+  }
+  .scene-switch-tabs.emerald .scene-tab-btn.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.45);
   }
 
-  /* FORM VIEW TRANSITIONS */
-  .form-view-container {
-    position: relative;
-    min-height: 200px;
+  /* Form Elements */
+  .auth-input-group {
+    margin-bottom: 13px;
   }
-
-  .form-view {
-    opacity: 0;
-    transform: translateY(8px);
-    display: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-
-  .form-view.active {
+  .auth-input-group label {
     display: block;
-    animation: formFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes formFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .form-group-item {
-    margin-bottom: 14px;
-  }
-
-  .form-group-item label {
-    display: block;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
-    color: #334155;
-    margin-bottom: 6px;
-    transition: color 0.2s;
+    color: #cbd5e1;
+    margin-bottom: 5px;
   }
-
-  .input-with-icon {
+  .input-field-wrap {
     position: relative;
   }
-
-  .input-with-icon input {
+  .input-field-wrap input {
     width: 100%;
-    padding: 12px 14px 12px 38px;
-    border-radius: 12px;
-    border: 1.5px solid #e2e8f0;
-    font-size: 14px;
-    background: #f8fafc;
-    transition: all 0.22s ease;
-    box-sizing: border-box;
+    padding: 11px 14px 11px 38px;
+    border-radius: 11px;
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    font-size: 13.5px;
+    background: rgba(15, 23, 42, 0.6);
+    color: #ffffff;
     font-family: inherit;
-    color: #0f172a;
+    transition: all 0.2s ease;
   }
-
-  .input-icon {
+  .input-field-wrap input:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: rgba(15, 23, 42, 0.95);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  }
+  .input-field-wrap.emerald input:focus {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  }
+  .input-prefix-icon {
     position: absolute;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
-    color: #94a3b8;
+    font-size: 15px;
+    color: var(--ink-mut);
     pointer-events: none;
-    transition: color 0.2s;
   }
-
-  .input-with-icon input:focus {
-    outline: none;
-    background: #ffffff;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
-  }
-
-  .input-with-icon.has-toggle input {
-    padding-right: 44px;
-  }
-
-  .btn-toggle-eye {
+  .btn-eye-toggle {
     position: absolute;
-    right: 10px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--ink-mut);
     cursor: pointer;
     padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    transition: color 0.2s, background-color 0.2s;
+    border-radius: 6px;
   }
-
-  .btn-toggle-eye:hover {
-    color: #4f46e5;
-    background: #eef2ff;
-  }
-
-  .btn-toggle-eye svg {
-    display: block;
-    width: 18px;
-    height: 18px;
-  }
-
-  .forgot-pass-link {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    color: #4f46e5;
-    text-decoration: none;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-
-  .forgot-pass-link:hover {
-    color: #3730a3;
-    text-decoration: underline;
-  }
-
-  /* MODAL RESET PASSWORD */
-  .modal-reset-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1200;
-    padding: 16px;
-  }
-
-  .modal-reset-card {
-    background: #ffffff;
-    border-radius: 24px;
-    width: 100%;
-    max-width: 420px;
-    padding: 28px;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
-    box-sizing: border-box;
-  }
-
-  .modal-reset-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .modal-reset-header h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: #0f172a;
-    margin: 0;
-  }
-
-  .modal-reset-header p {
-    font-size: 13px;
-    color: #64748b;
-    margin: 4px 0 0;
-    line-height: 1.45;
-  }
-
-  .btn-close-modal {
-    background: #f1f5f9;
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    color: #64748b;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .btn-close-modal:hover {
-    background: #e2e8f0;
-    color: #0f172a;
-  }
-
-  /* SUBMIT BUTTON DENGAN SHIMMER */
-  .btn-submit-action {
-    width: 100%;
-    margin-top: 10px;
-    padding: 13px;
-    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  .btn-eye-toggle:hover {
     color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    font-size: 14.5px;
+  }
+
+  /* Action Submit Button */
+  .btn-card-submit {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    background: linear-gradient(135deg, #2563eb, #0284c7);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 11px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+    transition: all 0.22s ease;
     position: relative;
     overflow: hidden;
   }
-
-  .btn-submit-action:hover {
+  .btn-card-submit:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -2px rgba(79, 70, 229, 0.45);
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.45);
+  }
+  .btn-card-submit.emerald {
+    background: linear-gradient(135deg, #059669, #10b981);
+    border-color: rgba(52, 211, 153, 0.4);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+  }
+  .btn-card-submit.emerald:hover {
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
   }
 
-  .btn-submit-action:active {
-    transform: translateY(0);
-  }
-
-  .btn-submit-action::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    transform: skewX(-20deg);
-  }
-
-  .btn-submit-action:hover::after {
-    left: 200%;
-    transition: left 0.7s ease;
-  }
-
-  /* TOAST ALERT */
-  #notifBox {
-    margin-top: 14px;
+  .card-footer-caption {
+    margin-top: 16px;
     font-size: 12.5px;
-    font-weight: 600;
-    padding: 10px 14px;
-    border-radius: 10px;
-    display: none;
-    line-height: 1.45;
-    animation: notifSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes notifSlideDown {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  #notifBox.error {
-    display: block;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-  }
-
-  #notifBox.success {
-    display: block;
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #059669;
-  }
-
-  .switch-caption {
-    margin-top: 18px;
-    font-size: 13px;
-    color: #64748b;
+    color: var(--ink-mut);
     text-align: center;
   }
-
-  .switch-caption a {
-    color: #4f46e5;
+  .card-footer-caption a {
+    color: var(--blue);
     font-weight: 700;
-    text-decoration: none;
     cursor: pointer;
+    text-decoration: none;
   }
-
-  .switch-caption a:hover {
-    color: #4338ca;
+  .card-footer-caption a:hover {
     text-decoration: underline;
   }
-
-  /* LOADING OVERLAY */
-  #loadingBox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(7, 11, 20, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    z-index: 1000;
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    gap: 14px;
+  .card-footer-caption.emerald a {
+    color: #34d399;
   }
 
-  #loadingBox.show { display: flex; }
+  /* Terminal Card */
+  .terminal-card {
+    max-width: 600px;
+    text-align: center;
+    background: rgba(11, 17, 33, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 28px;
+    padding: 38px 36px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(56, 189, 248, 0.15);
+  }
+  .terminal-card .mono-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.28em;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .terminal-card h2 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: #ffffff;
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+  }
+  .terminal-card p {
+    font-size: 13.5px;
+    color: var(--ink-mut);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .terminal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
+  /* MODAL RESET PASSWORD */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 9, 17, 0.75);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  .modal-box {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    padding: 26px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .modal-header h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: #ffffff;
+  }
+  .btn-close-x {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* TOAST & LOADING */
+  .toast-alert {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 9px 12px;
+    border-radius: 9px;
+    line-height: 1.4;
+    display: none;
+  }
+  .toast-alert.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+  }
+  .toast-alert.success {
+    display: block;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+  }
+
+  #loadingBox {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 9, 17, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 2000;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  #loadingBox.show { display: flex; }
   .spin-wheel {
-    width: 40px;
-    height: 40px;
-    border: 3.5px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #818cf8;
+    width: 38px;
+    height: 38px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--blue);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* RESPONSIVE LAYOUT */
-  @media (max-width: 960px) {
-    .portal-auth-container {
-      flex-direction: column;
+  /* RESPONSIVE BREAKPOINTS */
+  @media (max-width: 900px) {
+    #sheet { inset: 10px; }
+    #sheet .tb { display: none; }
+    .hud-center-meta { display: none; }
+    .hud-top { padding: 1rem 4vw; }
+    #sceneLogin, #sceneRegister {
       justify-content: center;
-      gap: 24px;
+      padding: 0 4vw;
     }
-    .showcase-side {
-      width: 100%;
-      text-align: center;
-      padding: 0;
-    }
-    .showcase-desc {
-      max-width: 100%;
-    }
-    .stage-3d-container {
-      height: 270px;
-    }
-    .auth-card-side {
-      max-width: 440px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    body {
-      padding: 16px 12px;
-    }
-    .login-card {
-      padding: 28px 20px;
-      border-radius: 22px;
-    }
-    .showcase-title {
-      font-size: 24px;
-    }
-    .stage-3d-container {
-      height: 220px;
+    .daevora-auth-card {
+      max-width: 400px;
+      padding: 26px 20px;
     }
   }
 </style>
 </head>
 <body>
+
   <!-- LOADING OVERLAY -->
   <div id="loadingBox">
     <div class="spin-wheel"></div>
     <span id="loadingCaption">Memproses...</span>
   </div>
 
-  <div class="portal-auth-container">
+  <!-- ════════════════════════════════════════════════════════════
+       PINNED STAGE ALA DAEVORA.ID (100VH STICKY OVER SCROLL)
+       ════════════════════════════════════════════════════════════ -->
+  <section id="film" aria-label="Portal Presensi 3D SMKN 1 Sumedang">
+    <canvas id="gl"></canvas>
+    <div id="gridOverlay"></div>
+    
+    <!-- Architectural Border Framing -->
+    <div id="sheet">
+      <div class="tb mono">
+        SISTEM — PRESENSI IOT RFID<br>
+        SMKN 1 SUMEDANG — RPL<br>
+        LEMBAR P-101 → GATEWAY<br>
+        DIGERAKKAN OLEH SCROLL ANDA
+      </div>
+    </div>
+    
+    <div class="grain"></div>
+    <div id="bar"></div>
 
-    <!-- SISI KIRI: 3D REALTIME MEDALLION SHOWCASE (SMKN 1 SUMEDANG / RPL - BERSIH 100%) -->
-    <div class="showcase-side">
-      <!-- STAGE 3D INTERAKTIF (BERSIH DARI DISTRAKSI HEADER & BADGE) -->
-      <div class="stage-3d-container" id="stage3dContainer">
-        <canvas id="canvas3d"></canvas>
+    <!-- Top HUD Overlay -->
+    <header class="hud-top">
+      <div class="hud-brand-wrap">
+        <span class="brand-nesas">SMKN 1 SUMEDANG</span>
+        <span class="badge-chip">RPL IOT</span>
+      </div>
+
+      <div class="hud-center-meta mono">
+        <span>LAT -6.8587° S</span>
+        <span>LON 107.9266° E</span>
+        <span id="liveClock">00:00:00 WIB</span>
+      </div>
+
+      <nav class="hud-nav-links">
+        <button type="button" class="hud-nav-btn active" id="navBtnHero" onclick="goScene('hero')">01 PORTAL</button>
+        <button type="button" class="hud-nav-btn" id="navBtnLogin" onclick="goScene('login')">02 MASUK</button>
+        <button type="button" class="hud-nav-btn" id="navBtnRegister" onclick="goScene('register')">03 DAFTAR</button>
+        <button type="button" class="hud-nav-btn" id="navBtnTerminal" onclick="goScene('terminal')">04 TERMINAL</button>
+        <a href="presensi-live.html" class="hud-nav-btn live-pill">📡 PANTAU LIVE</a>
+      </nav>
+    </header>
+
+    <!-- Bottom HUD Overlay -->
+    <footer class="hud-bot">
+      <p class="mono" id="caption">01 — BLUEPRINT GATEWAY</p>
+      <p class="mono" id="read">000 / 100</p>
+    </footer>
+
+    <!-- Center Bottom Scroll Hint -->
+    <div id="hint">
+      <span>SCROLL TO EXPLORE</span>
+      <i></i>
+    </div>
+
+    <!-- ──────────────────────────────────────────────
+         SCENE 01: HERO PORTAL INTRO (Scroll 0.00 – 0.20)
+         ────────────────────────────────────────────── -->
+    <div class="scene-overlay is-active" id="sceneHero">
+      <div class="hero-content">
+        <p class="kick">Kompetensi Keahlian Rekayasa Perangkat Lunak</p>
+        <h1>PRESENSI IOT RFID</h1>
+        <p class="hero-t2">From card tap to real-time intelligence</p>
+        <div class="hero-actions">
+          <button type="button" class="btn-hero-primary" onclick="goScene('login')">Masuk ke Portal ↓</button>
+          <button type="button" class="btn-hero-ghost" onclick="goScene('register')">Daftar Akun RPL ↓</button>
+          <a href="presensi-live.html" class="btn-hero-live">📡 Pantau Presensi Langsung</a>
+        </div>
       </div>
     </div>
 
-    <!-- SISI KANAN: LOGIN & REGISTER CARD -->
-    <div class="auth-card-side">
-      <div class="login-card">
+    <!-- ──────────────────────────────────────────────
+         SCENE 02: GATEWAY MASUK / LOGIN (Scroll 0.25 – 0.55)
+         ────────────────────────────────────────────── -->
+    <div class="scene-overlay" id="sceneLogin">
+      <div class="daevora-auth-card" id="cardLoginWrap">
         
-        <!-- BRAND HEADER DENGAN 3D LOGO FLIPPER -->
-        <div class="brand-header">
-          <div class="brand-logo-flipper">
-            <div class="flipper-inner" id="brandLogoFlipper">
-              <!-- MUKA DEPAN: LOGO NESAS (LOGIN) -->
-              <div class="logo-face front-nesas">
-                <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang (NESAS)">
-              </div>
-              <!-- MUKA BELAKANG: LOGO RPL (REGISTER) -->
-              <div class="logo-face back-rpl">
-                <img src="assets/logo-rpl.png" alt="Logo Jurusan RPL Nesas">
-              </div>
-            </div>
+        <div class="card-top-header">
+          <div class="card-logo-thumb">
+            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang (NESAS)">
           </div>
-          <h1 id="cardTitle">Presensi Siswa</h1>
-          <p id="cardSubtitle">Portal Presensi RFID & Akademik SMKN 1 Sumedang</p>
+          <div class="card-title-group">
+            <h2>Presensi Siswa</h2>
+            <p>Portal Presensi RFID & Akademik SMKN 1 Sumedang</p>
+          </div>
         </div>
 
-        <!-- 1-KLIK GOOGLE SIGN-IN -->
-        <button class="btn-google-smart" id="btnGoogle" onclick="handleGoogleLogin()">
+        <!-- Google 1-Click Sign-In -->
+        <button class="btn-google-glow" id="btnGoogle" onclick="handleGoogleLogin()">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
           Masuk dengan Google
         </button>
 
-        <div class="sep-line">
+        <div class="card-sep">
           <span>atau dengan email</span>
         </div>
 
-        <!-- SEGMENTED TABS DENGAN SLIDER HALUS -->
-        <div class="switch-tabs-wrap" id="switchTabsWrap">
-          <div class="tab-slider" id="tabSlider"></div>
-          <button class="switch-btn active" id="tabMasuk" onclick="gantiTab('login')">Masuk</button>
-          <button class="switch-btn" id="tabDaftar" onclick="gantiTab('register')">Daftar</button>
+        <!-- Tab Switcher (Masuk / Daftar) -->
+        <div class="scene-switch-tabs">
+          <button type="button" class="scene-tab-btn active">Masuk</button>
+          <button type="button" class="scene-tab-btn" onclick="goScene('register')">Daftar</button>
         </div>
 
-        <!-- FORM CONTAINER -->
-        <div class="form-view-container">
-          
-          <!-- FORM LOGIN -->
-          <form id="formLogin" class="form-view active" onsubmit="handleLoginEmail(event)">
-            <div class="form-group-item">
-              <label for="loginEmail">Email Gmail</label>
-              <div class="input-with-icon">
-                <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
-                <span class="input-icon">✉️</span>
-              </div>
+        <!-- Form Login -->
+        <form id="formLogin" onsubmit="handleLoginEmail(event)">
+          <div class="auth-input-group">
+            <label for="loginEmail">Email Gmail</label>
+            <div class="input-field-wrap">
+              <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
+              <span class="input-prefix-icon">✉️</span>
             </div>
+          </div>
 
-            <div class="form-group-item">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <label for="loginPassword" style="margin-bottom:0;">Kata Sandi</label>
-                <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" class="forgot-pass-link">Lupa kata sandi?</a>
-              </div>
-              <div class="input-with-icon has-toggle">
-                <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
-                <span class="input-icon">🔒</span>
-                <button type="button" class="btn-toggle-eye" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi" title="Lihat/Sembunyikan Kata Sandi">
-                  <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
+          <div class="auth-input-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+              <label for="loginPassword" style="margin-bottom:0;">Kata Sandi</label>
+              <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" style="font-size:11.5px;color:var(--blue);text-decoration:none;">Lupa sandi?</a>
             </div>
-
-            <button type="submit" class="btn-submit-action" id="btnActionLogin">Masuk Sekarang</button>
-          </form>
-
-          <!-- FORM REGISTER (Khusus Siswa & Wali Murid RPL: Hanya 3 Input Bersih) -->
-          <form id="formRegister" class="form-view" onsubmit="handleRegisterEmail(event)">
-            <div class="form-group-item">
-              <label for="regNama">Nama Lengkap</label>
-              <div class="input-with-icon">
-                <input type="text" id="regNama" placeholder="Nama lengkap siswa atau wali murid" required autocomplete="name">
-                <span class="input-icon">👤</span>
-              </div>
+            <div class="input-field-wrap">
+              <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
+              <span class="input-prefix-icon">🔒</span>
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
             </div>
+          </div>
 
-            <div class="form-group-item">
-              <label for="regEmail">Email Gmail</label>
-              <div class="input-with-icon">
-                <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
-                <span class="input-icon">✉️</span>
-              </div>
-            </div>
+          <button type="submit" class="btn-card-submit" id="btnActionLogin">Masuk Sekarang</button>
+          <div id="notifBoxLogin" class="toast-alert"></div>
+        </form>
 
-            <div class="form-group-item">
-              <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
-              <div class="input-with-icon has-toggle">
-                <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
-                <span class="input-icon">🔒</span>
-                <button type="button" class="btn-toggle-eye" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi" title="Lihat/Sembunyikan Kata Sandi">
-                  <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" class="btn-submit-action" id="btnActionRegister">Daftar Akun RPL</button>
-          </form>
-
-        </div>
-
-        <!-- NOTIFIKASI TOAST -->
-        <div id="notifBox"></div>
-
-        <!-- CAPTION SWITCH BAWAH -->
-        <div class="switch-caption" id="captionBawah">
-          Belum punya akun? <a onclick="gantiTab('register')">Daftar akun RPL</a>
+        <div class="card-footer-caption">
+          Belum punya akun? <a onclick="goScene('register')">Daftar akun RPL ↓</a>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- MODAL PEMULIHAN KATA SANDI / LUPA PASSWORD -->
-  <div id="modalLupaPassword" class="modal-reset-overlay" style="display:none;">
-    <div class="modal-reset-card">
-      <div class="modal-reset-header">
-        <div>
-          <h3>Pemulihan Kata Sandi</h3>
-          <p>Tautan reset kata sandi resmi akan dikirim ke alamat email Gmail Anda.</p>
-        </div>
-        <button type="button" class="btn-close-modal" onclick="tutupModalLupaPassword()" title="Tutup">✕</button>
-      </div>
-      <form onsubmit="handleKirimResetPassword(event)">
-        <div class="form-group-item" style="margin-bottom:14px;">
-          <label for="resetEmail">Email Gmail Terdaftar</label>
-          <div class="input-with-icon">
-            <input type="email" id="resetEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            <span class="input-icon">✉️</span>
+    <!-- ──────────────────────────────────────────────
+         SCENE 03: MATRIX REGISTRASI RPL (Scroll 0.60 – 0.85)
+         ────────────────────────────────────────────── -->
+    <div class="scene-overlay" id="sceneRegister">
+      <div class="daevora-auth-card emerald-glow" id="cardRegisterWrap">
+        
+        <div class="card-top-header">
+          <div class="card-logo-thumb" style="border-color: rgba(16, 185, 129, 0.4);">
+            <img src="assets/logo-rpl.png" alt="Logo Jurusan RPL Nesas">
+          </div>
+          <div class="card-title-group">
+            <h2>Pendaftaran Akun</h2>
+            <p>Khusus Siswa & Wali Murid Rekayasa Perangkat Lunak (RPL)</p>
           </div>
         </div>
-        <div id="resetNotifBox" style="display:none;font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:10px;margin-bottom:14px;line-height:1.45;"></div>
-        <button type="submit" class="btn-submit-action" id="btnKirimReset">Kirim Link Pemulihan</button>
+
+        <!-- Tab Switcher (Masuk / Daftar) -->
+        <div class="scene-switch-tabs emerald">
+          <button type="button" class="scene-tab-btn" onclick="goScene('login')">Masuk</button>
+          <button type="button" class="scene-tab-btn active">Daftar</button>
+        </div>
+
+        <!-- Form Register -->
+        <form id="formRegister" onsubmit="handleRegisterEmail(event)">
+          <div class="auth-input-group">
+            <label for="regNama">Nama Lengkap</label>
+            <div class="input-field-wrap emerald">
+              <input type="text" id="regNama" placeholder="Nama lengkap siswa atau wali murid" required autocomplete="name">
+              <span class="input-prefix-icon">👤</span>
+            </div>
+          </div>
+
+          <div class="auth-input-group">
+            <label for="regEmail">Email Gmail</label>
+            <div class="input-field-wrap emerald">
+              <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
+              <span class="input-prefix-icon">✉️</span>
+            </div>
+          </div>
+
+          <div class="auth-input-group">
+            <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
+            <div class="input-field-wrap emerald">
+              <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
+              <span class="input-prefix-icon">🔒</span>
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)">👁️</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun RPL</button>
+          <div id="notifBoxRegister" class="toast-alert"></div>
+        </form>
+
+        <div class="card-footer-caption emerald">
+          Sudah punya akun? <a onclick="goScene('login')">Masuk ke akun ↑</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────
+         SCENE 04: TERMINAL & REKAP SUMMARY (Scroll 0.90 – 1.00)
+         ────────────────────────────────────────────── -->
+    <div class="scene-overlay" id="sceneTerminal">
+      <div class="terminal-card">
+        <p class="mono-badge mono">Scene 04 — Terminal & Data Presensi</p>
+        <h2>INTEGRASI IOT SMKN 1 SUMEDANG</h2>
+        <p>
+          Sistem Presensi RFID IoT terhubung langsung ke Firebase Realtime Database.<br>
+          Memantau 69 Data Siswa (XII RPL 1, XII RPL 2, XII TKJ 1) secara transparan dan terbuka.
+        </p>
+        <div class="terminal-actions">
+          <a href="presensi-live.html" class="btn-hero-live">📡 Buka Presensi Live (Tanpa Login)</a>
+          <button type="button" class="btn-hero-primary" onclick="goScene('login')">↑ Masuk ke Akun</button>
+          <button type="button" class="btn-hero-ghost" onclick="goScene('hero')">↺ Ulangi Dari Awal</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- MODAL PEMULIHAN KATA SANDI / LUPA PASSWORD -->
+  <div id="modalLupaPassword" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3>Pemulihan Kata Sandi</h3>
+          <p style="font-size:12.5px;color:var(--ink-mut);margin-top:4px;">Link reset resmi akan dikirim ke email Gmail Anda.</p>
+        </div>
+        <button type="button" class="btn-close-x" onclick="tutupModalLupaPassword()">✕</button>
+      </div>
+      <form onsubmit="handleKirimResetPassword(event)">
+        <div class="auth-input-group" style="margin-bottom:14px;">
+          <label for="resetEmail">Email Gmail Terdaftar</label>
+          <div class="input-field-wrap">
+            <input type="email" id="resetEmail" placeholder="nama@gmail.com" required autocomplete="email">
+            <span class="input-prefix-icon">✉️</span>
+          </div>
+        </div>
+        <div id="resetNotifBox" class="toast-alert"></div>
+        <button type="submit" class="btn-card-submit" id="btnKirimReset" style="margin-top:12px;">Kirim Link Pemulihan</button>
       </form>
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- SCRIPTS & ENGINE -->
   <script src="assets/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -830,70 +1085,134 @@
   <script src="assets/firebase-config.js"></script>
   <script src="assets/auth.js"></script>
 
-  <!-- 3D ENGINE & TAB CONTROLLER -->
-  <script>
-    // ===== 1. KONTROLER 3D THREE.JS (DUAL SCENE: LOGIN & REGISTER WAJIB BEDA) =====
-    let scene, camera, renderer;
-    let login3DGroup, register3DGroup;
-    let currentAuthMode = 'login';
-    let loginScale = 1.0, targetLoginScale = 1.0;
-    let registerScale = 0.001, targetRegisterScale = 0.001;
-    let targetRotationY = 0;
-    let currentRotationY = 0;
-    let isDragging = false;
-    let previousMouseX = 0;
-    let mouseTiltX = 0;
-    let mouseTiltY = 0;
-    let currentTiltX = 0;
-    let currentTiltY = 0;
-    let orbitalRing1, orbitalRing2, particleField;
-    let bluePointLight, purplePointLight;
-    let regWireframe, regCrystal, regGimbal1, regGimbal2, regGimbal3, regSatellites = [];
+  <!-- Optional Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 
-    function init3DScene() {
-      const container = document.getElementById('stage3dContainer');
-      const canvas = document.getElementById('canvas3d');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+  <script>
+    // ===== 1. CORE SCROLL MANAGER (ALA DAEVORA.ID) =====
+    let currentProgress = 0;
+    let targetProgress = 0;
+    let lenis = null;
+
+    try {
+      if (window.Lenis) {
+        lenis = new Lenis({
+          duration: 1.2,
+          smoothWheel: true,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+        });
+        lenis.on('scroll', () => {
+          updateScrollTarget();
+        });
+      }
+    } catch (e) {
+      console.warn('Lenis fallback to native scroll listener:', e);
+    }
+
+    function updateScrollTarget() {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      targetProgress = Math.min(1, Math.max(0, scrollY / maxScroll));
+    }
+
+    window.addEventListener('scroll', updateScrollTarget, { passive: true });
+    window.addEventListener('resize', updateScrollTarget);
+
+    function scrollToProgress(p, smooth = true) {
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const targetY = p * maxScroll;
+      if (lenis) {
+        lenis.scrollTo(targetY, { duration: 1.4 });
+      } else {
+        window.scrollTo({ top: targetY, behavior: smooth ? 'smooth' : 'auto' });
+      }
+    }
+
+    function goScene(sceneName) {
+      if (sceneName === 'hero') scrollToProgress(0.0);
+      else if (sceneName === 'login') scrollToProgress(0.38);
+      else if (sceneName === 'register') scrollToProgress(0.72);
+      else if (sceneName === 'terminal' || sceneName === 'rekap') scrollToProgress(0.98);
+    }
+
+    // Live Clock UTC+7 (WIB)
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const clockEl = document.getElementById('liveClock');
+      if (clockEl) clockEl.textContent = `${h}:${m}:${s} WIB`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ===== 2. THREE.JS SCROLL 3D ENGINE (ALA DAEVORA.ID) =====
+    let scene, camera, renderer;
+    let login3DGroup, register3DGroup, gridPlane, particleField;
+    let bluePointLight, purplePointLight, laserRing;
+    let regWireframe, regCrystal, regGimbal1, regGimbal2, regGimbal3, regSatellites = [];
+    let isDragging = false, previousMouseX = 0, currentRotationY = 0;
+    let mouseTiltX = 0, mouseTiltY = 0, curTiltX = 0, curTiltY = 0;
+
+    const CAPTIONS = [
+      [0.00, '01 — BLUEPRINT GATEWAY'],
+      [0.22, '02 — RFID LOGIN PORTAL'],
+      [0.58, '03 — RPL QUANTUM MATRIX'],
+      [0.88, '04 — TERMINAL & PRESENSI']
+    ];
+
+    function init3D() {
+      const canvas = document.getElementById('gl');
+      const w = window.innerWidth;
+      const h = window.innerHeight;
 
       scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060911);
+      scene.fog = new THREE.Fog(0x060911, 14, 38);
 
-      camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-      camera.position.set(0, 0, 9.2);
+      camera = new THREE.PerspectiveCamera(34, w / h, 0.1, 100);
+      camera.position.set(0, 0, 9.8);
 
       renderer = new THREE.WebGLRenderer({
         canvas: canvas,
-        alpha: true,
         antialias: true,
         powerPreference: 'high-performance'
       });
-      renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(w, h);
 
-      // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
-      scene.add(ambientLight);
+      // Lighting System
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x0f172a, 1.2);
+      scene.add(hemiLight);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
-      dirLight.position.set(5, 8, 7);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
+      dirLight.position.set(6, 12, 10);
       scene.add(dirLight);
 
-      bluePointLight = new THREE.PointLight(0x2563eb, 2.8, 16);
-      bluePointLight.position.set(-4, -2, 5);
+      bluePointLight = new THREE.PointLight(0x38bdf8, 3.2, 20);
+      bluePointLight.position.set(-4, -1, 5);
       scene.add(bluePointLight);
 
-      purplePointLight = new THREE.PointLight(0x06b6d4, 2.8, 16);
-      purplePointLight.position.set(4, 3, -4);
+      purplePointLight = new THREE.PointLight(0xa855f7, 3.0, 20);
+      purplePointLight.position.set(4, 2, -4);
       scene.add(purplePointLight);
 
+      // Blueprint Wireframe Grid Ground (ala Daevora)
+      const gridHelper = new THREE.GridHelper(60, 40, 0x38bdf8, 0x1e293b);
+      gridHelper.position.y = -3.2;
+      gridHelper.material.opacity = 0.35;
+      gridHelper.material.transparent = true;
+      scene.add(gridHelper);
+
       // ==========================================
-      // MODEL 3D #1: LOGIN (CYBER MEDALLION RFID GATEWAY)
+      // MODEL 1: LOGIN (CYBER MEDALLION & RFID GATEWAY)
       // ==========================================
       login3DGroup = new THREE.Group();
       scene.add(login3DGroup);
 
-      // 1. Cyber Cylinder Rim (Metallic Edge)
-      const rimGeom = new THREE.CylinderGeometry(2.85, 2.85, 0.36, 64, 1, true);
+      // Rim Silinder Metalik
+      const rimGeom = new THREE.CylinderGeometry(2.7, 2.7, 0.35, 64, 1, true);
       rimGeom.rotateX(Math.PI / 2);
       const rimMat = new THREE.MeshStandardMaterial({
         color: 0x0f172a,
@@ -903,202 +1222,191 @@
       const rimMesh = new THREE.Mesh(rimGeom, rimMat);
       login3DGroup.add(rimMesh);
 
-      // 2. Beveled Metallic Rings Front & Back
-      const bevelGeom = new THREE.TorusGeometry(2.86, 0.05, 16, 64);
+      // Cincin Bevel Neon
+      const bevelGeom = new THREE.TorusGeometry(2.71, 0.05, 16, 64);
       const bevelMat = new THREE.MeshStandardMaterial({
         color: 0x38bdf8,
         metalness: 0.9,
         roughness: 0.2,
         emissive: 0x0284c7,
-        emissiveIntensity: 0.3
+        emissiveIntensity: 0.5
       });
       const bevelFront = new THREE.Mesh(bevelGeom, bevelMat);
-      bevelFront.position.z = 0.18;
+      bevelFront.position.z = 0.175;
       login3DGroup.add(bevelFront);
 
       const bevelBack = new THREE.Mesh(bevelGeom, bevelMat);
-      bevelBack.position.z = -0.18;
+      bevelBack.position.z = -0.175;
       login3DGroup.add(bevelBack);
 
-      // 3. Face Textures (NESAS Official Emblem)
-      const textureNesas = createMedalCanvasTexture('assets/logo-nesas.png', 'NESAS', 'SMKN 1 SUMEDANG', '#2563eb', '#0f172a', '#1e293b');
-      const textureNesasBack = createMedalCanvasTexture('assets/logo-nesas.png', 'SECURITY GATEWAY', 'SMART RFID ACCESS', '#0284c7', '#090d16', '#1e293b');
+      // Tekstur Emblem NESAS Depan & Belakang
+      const texNesasFront = createMedalCanvasTexture('assets/logo-nesas.png', 'NESAS', 'SMKN 1 SUMEDANG', '#38bdf8', '#1e3a8a', '#0b1329');
+      const texNesasBack = createMedalCanvasTexture('assets/logo-nesas.png', 'RFID GATEWAY', 'PRESENSI IOT SYSTEM', '#0284c7', '#0f172a', '#060911');
 
-      const faceGeom = new THREE.CircleGeometry(2.83, 64);
-
+      const faceGeom = new THREE.CircleGeometry(2.68, 64);
       const faceFront = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: textureNesas,
+        map: texNesasFront,
         roughness: 0.25,
         metalness: 0.3
       }));
-      faceFront.position.z = 0.185;
+      faceFront.position.z = 0.18;
       login3DGroup.add(faceFront);
 
       const faceBack = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: textureNesasBack,
+        map: texNesasBack,
         roughness: 0.25,
         metalness: 0.3
       }));
-      faceBack.position.z = -0.185;
+      faceBack.position.z = -0.18;
       faceBack.rotation.y = Math.PI;
       login3DGroup.add(faceBack);
 
-      // 4. Gyroscopic Orbital Rings for Login
-      const ringGeom1 = new THREE.TorusGeometry(3.45, 0.025, 16, 80);
-      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 });
-      orbitalRing1 = new THREE.Mesh(ringGeom1, ringMat1);
-      orbitalRing1.rotation.x = 1.15;
-      login3DGroup.add(orbitalRing1);
+      // Gyroscopic Orbital Rings
+      const ringGeom1 = new THREE.TorusGeometry(3.3, 0.025, 16, 80);
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+      const ring1 = new THREE.Mesh(ringGeom1, ringMat1);
+      ring1.rotation.x = 1.15;
+      login3DGroup.add(ring1);
 
-      const ringGeom2 = new THREE.TorusGeometry(3.95, 0.02, 16, 80);
-      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.5 });
-      orbitalRing2 = new THREE.Mesh(ringGeom2, ringMat2);
-      orbitalRing2.rotation.y = 0.75;
-      orbitalRing2.rotation.x = -0.4;
-      login3DGroup.add(orbitalRing2);
+      const ringGeom2 = new THREE.TorusGeometry(3.75, 0.02, 16, 80);
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45 });
+      const ring2 = new THREE.Mesh(ringGeom2, ringMat2);
+      ring2.rotation.y = 0.75;
+      ring2.rotation.x = -0.4;
+      login3DGroup.add(ring2);
+
+      // Scanning Laser Ring
+      const laserGeom = new THREE.TorusGeometry(2.85, 0.015, 8, 64);
+      const laserMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
+      laserRing = new THREE.Mesh(laserGeom, laserMat);
+      login3DGroup.add(laserRing);
 
       // ==========================================
-      // MODEL 3D #2: REGISTER (QUANTUM POLYHEDRON & INNOVATION MATRIX)
-      // Visual 100% Berbeda Khusus Pendaftaran Kejuruan RPL
+      // MODEL 2: REGISTER (QUANTUM POLYHEDRON & RPL MATRIX)
+      // Visual 100% Berbeda Khusus Registrasi RPL
       // ==========================================
       register3DGroup = new THREE.Group();
       register3DGroup.scale.set(0.001, 0.001, 0.001);
       scene.add(register3DGroup);
 
-      // 1. Outer Wireframe Cyber Polyhedron (Emerald Neon)
+      // Wireframe Icosahedron Neon Emerald
       const wireGeom = new THREE.IcosahedronGeometry(2.4, 1);
       const wireMat = new THREE.MeshStandardMaterial({
         color: 0x10b981,
         wireframe: true,
         emissive: 0x059669,
-        emissiveIntensity: 0.7,
+        emissiveIntensity: 0.8,
         roughness: 0.2
       });
       regWireframe = new THREE.Mesh(wireGeom, wireMat);
       register3DGroup.add(regWireframe);
 
-      // 2. Inner Faceted Quantum Crystal (Cyber Violet)
+      // Inner Crystal Violet
       const crystalGeom = new THREE.OctahedronGeometry(1.85, 0);
       const crystalMat = new THREE.MeshStandardMaterial({
         color: 0x7c3aed,
         emissive: 0x4c1d95,
-        emissiveIntensity: 0.55,
+        emissiveIntensity: 0.6,
         metalness: 0.9,
         roughness: 0.15,
         transparent: true,
-        opacity: 0.88
+        opacity: 0.85
       });
       regCrystal = new THREE.Mesh(crystalGeom, crystalMat);
       register3DGroup.add(regCrystal);
 
-      // 3. Central RPL Hologram Plate
-      const textureRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'RPL INNOVATION', 'REKAYASA PERANGKAT LUNAK', '#10b981', '#0f0b1e', '#064e3b');
-      const rplPlateFront = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: textureRpl,
+      // Central RPL Logo Emblem
+      const texRpl = createMedalCanvasTexture('assets/logo-rpl.png', 'RPL INNOVATION', 'SMKN 1 SUMEDANG', '#10b981', '#064e3b', '#031f17');
+      const rplPlate = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
+        map: texRpl,
         roughness: 0.2,
         metalness: 0.4,
         transparent: true,
         opacity: 0.95
       }));
-      rplPlateFront.position.z = 0.02;
-      rplPlateFront.scale.set(0.68, 0.68, 0.68);
-      register3DGroup.add(rplPlateFront);
+      rplPlate.scale.set(0.68, 0.68, 0.68);
+      rplPlate.position.z = 0.02;
+      register3DGroup.add(rplPlate);
 
-      const rplPlateBack = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({
-        map: textureRpl,
-        roughness: 0.2,
-        metalness: 0.4,
-        transparent: true,
-        opacity: 0.95
-      }));
+      const rplPlateBack = rplPlate.clone();
       rplPlateBack.position.z = -0.02;
       rplPlateBack.rotation.y = Math.PI;
-      rplPlateBack.scale.set(0.68, 0.68, 0.68);
       register3DGroup.add(rplPlateBack);
 
-      // 4. Three Intersecting Quantum Gimbal Rings (RGB Precision Spectrum)
-      const gimbalGeom1 = new THREE.TorusGeometry(3.1, 0.03, 16, 80);
-      const gimbalMat1 = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.75 });
-      regGimbal1 = new THREE.Mesh(gimbalGeom1, gimbalMat1);
+      // Triple Quantum Gimbal Rings
+      const gMat1 = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.75 });
+      regGimbal1 = new THREE.Mesh(new THREE.TorusGeometry(3.1, 0.03, 16, 80), gMat1);
       regGimbal1.rotation.x = Math.PI / 3;
       register3DGroup.add(regGimbal1);
 
-      const gimbalGeom2 = new THREE.TorusGeometry(3.5, 0.025, 16, 80);
-      const gimbalMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.7 });
-      regGimbal2 = new THREE.Mesh(gimbalGeom2, gimbalMat2);
+      const gMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.7 });
+      regGimbal2 = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.025, 16, 80), gMat2);
       regGimbal2.rotation.y = Math.PI / 4;
       register3DGroup.add(regGimbal2);
 
-      const gimbalGeom3 = new THREE.TorusGeometry(3.9, 0.02, 16, 80);
-      const gimbalMat3 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
-      regGimbal3 = new THREE.Mesh(gimbalGeom3, gimbalMat3);
+      const gMat3 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
+      regGimbal3 = new THREE.Mesh(new THREE.TorusGeometry(3.9, 0.02, 16, 80), gMat3);
       regGimbal3.rotation.z = Math.PI / 6;
       register3DGroup.add(regGimbal3);
 
-      // 5. Floating Satellite Data Nodes (Micro Cubes in Dynamic Orbit)
+      // Orbiting Satellite Data Nodes
       regSatellites = [];
-      const satGeom = new THREE.BoxGeometry(0.24, 0.24, 0.24);
+      const satGeom = new THREE.BoxGeometry(0.25, 0.25, 0.25);
       for (let i = 0; i < 6; i++) {
         const satMat = new THREE.MeshStandardMaterial({
           color: (i % 2 === 0) ? 0x10b981 : 0xa855f7,
           emissive: (i % 2 === 0) ? 0x059669 : 0x7c3aed,
-          emissiveIntensity: 0.6,
-          metalness: 0.8,
-          roughness: 0.2
+          emissiveIntensity: 0.7,
+          metalness: 0.8
         });
         const satMesh = new THREE.Mesh(satGeom, satMat);
         register3DGroup.add(satMesh);
         regSatellites.push(satMesh);
       }
 
-      // ==========================================
-      // GLOBAL PARTICLE DUST FIELD
-      // ==========================================
-      const partCount = 55;
-      const partGeom = new THREE.BufferGeometry();
-      const posArray = new Float32Array(partCount * 3);
-      for (let i = 0; i < partCount * 3; i += 3) {
-        posArray[i] = (Math.random() - 0.5) * 12;
-        posArray[i + 1] = (Math.random() - 0.5) * 8;
-        posArray[i + 2] = (Math.random() - 0.5) * 6;
+      // Floating Particle Dust
+      const pCount = 70;
+      const pGeom = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        pPos[i] = (Math.random() - 0.5) * 16;
+        pPos[i + 1] = (Math.random() - 0.5) * 10;
+        pPos[i + 2] = (Math.random() - 0.5) * 8;
       }
-      partGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-      const partMat = new THREE.PointsMaterial({ size: 0.04, color: 0x93c5fd, transparent: true, opacity: 0.75 });
-      particleField = new THREE.Points(partGeom, partMat);
+      pGeom.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({ size: 0.045, color: 0x93c5fd, transparent: true, opacity: 0.65 });
+      particleField = new THREE.Points(pGeom, pMat);
       scene.add(particleField);
 
-      // Event Listeners
-      setupInteractions(container);
-      window.addEventListener('resize', onWindowResize);
-      animate3D();
+      // Interactions
+      setupPointerInteractions();
+      window.addEventListener('resize', onResize);
     }
 
-    // Helper untuk membuat Texture Canvas Lingkaran Beresolusi Tinggi
     function createMedalCanvasTexture(imgSrc, title, subtitle, ringColor, bgCenter, bgEdge) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1024;
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d');
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext('2d');
       const cx = 512, cy = 512, r = 490;
 
-      function drawTexture(img) {
+      function render(img) {
         ctx.clearRect(0, 0, 1024, 1024);
-
         ctx.save();
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.clip();
 
-        // Latar Belakang Gradasi Radial
-        const bgGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, r);
+        // Background Radial
+        const bgGrad = ctx.createRadialGradient(cx, cy, 60, cx, cy, r);
         bgGrad.addColorStop(0, bgCenter);
         bgGrad.addColorStop(0.7, bgEdge);
-        bgGrad.addColorStop(1, '#050811');
+        bgGrad.addColorStop(1, '#030712');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, 1024, 1024);
 
-        // Lingkaran Konsentris Tech
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        // Tech Rings
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 2;
         for (let rad = 140; rad < 460; rad += 45) {
           ctx.beginPath();
@@ -1106,49 +1414,42 @@
           ctx.stroke();
         }
 
-        // Cincin Luar Neon Glow
+        // Outer Glow Ring
         ctx.strokeStyle = ringColor;
-        ctx.lineWidth = 16;
+        ctx.lineWidth = 14;
         ctx.shadowColor = ringColor;
-        ctx.shadowBlur = 28;
+        ctx.shadowBlur = 24;
         ctx.beginPath();
         ctx.arc(cx, cy, r - 12, 0, Math.PI * 2);
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Cincin Metalik Dalam
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r - 38, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Gambar Logo Asli di Tengah
+        // Image
         if (img) {
           const sz = 460;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-          ctx.shadowBlur = 30;
-          ctx.shadowOffsetY = 15;
+          ctx.shadowBlur = 26;
+          ctx.shadowOffsetY = 12;
           ctx.drawImage(img, cx - sz / 2, cy - sz / 2 - 35, sz, sz);
           ctx.shadowBlur = 0;
           ctx.shadowOffsetY = 0;
         }
 
-        // Teks Badge Bawah
+        // Title & Subtitle
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.letterSpacing = '1.5px';
         ctx.fillText(title, cx, 840);
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
         ctx.fillText(subtitle, cx, 885);
 
-        // Pantulan Glossy Kaca (Sheen Curve)
+        // Glass Sheen Curve
         const sheen = ctx.createLinearGradient(0, 0, 1024, 600);
-        sheen.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
-        sheen.addColorStop(0.35, 'rgba(255, 255, 255, 0.05)');
+        sheen.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+        sheen.addColorStop(0.35, 'rgba(255, 255, 255, 0.04)');
         sheen.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = sheen;
         ctx.beginPath();
@@ -1158,22 +1459,19 @@
         ctx.restore();
       }
 
-      drawTexture(null);
-
-      const texture = new THREE.CanvasTexture(canvas);
+      render(null);
+      const texture = new THREE.CanvasTexture(c);
       texture.anisotropy = 8;
-
       const img = new Image();
       img.src = imgSrc;
       img.onload = () => {
-        drawTexture(img);
+        render(img);
         texture.needsUpdate = true;
       };
-
       return texture;
     }
 
-    function setupInteractions(container) {
+    function setupPointerInteractions() {
       window.addEventListener('mousemove', (e) => {
         const x = (e.clientX / window.innerWidth) * 2 - 1;
         const y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -1181,86 +1479,197 @@
         mouseTiltY = x * 0.26;
       });
 
-      container.addEventListener('mousedown', (e) => {
+      const glCanvas = document.getElementById('gl');
+      glCanvas.addEventListener('mousedown', (e) => {
         isDragging = true;
         previousMouseX = e.clientX;
       });
-
       window.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         const deltaX = e.clientX - previousMouseX;
         currentRotationY += deltaX * 0.012;
         previousMouseX = e.clientX;
       });
-
       window.addEventListener('mouseup', () => { isDragging = false; });
 
-      container.addEventListener('touchstart', (e) => {
+      glCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
           isDragging = true;
           previousMouseX = e.touches[0].clientX;
         }
       }, { passive: true });
-
       window.addEventListener('touchmove', (e) => {
         if (!isDragging || e.touches.length !== 1) return;
         const deltaX = e.touches[0].clientX - previousMouseX;
         currentRotationY += deltaX * 0.012;
         previousMouseX = e.touches[0].clientX;
       }, { passive: true });
-
       window.addEventListener('touchend', () => { isDragging = false; });
     }
 
-    function onWindowResize() {
-      const container = document.getElementById('stage3dContainer');
-      if (!container || !renderer || !camera) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+    function onResize() {
+      if (!camera || !renderer) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
 
-    let clock = new THREE.Clock();
+    // ===== 3. RENDER LOOP DENGAN KOREOGRAFI SCROLL LERP (ALA DAEVORA) =====
+    const clock = new THREE.Clock();
 
-    function animate3D() {
-      requestAnimationFrame(animate3D);
+    function animate() {
+      requestAnimationFrame(animate);
 
+      if (lenis) lenis.raf(performance.now());
+
+      // Smooth Lerp Scroll Progress
+      currentProgress += (targetProgress - currentProgress) * 0.085;
+
+      const p = currentProgress;
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth Lerp Spring ke Target Rotation jika sedang tidak di-drag
-      if (!isDragging) {
-        currentRotationY += (targetRotationY - currentRotationY) * 0.065;
+      // Update Top Bar & Read Counter
+      const barEl = document.getElementById('bar');
+      if (barEl) barEl.style.transform = `scaleX(${p})`;
+
+      const readEl = document.getElementById('read');
+      if (readEl) readEl.textContent = `${String(Math.round(p * 100)).padStart(3, '0')} / 100`;
+
+      // Update Caption
+      const captionEl = document.getElementById('caption');
+      let activeCap = CAPTIONS[0][1];
+      for (let i = 0; i < CAPTIONS.length; i++) {
+        if (p >= CAPTIONS[i][0]) activeCap = CAPTIONS[i][1];
+      }
+      if (captionEl && captionEl.textContent !== activeCap) {
+        captionEl.textContent = activeCap;
       }
 
-      currentTiltX += (mouseTiltX - currentTiltX) * 0.08;
-      currentTiltY += (mouseTiltY - currentTiltY) * 0.08;
+      // Hide Scroll Hint after scrolling starts
+      const hintEl = document.getElementById('hint');
+      if (hintEl) {
+        hintEl.style.opacity = p > 0.03 ? '0' : '1';
+      }
 
-      // Dynamic scale transition between Login & Register 3D models
-      loginScale += (targetLoginScale - loginScale) * 0.075;
-      registerScale += (targetRegisterScale - registerScale) * 0.075;
+      // Update Active Navigation Buttons
+      const navHero = document.getElementById('navBtnHero');
+      const navLogin = document.getElementById('navBtnLogin');
+      const navRegister = document.getElementById('navBtnRegister');
+      const navTerminal = document.getElementById('navBtnTerminal');
+      [navHero, navLogin, navRegister, navTerminal].forEach(btn => btn && btn.classList.remove('active'));
+      if (p < 0.22 && navHero) navHero.classList.add('active');
+      else if (p >= 0.22 && p < 0.58 && navLogin) navLogin.classList.add('active');
+      else if (p >= 0.58 && p < 0.88 && navRegister) navRegister.classList.add('active');
+      else if (p >= 0.88 && navTerminal) navTerminal.classList.add('active');
 
-      // 1. Model Login (Medallion) Animation
+      // Update Scene Overlays Crossfade
+      const sHero = document.getElementById('sceneHero');
+      const sLogin = document.getElementById('sceneLogin');
+      const sRegister = document.getElementById('sceneRegister');
+      const sTerminal = document.getElementById('sceneTerminal');
+
+      if (sHero) sHero.classList.toggle('is-active', p < 0.20);
+      if (sLogin) sLogin.classList.toggle('is-active', p >= 0.22 && p < 0.58);
+      if (sRegister) sRegister.classList.toggle('is-active', p >= 0.58 && p < 0.88);
+      if (sTerminal) sTerminal.classList.toggle('is-active', p >= 0.88);
+
+      // Smooth Pointer Tilt
+      curTiltX += (mouseTiltX - curTiltX) * 0.08;
+      curTiltY += (mouseTiltY - curTiltY) * 0.08;
+
+      // ==========================================
+      // SCROLL-DRIVEN CAMERA & 3D OBJECT CHOREOGRAPHY
+      // ==========================================
+      const isMobile = window.innerWidth < 900;
+
+      // Hitung Posisi Kamera Sesuai Progress Scroll
+      let targetCamX = 0, targetCamY = 0, targetCamZ = 9.8;
+      let targetLookX = 0, targetLookY = 0, targetLookZ = 0;
+
+      if (p < 0.22) {
+        // Scene 1: Hero (Center Focus)
+        targetCamX = 0;
+        targetCamY = 0.2;
+        targetCamZ = isMobile ? 11.2 : 9.8;
+      } else if (p < 0.58) {
+        // Scene 2: Login (Geser Kamera ke Kiri, Model di Kiri, Form di Kanan)
+        const t = (p - 0.22) / 0.36;
+        targetCamX = isMobile ? 0 : -2.3;
+        targetCamY = 0.2;
+        targetCamZ = isMobile ? 11.5 : 8.2;
+        targetLookX = isMobile ? 0 : -0.5;
+      } else if (p < 0.88) {
+        // Scene 3: Register (Geser Kamera ke Kanan, Model di Kanan, Form di Kiri)
+        const t = (p - 0.58) / 0.30;
+        targetCamX = isMobile ? 0 : 2.3;
+        targetCamY = -0.1;
+        targetCamZ = isMobile ? 11.5 : 8.2;
+        targetLookX = isMobile ? 0 : 0.5;
+      } else {
+        // Scene 4: Terminal (Overview Tinggi Ala Arsitektur)
+        targetCamX = 0;
+        targetCamY = 4.8;
+        targetCamZ = isMobile ? 11.0 : 8.8;
+        targetLookY = 0;
+      }
+
+      camera.position.x += (targetCamX + curTiltY - camera.position.x) * 0.08;
+      camera.position.y += (targetCamY + curTiltX - camera.position.y) * 0.08;
+      camera.position.z += (targetCamZ - camera.position.z) * 0.08;
+      camera.lookAt(targetLookX, targetLookY, targetLookZ);
+
+      // Model 1: Login Medallion Scale & Placement
+      let targetLoginScale = 0.001;
+      let targetLoginX = isMobile ? 0 : -1.8;
+      if (p < 0.22) {
+        targetLoginScale = 1.0;
+        targetLoginX = 0;
+      } else if (p < 0.58) {
+        targetLoginScale = 1.0;
+        targetLoginX = isMobile ? 0 : -1.8;
+      } else {
+        targetLoginScale = 0.001;
+      }
+
       if (login3DGroup) {
-        login3DGroup.scale.set(loginScale, loginScale, loginScale);
-        if (loginScale > 0.01) {
-          login3DGroup.rotation.y = currentRotationY + currentTiltY;
-          login3DGroup.rotation.x = currentTiltX;
-          login3DGroup.position.y = Math.sin(elapsedTime * 1.6) * 0.16;
+        login3DGroup.position.x += (targetLoginX - login3DGroup.position.x) * 0.08;
+        login3DGroup.scale.x += (targetLoginScale - login3DGroup.scale.x) * 0.08;
+        login3DGroup.scale.y = login3DGroup.scale.x;
+        login3DGroup.scale.z = login3DGroup.scale.x;
 
-          if (orbitalRing1) orbitalRing1.rotation.z += 0.007;
-          if (orbitalRing2) orbitalRing2.rotation.z -= 0.005;
+        if (login3DGroup.scale.x > 0.02) {
+          login3DGroup.rotation.y = currentRotationY + p * 3.5 + Math.sin(elapsedTime * 0.8) * 0.15;
+          login3DGroup.rotation.x = Math.sin(elapsedTime * 1.2) * 0.08;
+          login3DGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.15;
+
+          if (laserRing) {
+            laserRing.position.z = Math.sin(elapsedTime * 3) * 0.2;
+            laserRing.scale.setScalar(1 + Math.sin(elapsedTime * 4) * 0.05);
+          }
         }
       }
 
-      // 2. Model Register (Quantum Polyhedron) Animation
+      // Model 2: Register Quantum Polyhedron Scale & Placement
+      let targetRegScale = 0.001;
+      let targetRegX = isMobile ? 0 : 1.8;
+      if (p >= 0.58 && p < 0.88) {
+        targetRegScale = 1.0;
+        targetRegX = isMobile ? 0 : 1.8;
+      } else {
+        targetRegScale = 0.001;
+      }
+
       if (register3DGroup) {
-        register3DGroup.scale.set(registerScale, registerScale, registerScale);
-        if (registerScale > 0.01) {
-          register3DGroup.rotation.y = currentRotationY + currentTiltY + elapsedTime * 0.35;
-          register3DGroup.rotation.x = currentTiltX + Math.sin(elapsedTime * 0.9) * 0.12;
-          register3DGroup.position.y = Math.cos(elapsedTime * 1.8) * 0.16;
+        register3DGroup.position.x += (targetRegX - register3DGroup.position.x) * 0.08;
+        register3DGroup.scale.x += (targetRegScale - register3DGroup.scale.x) * 0.08;
+        register3DGroup.scale.y = register3DGroup.scale.x;
+        register3DGroup.scale.z = register3DGroup.scale.x;
+
+        if (register3DGroup.scale.x > 0.02) {
+          register3DGroup.rotation.y = currentRotationY + p * 4.2 + elapsedTime * 0.3;
+          register3DGroup.position.y = Math.cos(elapsedTime * 1.6) * 0.16;
 
           if (regWireframe) {
             regWireframe.rotation.x += 0.008;
@@ -1275,7 +1684,7 @@
           if (regGimbal3) regGimbal3.rotation.y += 0.007;
 
           regSatellites.forEach((sat, i) => {
-            const angle = elapsedTime * 1.4 + (i * Math.PI / 3);
+            const angle = elapsedTime * 1.5 + (i * Math.PI / 3);
             const radius = 3.2 + Math.sin(elapsedTime + i) * 0.25;
             sat.position.x = Math.cos(angle) * radius;
             sat.position.z = Math.sin(angle) * radius;
@@ -1286,14 +1695,14 @@
         }
       }
 
-      // Smooth Dynamic Lighting Transition
+      // Dynamic Color Shifting Lights
       if (bluePointLight && purplePointLight) {
-        if (currentAuthMode === 'login') {
-          bluePointLight.color.lerp(new THREE.Color(0x2563eb), 0.06);
-          purplePointLight.color.lerp(new THREE.Color(0x06b6d4), 0.06);
+        if (p >= 0.58 && p < 0.88) {
+          bluePointLight.color.lerp(new THREE.Color(0x10b981), 0.08); // Emerald
+          purplePointLight.color.lerp(new THREE.Color(0xa855f7), 0.08); // Purple
         } else {
-          bluePointLight.color.lerp(new THREE.Color(0xa855f7), 0.06);
-          purplePointLight.color.lerp(new THREE.Color(0x10b981), 0.06);
+          bluePointLight.color.lerp(new THREE.Color(0x38bdf8), 0.08); // Sky blue
+          purplePointLight.color.lerp(new THREE.Color(0x0284c7), 0.08); // Indigo
         }
       }
 
@@ -1303,101 +1712,20 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      init3DScene();
+      init3D();
+      animate();
     });
 
-    // ===== 2. KONTROLER TAB & ANIMASI TRANSISI (MASUK / DAFTAR) =====
-    function gantiTab(mode) {
-      const fLog = document.getElementById('formLogin');
-      const fReg = document.getElementById('formRegister');
-      const tLog = document.getElementById('tabMasuk');
-      const tReg = document.getElementById('tabDaftar');
-      const wrap = document.getElementById('switchTabsWrap');
-      const cap = document.getElementById('captionBawah');
-      const flipper = document.getElementById('brandLogoFlipper');
-      const cardTitle = document.getElementById('cardTitle');
-      const cardSub = document.getElementById('cardSubtitle');
-      const cardEl = document.querySelector('.login-card');
+    // ===== 4. AUTHENTICATION & FORM LOGIC =====
 
-      bersihkanNotif();
-
-      if (mode === 'login') {
-        currentAuthMode = 'login';
-        targetLoginScale = 1.0;
-        targetRegisterScale = 0.001;
-        targetRotationY = 0;
-
-        // Smooth 3D Card Morph Transition
-        if (cardEl) {
-          cardEl.classList.remove('card-morph-to-reg');
-          cardEl.classList.add('card-morph-to-log');
-          setTimeout(() => cardEl.classList.remove('card-morph-to-log'), 650);
-        }
-
-        // Form View Cross-Fade
-        fLog.style.display = 'block';
-        fReg.style.display = 'none';
-        setTimeout(() => {
-          fLog.classList.add('active');
-          fReg.classList.remove('active');
-        }, 10);
-
-        tLog.classList.add('active');
-        tReg.classList.remove('active');
-        wrap.classList.remove('is-register');
-        flipper.classList.remove('is-flipped');
-
-        cardTitle.textContent = 'Presensi Siswa';
-        cardSub.textContent = 'Portal Presensi RFID & Akademik SMKN 1 Sumedang';
-        cap.innerHTML = 'Belum punya akun? <a onclick="gantiTab(\'register\')">Daftar akun RPL</a>';
-      } else {
-        currentAuthMode = 'register';
-        targetLoginScale = 0.001;
-        targetRegisterScale = 1.0;
-        targetRotationY = 0;
-
-        // Smooth 3D Card Morph Transition
-        if (cardEl) {
-          cardEl.classList.remove('card-morph-to-log');
-          cardEl.classList.add('card-morph-to-reg');
-          setTimeout(() => cardEl.classList.remove('card-morph-to-reg'), 650);
-        }
-
-        // Form View Cross-Fade
-        fLog.style.display = 'none';
-        fReg.style.display = 'block';
-        setTimeout(() => {
-          fReg.classList.add('active');
-          fLog.classList.remove('active');
-        }, 10);
-
-        tLog.classList.remove('active');
-        tReg.classList.add('active');
-        wrap.classList.add('is-register');
-        flipper.classList.add('is-flipped');
-
-        cardTitle.textContent = 'Pendaftaran Akun';
-        cardSub.textContent = 'Kompetensi Keahlian Rekayasa Perangkat Lunak (RPL)';
-        cap.innerHTML = 'Sudah punya akun? <a onclick="gantiTab(\'login\')">Masuk ke akun</a>';
-      }
-    }
-
-    // Toggle Lihat / Sembunyikan Kata Sandi (Anti Typo)
     function togglePassword(inputId, btn) {
       const inp = document.getElementById(inputId);
       if (!inp) return;
       const isPass = inp.type === 'password';
       inp.type = isPass ? 'text' : 'password';
-      const openIcon = btn.querySelector('.eye-open');
-      const closedIcon = btn.querySelector('.eye-closed');
-      if (openIcon && closedIcon) {
-        openIcon.style.display = isPass ? 'none' : 'block';
-        closedIcon.style.display = isPass ? 'block' : 'none';
-      }
-      btn.setAttribute('aria-label', isPass ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
+      btn.textContent = isPass ? '🙈' : '👁️';
     }
 
-    // Modal Pemulihan / Lupa Password
     function bukaModalLupaPassword() {
       const emailField = document.getElementById('loginEmail');
       const resetEmailField = document.getElementById('resetEmail');
@@ -1424,10 +1752,8 @@
       try {
         await kirimResetPassword(email);
         notif.style.display = 'block';
-        notif.style.background = '#ecfdf5';
-        notif.style.color = '#059669';
-        notif.style.border = '1px solid #a7f3d0';
-        notif.textContent = 'Link pemulihan kata sandi telah dikirim ke ' + email + '. Silakan periksa inbox / spam di Gmail Anda.';
+        notif.className = 'toast-alert success';
+        notif.textContent = 'Link pemulihan kata sandi telah dikirim ke ' + email + '. Cek kotak masuk / spam di Gmail Anda.';
         btn.textContent = 'Terkirim ✓';
         setTimeout(() => {
           tutupModalLupaPassword();
@@ -1438,9 +1764,7 @@
         btn.disabled = false;
         btn.textContent = 'Kirim Link Pemulihan';
         notif.style.display = 'block';
-        notif.style.background = '#fef2f2';
-        notif.style.color = '#dc2626';
-        notif.style.border = '1px solid #fecaca';
+        notif.className = 'toast-alert error';
         if (err.code === 'auth/user-not-found') {
           notif.textContent = 'Email belum terdaftar di sistem presensi.';
         } else if (err.code === 'auth/invalid-email') {
@@ -1451,16 +1775,18 @@
       }
     }
 
-    function tampilNotif(pesan, tipe) {
-      const b = document.getElementById('notifBox');
+    function tampilNotif(boxId, pesan, tipe) {
+      const b = document.getElementById(boxId);
+      if (!b) return;
       b.textContent = pesan;
-      b.className = tipe;
+      b.className = 'toast-alert ' + tipe;
     }
 
-    function bersihkanNotif() {
-      const b = document.getElementById('notifBox');
+    function bersihkanNotif(boxId) {
+      const b = document.getElementById(boxId);
+      if (!b) return;
       b.textContent = '';
-      b.className = '';
+      b.className = 'toast-alert';
     }
 
     function loading(show, text = 'Memproses...') {
@@ -1477,7 +1803,7 @@
 
     // Login Google
     async function handleGoogleLogin() {
-      bersihkanNotif();
+      bersihkanNotif('notifBoxLogin');
       loading(true, 'Menghubungkan akun Google...');
       try {
         const result = await loginDenganGoogle();
@@ -1486,11 +1812,11 @@
       } catch (e) {
         loading(false);
         if (e.code === 'auth/unauthorized-domain') {
-          tampilNotif('Harap tambahkan domain lokal ke Firebase Console -> Auth -> Settings -> Authorized domains.', 'error');
+          tampilNotif('notifBoxLogin', 'Harap tambahkan domain lokal ke Firebase Console -> Auth -> Authorized domains.', 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
-          tampilNotif('Login dibatalkan.', 'error');
+          tampilNotif('notifBoxLogin', 'Login dibatalkan.', 'error');
         } else {
-          tampilNotif(e.message || 'Gagal login Google.', 'error');
+          tampilNotif('notifBoxLogin', e.message || 'Gagal login Google.', 'error');
         }
       }
     }
@@ -1498,7 +1824,7 @@
     // Login Email
     async function handleLoginEmail(e) {
       e.preventDefault();
-      bersihkanNotif();
+      bersihkanNotif('notifBoxLogin');
       const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPassword').value;
 
@@ -1510,19 +1836,19 @@
       } catch (err) {
         loading(false);
         if (err.code === 'auth/email-not-verified') {
-          tampilNotif('Email belum diverifikasi. Cek kotak masuk atau spam di Gmail Anda.', 'error');
+          tampilNotif('notifBoxLogin', 'Email belum diverifikasi. Cek kotak masuk atau spam di Gmail Anda.', 'error');
         } else if (err.code === 'auth/operation-not-allowed') {
-          tampilNotif('PENTING: Aktifkan Email/Password di Firebase Console -> Authentication -> Sign-in method.', 'error');
+          tampilNotif('notifBoxLogin', 'PENTING: Aktifkan Email/Password di Firebase Console -> Authentication -> Sign-in method.', 'error');
         } else {
-          tampilNotif('Email atau kata sandi salah / belum terdaftar.', 'error');
+          tampilNotif('notifBoxLogin', 'Email atau kata sandi salah / belum terdaftar.', 'error');
         }
       }
     }
 
-    // Register Email (Khusus Siswa & Wali Murid RPL: Hanya 3 Isian)
+    // Register Email (Khusus Siswa & Wali Murid RPL)
     async function handleRegisterEmail(e) {
       e.preventDefault();
-      bersihkanNotif();
+      bersihkanNotif('notifBoxRegister');
       const nama = document.getElementById('regNama').value.trim();
       const email = document.getElementById('regEmail').value.trim();
       const pass = document.getElementById('regPassword').value;
@@ -1531,17 +1857,17 @@
       try {
         await registerDenganEmail(email, pass, nama);
         loading(false);
-        tampilNotif('Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik tautan verifikasi, lalu masuk.', 'success');
+        tampilNotif('notifBoxRegister', 'Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik tautan verifikasi, lalu masuk.', 'success');
         document.getElementById('formRegister').reset();
-        setTimeout(() => gantiTab('login'), 3500);
+        setTimeout(() => goScene('login'), 3500);
       } catch (err) {
         loading(false);
         if (err.code === 'auth/operation-not-allowed') {
-          tampilNotif('Harap aktifkan provider Email/Password di Firebase Console -> Auth -> Sign-in method.', 'error');
+          tampilNotif('notifBoxRegister', 'Harap aktifkan provider Email/Password di Firebase Console -> Auth -> Sign-in method.', 'error');
         } else if (err.code === 'auth/email-already-in-use') {
-          tampilNotif('Email ini sudah terdaftar. Silakan pilih Masuk.', 'error');
+          tampilNotif('notifBoxRegister', 'Email ini sudah terdaftar. Silakan pilih Masuk.', 'error');
         } else {
-          tampilNotif(err.message || 'Gagal mendaftar.', 'error');
+          tampilNotif('notifBoxRegister', err.message || 'Gagal mendaftar.', 'error');
         }
       }
     }
