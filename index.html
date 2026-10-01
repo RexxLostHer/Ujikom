@@ -1276,10 +1276,10 @@
       login3DGroup.add(kbPlane);
 
       // Display Lid Panel (Upper Screen Unit)
-      const screenW = 4.2, screenH = 2.7, screenD = 0.08;
+      const screenW = 4.4, screenH = 2.75, screenD = 0.08;
       const lidGroup = new THREE.Group();
       lidGroup.position.set(0, 0.02, -baseD / 2);
-      lidGroup.rotation.x = -Math.PI * 0.58; // Ergonomic 105 degree open angle
+      lidGroup.rotation.x = -0.22; // Opens lid ~102.6 degrees from base (faces camera upright and clear)
       login3DGroup.add(lidGroup);
 
       const lidBackGeom = new THREE.BoxGeometry(screenW, screenH, screenD);
@@ -1299,96 +1299,250 @@
       const hingeMesh = new THREE.Mesh(hingeGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.95 }));
       lidGroup.add(hingeMesh);
 
-      // Live Holographic Screen Glass (Terminal OS Canvas)
+      // Live High-Res Cyber Terminal Screen Canvas
       const screenCanvas = document.createElement('canvas');
-      screenCanvas.width = 1024;
-      screenCanvas.height = 680;
+      screenCanvas.width = 1280;
+      screenCanvas.height = 800;
       const scrCtx = screenCanvas.getContext('2d');
       let screenScanY = 0;
 
       function renderScreenTerminal(t = 0) {
-        scrCtx.fillStyle = '#030816';
-        scrCtx.fillRect(0, 0, 1024, 680);
+        const W = 1280, H = 800;
+        scrCtx.fillStyle = '#030814';
+        scrCtx.fillRect(0, 0, W, H);
 
-        // Faint Cyber Grid
-        scrCtx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+        // Faint Cyber Matrix Grid
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
         scrCtx.lineWidth = 1;
-        for (let x = 0; x < 1024; x += 40) {
-          scrCtx.beginPath(); scrCtx.moveTo(x, 0); scrCtx.lineTo(x, 680); scrCtx.stroke();
+        for (let x = 0; x < W; x += 40) {
+          scrCtx.beginPath(); scrCtx.moveTo(x, 0); scrCtx.lineTo(x, H); scrCtx.stroke();
         }
-        for (let y = 0; y < 680; y += 40) {
-          scrCtx.beginPath(); scrCtx.moveTo(0, y); scrCtx.lineTo(1024, y); scrCtx.stroke();
+        for (let y = 0; y < H; y += 40) {
+          scrCtx.beginPath(); scrCtx.moveTo(0, y); scrCtx.lineTo(W, y); scrCtx.stroke();
         }
 
-        // Top Terminal Bar
-        scrCtx.fillStyle = '#0a1428';
-        scrCtx.fillRect(0, 0, 1024, 64);
-        scrCtx.strokeStyle = '#00f0ff';
+        // Top System Window Header Bar
+        scrCtx.fillStyle = '#081226';
+        scrCtx.fillRect(0, 0, W, 64);
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
         scrCtx.lineWidth = 2;
-        scrCtx.beginPath(); scrCtx.moveTo(0, 64); scrCtx.lineTo(1024, 64); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(0, 64); scrCtx.lineTo(W, 64); scrCtx.stroke();
 
-        // Window Controls
-        scrCtx.fillStyle = '#ef4444'; scrCtx.beginPath(); scrCtx.arc(36, 32, 7, 0, Math.PI * 2); scrCtx.fill();
-        scrCtx.fillStyle = '#f59e0b'; scrCtx.beginPath(); scrCtx.arc(60, 32, 7, 0, Math.PI * 2); scrCtx.fill();
-        scrCtx.fillStyle = '#10b981'; scrCtx.beginPath(); scrCtx.arc(84, 32, 7, 0, Math.PI * 2); scrCtx.fill();
+        // Window Controls (Red / Yellow / Green)
+        scrCtx.fillStyle = '#ff5f56'; scrCtx.beginPath(); scrCtx.arc(36, 32, 8, 0, Math.PI * 2); scrCtx.fill();
+        scrCtx.fillStyle = '#ffbd2e'; scrCtx.beginPath(); scrCtx.arc(62, 32, 8, 0, Math.PI * 2); scrCtx.fill();
+        scrCtx.fillStyle = '#27c93f'; scrCtx.beginPath(); scrCtx.arc(88, 32, 8, 0, Math.PI * 2); scrCtx.fill();
 
+        // Window Header Text
         scrCtx.fillStyle = '#ffffff';
         scrCtx.font = 'bold 20px "IBM Plex Mono", monospace';
-        scrCtx.fillText('NESAS CYBER TERMINAL v4.2 // RFID GATEWAY ONLINE', 120, 39);
+        scrCtx.textAlign = 'left';
+        scrCtx.fillText('SMKN 1 SUMEDANG // ABSENSI RFID GATEWAY v4.2', 124, 39);
 
-        // Center RFID Reticle & Radar Scanner
-        const cx = 512, cy = 330;
-        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        scrCtx.fillStyle = '#10b981';
+        scrCtx.font = 'bold 15px "IBM Plex Mono", monospace';
+        scrCtx.textAlign = 'right';
+        scrCtx.fillText('● SYSTEM ACTIVE // 60 FPS', W - 36, 38);
+
+        // LEFT COLUMN: High-Tech RFID Target Scanner HUD
+        const lx = 48, ly = 96, lw = 560, lh = 560;
+        scrCtx.fillStyle = 'rgba(10, 25, 48, 0.55)';
+        scrCtx.fillRect(lx, ly, lw, lh);
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+        scrCtx.lineWidth = 1.5;
+        scrCtx.strokeRect(lx, ly, lw, lh);
+
+        // Corner Brackets for HUD
+        const bLen = 24;
+        scrCtx.strokeStyle = '#00f0ff';
+        scrCtx.lineWidth = 3;
+        scrCtx.beginPath(); scrCtx.moveTo(lx, ly + bLen); scrCtx.lineTo(lx, ly); scrCtx.lineTo(lx + bLen, ly); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(lx + lw - bLen, ly); scrCtx.lineTo(lx + lw, ly); scrCtx.lineTo(lx + lw, ly + bLen); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(lx, ly + lh - bLen); scrCtx.lineTo(lx, ly + lh); scrCtx.lineTo(lx + bLen, ly + lh); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(lx + lw - bLen, ly + lh); scrCtx.lineTo(lx + lw, ly + lh); scrCtx.lineTo(lx + lw, ly + lh - bLen); scrCtx.stroke();
+
+        // Section Title
+        scrCtx.fillStyle = '#38bdf8';
+        scrCtx.font = 'bold 16px "IBM Plex Mono", monospace';
+        scrCtx.textAlign = 'left';
+        scrCtx.fillText('// RFID HARDWARE SCANNER', lx + 20, ly + 36);
+
+        // Radar Circles
+        const rcx = lx + lw / 2, rcy = ly + 250;
+        const outerR = 150;
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
         scrCtx.lineWidth = 2;
-        scrCtx.beginPath(); scrCtx.arc(cx, cy, 140, 0, Math.PI * 2); scrCtx.stroke();
-        scrCtx.beginPath(); scrCtx.arc(cx, cy, 80, 0, Math.PI * 2); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.arc(rcx, rcy, outerR, 0, Math.PI * 2); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.arc(rcx, rcy, 95, 0, Math.PI * 2); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.arc(rcx, rcy, 40, 0, Math.PI * 2); scrCtx.stroke();
 
         // Crosshairs
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
         scrCtx.beginPath();
-        scrCtx.moveTo(cx - 160, cy); scrCtx.lineTo(cx + 160, cy);
-        scrCtx.moveTo(cx, cy - 160); scrCtx.lineTo(cx, cy + 160);
+        scrCtx.moveTo(rcx - outerR - 15, rcy); scrCtx.lineTo(rcx + outerR + 15, rcy);
+        scrCtx.moveTo(rcx, rcy - outerR - 15); scrCtx.lineTo(rcx, rcy + outerR + 15);
         scrCtx.stroke();
 
-        // Rotating Radar Sweep Line
-        const radarAngle = t * 2.2;
+        // Rotating Radar Sweep Beam
+        const radarAngle = t * 2.4;
+        const grad = scrCtx.createRadialGradient(rcx, rcy, 10, rcx, rcy, outerR);
+        grad.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+        grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+        scrCtx.fillStyle = grad;
+        scrCtx.beginPath();
+        scrCtx.moveTo(rcx, rcy);
+        scrCtx.arc(rcx, rcy, outerR, radarAngle - 0.45, radarAngle);
+        scrCtx.closePath();
+        scrCtx.fill();
+
         scrCtx.strokeStyle = '#10b981';
         scrCtx.lineWidth = 3;
         scrCtx.beginPath();
-        scrCtx.moveTo(cx, cy);
-        scrCtx.lineTo(cx + Math.cos(radarAngle) * 140, cy + Math.sin(radarAngle) * 140);
+        scrCtx.moveTo(rcx, rcy);
+        scrCtx.lineTo(rcx + Math.cos(radarAngle) * outerR, rcy + Math.sin(radarAngle) * outerR);
         scrCtx.stroke();
 
-        // Central Badge Text
+        // Pulsing Target Lock Center
+        const pulse = 1 + Math.sin(t * 4) * 0.15;
         scrCtx.fillStyle = '#00f0ff';
-        scrCtx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
-        scrCtx.textAlign = 'center';
-        scrCtx.fillText('SMK NEGERI 1 SUMEDANG', cx, cy - 25);
+        scrCtx.beginPath();
+        scrCtx.arc(rcx, rcy, 8 * pulse, 0, Math.PI * 2);
+        scrCtx.fill();
+
+        // Scanner Status Box
+        scrCtx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+        scrCtx.fillRect(lx + 40, ly + lh - 110, lw - 80, 75);
+        scrCtx.strokeStyle = '#10b981';
+        scrCtx.lineWidth = 1.5;
+        scrCtx.strokeRect(lx + 40, ly + lh - 110, lw - 80, 75);
+
         scrCtx.fillStyle = '#34d399';
-        scrCtx.font = 'bold 16px "IBM Plex Mono", monospace';
-        scrCtx.fillText('[ RFID SCANNER READY ]', cx, cy + 10);
-        scrCtx.fillStyle = 'rgba(255,255,255,0.7)';
+        scrCtx.font = 'bold 20px "IBM Plex Mono", monospace';
+        scrCtx.textAlign = 'center';
+        scrCtx.fillText('[ RFID READER READY ]', rcx, ly + lh - 75);
+        scrCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         scrCtx.font = '14px "IBM Plex Mono", monospace';
-        scrCtx.fillText('69 SISWA // ESP32 NODE SYNCED', cx, cy + 34);
+        scrCtx.fillText('TEMPELKAN KARTU PELAJAR PADA SCANNER', rcx, ly + lh - 48);
 
-        // Live Code Terminal Outputs at the Bottom
-        scrCtx.textAlign = 'left';
+        // RIGHT COLUMN: Live System Terminal & Realtime Stream
+        const rx = 640, ry = 96, rw = 592, rh = 560;
+        scrCtx.fillStyle = 'rgba(6, 17, 36, 0.7)';
+        scrCtx.fillRect(rx, ry, rw, rh);
+        scrCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        scrCtx.lineWidth = 1.5;
+        scrCtx.strokeRect(rx, ry, rw, rh);
+
+        // Right Corner Brackets
+        scrCtx.strokeStyle = '#38bdf8';
+        scrCtx.lineWidth = 3;
+        scrCtx.beginPath(); scrCtx.moveTo(rx, ry + bLen); scrCtx.lineTo(rx, ry); scrCtx.lineTo(rx + bLen, ry); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(rx + rw - bLen, ry); scrCtx.lineTo(rx + rw, ry); scrCtx.lineTo(rx + rw, ry + bLen); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(rx, ry + rh - bLen); scrCtx.lineTo(rx, ry + rh); scrCtx.lineTo(rx + bLen, ry + rh); scrCtx.stroke();
+        scrCtx.beginPath(); scrCtx.moveTo(rx + rw - bLen, ry + rh); scrCtx.lineTo(rx + rw, ry + rh); scrCtx.lineTo(rx + rw, ry + rh - bLen); scrCtx.stroke();
+
+        // Console Header
         scrCtx.fillStyle = '#38bdf8';
-        scrCtx.font = '15px "IBM Plex Mono", monospace';
-        scrCtx.fillText('> [AUTH] GATEWAY INITIALIZED ON PORT 8080 (WS SECURE)', 50, 560);
-        scrCtx.fillText('> [DB] FIREBASE REALTIME DATABASE LISTENER ATTACHED', 50, 588);
-        scrCtx.fillText('> [SYSTEM] AWAITING STUDENT RFID BADGE SCAN...', 50, 616);
+        scrCtx.font = 'bold 16px "IBM Plex Mono", monospace';
+        scrCtx.textAlign = 'left';
+        scrCtx.fillText('// REALTIME FIREBASE DB TELEMETRY', rx + 20, ry + 36);
 
-        // Moving Scanning Laser Bar
-        screenScanY = (screenScanY + 3.5) % 680;
-        scrCtx.fillStyle = 'rgba(0, 240, 255, 0.15)';
-        scrCtx.fillRect(0, screenScanY, 1024, 12);
+        // System Specs / Key Metrics Badges
+        const stats = [
+          { label: 'DATABASE', val: 'FIREBASE RT', col: '#38bdf8' },
+          { label: 'RECORDS', val: '69 SISWA', col: '#10b981' },
+          { label: 'DEVICE', val: 'RC522 SPI', col: '#fbbf24' }
+        ];
+        stats.forEach((s, idx) => {
+          const sx = rx + 20 + idx * 180;
+          const sy = ry + 56;
+          scrCtx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+          scrCtx.fillRect(sx, sy, 170, 52);
+          scrCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          scrCtx.strokeRect(sx, sy, 170, 52);
+
+          scrCtx.fillStyle = '#94a3b8';
+          scrCtx.font = '11px "IBM Plex Mono", monospace';
+          scrCtx.fillText(s.label, sx + 12, sy + 20);
+          scrCtx.fillStyle = s.col;
+          scrCtx.font = 'bold 16px "IBM Plex Mono", monospace';
+          scrCtx.fillText(s.val, sx + 12, sy + 42);
+        });
+
+        // Live Log Feed Lines
+        const logs = [
+          { time: '14:20:01', tag: '[INIT]', text: 'Core attendance engine started', col: '#94a3b8' },
+          { time: '14:20:02', tag: '[AUTH]', text: 'Firebase Realtime Auth: Verified', col: '#38bdf8' },
+          { time: '14:20:03', tag: '[SYNC]', text: '69 student records loaded successfully', col: '#10b981' },
+          { time: '14:20:04', tag: '[RC522]', text: 'SPI bus attached @ 10 MHz', col: '#fbbf24' },
+          { time: '14:20:05', tag: '[GATE]', text: 'Port COM3 listening @ 115200 baud', col: '#38bdf8' },
+          { time: '14:20:06', tag: '[STANDBY]', text: 'Waiting for student RFID card...', col: '#a78bfa' },
+          { time: '14:20:08', tag: '[LIVE]', text: 'Auto-record sync active', col: '#34d399' }
+        ];
+
+        scrCtx.font = '13px "IBM Plex Mono", monospace';
+        logs.forEach((log, i) => {
+          const lyPos = ry + 145 + i * 44;
+          scrCtx.fillStyle = '#64748b';
+          scrCtx.fillText(log.time, rx + 20, lyPos);
+          scrCtx.fillStyle = log.col;
+          scrCtx.fillText(log.tag, rx + 105, lyPos);
+          scrCtx.fillStyle = '#e2e8f0';
+          scrCtx.fillText(log.text, rx + 185, lyPos);
+
+          scrCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+          scrCtx.beginPath();
+          scrCtx.moveTo(rx + 20, lyPos + 12);
+          scrCtx.lineTo(rx + rw - 20, lyPos + 12);
+          scrCtx.stroke();
+        });
+
+        // Blinking Prompt Line
+        const promptY = ry + rh - 40;
+        scrCtx.fillStyle = '#38bdf8';
+        scrCtx.font = 'bold 15px "IBM Plex Mono", monospace';
+        const blink = Math.sin(t * 6) > 0 ? '_' : '';
+        scrCtx.fillText(`admin@nesas:~$ ready_for_scan${blink}`, rx + 20, promptY);
+
+        // BOTTOM STATUS BAR
+        scrCtx.fillStyle = '#081226';
+        scrCtx.fillRect(0, H - 76, W, 76);
+        scrCtx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+        scrCtx.lineWidth = 1.5;
+        scrCtx.beginPath(); scrCtx.moveTo(0, H - 76); scrCtx.lineTo(W, H - 76); scrCtx.stroke();
+
+        scrCtx.fillStyle = '#94a3b8';
+        scrCtx.font = '13px "IBM Plex Mono", monospace';
+        scrCtx.fillText('STATUS: ESP32 ONLINE', 48, H - 34);
+        scrCtx.fillText('PING: 14ms (OPTIMAL)', 280, H - 34);
+        scrCtx.fillText('PORT: 8080 (WS SECURE)', 520, H - 34);
+
+        // Animated Mini Equalizer / Network Activity Bars
+        const eqX = W - 240, eqY = H - 48;
         scrCtx.fillStyle = '#00f0ff';
-        scrCtx.fillRect(0, screenScanY + 11, 1024, 2);
+        for (let b = 0; b < 16; b++) {
+          const bh = 8 + Math.abs(Math.sin(t * 4 + b * 0.45)) * 22;
+          scrCtx.fillRect(eqX + b * 11, eqY - bh + 24, 7, bh);
+        }
+
+        // Animated Moving Cyber Laser Scanline Across the Entire Screen
+        screenScanY = (screenScanY + 4) % H;
+        const scanGrad = scrCtx.createLinearGradient(0, screenScanY - 20, 0, screenScanY + 20);
+        scanGrad.addColorStop(0, 'rgba(0, 240, 255, 0.0)');
+        scanGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.22)');
+        scanGrad.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+        scrCtx.fillStyle = scanGrad;
+        scrCtx.fillRect(0, screenScanY - 20, W, 40);
+
+        scrCtx.fillStyle = '#00f0ff';
+        scrCtx.fillRect(0, screenScanY, W, 2);
       }
 
       renderScreenTerminal(0);
       const screenTexture = new THREE.CanvasTexture(screenCanvas);
-      screenTexture.anisotropy = 8;
+      screenTexture.minFilter = THREE.LinearFilter;
+      screenTexture.magFilter = THREE.LinearFilter;
+      screenTexture.anisotropy = 16;
+
       const screenMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(screenW * 0.95, screenH * 0.92),
         new THREE.MeshBasicMaterial({ map: screenTexture })
@@ -1396,22 +1550,12 @@
       screenMesh.position.set(0, screenH / 2, screenD / 2 + 0.005);
       lidGroup.add(screenMesh);
 
-      // Floating Holographic HUD Panels in Air
-      const floatHud1 = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.6, 1.2, 4, 3),
-        new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.28, wireframe: true })
+      const scrBorder = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.PlaneGeometry(screenW * 0.95, screenH * 0.92)),
+        new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.75 })
       );
-      floatHud1.position.set(-2.0, 1.6, 0.5);
-      floatHud1.rotation.y = 0.35;
-      login3DGroup.add(floatHud1);
-
-      const floatHud2 = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 1.1, 4, 3),
-        new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25, wireframe: true })
-      );
-      floatHud2.position.set(2.1, 1.8, 0.4);
-      floatHud2.rotation.y = -0.35;
-      login3DGroup.add(floatHud2);
+      scrBorder.position.set(0, screenH / 2, screenD / 2 + 0.006);
+      lidGroup.add(scrBorder);
 
       // Micro Cyber Floating Data Cubes
       const compDataBits = [];
@@ -1432,8 +1576,6 @@
       cyberComputerData = {
         renderScreen: renderScreenTerminal,
         screenTexture: screenTexture,
-        floatHud1: floatHud1,
-        floatHud2: floatHud2,
         dataBits: compDataBits
       };
 
@@ -1835,22 +1977,13 @@
         if (login3DGroup.scale.x > 0.02) {
           // Ergonomic 3D Isometric View of Cyber Computer
           login3DGroup.rotation.y = currentRotationY + (p < 0.22 ? 0.35 : 0.55) + Math.sin(elapsedTime * 0.7) * 0.1 + curTiltY;
-          login3DGroup.rotation.x = 0.26 + Math.sin(elapsedTime * 0.9) * 0.04 + curTiltX;
-          login3DGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.12 - 0.2;
+          login3DGroup.rotation.x = 0.15 + Math.sin(elapsedTime * 0.9) * 0.03 + curTiltX;
+          login3DGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.12 - 0.22;
 
           // Render Active Holographic Screen Terminal
           if (cyberComputerData) {
             cyberComputerData.renderScreen(elapsedTime);
             cyberComputerData.screenTexture.needsUpdate = true;
-
-            if (cyberComputerData.floatHud1) {
-              cyberComputerData.floatHud1.position.y = 1.6 + Math.sin(elapsedTime * 1.8) * 0.08;
-              cyberComputerData.floatHud1.rotation.z = Math.sin(elapsedTime * 1.2) * 0.05;
-            }
-            if (cyberComputerData.floatHud2) {
-              cyberComputerData.floatHud2.position.y = 1.8 + Math.cos(elapsedTime * 1.6) * 0.08;
-              cyberComputerData.floatHud2.rotation.z = -Math.sin(elapsedTime * 1.1) * 0.05;
-            }
 
             cyberComputerData.dataBits.forEach(b => {
               const ang = elapsedTime * b.speed + b.offset;
