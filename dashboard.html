@@ -273,13 +273,20 @@
   <!-- ===== TAB 1: PANTAU PRESENSI KELAS ===== -->
   <div id="tabKelas" class="tab-content" style="display:none;">
     <div class="filter-bar">
-      <select id="pilihKelasPantau"></select>
+      <select id="pilihKelasPantau">
+        <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
+        <option value="XII RPL 1">Kelas XII RPL 1</option>
+        <option value="XI RPL 1">Kelas XI RPL 1</option>
+        <option value="XI RPL 2">Kelas XI RPL 2</option>
+        <option value="X PPLG 1">Kelas X PPLG 1</option>
+        <option value="X PPLG 2">Kelas X PPLG 2</option>
+      </select>
       <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">
     </div>
 
     <!-- Status Jam Pelajaran -->
     <div id="infoJamPelajaran" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:14px 18px;border-radius:14px;font-size:13.5px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
-      Memeriksa jadwal aktif...
+      🔔 <b>Presensi Realtime Aktif:</b> Menampilkan status kehadiran siswa kelas hari ini.
     </div>
 
     <!-- Statistik Ringkasan -->
@@ -436,19 +443,32 @@
       <p>Tinjau akumulasi kehadiran, persentase kehadiran setahun terakhir, serta log presensi harian RFID.</p>
     </div>
 
-    <!-- Peringatan jika Pengunjung -->
+    <!-- Info Mode Peninjau / Pengunjung -->
     <div id="rekapPengunjungAlert" class="guest-verification-banner" style="display:none;">
       <div class="guest-banner-left">
-        <div class="guest-banner-icon">🔒</div>
+        <div class="guest-banner-icon">👁️</div>
         <div class="guest-banner-text">
-          <strong>Riwayat Presensi Belum Tersedia</strong>
-          <p>Fitur ini memerlukan verifikasi identitas siswa. Silakan konfirmasi NISN Anda melalui tombol di samping.</p>
+          <strong>Mode Peninjau Presensi Terbuka</strong>
+          <p>Anda dapat meninjau statistik dan riwayat presensi RFID seluruh siswa secara transparan. Tautkan NISN jika Anda adalah siswa.</p>
         </div>
       </div>
-      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN</button>
+      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN Siswa</button>
     </div>
 
     <div id="rekapContentSiswa">
+      <!-- Selector Siswa untuk Rekap (Pengunjung & Siswa) -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:13.5px; font-weight:700; color:#334155;">👤 Pilih Siswa yang Ditinjau:</span>
+          <select id="pilihSiswaRekap" style="padding:8px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; color:#1e293b; background:#fff; outline:none; min-width:280px;">
+            <option value="0098263610">M. Ihsan Athallah (XII RPL 2) — NISN: 0098263610</option>
+            <option value="0082104129">Rizky Ramadhani (XII RPL 2) — NISN: 0082104129</option>
+          </select>
+        </div>
+        <div id="rekapModeBadge" style="font-size:12px; font-weight:700; color:#4338ca; background:#e0e7ff; padding:5px 12px; border-radius:999px;">
+          👁️ Peninjauan Presensi Terbuka
+        </div>
+      </div>
       <!-- STATISTIK KEHADIRAN 1 TAHUN -->
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px;">
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; text-align:center;">
