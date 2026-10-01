@@ -1,85 +1,415 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presensi Siswa - Login Admin</title>
+<title>Staff & Admin Gateway — SMKN 1 Sumedang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  body { align-items: center; }
-  .login-wrap {
-    background: #fff;
-    border-radius: 20px;
-    padding: 36px 28px;
-    max-width: 420px;
-    width: 100%;
-    box-shadow: 0 10px 40px -10px rgba(100,116,139,0.18), 0 2px 8px rgba(0,0,0,0.05);
+  :root {
+    --bg-deep: #050814;
+    --card-bg: rgba(11, 18, 36, 0.88);
+    --border-glass: rgba(56, 189, 248, 0.25);
+    --border-glow: rgba(0, 240, 255, 0.45);
+    --cyan: #00f0ff;
+    --emerald: #10b981;
+    --blue: #38bdf8;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
   }
-  .login-logo { text-align: center; margin-bottom: 28px; }
-  .login-logo .logo-icon {
-    width: 68px;
-    height: 68px;
-    background: linear-gradient(135deg, #0f172a, #334155);
-    border-radius: 18px;
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
-    margin: 0 auto 14px;
-    box-shadow: 0 6px 18px rgba(15,23,42,0.3);
+    padding: 24px;
+    position: relative;
+    overflow-x: hidden;
   }
-  .login-logo h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-  .login-logo p { color: #64748b; font-size: 13.5px; }
-  .login-field { margin-top: 18px; }
-  .login-field label { margin-top: 0; margin-bottom: 7px; }
-  .btn-login {
-    margin-top: 24px;
-    background: #0f172a;
-    font-size: 15px;
-    font-weight: 600;
+
+  /* Cyber Grid Background */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(circle at 50% 20%, rgba(14, 165, 233, 0.15) 0%, transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.10) 0%, transparent 50%),
+      linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
   }
-  .btn-login:hover { background: #1e293b; }
-  .back-link {
+
+  /* Architectural Framing Lines */
+  .frame-border {
+    position: fixed;
+    inset: 16px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1;
+  }
+
+  /* Main Container */
+  .gateway-card {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 460px;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-glass);
+    border-radius: 24px;
+    padding: 38px 32px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 35px -5px rgba(0, 240, 255, 0.15);
+  }
+
+  /* Header Section */
+  .gateway-header {
     text-align: center;
-    margin-top: 20px;
-    font-size: 13px;
-    color: #94a3b8;
+    margin-bottom: 26px;
   }
-  .back-link a { color: #2563eb; font-weight: 600; text-decoration: none; }
-  .back-link a:hover { text-decoration: underline; }
-  .error { margin-top: 10px; font-size: 13px; }
+
+  .security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.35);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .security-badge .dot-live {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulseDot 1.8s infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .shield-icon-wrap {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+    border: 1px solid var(--border-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 24px rgba(0, 240, 255, 0.25);
+  }
+  .shield-icon-wrap svg {
+    width: 32px;
+    height: 32px;
+    color: var(--cyan);
+  }
+
+  .gateway-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .gateway-header p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Google Sign-In */
+  .btn-google-staff {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .btn-google-staff:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+  .btn-google-staff svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Divider */
+  .divider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 20px 0;
+    color: #475569;
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+  .divider-row::before, .divider-row::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Inputs */
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 7px;
+  }
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-wrapper input {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    transition: all 0.2s ease;
+  }
+  .input-wrapper input:focus {
+    outline: none;
+    border-color: var(--cyan);
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+    background: rgba(15, 23, 42, 0.95);
+  }
+  .input-wrapper input::placeholder {
+    color: #64748b;
+  }
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    color: #64748b;
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .toggle-pwd-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+  }
+  .toggle-pwd-btn:hover { color: #cbd5e1; }
+
+  /* Submit Button */
+  .btn-submit-gateway {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0284c7, #0f766e);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 24px -6px rgba(2, 132, 199, 0.5);
+    margin-top: 8px;
+  }
+  .btn-submit-gateway:hover {
+    background: linear-gradient(135deg, #0369a1, #0d9488);
+    box-shadow: 0 10px 28px -4px rgba(0, 240, 255, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-submit-gateway:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Notification Box */
+  .notif-box {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    display: none;
+  }
+  .notif-box.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+  }
+  .notif-box.success {
+    display: block;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+  }
+  .notif-box.warning {
+    display: block;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fcd34d;
+  }
+
+  /* Footer Link */
+  .gateway-footer {
+    margin-top: 24px;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 18px;
+  }
+  .gateway-footer a {
+    color: #64748b;
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gateway-footer a:hover {
+    color: var(--blue);
+  }
+
+  /* Telemetry Meta */
+  .telemetry-meta {
+    margin-top: 16px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: #475569;
+    letter-spacing: 0.08em;
+  }
 </style>
 </head>
 <body>
-  <div class="login-wrap">
-    <div class="login-logo">
-      <div class="logo-icon">🛡️</div>
-      <h1>Panel Admin</h1>
-      <p>Login untuk Admin / Guru / Petugas Piket</p>
+
+  <div class="bg-grid"></div>
+  <div class="frame-border"></div>
+
+  <main class="gateway-card">
+    <div class="gateway-header">
+      <div class="security-badge">
+        <span class="dot-live"></span>
+        <span>RESTRICTED ACCESS • STAFF & ADMIN</span>
+      </div>
+
+      <div class="shield-icon-wrap">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </div>
+
+      <h1>Portal Kontrol Administrator</h1>
+      <p>Gerbang otentikasi khusus Administrator, Guru, & Petugas Piket SMKN 1 Sumedang</p>
     </div>
 
-    <form id="adminLoginForm">
-      <div class="login-field">
-        <label for="adminUser">Username Admin</label>
-        <input type="text" id="adminUser" placeholder="Masukkan username" required>
+    <!-- 1-Click Google Staff Auth -->
+    <button type="button" class="btn-google-staff" id="btnGoogleStaff" onclick="handleGoogleStaffLogin()">
+      <svg viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      Masuk dengan Akun Dinas (Google)
+    </button>
+
+    <div class="divider-row">
+      <span>atau dengan email & password</span>
+    </div>
+
+    <!-- Credentials Form -->
+    <form id="adminLoginForm" onsubmit="handleStaffLoginEmail(event)">
+      <div class="form-group">
+        <label for="adminEmail">Alamat Email Kedinasan</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="adminEmail" placeholder="admin@smkn1sumedang.sch.id" required autocomplete="email">
+        </div>
       </div>
-      <div class="login-field">
-        <label for="adminPass">Password</label>
-        <input type="password" id="adminPass" placeholder="Masukkan password" required>
+
+      <div class="form-group">
+        <label for="adminPass">Kata Sandi</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="adminPass" placeholder="Masukkan kata sandi" required autocomplete="current-password">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('adminPass', this)">👁️</button>
+        </div>
       </div>
-      <button type="submit" class="btn-login">🔐 Login Admin</button>
+
+      <button type="submit" class="btn-submit-gateway" id="btnSubmitAdmin">
+        🔐 Otentikasi & Masuk ke Panel
+      </button>
+
+      <div id="adminNotifBox" class="notif-box"></div>
     </form>
 
-    <p id="errorMsg" class="error"></p>
+    <div class="gateway-footer">
+      <a href="index.html">
+        <span>←</span>
+        <span>Kembali ke Portal Publik Siswa (index.html)</span>
+      </a>
+    </div>
 
-    <p class="back-link">
-      Orang tua? <a href="index.html">← Kembali ke portal orang tua</a>
-    </p>
-  </div>
+    <div class="telemetry-meta">
+      SECURE PROTOCOL // FIREBASE AUTH v10.12 // NESAS CLOUD
+    </div>
+  </main>
 
+  <!-- FIREBASE & AUTH SCRIPTS -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="assets/firebase-config.js"></script>
+  <script src="assets/auth.js"></script>
   <script src="assets/admin-login.js"></script>
 </body>
 </html>

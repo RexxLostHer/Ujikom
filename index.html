@@ -814,7 +814,10 @@
 
     <!-- Bottom HUD Overlay -->
     <footer class="hud-bot">
-      <p class="mono" id="caption">01 — BLUEPRINT GATEWAY</p>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <p class="mono" id="caption">01 — BLUEPRINT GATEWAY</p>
+        <a href="admin-login.html" class="mono" style="opacity:0.35;font-size:0.58rem;letter-spacing:0.18em;color:var(--ink-mut);text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='0.35'">[ 🔒 STAFF GATEWAY ]</a>
+      </div>
       <p class="mono" id="read">000 / 100</p>
     </footer>
 
@@ -900,6 +903,9 @@
 
         <div class="card-footer-caption">
           Belum punya akun? <a onclick="goScene('register')">Daftar akun RPL ↓</a>
+        </div>
+        <div class="card-footer-caption" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11.5px;">
+          Guru atau Administrator? <a href="admin-login.html" style="color: var(--blue);">Masuk via Portal Staff →</a>
         </div>
       </div>
     </div>
