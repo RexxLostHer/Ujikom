@@ -75,8 +75,10 @@ function buatSiswaCard(nisn, s, statusSudah) {
 function renderRoster() {
   const kelas = kelasSelect.value;
   const daftarSiswaKelas = Object.entries(siswaCache)
-    .filter(function ([, s]) { return s.kelas === kelas; })
-    .sort(function (a, b) { return a[1].nama.localeCompare(b[1].nama); });
+    .filter(function ([, s]) {
+      return (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(kelas) : kelas);
+    })
+    .sort(function (a, b) { return (a[1].nama || '').localeCompare(b[1].nama || ''); });
 
   const sudahEl = document.getElementById('daftarSudah');
   const belumEl = document.getElementById('daftarBelum');
@@ -216,26 +218,26 @@ setInterval(cekJamAktifTerkini, 15000);
 
 // Load semua siswa & populate dropdown kelas
 db.ref('siswa').on('value', function (snapshot) {
-  siswaCache = snapshot.val() || {};
+  siswaCache = (typeof parseSiswaSnapshot === 'function')
+    ? parseSiswaSnapshot(snapshot.val())
+    : (snapshot.val() || {});
 
   const kelasSebelumnya = kelasSelect.value;
-  const kelasSet = new Set(Object.values(siswaCache).map(function (s) { return s.kelas; }));
+  const daftarKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
   kelasSelect.innerHTML = '';
 
-  Array.from(kelasSet).sort().forEach(function (kelas) {
+  daftarKelas.forEach(function (kelas) {
     const opt = document.createElement('option');
     opt.value = kelas;
     opt.textContent = 'Kelas ' + kelas;
     kelasSelect.appendChild(opt);
   });
 
-  if (kelasSebelumnya && kelasSet.has(kelasSebelumnya)) {
+  if (kelasSebelumnya && daftarKelas.includes(kelasSebelumnya)) {
     kelasSelect.value = kelasSebelumnya;
+  } else {
+    kelasSelect.value = daftarKelas[0] || 'XII RPL 2';
   }
 
-  if (!kelasSebelumnya || !kelasSet.has(kelasSebelumnya)) {
-    pindahKelas(kelasSelect.value);
-  } else {
-    renderRoster();
-  }
+  pindahKelas(kelasSelect.value);
 });

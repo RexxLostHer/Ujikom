@@ -31,7 +31,9 @@ function initAdmin() {
 
   // Listeners realtime
   db.ref('siswa').on('value', function (snapshot) {
-    siswaCache = snapshot.val() || {};
+    siswaCache = (typeof parseSiswaSnapshot === 'function')
+      ? parseSiswaSnapshot(snapshot.val())
+      : (snapshot.val() || {});
     renderSiswaTable(siswaCache);
     renderKartuTable(kartuCache);
     populatePresensiKelas();
@@ -121,41 +123,43 @@ function populatePresensiKelas() {
   
   const kelasBefore = selKelas ? selKelas.value : '';
   const rekapBefore = selRekapKelas ? selRekapKelas.value : '';
-  const kelasSet = new Set(Object.values(siswaCache).map(s => s.kelas).filter(Boolean));
+  const daftarKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
   
   if (selKelas) {
     selKelas.innerHTML = '';
-    Array.from(kelasSet).sort().forEach(k => {
+    daftarKelas.forEach(k => {
       const opt = document.createElement('option');
       opt.value = k; opt.textContent = k;
       selKelas.appendChild(opt);
     });
-    if (kelasBefore && kelasSet.has(kelasBefore)) selKelas.value = kelasBefore;
+    if (kelasBefore && daftarKelas.includes(kelasBefore)) selKelas.value = kelasBefore;
     populatePresensiSiswa();
     selKelas.onchange = populatePresensiSiswa;
   }
 
   if (selRekapKelas) {
     selRekapKelas.innerHTML = '';
-    Array.from(kelasSet).sort().forEach(k => {
+    daftarKelas.forEach(k => {
       const opt = document.createElement('option');
       opt.value = k; opt.textContent = k;
       selRekapKelas.appendChild(opt);
     });
-    if (rekapBefore && kelasSet.has(rekapBefore)) selRekapKelas.value = rekapBefore;
+    if (rekapBefore && daftarKelas.includes(rekapBefore)) selRekapKelas.value = rekapBefore;
   }
 }
 
 function populatePresensiSiswa() {
-  const kelas = document.getElementById('presensiKelas').value;
+  const selKelasEl = document.getElementById('presensiKelas');
+  const kelas = selKelasEl ? selKelasEl.value : '';
   const selSiswa = document.getElementById('presensiSiswa');
+  if (!selSiswa) return;
   selSiswa.innerHTML = '<option value="">-- Pilih siswa --</option>';
-  Object.entries(siswaCache)
-    .filter(([, s]) => s.kelas === kelas)
-    .sort(([, a], [, b]) => a.nama.localeCompare(b.nama))
-    .forEach(([nisn, s]) => {
+  Object.values(siswaCache)
+    .filter(s => (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(kelas) : kelas))
+    .sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
+    .forEach(s => {
       const opt = document.createElement('option');
-      opt.value = nisn; opt.textContent = s.nama + ' (' + nisn + ')';
+      opt.value = s.nisn; opt.textContent = (s.nama || s.nisn) + ' (' + s.nisn + ')';
       selSiswa.appendChild(opt);
     });
 }
@@ -513,11 +517,12 @@ function resetFormSiswa() {
   document.getElementById('siswaCancelBtn').classList.add('hidden');
 }
 
-function editSiswa(nisn) {
-  const data = siswaCache[nisn];
+function editSiswa(keyOrNisn) {
+  const data = siswaCache[keyOrNisn] || Object.values(siswaCache).find(s => s._key === keyOrNisn || s.nisn === keyOrNisn);
   if (!data) return;
-  document.getElementById('siswaEditingKey').value = nisn;
-  document.getElementById('siswaNisn').value = nisn;
+  const targetKey = data._key || data.nisn || keyOrNisn;
+  document.getElementById('siswaEditingKey').value = targetKey;
+  document.getElementById('siswaNisn').value = data.nisn || keyOrNisn;
   document.getElementById('siswaNisn').disabled = true;
   document.getElementById('siswaNama').value = data.nama || '';
   document.getElementById('siswaKelas').value = data.kelas || '';
@@ -529,10 +534,13 @@ function editSiswa(nisn) {
   document.querySelector('.admin-content').scrollTop = 0;
 }
 
-function hapusSiswa(nisn) {
-  const nama = (siswaCache[nisn] && siswaCache[nisn].nama) || nisn;
+function hapusSiswa(keyOrNisn) {
+  const data = siswaCache[keyOrNisn] || Object.values(siswaCache).find(s => s._key === keyOrNisn || s.nisn === keyOrNisn);
+  const nisn = (data && data.nisn) || keyOrNisn;
+  const targetKey = (data && data._key) || keyOrNisn;
+  const nama = (data && data.nama) || nisn;
   if (!confirm('Hapus siswa ' + nama + ' (NISN: ' + nisn + ')?\nMapping kartu tidak otomatis terhapus.')) return;
-  db.ref('siswa/' + nisn).remove()
+  db.ref('siswa/' + targetKey).remove()
     .then(function () { showMsg('siswaMsg', 'Siswa dihapus.', 'success'); })
     .catch(function (err) { showMsg('siswaMsg', 'Gagal: ' + err.message, 'error'); });
 }
@@ -579,19 +587,21 @@ function renderSiswaTable(data) {
   if (selKartu) selKartu.innerHTML = '<option value="">-- Pilih siswa --</option>';
   if (selSim) selSim.innerHTML = '<option value="">-- Pilih siswa --</option>';
 
-  const nisnList = Object.keys(data).filter(k => /^\d+$/.test(k)).sort();
-  const kelasSet = new Set();
+  const parsedData = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(data) : data;
+  const items = Object.entries(parsedData).sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
+  const kelasSet = new Set((typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1']);
 
-  if (nisnList.length === 0) {
+  if (items.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">🧑‍🎓</div><p>Belum ada data siswa.</p></td></tr>';
   } else {
-    nisnList.forEach(function (nisn) {
-      const s = data[nisn];
-      kelasSet.add(s.kelas);
+    items.forEach(function ([nisn, s]) {
+      if (s && s.kelas) kelasSet.add(s.kelas);
+      const displayNisn = s.nisn || nisn;
+      const keyTarget = s._key || displayNisn;
 
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td>' + nisn + '</td>' +
+        '<td>' + displayNisn + '</td>' +
         '<td>' + (s.nama || '') + '</td>' +
         '<td>' + (s.kelas || '') + '</td>' +
         '<td style="font-size:12px;color:#64748b;">' + (s.email || '-') + '</td>' +
@@ -602,12 +612,12 @@ function renderSiswaTable(data) {
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
       editBtn.className = 'btn-row-edit';
-      editBtn.onclick = function () { editSiswa(nisn); };
+      editBtn.onclick = function () { editSiswa(keyTarget); };
 
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Hapus';
       delBtn.className = 'btn-row-delete';
-      delBtn.onclick = function () { hapusSiswa(nisn); };
+      delBtn.onclick = function () { hapusSiswa(keyTarget); };
 
       actionsTd.appendChild(editBtn);
       actionsTd.appendChild(delBtn);
@@ -615,15 +625,15 @@ function renderSiswaTable(data) {
 
       if (selKartu) {
         const opt = document.createElement('option');
-        opt.value = nisn;
-        opt.textContent = nisn + ' — ' + (s.nama || '');
+        opt.value = displayNisn;
+        opt.textContent = displayNisn + ' — ' + (s.nama || '');
         selKartu.appendChild(opt);
       }
 
       if (selSim) {
         const opt2 = document.createElement('option');
-        opt2.value = nisn;
-        opt2.textContent = (s.nama || nisn) + ' (' + (s.kelas || '') + ')';
+        opt2.value = displayNisn;
+        opt2.textContent = (s.nama || displayNisn) + ' (' + (s.kelas || '') + ')';
         selSim.appendChild(opt2);
       }
     });

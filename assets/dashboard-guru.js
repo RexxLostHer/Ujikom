@@ -223,35 +223,27 @@ async function muatDaftarKelas() {
   const selLive = document.getElementById('pilihKelasGuru');
   const selRekap = document.getElementById('rekapKelas');
 
-  const snap = await db.ref('siswa').once('value');
-  const siswaData = snap.val() || {};
-
-  const kelasSet = new Set();
-  Object.values(siswaData).forEach(s => {
-    if (s.kelas) kelasSet.add(s.kelas);
-  });
-
-  const listKelas = Array.from(kelasSet).sort();
-  selLive.innerHTML = '';
-  selRekap.innerHTML = '';
-
-  if (listKelas.length === 0) {
-    listKelas.push('9A');
-  }
+  const listKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  if (selLive) selLive.innerHTML = '';
+  if (selRekap) selRekap.innerHTML = '';
 
   listKelas.forEach(k => {
-    const o1 = document.createElement('option');
-    o1.value = k;
-    o1.textContent = `Kelas ${k}`;
-    selLive.appendChild(o1);
+    if (selLive) {
+      const o1 = document.createElement('option');
+      o1.value = k;
+      o1.textContent = `Kelas ${k}`;
+      selLive.appendChild(o1);
+    }
 
-    const o2 = document.createElement('option');
-    o2.value = k;
-    o2.textContent = `Kelas ${k}`;
-    selRekap.appendChild(o2);
+    if (selRekap) {
+      const o2 = document.createElement('option');
+      o2.value = k;
+      o2.textContent = `Kelas ${k}`;
+      selRekap.appendChild(o2);
+    }
   });
 
-  currentKelas = selLive.value;
+  currentKelas = selLive ? selLive.value : (listKelas[0] || 'XII RPL 2');
   muatDataPresensiKelas();
 }
 
@@ -285,8 +277,8 @@ async function muatDataPresensiKelas() {
 
   // 2. Ambil data siswa di kelas ini
   const snapSiswa = await db.ref('siswa').once('value');
-  const semuaSiswa = snapSiswa.val() || {};
-  const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => s.kelas === currentKelas);
+  const semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(currentKelas) : currentKelas));
 
   // 3. Ambil data presensi jam berjalan
   const snapPresensi = await db.ref(`presensi_jam/${currentKelas}/${today}/${jamKeAktif}`).once('value');
@@ -547,8 +539,8 @@ async function generateRekapGuru() {
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Memuat data rekapan...</td></tr>';
 
   const snapSiswa = await db.ref('siswa').once('value');
-  const semuaSiswa = snapSiswa.val() || {};
-  const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => s.kelas === kelas);
+  const semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(kelas) : kelas));
 
   const snapPresensi = await db.ref(`presensi_jam/${kelas}/${tanggal}`).once('value');
   const presensiTgl = snapPresensi.val() || {};

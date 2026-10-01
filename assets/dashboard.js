@@ -153,17 +153,18 @@ async function initDashboard(user) {
 
 function populateDropdownSiswa(user) {
   db.ref('siswa').once('value').then(snap => {
-    const siswaData = snap.val() || {};
+    const parsed = parseSiswaSnapshot(snap.val());
     const sel = document.getElementById('perijinanSiswaTarget');
+    if (!sel) return;
     sel.innerHTML = '<option value=\"\">-- Pilih Siswa yang Diizinkan --</option>';
 
     // Urutkan abjad nama
-    Object.entries(siswaData).sort((a,b) => a[1].nama.localeCompare(b[1].nama)).forEach(([nisn, s]) => {
+    Object.values(parsed).sort((a,b) => (a.nama || '').localeCompare(b.nama || '')).forEach(s => {
       const opt = document.createElement('option');
-      opt.value = nisn;
+      opt.value = s.nisn;
       opt.textContent = s.nama + ' (' + (s.kelas || '-') + ')';
       // Jika email user cocok dengan siswa ini, auto pilih
-      if (user.nisn === nisn || (s.email && s.email.toLowerCase() === user.email.toLowerCase())) {
+      if (user && (user.nisn === s.nisn || (s.email && user.email && s.email.toLowerCase() === user.email.toLowerCase()))) {
         opt.selected = true;
       }
       sel.appendChild(opt);
@@ -229,7 +230,6 @@ async function handleSubmitPerijinan() {
 }
 
 // ----- PANTAU KELAS REALTIME (3 KELAS RESMI: XII RPL 1, XII RPL 2, XII TKJ 1) -----
-const DAFTAR_KELAS_RESMI = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 let semuaSiswaCache = {};
 let jadwalPelajaranKelasCache = null;
 let jamKeAktifSekarang = null;
@@ -237,9 +237,20 @@ let listenerPresensiKelas = null;
 let sudahAbsenSet = new Set();
 let detailAbsensiSiswa = {};
 
+var DAFTAR_KELAS_RESMI = (typeof window !== 'undefined' && window.DAFTAR_KELAS_RESMI) ? window.DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+
+function ambilKelasSiswa(s) {
+  if (!s || typeof s !== 'object') return '';
+  return s.kelas || s.Kelas || s.KELAS || s.rombel || s.Rombel || s.kelas_nama || s.kelasNama || '';
+}
+
 function normalisasiKelas(k) {
   if (!k) return '';
-  return String(k).trim().toUpperCase().replace(/\s+/g, ' ');
+  let str = String(k).trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
+  // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1
+  str = str.replace(/(?:XII|12)\s*(RPL|TKJ)\s*([12])/gi, 'XII $1 $2');
+  str = str.replace(/\b12\s+/g, 'XII ').replace(/\b12([A-Z])/g, 'XII $1');
+  return str;
 }
 
 function parseSiswaSnapshot(rawVal) {
@@ -247,20 +258,43 @@ function parseSiswaSnapshot(rawVal) {
   if (!rawVal) return result;
   if (Array.isArray(rawVal)) {
     rawVal.forEach((s, idx) => {
-      if (s) {
-        const nisn = s.nisn || String(idx);
-        result[nisn] = { ...s, nisn };
+      if (s && typeof s === 'object') {
+        const nisn = String(s.nisn || s.NISN || s.id || (idx + 1));
+        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
+        const kelas = normalisasiKelas(ambilKelasSiswa(s));
+        result[nisn] = { ...s, nisn, nama, kelas, _key: String(idx) };
       }
     });
   } else if (typeof rawVal === 'object') {
     Object.entries(rawVal).forEach(([k, s]) => {
       if (s && typeof s === 'object') {
-        const nisn = s.nisn || k;
-        result[nisn] = { ...s, nisn };
+        const nisn = String(s.nisn || s.NISN || s.id || k);
+        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
+        const kelas = normalisasiKelas(ambilKelasSiswa(s));
+        result[nisn] = { ...s, nisn, nama, kelas, _key: k };
+      } else if (typeof s === 'string') {
+        result[k] = { nama: s, nisn: k, kelas: 'XII RPL 2', _key: k };
       }
     });
   }
   return result;
+}
+
+function perbaruiDropdownKelasPantau(selected) {
+  const sel = document.getElementById('pilihKelasPantau');
+  if (!sel) return;
+  const currentVal = selected || sel.value || 'XII RPL 2';
+  sel.innerHTML = '';
+
+  DAFTAR_KELAS_RESMI.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(k)).length;
+    opt.textContent = count > 0 ? `Kelas ${k} (${count} Siswa)` : `Kelas ${k}`;
+    if (k === currentVal) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (!sel.value) sel.value = currentVal;
 }
 
 function initPantauKelas(user) {
@@ -269,18 +303,7 @@ function initPantauKelas(user) {
     ? user.kelas
     : ((sel && sel.value && DAFTAR_KELAS_RESMI.includes(sel.value)) ? sel.value : 'XII RPL 2');
 
-  // Pastikan dropdown hanya berisi 3 rombel resmi
-  if (sel) {
-    sel.innerHTML = '';
-    DAFTAR_KELAS_RESMI.forEach(k => {
-      const opt = document.createElement('option');
-      opt.value = k;
-      opt.textContent = 'Kelas ' + k;
-      if (k === targetKelasAwal) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.value = targetKelasAwal;
-  }
+  perbaruiDropdownKelasPantau(targetKelasAwal);
 
   // Render awal seketika agar tidak ada tampilan kosong
   renderPantauKelas();
@@ -298,6 +321,14 @@ function initPantauKelas(user) {
     if (Object.keys(parsed).length > 0) {
       semuaSiswaCache = parsed;
     }
+    const totalSiswa = Object.keys(semuaSiswaCache).length;
+    perbaruiDropdownKelasPantau(sel ? sel.value : targetKelasAwal);
+
+    const infoEl = document.getElementById('infoJamPelajaran');
+    if (infoEl && !jamKeAktifSekarang) {
+      infoEl.innerHTML = `🔔 <b>Presensi Realtime Aktif:</b> Terhubung ke Firebase (${totalSiswa} Siswa Terdaftar).`;
+    }
+
     renderPantauKelas();
   }, function(err) {
     console.warn('Gagal membaca siswa:', err.message);
@@ -667,8 +698,8 @@ function initRekapPresensiSiswa(user) {
 
   // Muat opsi daftar siswa ke dropdown pilihan rekap
   db.ref('siswa').once('value').then(snap => {
-    const data = snap.val() || {};
-    let siswaList = Object.entries(data).map(([n, s]) => ({ nisn: n, nama: s.nama, kelas: s.kelas }));
+    const parsed = parseSiswaSnapshot(snap.val());
+    let siswaList = Object.values(parsed);
 
     // Fallback awal jika database siswa belum tersinkronisasi
     if (siswaList.length === 0) {
