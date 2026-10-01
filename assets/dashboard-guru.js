@@ -276,8 +276,23 @@ async function muatDataPresensiKelas() {
   }
 
   // 2. Ambil data siswa di kelas ini
-  const snapSiswa = await db.ref('siswa').once('value');
-  const semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  let snapSiswa = await db.ref('siswa').once('value');
+  let semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  if (Object.keys(semuaSiswa).length < 50) {
+    try {
+      const snapData = await db.ref('data').once('value');
+      if (snapData.exists()) {
+        semuaSiswa = Object.assign({}, semuaSiswa, parseSiswaSnapshot(snapData.val()));
+      }
+    } catch (e) {}
+    if (Object.keys(semuaSiswa).length < 50 && typeof fetch === 'function') {
+      try {
+        const res = await fetch('assets/data-siswa.json');
+        const local = await res.json();
+        semuaSiswa = Object.assign({}, parseSiswaSnapshot(local), semuaSiswa);
+      } catch (e) {}
+    }
+  }
   const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(currentKelas) : currentKelas));
 
   // 3. Ambil data presensi jam berjalan
@@ -562,8 +577,23 @@ async function generateRekapGuru() {
 
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Memuat data rekapan...</td></tr>';
 
-  const snapSiswa = await db.ref('siswa').once('value');
-  const semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  let snapSiswa = await db.ref('siswa').once('value');
+  let semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : (snapSiswa.val() || {});
+  if (Object.keys(semuaSiswa).length < 50) {
+    try {
+      const snapData = await db.ref('data').once('value');
+      if (snapData.exists()) {
+        semuaSiswa = Object.assign({}, semuaSiswa, parseSiswaSnapshot(snapData.val()));
+      }
+    } catch (e) {}
+    if (Object.keys(semuaSiswa).length < 50 && typeof fetch === 'function') {
+      try {
+        const res = await fetch('assets/data-siswa.json');
+        const local = await res.json();
+        semuaSiswa = Object.assign({}, parseSiswaSnapshot(local), semuaSiswa);
+      } catch (e) {}
+    }
+  }
   const siswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) => (typeof normalisasiKelas === 'function' ? normalisasiKelas(s.kelas) : s.kelas) === (typeof normalisasiKelas === 'function' ? normalisasiKelas(kelas) : kelas));
 
   const snapPresensi = await db.ref(`presensi_jam/${kelas}/${tanggal}`).once('value');

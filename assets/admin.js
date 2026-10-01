@@ -30,13 +30,35 @@ function initAdmin() {
   if (tglRekap) tglRekap.value = tanggalHariIni();
 
   // Listeners realtime
-  db.ref('siswa').on('value', function (snapshot) {
-    siswaCache = (typeof parseSiswaSnapshot === 'function')
-      ? parseSiswaSnapshot(snapshot.val())
-      : (snapshot.val() || {});
+  function perbaruiSiswaAdmin(parsed) {
+    if (parsed && Object.keys(parsed).length > 0) {
+      siswaCache = Object.assign({}, siswaCache, parsed);
+    }
     renderSiswaTable(siswaCache);
     renderKartuTable(kartuCache);
     populatePresensiKelas();
+  }
+
+  db.ref('siswa').on('value', function (snapshot) {
+    const parsed = (typeof parseSiswaSnapshot === 'function')
+      ? parseSiswaSnapshot(snapshot.val())
+      : (snapshot.val() || {});
+    perbaruiSiswaAdmin(parsed);
+
+    if (Object.keys(parsed).length < 50) {
+      db.ref('data').once('value').then(function(snapData) {
+        if (snapData.exists()) {
+          perbaruiSiswaAdmin(parseSiswaSnapshot(snapData.val()));
+        }
+      }).catch(function() {});
+
+      if (typeof fetch === 'function') {
+        fetch('assets/data-siswa.json')
+          .then(r => r.json())
+          .then(loc => perbaruiSiswaAdmin(parseSiswaSnapshot(loc)))
+          .catch(function() {});
+      }
+    }
   });
 
   db.ref('kartu').on('value', function (snapshot) {

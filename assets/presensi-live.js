@@ -222,10 +222,10 @@ kelasSelect.addEventListener('change', function () {
 setInterval(cekJamAktifTerkini, 15000);
 
 // Load semua siswa & populate dropdown kelas
-db.ref('siswa').on('value', function (snapshot) {
-  siswaCache = (typeof parseSiswaSnapshot === 'function')
-    ? parseSiswaSnapshot(snapshot.val())
-    : (snapshot.val() || {});
+function perbaruiSiswaLive(parsed) {
+  if (parsed && Object.keys(parsed).length > 0) {
+    siswaCache = Object.assign({}, siswaCache, parsed);
+  }
 
   const kelasSebelumnya = kelasSelect.value;
   const daftarKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
@@ -245,6 +245,28 @@ db.ref('siswa').on('value', function (snapshot) {
   }
 
   pindahKelas(kelasSelect.value);
+}
+
+db.ref('siswa').on('value', function (snapshot) {
+  const parsed = (typeof parseSiswaSnapshot === 'function')
+    ? parseSiswaSnapshot(snapshot.val())
+    : (snapshot.val() || {});
+  perbaruiSiswaLive(parsed);
+
+  if (Object.keys(parsed).length < 50) {
+    db.ref('data').once('value').then(function(snapData) {
+      if (snapData.exists()) {
+        perbaruiSiswaLive(parseSiswaSnapshot(snapData.val()));
+      }
+    }).catch(function() {});
+
+    if (typeof fetch === 'function') {
+      fetch('assets/data-siswa.json')
+        .then(r => r.json())
+        .then(loc => perbaruiSiswaLive(parseSiswaSnapshot(loc)))
+        .catch(function() {});
+    }
+  }
 });
 
 db.ref('kartu').on('value', function (snapshot) {

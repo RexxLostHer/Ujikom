@@ -17,6 +17,9 @@ var DAFTAR_KELAS_RESMI = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 
 function ambilKelasSiswa(s) {
   if (!s || typeof s !== 'object') return '';
+  if (s.kelas && typeof s.kelas === 'object') {
+    return s.kelas.nama_kelas || s.kelas.nama || s.kelas.name || s.kelas.rombel || '';
+  }
   return s.kelas || s.Kelas || s.KELAS || s.rombel || s.Rombel || s.kelas_nama || s.kelasNama || '';
 }
 
@@ -24,6 +27,7 @@ function normalisasiKelas(k) {
   if (!k) return '';
   let str = String(k).trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
   // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1
+  str = str.replace(/(?:XII|12)\s*TKJ\s*2/gi, 'XII TKJ 1');
   str = str.replace(/(?:XII|12)\s*(RPL|TKJ)\s*([12])/gi, 'XII $1 $2');
   str = str.replace(/\b12\s+/g, 'XII ').replace(/\b12([A-Z])/g, 'XII $1');
   return str;
@@ -32,22 +36,41 @@ function normalisasiKelas(k) {
 function parseSiswaSnapshot(rawVal) {
   const result = {};
   if (!rawVal) return result;
-  if (Array.isArray(rawVal)) {
-    rawVal.forEach((s, idx) => {
-      if (s && typeof s === 'object') {
-        const nisn = String(s.nisn || s.NISN || s.id || (idx + 1));
-        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
-        const kelas = normalisasiKelas(ambilKelasSiswa(s));
-        result[nisn] = { ...s, nisn, nama, kelas, _key: String(idx) };
-      }
+
+  // Dukung format thunder client yang dibungkus object { status: 'success', data: [...] }
+  let listData = rawVal;
+  if (rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal) && rawVal.data) {
+    listData = rawVal.data;
+  }
+
+  function prosesItemSiswa(s, fallbackKey) {
+    if (!s || typeof s !== 'object') return;
+    let nisn = s.nisn || s.NISN;
+    if (!nisn && s.user && s.user.email) {
+      const m = s.user.email.match(/^(\d{8,12})/);
+      if (m) nisn = m[1];
+    }
+    if (!nisn && s.nis && /^\d+$/.test(s.nis)) {
+      nisn = s.nis;
+    }
+    if (!nisn) {
+      nisn = String(s.id || fallbackKey);
+    }
+    nisn = String(nisn).trim();
+
+    const nama = s.nama_lengkap || s.nama || s.Nama || s.name || s.NAMA || (s.user && (s.user.name || s.user.nama)) || ('Siswa ' + nisn);
+    const kelas = normalisasiKelas(ambilKelasSiswa(s));
+    result[nisn] = { ...s, nisn, nama, kelas, _key: String(fallbackKey) };
+  }
+
+  if (Array.isArray(listData)) {
+    listData.forEach((s, idx) => {
+      prosesItemSiswa(s, idx);
     });
-  } else if (typeof rawVal === 'object') {
-    Object.entries(rawVal).forEach(([k, s]) => {
+  } else if (typeof listData === 'object') {
+    Object.entries(listData).forEach(([k, s]) => {
       if (s && typeof s === 'object') {
-        const nisn = String(s.nisn || s.NISN || s.id || k);
-        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
-        const kelas = normalisasiKelas(ambilKelasSiswa(s));
-        result[nisn] = { ...s, nisn, nama, kelas, _key: k };
+        prosesItemSiswa(s, k);
       } else if (typeof s === 'string') {
         result[k] = { nama: s, nisn: k, kelas: 'XII RPL 2', _key: k };
       }

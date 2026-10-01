@@ -155,23 +155,47 @@ async function initDashboard(user) {
 }
 
 function populateDropdownSiswa(user) {
-  db.ref('siswa').once('value').then(snap => {
-    const parsed = parseSiswaSnapshot(snap.val());
+  function renderSel(parsed) {
     const sel = document.getElementById('perijinanSiswaTarget');
     if (!sel) return;
-    sel.innerHTML = '<option value=\"\">-- Pilih Siswa yang Diizinkan --</option>';
+    sel.innerHTML = '<option value="">-- Pilih Siswa yang Diizinkan --</option>';
 
-    // Urutkan abjad nama
     Object.values(parsed).sort((a,b) => (a.nama || '').localeCompare(b.nama || '')).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.nisn;
       opt.textContent = s.nama + ' (' + (s.kelas || '-') + ')';
-      // Jika email user cocok dengan siswa ini, auto pilih
       if (user && (user.nisn === s.nisn || (s.email && user.email && s.email.toLowerCase() === user.email.toLowerCase()))) {
         opt.selected = true;
       }
       sel.appendChild(opt);
     });
+  }
+
+  db.ref('siswa').once('value').then(snap => {
+    let parsed = parseSiswaSnapshot(snap.val());
+    if (Object.keys(parsed).length < 50) {
+      db.ref('data').once('value').then(snapData => {
+        if (snapData.exists()) {
+          parsed = Object.assign({}, parsed, parseSiswaSnapshot(snapData.val()));
+        }
+        if (Object.keys(parsed).length < 50 && typeof fetch === 'function') {
+          fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
+            parsed = Object.assign({}, parseSiswaSnapshot(loc), parsed);
+            renderSel(parsed);
+          }).catch(() => renderSel(parsed));
+        } else {
+          renderSel(parsed);
+        }
+      }).catch(() => renderSel(parsed));
+    } else {
+      renderSel(parsed);
+    }
+  }).catch(() => {
+    if (typeof fetch === 'function') {
+      fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
+        renderSel(parseSiswaSnapshot(loc));
+      }).catch(() => {});
+    }
   });
 }
 
@@ -246,6 +270,9 @@ var DAFTAR_KELAS_RESMI = (typeof window !== 'undefined' && window.DAFTAR_KELAS_R
 
 function ambilKelasSiswa(s) {
   if (!s || typeof s !== 'object') return '';
+  if (s.kelas && typeof s.kelas === 'object') {
+    return s.kelas.nama_kelas || s.kelas.nama || s.kelas.name || s.kelas.rombel || '';
+  }
   return s.kelas || s.Kelas || s.KELAS || s.rombel || s.Rombel || s.kelas_nama || s.kelasNama || '';
 }
 
@@ -253,6 +280,7 @@ function normalisasiKelas(k) {
   if (!k) return '';
   let str = String(k).trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
   // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1
+  str = str.replace(/(?:XII|12)\s*TKJ\s*2/gi, 'XII TKJ 1');
   str = str.replace(/(?:XII|12)\s*(RPL|TKJ)\s*([12])/gi, 'XII $1 $2');
   str = str.replace(/\b12\s+/g, 'XII ').replace(/\b12([A-Z])/g, 'XII $1');
   return str;
@@ -261,22 +289,41 @@ function normalisasiKelas(k) {
 function parseSiswaSnapshot(rawVal) {
   const result = {};
   if (!rawVal) return result;
-  if (Array.isArray(rawVal)) {
-    rawVal.forEach((s, idx) => {
-      if (s && typeof s === 'object') {
-        const nisn = String(s.nisn || s.NISN || s.id || (idx + 1));
-        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
-        const kelas = normalisasiKelas(ambilKelasSiswa(s));
-        result[nisn] = { ...s, nisn, nama, kelas, _key: String(idx) };
-      }
+
+  // Dukung format thunder client yang dibungkus object { status: 'success', data: [...] }
+  let listData = rawVal;
+  if (rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal) && rawVal.data) {
+    listData = rawVal.data;
+  }
+
+  function prosesItemSiswa(s, fallbackKey) {
+    if (!s || typeof s !== 'object') return;
+    let nisn = s.nisn || s.NISN;
+    if (!nisn && s.user && s.user.email) {
+      const m = s.user.email.match(/^(\d{8,12})/);
+      if (m) nisn = m[1];
+    }
+    if (!nisn && s.nis && /^\d+$/.test(s.nis)) {
+      nisn = s.nis;
+    }
+    if (!nisn) {
+      nisn = String(s.id || fallbackKey);
+    }
+    nisn = String(nisn).trim();
+
+    const nama = s.nama_lengkap || s.nama || s.Nama || s.name || s.NAMA || (s.user && (s.user.name || s.user.nama)) || ('Siswa ' + nisn);
+    const kelas = normalisasiKelas(ambilKelasSiswa(s));
+    result[nisn] = { ...s, nisn, nama, kelas, _key: String(fallbackKey) };
+  }
+
+  if (Array.isArray(listData)) {
+    listData.forEach((s, idx) => {
+      prosesItemSiswa(s, idx);
     });
-  } else if (typeof rawVal === 'object') {
-    Object.entries(rawVal).forEach(([k, s]) => {
+  } else if (typeof listData === 'object') {
+    Object.entries(listData).forEach(([k, s]) => {
       if (s && typeof s === 'object') {
-        const nisn = String(s.nisn || s.NISN || s.id || k);
-        const nama = s.nama || s.Nama || s.name || s.NAMA || ('Siswa ' + nisn);
-        const kelas = normalisasiKelas(ambilKelasSiswa(s));
-        result[nisn] = { ...s, nisn, nama, kelas, _key: k };
+        prosesItemSiswa(s, k);
       } else if (typeof s === 'string') {
         result[k] = { nama: s, nisn: k, kelas: 'XII RPL 2', _key: k };
       }
@@ -326,10 +373,9 @@ function initPantauKelas(user) {
   });
 
   // Sinkronisasi realtime master data siswa dari Firebase
-  db.ref('siswa').on('value', function(snap) {
-    const parsed = parseSiswaSnapshot(snap.val());
-    if (Object.keys(parsed).length > 0) {
-      semuaSiswaCache = parsed;
+  function perbaruiSiswa(parsed) {
+    if (parsed && Object.keys(parsed).length > 0) {
+      semuaSiswaCache = Object.assign({}, semuaSiswaCache, parsed);
     }
     const totalSiswa = Object.keys(semuaSiswaCache).length;
     perbaruiDropdownKelasPantau(sel ? sel.value : targetKelasAwal);
@@ -341,8 +387,41 @@ function initPantauKelas(user) {
 
     renderPantauKelas();
     renderPantauBeranda();
+  }
+
+  db.ref('siswa').on('value', function(snap) {
+    const parsed = parseSiswaSnapshot(snap.val());
+    perbaruiSiswa(parsed);
+
+    if (Object.keys(parsed).length < 50) {
+      db.ref('data').once('value').then(function(snapData) {
+        if (snapData.exists()) {
+          const parsedData = parseSiswaSnapshot(snapData.val());
+          if (Object.keys(parsedData).length > 0) {
+            perbaruiSiswa(parsedData);
+          }
+        }
+      }).catch(function() {});
+
+      if (typeof fetch === 'function') {
+        fetch('assets/data-siswa.json')
+          .then(r => r.json())
+          .then(localData => {
+            if (Object.keys(semuaSiswaCache).length < 50) {
+              perbaruiSiswa(parseSiswaSnapshot(localData));
+            }
+          })
+          .catch(function() {});
+      }
+    }
   }, function(err) {
     console.warn('Gagal membaca siswa:', err.message);
+    if (typeof fetch === 'function') {
+      fetch('assets/data-siswa.json')
+        .then(r => r.json())
+        .then(localData => perbaruiSiswa(parseSiswaSnapshot(localData)))
+        .catch(function() {});
+    }
     renderPantauKelas();
     renderPantauBeranda();
   });
@@ -841,11 +920,8 @@ function initRekapPresensiSiswa(user) {
   }
 
   // Muat opsi daftar siswa ke dropdown pilihan rekap
-  db.ref('siswa').once('value').then(snap => {
-    const parsed = parseSiswaSnapshot(snap.val());
+  function setupRekapOptions(parsed) {
     let siswaList = Object.values(parsed);
-
-    // Fallback awal jika database siswa belum tersinkronisasi
     if (siswaList.length === 0) {
       siswaList = [
         { nisn: '0098263610', nama: 'M. Ihsan Athallah', kelas: 'XII RPL 2' },
@@ -864,7 +940,6 @@ function initRekapPresensiSiswa(user) {
         selSiswaRekap.appendChild(opt);
       });
 
-      // Siswa login otomatis melihat NISN sendiri, akun pengunjung default ke siswa pertama / Ihsan
       const targetNisn = (user && user.nisn) ? user.nisn : (siswaList.some(s => s.nisn === '0098263610') ? '0098263610' : siswaList[0].nisn);
       selSiswaRekap.value = targetNisn;
       muatDataRekapNisn(targetNisn);
@@ -875,6 +950,33 @@ function initRekapPresensiSiswa(user) {
     } else {
       const targetNisn = (user && user.nisn) ? user.nisn : '0098263610';
       muatDataRekapNisn(targetNisn);
+    }
+  }
+
+  db.ref('siswa').once('value').then(snap => {
+    let parsed = parseSiswaSnapshot(snap.val());
+    if (Object.keys(parsed).length < 50) {
+      db.ref('data').once('value').then(snapData => {
+        if (snapData.exists()) {
+          parsed = Object.assign({}, parsed, parseSiswaSnapshot(snapData.val()));
+        }
+        if (Object.keys(parsed).length < 50 && typeof fetch === 'function') {
+          fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
+            parsed = Object.assign({}, parseSiswaSnapshot(loc), parsed);
+            setupRekapOptions(parsed);
+          }).catch(() => setupRekapOptions(parsed));
+        } else {
+          setupRekapOptions(parsed);
+        }
+      }).catch(() => setupRekapOptions(parsed));
+    } else {
+      setupRekapOptions(parsed);
+    }
+  }).catch(() => {
+    if (typeof fetch === 'function') {
+      fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
+        setupRekapOptions(parseSiswaSnapshot(loc));
+      }).catch(() => {});
     }
   });
 }
