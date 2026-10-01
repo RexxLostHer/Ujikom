@@ -30,48 +30,6 @@ function togglePasswordVisibility(inputId, btn) {
   }
 }
 
-// 1. Google 1-Click Login Khusus Staff & Admin
-async function handleGoogleStaffLogin() {
-  clearAdminNotif();
-  const btnGoogle = document.getElementById('btnGoogleStaff');
-  const originalText = btnGoogle ? btnGoogle.innerHTML : '';
-  if (btnGoogle) {
-    btnGoogle.disabled = true;
-    btnGoogle.innerHTML = '<span>⏳ Menghubungkan Google Auth...</span>';
-  }
-
-  try {
-    const cred = await loginDenganGoogle();
-    const fbUser = cred.user;
-    const userData = await prosesLoginUser(fbUser);
-
-    if (userData.role === 'admin') {
-      showAdminNotif('success', '✓ Akses Administrator Terverifikasi. Mengalihkan ke Panel Admin...');
-      setTimeout(() => { window.location.href = 'admin.html'; }, 900);
-    } else if (userData.role === 'guru') {
-      showAdminNotif('success', '✓ Akses Guru Terverifikasi. Mengalihkan ke Portal Guru...');
-      setTimeout(() => { window.location.href = 'dashboard-guru.html'; }, 900);
-    } else {
-      showAdminNotif('warning', `⚠️ Akses Ditolak: Akun <strong>${userData.email}</strong> terdaftar sebagai Siswa/Pengunjung. Portal ini khusus untuk Guru dan Administrator.`);
-      setTimeout(async () => {
-        await firebase.auth().signOut();
-        window.location.href = 'index.html';
-      }, 3000);
-    }
-  } catch (err) {
-    if (err.code === 'auth/popup-closed-by-user') {
-      showAdminNotif('warning', 'Login Google dibatalkan oleh pengguna.');
-    } else {
-      showAdminNotif('error', 'Gagal masuk dengan Google: ' + (err.message || 'Terjadi kesalahan sistem.'));
-    }
-  } finally {
-    if (btnGoogle) {
-      btnGoogle.disabled = false;
-      btnGoogle.innerHTML = originalText;
-    }
-  }
-}
-
 // 2. Email & Password Login Khusus Staff & Admin
 async function handleStaffLoginEmail(e) {
   e.preventDefault();
