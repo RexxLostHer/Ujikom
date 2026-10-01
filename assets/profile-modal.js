@@ -57,7 +57,7 @@ function bukaModalProfil() {
           <div class="profile-field-row">
             <label for="inputNisnVerif">Nomor Induk Siswa Nasional (NISN)</label>
             <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Contoh: 0098263610 atau 0082104129" maxlength="12"
+              <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Contoh: 1234567890" maxlength="12"
                      onkeydown="if(event.key==='Enter') handlePeriksaNisn()">
               <button type="button" class="profile-btn-action" onclick="handlePeriksaNisn()" id="btnCekNisn">🔍 Periksa</button>
             </div>

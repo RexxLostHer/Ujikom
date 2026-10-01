@@ -966,7 +966,7 @@ function loadUsers() {
     const entries = Object.entries(data);
 
     if (entries.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada pengguna.</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada pengguna.</p></div></td></tr>';
       return;
     }
 
@@ -976,7 +976,7 @@ function loadUsers() {
       // Role select
       const select = document.createElement('select');
       select.className = 'role-select';
-      ['siswa', 'ortu', 'guru', 'admin'].forEach(function (r) {
+      ['pengunjung', 'siswa', 'ortu', 'guru', 'admin'].forEach(function (r) {
         const opt = document.createElement('option');
         opt.value = r; opt.textContent = r;
         if (u.role === r) opt.selected = true;
@@ -984,30 +984,80 @@ function loadUsers() {
       });
       select.onchange = function () { ubahRoleUser(uid, select.value); };
 
+      const tdNama   = document.createElement('td');
+      const tdEmail  = document.createElement('td');
+      const tdRole   = document.createElement('td');
+      const tdNisn   = document.createElement('td');
+      const tdAksi   = document.createElement('td');
+
+      tdNama.innerHTML   = '<strong>' + (u.nama || '-') + '</strong>';
+      tdEmail.textContent = u.email || '-';
+      tdEmail.style.fontSize = '12.5px';
+      tdRole.appendChild(select);
+
+      if (u.nisn) {
+        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;">✓ ' + u.nisn + ' (' + (u.kelas || '-') + ')</span>';
+      } else {
+        tdNisn.innerHTML = '<span style="color:#94a3b8;font-size:12px;">- Belum Tertaut</span>';
+      }
+
+      tdAksi.style.display = 'flex';
+      tdAksi.style.gap = '6px';
+      tdAksi.style.alignItems = 'center';
+
+      // Tombol Lepas Tautan NISN jika user memiliki NISN
+      if (u.nisn) {
+        const unlinkBtn = document.createElement('button');
+        unlinkBtn.textContent = '🔓 Lepas NISN';
+        unlinkBtn.className = 'btn-row-edit';
+        unlinkBtn.style.background = '#fffbeb';
+        unlinkBtn.style.color = '#b45309';
+        unlinkBtn.style.borderColor = '#fde68a';
+        unlinkBtn.title = 'Lepas tautan NISN agar dapat dipindahkan ke akun lain';
+        unlinkBtn.onclick = function () { lepasTautanNisnAdmin(uid, u.nisn, u.email); };
+        tdAksi.appendChild(unlinkBtn);
+      }
+
       // Hapus button
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Hapus';
       delBtn.className = 'btn-row-delete';
       delBtn.onclick = function () { hapusUser(uid); };
-
-      const tdNama  = document.createElement('td');
-      const tdEmail = document.createElement('td');
-      const tdRole  = document.createElement('td');
-      const tdAksi  = document.createElement('td');
-
-      tdNama.textContent  = u.nama  || '-';
-      tdEmail.textContent = u.email || '-';
-      tdEmail.style.fontSize = '12.5px';
-      tdRole.appendChild(select);
       tdAksi.appendChild(delBtn);
 
       tr.appendChild(tdNama);
       tr.appendChild(tdEmail);
       tr.appendChild(tdRole);
+      tr.appendChild(tdNisn);
       tr.appendChild(tdAksi);
       tbody.appendChild(tr);
     });
   });
+}
+
+async function lepasTautanNisnAdmin(uid, nisn, email) {
+  if (!confirm('Lepas tautan NISN ' + nisn + ' dari akun ' + (email || uid) + '?\n\nSetelah dilepas, akun ini akan kembali berstatus Pengunjung dan NISN ' + nisn + ' dapat ditautkan ke akun baru.')) {
+    return;
+  }
+
+  try {
+    if (nisn) {
+      await db.ref('nisn_claimed/' + nisn).remove();
+    }
+    await db.ref('users/' + uid).update({
+      nisn: null,
+      kelas: null,
+      role: 'pengunjung',
+      nisn_verified_at: null
+    });
+    if (email) {
+      const encoded = email.toLowerCase().replace(/\./g, ',').replace(/@/g, '(at)');
+      await db.ref('email_mapping/' + encoded).remove();
+    }
+    alert('✅ Tautan NISN ' + nisn + ' berhasil dilepas dari akun ' + email + '. Siswa kini dapat menautkannya ke akun baru.');
+  } catch (err) {
+    alert('Gagal melepas tautan NISN: ' + err.message);
+  }
 }
 
 async function ubahRoleUser(uid, role) {

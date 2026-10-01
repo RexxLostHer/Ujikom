@@ -185,8 +185,31 @@ assert.throws(() => {
 }, /telah ditautkan ke akun lain/, 'Harus menolak klaim NISN yang sudah dipakai');
 console.log('✓ Proteksi anti-double claim aktif: Akun lain ditolak saat klaim NISN terpakai.');
 
-// TEST 6: Rekapitulasi Presensi 1 Tahun Terakhir
-console.log('\n[Test 6] Agregasi Data Presensi Historis 1 Tahun Terakhir');
+// TEST 6: Admin Melepas Tautan NISN (Konfirmasi Admin untuk Pindah Akun)
+console.log('\n[Test 6] Admin Melepas Tautan NISN (Konfirmasi Admin untuk Pindah Akun)');
+function lepasTautanAdminMock(uid, nisn, email) {
+  delete mockDb.nisn_claimed[nisn];
+  if (mockDb.users[uid]) {
+    mockDb.users[uid].nisn = null;
+    mockDb.users[uid].kelas = null;
+    mockDb.users[uid].role = 'pengunjung';
+  }
+  const encoded = email.toLowerCase().replace(/\./g, ',').replace(/@/g, '(at)');
+  delete mockDb.email_mapping[encoded];
+}
+
+lepasTautanAdminMock(userBaru.uid, '0098263610', userBaru.email);
+assert.strictEqual(mockDb.users[userBaru.uid].role, 'pengunjung', 'Akun lama kembali menjadi pengunjung');
+assert.strictEqual(mockDb.users[userBaru.uid].nisn, null, 'NISN akun lama menjadi null');
+assert.strictEqual(mockDb.nisn_claimed['0098263610'], undefined, 'NISN claimed harus terhapus');
+
+const userLainKlaim = konfirmasiNisnMock(userLain.uid, '0098263610');
+assert.strictEqual(userLainKlaim.role, 'siswa', 'Akun baru berhasil mengklaim setelah dilepas admin');
+assert.strictEqual(userLainKlaim.nisn, '0098263610');
+console.log('✓ Konfirmasi Admin untuk pindah akun berhasil: NISN berhasil dipindahkan ke akun baru.');
+
+// TEST 7: Rekapitulasi Presensi 1 Tahun Terakhir
+console.log('\n[Test 7] Agregasi Data Presensi Historis 1 Tahun Terakhir');
 const dataset = generateDatasetSetahun();
 const logsIhsan = Object.values(dataset['0098263610']);
 

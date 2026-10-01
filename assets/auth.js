@@ -198,7 +198,7 @@ async function periksaNisnSiswa(nisn) {
     const claimedUid = typeof claimData === 'string' ? claimData : claimData.uid;
     if (currentFbUser && claimedUid !== currentFbUser.uid) {
       const emailMask = claimData.email ? ' (' + claimData.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') + ')' : '';
-      throw new Error('NISN ' + cleanNisn + ' telah ditautkan ke akun lain' + emailMask + '. Hubungi tata usaha jika ini kekeliruan.');
+      throw new Error('NISN ' + cleanNisn + ' telah ditautkan ke akun lain' + emailMask + '. Sesuai kebijakan sekolah, 1 NISN hanya dapat digunakan oleh 1 akun primer. Untuk memindahkan akun, hubungi Administrator Sekolah untuk konfirmasi & pelepasan tautan.');
     }
   }
 
