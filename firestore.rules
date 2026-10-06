@@ -1,0 +1,411 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER FUNCTIONS & AUTH CONTEXT
+    // =========================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasUserDoc() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getRole() {
+      return request.auth.token.role != null
+        ? request.auth.token.role
+        : (hasUserDoc() ? getUserDoc().role : null);
+    }
+
+    function getSchoolId() {
+      return request.auth.token.schoolId != null
+        ? request.auth.token.schoolId
+        : (hasUserDoc() ? getUserDoc().schoolId : null);
+    }
+
+    function getCompanyId() {
+      return request.auth.token.companyId != null
+        ? request.auth.token.companyId
+        : (hasUserDoc() ? getUserDoc().companyId : null);
+    }
+
+    // Super Admin: platform-wide admin with no school attachment
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'super_admin' ||
+        (getRole() == 'admin' && (getSchoolId() == null || getSchoolId() == ''))
+      );
+    }
+
+    // Admin Sekolah: administrator scoped to a specific school
+    function isAdminSekolah(schoolId) {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        (getRole() == 'admin' && getSchoolId() == schoolId)
+      );
+    }
+
+    function isAdminRole() {
+      return isAuthenticated() && getRole() == 'admin';
+    }
+
+    // Guru Pembimbing: teacher scoped to a specific school
+    function isGuruPembimbing(schoolId) {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        ((getRole() == 'guru pembimbing' || getRole() == 'guru') && getSchoolId() == schoolId)
+      );
+    }
+
+    // Pembimbing Instansi: mentor scoped to a specific company
+    function isPembimbingInstansi(companyId) {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        ((getRole() == 'pembimbing instansi' || getRole() == 'pembimbing') && getCompanyId() == companyId)
+      );
+    }
+
+    // Siswa: student scoped to their school
+    function isSiswa() {
+      return isAuthenticated() && getRole() == 'siswa';
+    }
+
+    // =========================================================================
+    // 1. SCHOOLS (Tenant Root)
+    // =========================================================================
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin() || isAdminSekolah(schoolId);
+    }
+
+    // =========================================================================
+    // 2. COMPANIES (Platform-level)
+    // =========================================================================
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isAdminRole();
+
+      // INVARIANT 2: Company edit field whitelist
+      allow update: if isSuperAdmin() || (
+        isAdminRole() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'address', 'lat', 'lng', 'geofenceRadiusMeters', 'jurusanAllowed', 'quota', 'updatedAt'])
+      );
+
+      // INVARIANT 1: Company deletion exclusively for Super Admin
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 3. QR TOKENS (One active token per company)
+    // =========================================================================
+    match /qrTokens/{companyId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isPembimbingInstansi(companyId);
+    }
+
+    // =========================================================================
+    // 4. USERS & NOTIFICATIONS
+    // =========================================================================
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isSuperAdmin() ||
+        (getSchoolId() != null && resource.data.schoolId == getSchoolId()) ||
+        (getCompanyId() != null && resource.data.companyId == getCompanyId())
+      );
+
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() ||
+        isAdminSekolah(request.resource.data.schoolId)
+      );
+
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (isAdminSekolah(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId) ||
+        (
+          request.auth.uid == userId &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'displayName', 'phone', 'address', 'avatarUrl', 'fcmToken', 'photoUrl', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isSuperAdmin();
+
+      match /notifications/{notificationId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow write: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 5. APPLICATIONS (PKL Placement)
+    // =========================================================================
+    match /applications/{applicationId} {
+      // INVARIANT 7: Multi-tenant read protection
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        isSuperAdmin() ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru')) ||
+        ((getRole() == 'pembimbing instansi' || getRole() == 'pembimbing') && getCompanyId() == resource.data.companyId)
+      );
+
+      // INVARIANT 3: Application creation guard
+      allow create: if isSiswa() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'menunggu' &&
+        (getSchoolId() == null || request.resource.data.schoolId == getSchoolId());
+
+      allow update: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    // =========================================================================
+    // 6. ATTENDANCES (Daily Attendance)
+    // =========================================================================
+    match /attendances/{attendanceId} {
+      // INVARIANT 7: Multi-tenant read protection
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.uid ||
+        isSuperAdmin() ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru'))
+      );
+
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() ||
+        isAdminSekolah(request.resource.data.schoolId) ||
+        (
+          request.auth.uid == request.resource.data.uid &&
+          isSiswa() &&
+          request.resource.data.schoolId == getSchoolId() &&
+          request.resource.data.logbookSubmitted == false &&
+          !('checkOut' in request.resource.data)
+        )
+      );
+
+      // INVARIANT 4: Attendance checkout barrier
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (isAdminSekolah(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId) ||
+        (
+          request.auth.uid == resource.data.uid &&
+          isSiswa() &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['notes', 'checkOut', 'updatedAt']) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkOut']) ||
+           resource.data.logbookSubmitted == true)
+        )
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 7. LOGBOOKS (Daily Hybrid Journal)
+    // =========================================================================
+    match /logbooks/{logbookId} {
+      // INVARIANT 7: Multi-tenant & Company isolation
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.uid ||
+        isSuperAdmin() ||
+        ((getRole() == 'pembimbing instansi' || getRole() == 'pembimbing') && getCompanyId() == resource.data.companyId) ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru'))
+      );
+
+      allow create: if isSiswa() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.reviewStatus == 'menunggu' &&
+        (getSchoolId() == null || request.resource.data.schoolId == getSchoolId());
+
+      // INVARIANT 5: Logbook review restricted to same company mentor
+      allow update: if isSuperAdmin() || (
+        isPembimbingInstansi(resource.data.companyId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['reviewStatus', 'catatan', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+      );
+
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    // =========================================================================
+    // 8. ASSESSMENTS (Two-Stage Evaluation)
+    // =========================================================================
+    match /assessments/{assessmentId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        isSuperAdmin() ||
+        ((getRole() == 'pembimbing instansi' || getRole() == 'pembimbing') && getCompanyId() == resource.data.companyId) ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru')) ||
+        (resource.data.isRecommendedTalent == true && resource.data.visibleToCompanies == true)
+      );
+
+      allow create: if isSuperAdmin() ||
+        isPembimbingInstansi(request.resource.data.companyId) ||
+        isGuruPembimbing(request.resource.data.schoolId) ||
+        isAdminSekolah(request.resource.data.schoolId);
+
+      allow update: if isSuperAdmin() ||
+        isPembimbingInstansi(resource.data.companyId) ||
+        isGuruPembimbing(resource.data.schoolId) ||
+        isAdminSekolah(resource.data.schoolId) ||
+        (
+          request.auth.uid == resource.data.studentId &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['visibleToCompanies', 'updatedAt'])
+        );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 9. SOS REPORTS (Emergency Alert)
+    // =========================================================================
+    match /sosReports/{sosId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        isSuperAdmin() ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru'))
+      );
+
+      allow create: if isSiswa() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'belum-ditinjau';
+
+      allow update: if isSuperAdmin() ||
+        isGuruPembimbing(resource.data.schoolId) ||
+        isAdminSekolah(resource.data.schoolId);
+
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    // =========================================================================
+    // 10. FINAL REPORTS (Internship Report & Certificate)
+    // =========================================================================
+    match /finalReports/{reportId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        isSuperAdmin() ||
+        (getSchoolId() == resource.data.schoolId && (isAdminRole() || getRole() == 'guru pembimbing' || getRole() == 'guru'))
+      );
+
+      allow create: if isSiswa() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'menunggu';
+
+      // INVARIANT 6: Final report admin review whitelist
+      allow update: if isSuperAdmin() || (
+        isAdminSekolah(resource.data.schoolId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'certificateUrl', 'reviewedBy', 'reviewedAt', 'reviewNote', 'updatedAt'])
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 11. ACADEMIC YEARS & MAJORS (Master Data)
+    // =========================================================================
+    match /academicYears/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isAdminSekolah(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() || (
+        isAdminSekolah(resource.data.schoolId) &&
+        request.resource.data.schoolId == resource.data.schoolId
+      );
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    match /majors/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isAdminSekolah(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() || (
+        isAdminSekolah(resource.data.schoolId) &&
+        request.resource.data.schoolId == resource.data.schoolId
+      );
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    // =========================================================================
+    // 12. MENTORSHIPS & MONITORING VISITS
+    // =========================================================================
+    match /mentorships/{id} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() || getSchoolId() == resource.data.schoolId
+      );
+      allow create: if isSuperAdmin() || isAdminSekolah(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() || (
+        isAdminSekolah(resource.data.schoolId) &&
+        request.resource.data.schoolId == resource.data.schoolId
+      );
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+
+    match /visits/{id} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() || getSchoolId() == resource.data.schoolId
+      );
+      allow create: if isSuperAdmin() ||
+        isGuruPembimbing(request.resource.data.schoolId) ||
+        isAdminSekolah(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() || (
+        (isGuruPembimbing(resource.data.schoolId) || isAdminSekolah(resource.data.schoolId)) &&
+        request.resource.data.schoolId == resource.data.schoolId
+      );
+      allow delete: if isSuperAdmin() ||
+        isGuruPembimbing(resource.data.schoolId) ||
+        isAdminSekolah(resource.data.schoolId);
+    }
+
+    // =========================================================================
+    // 13. TALENT POOL (Job Vacancies & Applications)
+    // =========================================================================
+    match /jobVacancies/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isPembimbingInstansi(request.resource.data.companyId);
+      allow update: if isSuperAdmin() || (
+        isPembimbingInstansi(resource.data.companyId) &&
+        request.resource.data.companyId == resource.data.companyId
+      );
+      allow delete: if isSuperAdmin() || isPembimbingInstansi(resource.data.companyId);
+    }
+
+    match /jobApplications/{id} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        isSuperAdmin() ||
+        ((getRole() == 'pembimbing instansi' || getRole() == 'pembimbing') && getCompanyId() == resource.data.companyId) ||
+        (getSchoolId() == resource.data.schoolId && isAdminRole())
+      );
+      allow create: if isSiswa() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'menunggu';
+      allow update: if isSuperAdmin() || isPembimbingInstansi(resource.data.companyId);
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 14. PRE-REGISTRATION ROSTER (Auxiliary)
+    // =========================================================================
+    match /roster/{id} {
+      allow read: if isAuthenticated() && (isSuperAdmin() || isAdminSekolah(resource.data.schoolId));
+      allow create: if isSuperAdmin() || isAdminSekolah(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() || (
+        isAdminSekolah(resource.data.schoolId) &&
+        request.resource.data.schoolId == resource.data.schoolId
+      );
+      allow delete: if isSuperAdmin() || isAdminSekolah(resource.data.schoolId);
+    }
+  }
+}

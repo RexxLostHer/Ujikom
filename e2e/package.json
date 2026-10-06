@@ -1,0 +1,21 @@
+{
+  "name": "vokalog-e2e",
+  "version": "1.0.0",
+  "description": "VokaLog E2E Test Suite and Opaque-Box Runner (21 PRD Flows, Tiers 1-4)",
+  "main": "runner.js",
+  "scripts": {
+    "test": "node runner.js",
+    "e2e": "node runner.js",
+    "e2e:live": "node runner.js --live",
+    "e2e:summary": "node runner.js --summary"
+  },
+  "keywords": [
+    "vokalog",
+    "e2e",
+    "ujikom",
+    "testing",
+    "smkn1-sumedang"
+  ],
+  "author": "RexxLostHer <7dosabesar557@gmail.com>",
+  "license": "ISC"
+}

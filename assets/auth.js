@@ -160,8 +160,8 @@ async function prosesLoginUser(firebaseUser) {
       console.warn('Penyimpanan users/{uid} dilewati:', errWrite.message);
     }
   } else {
-    // Normalisasi: jika bukan guru/admin dan belum punya NISN, pastikan role adalah pengunjung
-    if (userData.role !== 'admin' && userData.role !== 'guru' && !userData.nisn) {
+    // Normalisasi: jika bukan guru/walas/admin dan belum punya NISN, pastikan role adalah pengunjung
+    if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
       userData.role = 'pengunjung';
     }
     if (firebaseUser.photoURL && userData.foto_google !== firebaseUser.photoURL) {
@@ -227,6 +227,7 @@ async function konfirmasiTautkanNisn(nisn) {
     nisn: dataSiswa.nisn,
     kelas: dataSiswa.kelas,
     role: 'siswa',
+    isVerified: true,
     nisn_verified_at: new Date().toISOString(),
     foto_google: currentFbUser.photoURL || null
   };
@@ -255,9 +256,101 @@ async function konfirmasiTautkanNisn(nisn) {
   return updatedData;
 }
 
+// 5c. Validasi dan Konfirmasi NIP Guru / Wali Kelas (PRD Bab 3)
+async function periksaNipGuru(nip) {
+  const cleanNip = (nip || '').trim();
+  if (!cleanNip) throw new Error('Harap masukkan NIP atau Kode Guru.');
+
+  // Cek di master data guru Firebase
+  let guru = null;
+  try {
+    const snapGuru = await db.ref('guru/' + cleanNip).once('value');
+    guru = snapGuru.val();
+  } catch (e) {}
+
+  if (!guru && typeof MASTER_GURU_RESMI !== 'undefined') {
+    guru = MASTER_GURU_RESMI[cleanNip] || null;
+  }
+
+  if (!guru) {
+    throw new Error('NIP/Kode Guru ' + cleanNip + ' tidak terdaftar di database SMKN 1 Sumedang.');
+  }
+
+  // Cek apakah NIP sudah diklaim oleh akun lain
+  try {
+    const snapClaimed = await db.ref('guru_claimed/' + cleanNip).once('value');
+    const claimData = snapClaimed.val();
+    const currentFbUser = firebase.auth().currentUser;
+    if (claimData) {
+      const claimedUid = typeof claimData === 'string' ? claimData : claimData.uid;
+      if (currentFbUser && claimedUid !== currentFbUser.uid) {
+        throw new Error('NIP ' + cleanNip + ' telah ditautkan ke akun lain. Hubungi Administrator untuk reset.');
+      }
+    }
+  } catch (e) {}
+
+  return {
+    nip: cleanNip,
+    nama: guru.nama,
+    mapel: guru.mapel || '-',
+    isWalas: !!guru.isWalas,
+    walasKelasId: guru.walasKelasId || null
+  };
+}
+
+async function konfirmasiTautkanGuru(nip) {
+  const currentFbUser = firebase.auth().currentUser;
+  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
+
+  const dataGuru = await periksaNipGuru(nip);
+  const uid = currentFbUser.uid;
+  const email = currentFbUser.email || '';
+  const encoded = encodeEmail(email);
+
+  const role = dataGuru.isWalas ? 'walas' : 'guru';
+  const updatedData = {
+    uid: uid,
+    email: email,
+    nama: dataGuru.nama,
+    nip: dataGuru.nip,
+    mapel: dataGuru.mapel,
+    isWalas: dataGuru.isWalas,
+    walasKelasId: dataGuru.walasKelasId,
+    role: role,
+    isVerified: true,
+    nip_verified_at: new Date().toISOString(),
+    foto_google: currentFbUser.photoURL || null
+  };
+
+  await db.ref('users/' + uid).update(updatedData);
+
+  await db.ref('guru_claimed/' + dataGuru.nip).set({
+    uid: uid,
+    email: email,
+    nama: dataGuru.nama,
+    role: role,
+    waktu: new Date().toISOString()
+  });
+
+  if (encoded) {
+    try {
+      await db.ref('email_mapping/' + encoded).set({
+        nama: dataGuru.nama,
+        nip: dataGuru.nip,
+        role: role,
+        isWalas: dataGuru.isWalas,
+        walasKelasId: dataGuru.walasKelasId
+      });
+    } catch (e) {}
+  }
+
+  setSessionUser(updatedData);
+  return updatedData;
+}
+
 function getDashboardUrlByRole(role) {
   if (role === 'admin') return 'admin.html';
-  if (role === 'guru') return 'dashboard-guru.html';
+  if (role === 'guru' || role === 'walas') return 'dashboard-guru.html';
   return 'dashboard.html';
 }
 

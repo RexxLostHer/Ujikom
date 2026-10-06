@@ -48,6 +48,15 @@
         <span class="label">Perijinan Masuk</span>
         <span class="badge" id="badgePerijinan" style="display:none">0</span>
       </button>
+      <button class="sidebar-btn" data-tab="kendala" onclick="switchToTab('kendala')">
+        <span class="icon">⚠️</span>
+        <span class="label">ACC Kendala Guru</span>
+        <span class="badge" id="badgeKendalaGuru" style="display:none;background:#ef4444;">0</span>
+      </button>
+      <button class="sidebar-btn" data-tab="monitoring3kelas" onclick="switchToTab('monitoring3kelas')">
+        <span class="icon">🏫</span>
+        <span class="label">Pengawasan 3 Kelas</span>
+      </button>
       <button class="sidebar-btn" data-tab="presensi" onclick="switchToTab('presensi')">
         <span class="icon">✏️</span>
         <span class="label">Edit Presensi</span>
@@ -79,10 +88,10 @@
         <span class="label">Kelola Akun</span>
       </button>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Tools</div>
+      <div class="sidebar-section-label">Tools & Pengujian</div>
       <button class="sidebar-btn" data-tab="simulasi" onclick="switchToTab('simulasi')">
         <span class="icon">🧪</span>
-        <span class="label">Simulasi Absen</span>
+        <span class="label">Simulasi Absen & Auto-Alpa</span>
       </button>
     </nav>
 
@@ -458,33 +467,131 @@
         </table>
       </div>
 
-      <!-- ===== SIMULASI ABSEN ===== -->
+      <!-- ===== PANEL ACC KENDALA GURU (JAMKOS - PRD Bab 4.2 & 7.4) ===== -->
+      <div id="tab-kendala" class="tab-panel">
+        <div class="content-header">
+          <h2>Panel ACC Kendala Guru & Automasi Status Jamkos</h2>
+          <p>Tinjau laporan kendala mengajar dari guru pengajar. Saat Admin menekan Approve (ACC), sistem secara otomatis mengalihkan status kelas terdampak menjadi <strong>Jamkos</strong> dan memancarkan notifikasi realtime ke siswa dan wali kelas.</p>
+        </div>
+
+        <!-- Kontrol Cepat Status Operasional 3 Kelas -->
+        <div class="admin-form-card" style="margin-bottom:20px;background:#f8fafc;">
+          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:10px;">🏫 Kontrol Langsung Status 3 Kelas Pilot</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;" id="boxControlStatusKelas">
+            <!-- Disuntikkan via JS -->
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter-kendala="pending" onclick="setFilterKendalaAdmin('pending', this)">⏳ Menunggu ACC</button>
+          <button class="filter-btn" data-filter-kendala="approved" onclick="setFilterKendalaAdmin('approved', this)">✅ Sudah di-ACC (Jamkos)</button>
+          <button class="filter-btn" data-filter-kendala="semua" onclick="setFilterKendalaAdmin('semua', this)">Semua Laporan</button>
+        </div>
+
+        <div id="daftarKendalaAdmin">
+          <div class="empty-state"><div class="empty-icon">📋</div><p>Memuat laporan kendala guru...</p></div>
+        </div>
+      </div>
+
+      <!-- ===== PUSAT PENGAWASAN 3 KELAS TERPADU (PRD Bab 7.4) ===== -->
+      <div id="tab-monitoring3kelas" class="tab-panel">
+        <div class="content-header">
+          <h2>Pusat Pengawasan 3 Kelas Pilot</h2>
+          <p>Pemantauan terpadu komparasi kehadiran realtime antara Kelas XII RPL 1, XII RPL 2, dan XII TKJ 1.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-bottom:24px;" id="cards3KelasMonitoring">
+          <!-- Card 3 Kelas Disuntikkan via JS -->
+        </div>
+
+        <div class="admin-form-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <h3 style="font-size:15px;font-weight:800;color:#1e293b;">📡 Matriks Live Kehadiran 3 Kelas Hari Ini</h3>
+            <button class="btn-secondary" onclick="muatMonitoring3Kelas()" style="padding:6px 14px;font-size:12.5px;">🔄 Refresh Telemetri</button>
+          </div>
+          <div id="tabelRingkasan3Kelas" style="overflow-x:auto;">
+            <!-- Tabel komparasi -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SIMULASI ABSEN RFID VIRTUAL & AUTO-ALPA (PRD Bab 4.1, 5.2, 7.4) ===== -->
       <div id="tab-simulasi" class="tab-panel">
         <div class="content-header">
-          <h2>Simulasi Scan Kartu</h2>
-          <p>Tes sistem tanpa alat RFID fisik. Data ditulis ke Firebase seolah kartu di-tap langsung.</p>
+          <h2>Modul Simulasi Tap Kartu RFID Virtual & Automasi Sistem</h2>
+          <p>Uji coba fungsionalitas presensi RFID dan aturan ambang batas waktu (06.30 / 08.00 WIB) tanpa menggunakan alat fisik. Menguji Kartu A (Siswa), Kartu B (Guru), dan siswa kelas lainnya.</p>
         </div>
-        <div class="simulasi-card">
-          ⚠️ Fitur ini khusus untuk <strong>testing & demo saja</strong>. Gunakan saat alat reader belum tersedia.
-        </div>
-        <div class="admin-form-card">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Pilih Siswa</label>
-              <select id="simulasiNisn"></select>
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="simulasiStatus">
-                <option value="hadir">✓ Hadir</option>
-                <option value="pulang">🏠 Pulang</option>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:18px;">
+          
+          <!-- Kartu 1: Form Simulasi Tap RFID -->
+          <div class="admin-form-card">
+            <h3 style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Pemicu Tap Kartu RFID Virtual</h3>
+            
+            <div class="form-group" style="margin-bottom:12px;">
+              <label>Pilih Mode Pengujian Kartu</label>
+              <select id="simulasiModeKartu" onchange="gantiModeSimulasiKartu(this.value)" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-weight:700;">
+                <option value="kartuA">🏷️ Kartu A Fisik (Siswa XII RPL 1: Ahsan Mahmud)</option>
+                <option value="kartuB">🏷️ Kartu B Fisik (Guru Pengajar: Hani Hanifah, S.Si)</option>
+                <option value="virtualSiswa">🎓 Siswa Virtual (Pilih dari 3 Kelas Pilot)</option>
               </select>
             </div>
+
+            <!-- Dropdown Siswa jika pilih virtualSiswa -->
+            <div class="form-group" id="boxPilihVirtualSiswa" style="display:none;margin-bottom:12px;">
+              <label>Pilih Siswa Target</label>
+              <select id="simulasiNisn" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-weight:600;"></select>
+            </div>
+
+            <!-- Pilihan Waktu Simulasi -->
+            <div class="form-group" style="margin-bottom:12px;">
+              <label>Waktu Simulasi Tap (Uji Ambang Batas PRD)</label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+                <button type="button" class="filter-btn" onclick="setJamSimulasi('06:20:00')" style="font-size:11.5px;padding:5px 9px;">06:20 (Hadir Tepat)</button>
+                <button type="button" class="filter-btn" onclick="setJamSimulasi('06:45:00')" style="font-size:11.5px;padding:5px 9px;">06:45 (Terlambat)</button>
+                <button type="button" class="filter-btn" onclick="setJamSimulasi('08:05:00')" style="font-size:11.5px;padding:5px 9px;">08:05 (Lewat Batas)</button>
+                <button type="button" class="filter-btn" onclick="setJamSimulasi('15:35:00')" style="font-size:11.5px;padding:5px 9px;">15:35 (Pulang)</button>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="simulasiJamInput" value="06:20:00" placeholder="HH:MM:SS" style="flex:1;padding:8px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-family:monospace;font-weight:700;">
+                <input type="date" id="simulasiTanggalInput" style="padding:8px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-weight:600;">
+              </div>
+            </div>
+
+            <div class="form-actions" style="margin-top:16px;">
+              <button class="btn-primary" onclick="submitSimulasiTapLengkap()" style="width:100%;padding:12px;background:#4f46e5;font-weight:800;">
+                ⚡ Eksekusi Tap Kartu RFID Virtual
+              </button>
+            </div>
+            <div class="msg" id="simulasiMsg" style="margin-top:10px;"></div>
           </div>
-          <div class="form-actions">
-            <button class="btn-primary" onclick="submitSimulasi()">🧪 Simulasikan Scan</button>
+
+          <!-- Kartu 2: Automasi Sistem 08:00 WIB (Auto-Alpa) -->
+          <div class="admin-form-card" style="border:1.5px solid #fca5a5;background:#fffaf0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="font-size:22px;">⏰</span>
+              <h3 style="font-size:15px;font-weight:800;color:#991b1b;">Automasi Sistem: Tepat 08.00 WIB (Auto-Alpa)</h3>
+            </div>
+            <p style="font-size:13px;color:#78350f;line-height:1.5;margin-bottom:14px;">
+              Sesuai aturan bisnis PRD Bab 4.1: Tepat pukul 08.00 WIB, sistem memeriksa seluruh siswa di 3 kelas binaan. 
+              Siswa yang belum tap kartu dan tidak memiliki konfirmasi izin resmi disetujui Walas akan dialihkan statusnya secara otomatis menjadi <strong>Alpa</strong>.
+            </p>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px;">Target Tanggal Automasi</label>
+              <input type="date" id="autoAlpaTanggalInput" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #fcd34d;font-weight:700;">
+            </div>
+            <button class="btn-primary" onclick="jalankanAutomasiAutoAlpa()" style="width:100%;padding:12px;background:#dc2626;font-weight:800;border:none;">
+              ⚠️ Eksekusi Automasi 08.00 WIB (Tandai Alpa)
+            </button>
+            <div id="autoAlpaMsg" style="margin-top:12px;font-size:13px;font-weight:700;display:none;"></div>
           </div>
-          <div class="msg" id="simulasiMsg"></div>
+
+        </div>
+
+        <!-- Terminal Log Telemetri Simulasi -->
+        <div style="margin-top:20px;background:#0f172a;border-radius:14px;padding:16px;color:#f8fafc;font-family:monospace;font-size:12.5px;max-height:260px;overflow-y:auto;" id="simulasiTerminalLog">
+          <div style="color:#38bdf8;">// TELEMETRY LOG ENGINE READY — SISTEM PRESENSI RFID IOT SMKN 1 SUMEDANG</div>
+          <div style="color:#94a3b8;">Menunggu eksekusi tap atau automasi jadwal...</div>
         </div>
       </div>
 

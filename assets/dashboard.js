@@ -770,6 +770,83 @@ function renderPantauBeranda() {
 }
 
 // ===================================================================
+// STATUS OPERASIONAL KELAS & JAMKOS ALERT (PRD Bab 4.2 & 7.1)
+// ===================================================================
+let listenerStatusKelasOperasional = null;
+
+function dengarkanStatusKelasOperasional(kelasInput) {
+  if (listenerStatusKelasOperasional) {
+    listenerStatusKelasOperasional.ref.off('value', listenerStatusKelasOperasional.callback);
+    listenerStatusKelasOperasional = null;
+  }
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelasInput) : kelasInput;
+  const target = normKelas || 'XII RPL 1';
+  const ref = db.ref('kelas/' + target);
+  const cb = function(snap) {
+    const data = snap.val() || { status: 'belajar' };
+    updateWidgetStatusKelas(target, data);
+  };
+  ref.on('value', cb);
+  listenerStatusKelasOperasional = { ref, callback: cb };
+}
+
+function updateWidgetStatusKelas(namaKelas, data) {
+  const badge = document.getElementById('badgeStatusKelas');
+  const judul = document.getElementById('judulStatusKelas');
+  const desc = document.getElementById('descStatusKelas');
+  const icon = document.getElementById('iconStatusKelas');
+  const tag = document.getElementById('tagStatusKelasOperasional');
+  const alertJamkos = document.getElementById('alertJamkosBox');
+  const alertJamkosDesc = document.getElementById('alertJamkosDesc');
+
+  if (!badge) return;
+
+  const st = String(data.status || 'belajar').toLowerCase();
+  if (tag) tag.textContent = 'Status ' + namaKelas;
+
+  if (st === 'jamkos') {
+    badge.textContent = 'JAM KOSONG (JAMKOS)';
+    badge.style.background = '#ef4444';
+    badge.style.color = '#fff';
+    if (icon) {
+      icon.textContent = '⚠️';
+      icon.style.background = '#fee2e2';
+    }
+    if (judul) judul.textContent = 'Jam Kosong Dikonfirmasi (Guru Berhalangan)';
+    if (desc) desc.textContent = `Mapel: ${data.activeMapel || '-'} • Keterangan: ${data.keteranganJamkos || 'Laporan kendala di-ACC Admin'}`;
+    if (alertJamkos) {
+      alertJamkos.style.display = 'block';
+      if (alertJamkosDesc) {
+        alertJamkosDesc.textContent = `Guru pengajar (${data.activeTeacherNama || 'Guru'}) berhalangan hadir pada mapel ${data.activeMapel || '-'}: "${data.keteranganJamkos || 'Penugasan Mandiri'}". Laporan telah di-ACC Admin. Harap seluruh siswa tetap tertib di dalam kelas dan mengerjakan tugas pengganti.`;
+      }
+    }
+  } else if (st === 'pulang') {
+    badge.textContent = 'PULANG (KBM SELESAI)';
+    badge.style.background = '#64748b';
+    badge.style.color = '#fff';
+    if (icon) {
+      icon.textContent = '🏠';
+      icon.style.background = '#f1f5f9';
+    }
+    if (judul) judul.textContent = 'Jam Operasional Sekolah Selesai';
+    if (desc) desc.textContent = 'Seluruh rangkaian KBM hari ini telah berakhir. Selamat beristirahat dan hati-hati di jalan.';
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  } else {
+    // Default / Belajar
+    badge.textContent = 'BELAJAR (KBM AKTIF)';
+    badge.style.background = '#10b981';
+    badge.style.color = '#fff';
+    if (icon) {
+      icon.textContent = '🟢';
+      icon.style.background = '#dcfce7';
+    }
+    if (judul) judul.textContent = 'KBM Sedang Berlangsung';
+    if (desc) desc.textContent = `Mapel: ${data.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${data.activeTeacherNama || 'Guru Pengajar'}`;
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  }
+}
+
+// ===================================================================
 // BERANDA OVERVIEW LOGIC (SMART HUB 2026)
 // ===================================================================
 let clockInterval = null;
@@ -778,6 +855,10 @@ let rekapRangeAktif = 'hari_ini';
 
 function initBerandaOverview(user) {
   const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru');
+
+  // Dengarkan status operasional kelas siswa atau kelas pilot default
+  const kelasTarget = (user && user.kelas) ? user.kelas : 'XII RPL 1';
+  dengarkanStatusKelasOperasional(kelasTarget);
 
   // 1. Banner Pengunjung
   const bannerGuest = document.getElementById('bannerGuestVerifikasi');
@@ -895,31 +976,74 @@ function initBerandaOverview(user) {
         }
       });
 
-      const isHadir = (statusDitemukan === 'hadir' || (statusDitemukan && statusDitemukan !== 'alpha'));
-      const jamStr = waktuHadir && waktuHadir !== '00:00:00' ? ` (${waktuHadir.slice(0, 5)} WIB)` : '';
+      // Juga dukung direct child
+      if (!statusDitemukan && data[nisnAktif]) {
+        waktuHadir = data[nisnAktif].waktu;
+        statusDitemukan = data[nisnAktif].status;
+      }
 
-      if (cardBadge && cardIcon && cardText) {
-        if (isHadir) {
-          cardBadge.className = 'smart-card-status-badge hadir';
-          cardIcon.textContent = '✓';
-          cardText.textContent = `Terverifikasi Hadir${jamStr}`;
-        } else {
-          cardBadge.className = 'smart-card-status-badge belum';
-          cardIcon.textContent = '⚡';
-          cardText.textContent = 'Belum Scan Hari Ini';
+      // Evaluasi status presensi berdasarkan ambang batas waktu (PRD Bab 4.1)
+      let statusLabel = 'Belum Scan Hari Ini';
+      let statusClass = 'belum';
+      let iconSimbol = '⚡';
+
+      const jamSekarangStr = jamSekarang();
+      if (statusDitemukan) {
+        const stLower = String(statusDitemukan).toLowerCase();
+        if (stLower === 'hadir') {
+          // Cek apakah tepat waktu atau terlambat berdasarkan jam tap
+          const statusWaktu = (typeof evaluasiAmbangBatasWaktu === 'function' && waktuHadir)
+            ? evaluasiAmbangBatasWaktu(waktuHadir)
+            : 'hadir';
+          if (statusWaktu === 'terlambat' || (waktuHadir && waktuHadir > '06:30:00')) {
+            statusLabel = `Terlambat (${waktuHadir.slice(0,5)} WIB)`;
+            statusClass = 'peringatan';
+            iconSimbol = '⏰';
+          } else {
+            statusLabel = `Hadir Tepat Waktu (${waktuHadir ? waktuHadir.slice(0,5) + ' WIB' : ''})`;
+            statusClass = 'hadir';
+            iconSimbol = '✓';
+          }
+        } else if (stLower === 'terlambat') {
+          statusLabel = `Terlambat (${waktuHadir ? waktuHadir.slice(0,5) + ' WIB' : ''})`;
+          statusClass = 'peringatan';
+          iconSimbol = '⏰';
+        } else if (stLower === 'alpa' || stLower === 'alpha') {
+          statusLabel = 'Alpa (Tanpa Konfirmasi)';
+          statusClass = 'belum';
+          iconSimbol = '✗';
+        } else if (stLower === 'sakit') {
+          statusLabel = 'Sakit (Izin Terverifikasi Walas)';
+          statusClass = 'peringatan';
+          iconSimbol = '🤒';
+        } else if (stLower === 'izin' || stLower === 'ijin' || stLower === 'dispensasi' || stLower === 'dispen') {
+          statusLabel = 'Izin Resmi (ACC Walas)';
+          statusClass = 'peringatan';
+          iconSimbol = '📄';
+        }
+      } else {
+        // Belum ada data scan
+        if (jamSekarangStr >= '06:30:00' && jamSekarangStr <= '08:00:00') {
+          statusLabel = 'Belum Absen (Live Alert Walas)';
+          statusClass = 'peringatan';
+          iconSimbol = '⚠️';
+        } else if (jamSekarangStr > '08:00:00') {
+          statusLabel = 'Belum Absen / Terlewat';
+          statusClass = 'belum';
+          iconSimbol = '✗';
         }
       }
 
+      if (cardBadge && cardIcon && cardText) {
+        cardBadge.className = 'smart-card-status-badge ' + statusClass;
+        cardIcon.textContent = iconSimbol;
+        cardText.textContent = statusLabel;
+      }
+
       if (pillEl && iconEl && textEl) {
-        if (isHadir) {
-          pillEl.className = 'personal-status-pill hadir';
-          iconEl.textContent = '✓';
-          textEl.textContent = `Sudah Hadir di Kelas${jamStr}`;
-        } else {
-          pillEl.className = 'personal-status-pill belum';
-          iconEl.textContent = '⚡';
-          textEl.textContent = 'Belum Scan Kartu Hari Ini';
-        }
+        pillEl.className = 'personal-status-pill ' + statusClass;
+        iconEl.textContent = iconSimbol;
+        textEl.textContent = statusLabel;
       }
     });
 
@@ -927,8 +1051,57 @@ function initBerandaOverview(user) {
     initRekapPresensiSiswa(user);
   }
 
-  // 5. Inisialisasi Class Chips Selector
+  // 5. Listener Status Operasional Kelas Terkini (PRD Bab 4.2)
+  const targetKelas = normalisasiKelas(user.kelas || 'XII RPL 2');
+  db.ref('kelas/' + targetKelas).on('value', snap => {
+    const kData = snap.val() || (typeof DEFAULT_STATUS_KELAS !== 'undefined' ? DEFAULT_STATUS_KELAS[targetKelas] : null) || { status: 'belajar' };
+    updateWidgetStatusKelas(kData, targetKelas);
+  });
+
+  // 6. Inisialisasi Class Chips Selector
   initClassChipsSelector(user);
+}
+
+function updateWidgetStatusKelas(kData, namaKelas) {
+  const icon = document.getElementById('iconStatusKelas');
+  const badge = document.getElementById('badgeStatusKelas');
+  const judul = document.getElementById('judulStatusKelas');
+  const desc = document.getElementById('descStatusKelas');
+  const alertJamkos = document.getElementById('alertJamkosBox');
+  const alertJamkosDesc = document.getElementById('alertJamkosDesc');
+
+  if (!badge || !judul) return;
+
+  const st = (kData && kData.status) ? kData.status.toLowerCase() : 'belajar';
+  if (st === 'jamkos') {
+    if (icon) { icon.textContent = '⚠️'; icon.style.background = '#fee2e2'; }
+    badge.textContent = 'JAM KOSONG (JAMKOS)';
+    badge.style.background = '#ef4444';
+    judul.textContent = `Kelas ${namaKelas}: Jam Kosong`;
+    judul.style.color = '#991b1b';
+    if (desc) desc.textContent = `Mapel: ${kData.activeMapel || '-'} • Guru: ${kData.activeTeacherNama || 'Guru Pengajar'} (Berhalangan Hadir)`;
+    if (alertJamkos) {
+      alertJamkos.style.display = 'block';
+      if (alertJamkosDesc) alertJamkosDesc.textContent = `Laporan kendala guru (${kData.activeTeacherNama || '-'}) telah di-ACC Admin. Siswa kelas ${namaKelas} dipersilakan belajar mandiri.`;
+    }
+  } else if (st === 'pulang') {
+    if (icon) { icon.textContent = '🏠'; icon.style.background = '#f1f5f9'; }
+    badge.textContent = 'PULANG (KBM SELESAI)';
+    badge.style.background = '#64748b';
+    judul.textContent = `KBM Selesai — Jam Pulang`;
+    judul.style.color = '#334155';
+    if (desc) desc.textContent = 'Jam pembelajaran hari ini telah usai. Siswa diperkenankan pulang.';
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  } else {
+    // Belajar
+    if (icon) { icon.textContent = '🟢'; icon.style.background = '#dcfce7'; }
+    badge.textContent = 'BELAJAR (KBM AKTIF)';
+    badge.style.background = '#10b981';
+    judul.textContent = `KBM Sedang Berlangsung Normal`;
+    judul.style.color = '#1e1b4b';
+    if (desc) desc.textContent = `Mapel: ${kData.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${kData.activeTeacherNama || 'Guru Terjadwal'}`;
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  }
 }
 
 // ===================================================================

@@ -3,7 +3,7 @@
 // Auth guard Firebase + seluruh logika CRUD admin
 // ===================================================================
 
-const db = firebase.database();
+var db = (typeof firebase !== 'undefined' && firebase.database) ? firebase.database() : (typeof window !== 'undefined' && window.db ? window.db : null);
 let adminSessionUser = null;
 let siswaCache = {};
 let kartuCache = {};
@@ -28,6 +28,10 @@ function initAdmin() {
   if (tgl) tgl.value = tanggalHariIni();
   const tglRekap = document.getElementById('rekapTanggal');
   if (tglRekap) tglRekap.value = tanggalHariIni();
+  const tglSim = document.getElementById('simulasiTanggalInput');
+  if (tglSim) tglSim.value = tanggalHariIni();
+  const tglAlpa = document.getElementById('autoAlpaTanggalInput');
+  if (tglAlpa) tglAlpa.value = tanggalHariIni();
 
   // Listeners realtime
   function perbaruiSiswaAdmin(parsed) {
@@ -37,6 +41,7 @@ function initAdmin() {
     renderSiswaTable(siswaCache);
     renderKartuTable(kartuCache);
     populatePresensiKelas();
+    populateVirtualSiswaSimulasi();
   }
 
   db.ref('siswa').on('value', function (snapshot) {
@@ -73,6 +78,9 @@ function initAdmin() {
   listenPendingCount();
   loadUsers();
   renderDaftarPerijinanAdmin('daftarPerijinanAdmin', 'pending');
+  listenKendalaGuruAdmin();
+  initStatusKelasControls();
+  populateVirtualSiswaSimulasi();
 }
 
 // ===== TAB NAVIGATION =====
@@ -93,6 +101,18 @@ function switchToTab(tabName) {
   // Auto load rekap saat tab rekap dibuka
   if (tabName === 'rekap') {
     muatRekapPresensi();
+  }
+
+  if (tabName === 'monitoring3kelas') {
+    muatMonitoring3Kelas();
+  }
+
+  if (tabName === 'kendala') {
+    renderKendalaGuruAdmin(filterKendalaAktif);
+  }
+
+  if (tabName === 'simulasi') {
+    populateVirtualSiswaSimulasi();
   }
 }
 
@@ -220,24 +240,6 @@ function simpanPresensiManual() {
 // ===================================================================
 let rekapCacheData = [];
 
-async function muatRekapPresensi() {
-  const kelas = document.getElementById('rekapKelas') ? document.getElementById('rekapKelas').value : '';
-  const tgl = document.getElementById('rekapTanggal') ? document.getElementById('rekapTanggal').value : '';
-  const tbody = document.getElementById('rekapTableBody');
-  if (!tbody) return;
-
-  if (!kelas || !tgl) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">⚠️</div><p>Pilih kelas dan tanggal terlebih dahulu.</p></td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#64748b;">⏳ Memuat data rekapitulasi...</td></tr>';
-
-  // 1. Ambil daftar siswa kelas terkait dari cache
-  const daftarSiswa = Object.entries(siswaCache)
-    .filter(([, s]) => s.kelas === kelas)
-    .map(([nisn, s]) => ({ nisn, nama: s.nama }))
-    .sort((a, b) => a.nama.localeCompare(b.nama));
 
 function togglePeriodeAdmin() {
   const periode = document.getElementById('rekapPeriodeAdmin') ? document.getElementById('rekapPeriodeAdmin').value : 'harian';
@@ -307,9 +309,9 @@ async function muatRekapPresensi() {
       let h = 0, s = 0, i = 0, a = 0;
       Object.values(perTgl).forEach(arr => {
         const statuses = arr.map(x => x.status);
-        if (statuses.includes('hadir') || statuses.includes('pulang')) h++;
+        if (statuses.includes('hadir') || statuses.includes('pulang') || statuses.includes('terlambat')) h++;
         else if (statuses.includes('sakit')) s++;
-        else if (statuses.includes('dispensasi') || statuses.includes('ijin') || statuses.includes('ijin_kegiatan')) i++;
+        else if (statuses.includes('dispensasi') || statuses.includes('dispen') || statuses.includes('ijin') || statuses.includes('izin') || statuses.includes('ijin_kegiatan')) i++;
         else a++;
       });
 
@@ -417,11 +419,15 @@ async function muatRekapPresensi() {
       statusAkhir = 'Hadir';
       badgeClass = 'disetujui';
       hitungHadir++;
+    } else if (semuaStatus.some(s => s === 'terlambat')) {
+      statusAkhir = 'Terlambat';
+      badgeClass = 'pending';
+      hitungHadir++;
     } else if (semuaStatus.some(s => s === 'sakit')) {
       statusAkhir = 'Sakit';
       badgeClass = 'pending';
       hitungSakit++;
-    } else if (semuaStatus.some(s => s === 'dispensasi' || s === 'ijin_kegiatan')) {
+    } else if (semuaStatus.some(s => s === 'dispensasi' || s === 'dispen' || s === 'ijin_kegiatan' || s === 'ijin' || s === 'izin')) {
       statusAkhir = 'Izin/Disp';
       badgeClass = 'pending';
       hitungIzin++;
@@ -1119,3 +1125,624 @@ if (chatInput) {
     if (e.key === 'Enter') kirimPesanChat();
   });
 }
+
+// ===================================================================
+// MODUL KENDALA GURU & KONTROL STATUS OPERASIONAL KELAS (PRD 4.2 & 7.4)
+// ===================================================================
+let filterKendalaAktif = 'pending';
+let kendalaGuruCache = {};
+
+function setFilterKendalaAdmin(filter, btn) {
+  document.querySelectorAll('[data-filter-kendala]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filterKendalaAktif = filter;
+  renderKendalaGuruAdmin(filterKendalaAktif);
+}
+
+function listenKendalaGuruAdmin() {
+  db.ref('kendala_guru').on('value', function (snap) {
+    kendalaGuruCache = snap.val() || {};
+    updateBadgeKendalaGuru();
+    renderKendalaGuruAdmin(filterKendalaAktif);
+  });
+}
+
+function updateBadgeKendalaGuru() {
+  const badge = document.getElementById('badgeKendalaGuru');
+  if (!badge) return;
+  const countPending = Object.values(kendalaGuruCache).filter(k => k.status === 'pending').length;
+  if (countPending > 0) {
+    badge.textContent = countPending;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderKendalaGuruAdmin(filter) {
+  const container = document.getElementById('daftarKendalaAdmin');
+  if (!container) return;
+
+  const entries = Object.entries(kendalaGuruCache).filter(([, k]) => {
+    if (filter === 'semua') return true;
+    return k.status === filter;
+  }).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
+
+  if (entries.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <p>Tidak ada laporan kendala guru dengan status <strong>${filter}</strong>.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  entries.forEach(([id, k]) => {
+    const card = document.createElement('div');
+    card.className = 'admin-form-card';
+    card.style.borderLeft = (k.status === 'pending') ? '5px solid #ef4444' : (k.status === 'approved' ? '5px solid #10b981' : '5px solid #64748b');
+    card.style.marginBottom = '14px';
+
+    const statusBadge = (k.status === 'pending')
+      ? '<span class="status-pill pending">⏳ Menunggu ACC</span>'
+      : (k.status === 'approved'
+        ? '<span class="status-pill disetujui">✅ Disetujui (Jamkos Aktif)</span>'
+        : '<span class="status-pill ditolak">❌ Ditolak</span>');
+
+    let aksiHtml = '';
+    if (k.status === 'pending') {
+      aksiHtml = `
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <button class="btn-primary" style="background:#dc2626;padding:8px 16px;font-weight:700;" onclick="adminApproveKendala('${id}')">
+            ⚡ ACC (Setujui Jamkos Kelas ${k.kelasId})
+          </button>
+          <button class="btn-secondary" style="padding:8px 16px;" onclick="adminRejectKendala('${id}')">
+            Tolak Laporan
+          </button>
+        </div>
+      `;
+    } else if (k.status === 'approved') {
+      aksiHtml = `
+        <div style="margin-top:10px;font-size:12px;color:#059669;font-weight:600;">
+          Diverifikasi & disetujui oleh: <strong>${k.approvedBy || 'Admin'}</strong> (${k.approvedAt ? k.approvedAt.slice(0, 16).replace('T', ' ') : '-'})
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <div>
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;">${k.guruNama || 'Guru'} (${k.guruNip || '-'})</h4>
+          <span style="font-size:12px;color:#64748b;">Mengajar: <strong>${k.mapel || '-'}</strong> di Kelas <strong style="color:#2563eb;">${k.kelasId || '-'}</strong></span>
+        </div>
+        ${statusBadge}
+      </div>
+      <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;margin:10px 0;font-size:13px;">
+        <div style="margin-bottom:4px;"><strong>Jenis Kendala:</strong> ${k.jenis || 'Jam Kosong'}</div>
+        <div><strong>Alasan / Keterangan:</strong> ${k.alasan || '-'}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#94a3b8;">
+        <span>Tanggal Pengajuan: ${k.tanggal || '-'}</span>
+        <span>ID Laporan: <code>${id}</code></span>
+      </div>
+      ${aksiHtml}
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function adminApproveKendala(id) {
+  const k = kendalaGuruCache[id];
+  if (!k) return;
+  const konfirmasi = confirm(
+    `Setujui laporan kendala dari ${k.guruNama}?\n\n` +
+    `TINDAKAN OTOMATIS:\n` +
+    `1. Kelas ${k.kelasId} dialihkan menjadi status 'JAMKOS'.\n` +
+    `2. Live alert Jamkos dipancarkan ke seluruh Siswa & Walas kelas ${k.kelasId}.`
+  );
+  if (!konfirmasi) return;
+
+  try {
+    const adminNama = (adminSessionUser && adminSessionUser.nama) ? adminSessionUser.nama : 'Administrator';
+    // 1. Update status kendala
+    await db.ref('kendala_guru/' + id).update({
+      status: 'approved',
+      approvedBy: adminNama,
+      approvedAt: new Date().toISOString()
+    });
+
+    // 2. Ubah status operasional kelas menjadi jamkos
+    await db.ref('kelas/' + k.kelasId).update({
+      status: 'jamkos',
+      activeMapel: k.mapel || 'Jam Kosong',
+      activeTeacherNama: k.guruNama || '-',
+      keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
+      updatedAt: new Date().toISOString()
+    });
+
+    alert(`✅ Laporan disetujui! Status kelas ${k.kelasId} kini resmi berstatus JAMKOS.`);
+  } catch (err) {
+    alert('Gagal menyetujui kendala: ' + err.message);
+  }
+}
+
+async function adminRejectKendala(id) {
+  if (!confirm('Tolak laporan kendala ini?')) return;
+  try {
+    await db.ref('kendala_guru/' + id).update({
+      status: 'rejected',
+      rejectedBy: (adminSessionUser && adminSessionUser.nama) || 'Administrator',
+      rejectedAt: new Date().toISOString()
+    });
+    alert('Laporan kendala berhasil ditolak.');
+  } catch (err) {
+    alert('Gagal menolak kendala: ' + err.message);
+  }
+}
+
+// Kontrol Cepat Status Operasional 3 Kelas Pilot (XII RPL 1, XII RPL 2, XII TKJ 1)
+function initStatusKelasControls() {
+  db.ref('kelas').on('value', function (snap) {
+    const val = snap.val() || {};
+    renderStatusKelasControls(val);
+  });
+}
+
+function renderStatusKelasControls(dataKelas) {
+  const box = document.getElementById('boxControlStatusKelas');
+  if (!box) return;
+
+  const targetClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  box.innerHTML = '';
+
+  targetClasses.forEach(cls => {
+    const item = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
+    const st = item.status || 'belajar';
+    const stColor = st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b');
+    const stLabel = st === 'belajar' ? '📖 BELAJAR (KBM AKTIF)' : (st === 'jamkos' ? '⚠️ JAMKOS' : '🏠 PULANG');
+
+    const card = document.createElement('div');
+    card.style.background = '#ffffff';
+    card.style.border = '1.5px solid #cbd5e1';
+    card.style.borderRadius = '12px';
+    card.style.padding = '14px';
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong style="font-size:14px;color:#0f172a;">${cls}</strong>
+        <span style="font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;background:${stColor}18;color:${stColor};border:1px solid ${stColor}40;">
+          ${stLabel}
+        </span>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;">
+        <div>Mapel: <strong>${item.activeMapel || '-'}</strong></div>
+        <div>Guru: <strong>${item.activeTeacherNama || '-'}</strong></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="ubahStatusKelasManual('${cls}', 'belajar')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #10b981;background:${st === 'belajar' ? '#10b981' : '#f0fdf4'};color:${st === 'belajar' ? '#fff' : '#047857'};cursor:pointer;">
+          Belajar
+        </button>
+        <button onclick="ubahStatusKelasManual('${cls}', 'jamkos')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #ef4444;background:${st === 'jamkos' ? '#ef4444' : '#fef2f2'};color:${st === 'jamkos' ? '#fff' : '#b91c1c'};cursor:pointer;">
+          Jamkos
+        </button>
+        <button onclick="ubahStatusKelasManual('${cls}', 'pulang')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #64748b;background:${st === 'pulang' ? '#64748b' : '#f8fafc'};color:${st === 'pulang' ? '#fff' : '#334155'};cursor:pointer;">
+          Pulang
+        </button>
+      </div>
+    `;
+    box.appendChild(card);
+  });
+}
+
+async function ubahStatusKelasManual(kelasId, statusBaru) {
+  try {
+    await db.ref('kelas/' + kelasId).update({
+      status: statusBaru,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    alert('Gagal memperbarui status kelas: ' + err.message);
+  }
+}
+
+// ===================================================================
+// MODUL MONITORING 3 KELAS PILOT (XII RPL 1, XII RPL 2, XII TKJ 1)
+// ===================================================================
+async function muatMonitoring3Kelas() {
+  const cardsContainer = document.getElementById('cards3KelasMonitoring');
+  const tableContainer = document.getElementById('tabelRingkasan3Kelas');
+  if (!cardsContainer || !tableContainer) return;
+
+  cardsContainer.innerHTML = '<div style="color:#64748b;font-size:13px;grid-column:1/-1;">⏳ Mengumpulkan telemetri kehadiran 3 kelas pilot...</div>';
+
+  const tgl = tanggalHariIni();
+  const pilotClasses = [
+    { nama: 'XII RPL 1', walas: 'Hani Hanifah, S.Si' },
+    { nama: 'XII RPL 2', walas: 'Muhammad Echa Putra, S.Kom.Gr' },
+    { nama: 'XII TKJ 1', walas: 'Rijal Nur Rahmat, S.T' }
+  ];
+
+  try {
+    const [snapKelas, snapPresensiJam] = await Promise.all([
+      db.ref('kelas').once('value'),
+      db.ref('presensi_jam').once('value')
+    ]);
+
+    const dataKelas = snapKelas.val() || {};
+    const dataPresensiAll = snapPresensiJam.val() || {};
+
+    let htmlCards = '';
+    let htmlTableRows = '';
+
+    pilotClasses.forEach(itemCls => {
+      const cls = itemCls.nama;
+      const kInfo = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
+      const st = kInfo.status || 'belajar';
+      const stColor = st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b');
+      const stBadgeText = st === 'belajar' ? 'KBM AKTIF' : (st === 'jamkos' ? 'JAMKOS' : 'SELESAI');
+
+      // Siswa di kelas ini
+      const siswaDiKelas = Object.values(siswaCache).filter(s => s.kelas === cls);
+      const totalSiswa = siswaDiKelas.length || 36;
+
+      // Presensi jam 1 hari ini
+      const presensiHariIni = (dataPresensiAll[cls] && dataPresensiAll[cls][tgl] && dataPresensiAll[cls][tgl]['1']) ? dataPresensiAll[cls][tgl]['1'] : {};
+
+      let hadirCount = 0;
+      let terlambatCount = 0;
+      let izinCount = 0;
+      let alpaCount = 0;
+
+      siswaDiKelas.forEach(s => {
+        const p = presensiHariIni[s.nisn];
+        if (p) {
+          if (p.status === 'hadir') hadirCount++;
+          else if (p.status === 'terlambat') terlambatCount++;
+          else if (['sakit', 'dispensasi', 'ijin_kegiatan', 'ijin'].includes(p.status)) izinCount++;
+          else if (['alpha', 'alpa'].includes(p.status)) alpaCount++;
+        }
+      });
+
+      const totalHadirFisik = hadirCount + terlambatCount;
+      const belumAbsen = Math.max(0, totalSiswa - (totalHadirFisik + izinCount + alpaCount));
+      const persenKehadiran = totalSiswa > 0 ? Math.round((totalHadirFisik / totalSiswa) * 100) : 0;
+
+      // Card
+      htmlCards += `
+        <div style="background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">${cls}</h3>
+            <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:${stColor}18;color:${stColor};border:1px solid ${stColor}40;">
+              ${stBadgeText}
+            </span>
+          </div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:12px;">
+            Walas: <strong style="color:#1e293b;">${itemCls.walas}</strong><br>
+            Mapel Aktif: <strong>${kInfo.activeMapel || '-'}</strong>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+              <span>Tingkat Kehadiran</span>
+              <span style="color:#2563eb;">${persenKehadiran}% (${totalHadirFisik}/${totalSiswa})</span>
+            </div>
+            <div style="height:7px;background:#e2e8f0;border-radius:10px;overflow:hidden;">
+              <div style="width:${persenKehadiran}%;height:100%;background:${persenKehadiran >= 85 ? '#10b981' : '#f59e0b'};"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;margin-top:12px;background:#f8fafc;padding:8px;border-radius:10px;font-size:11px;">
+            <div><span style="color:#059669;font-weight:800;display:block;">${hadirCount}</span>Tepat</div>
+            <div><span style="color:#d97706;font-weight:800;display:block;">${terlambatCount}</span>Telat</div>
+            <div><span style="color:#2563eb;font-weight:800;display:block;">${izinCount}</span>Izin</div>
+            <div><span style="color:#dc2626;font-weight:800;display:block;">${belumAbsen + alpaCount}</span>Belum/A</div>
+          </div>
+        </div>
+      `;
+
+      // Row table
+      htmlTableRows += `
+        <tr>
+          <td><strong>${cls}</strong></td>
+          <td>${itemCls.walas}</td>
+          <td><span style="font-weight:700;color:${stColor};">${st.toUpperCase()}</span></td>
+          <td><span style="color:#059669;font-weight:800;">${hadirCount}</span></td>
+          <td><span style="color:#d97706;font-weight:800;">${terlambatCount}</span></td>
+          <td><span style="color:#2563eb;font-weight:800;">${izinCount}</span></td>
+          <td><span style="color:#dc2626;font-weight:800;">${belumAbsen + alpaCount}</span></td>
+          <td><strong style="color:#4f46e5;">${persenKehadiran}%</strong></td>
+          <td>
+            <button onclick="ubahStatusKelasManual('${cls}', '${st === 'jamkos' ? 'belajar' : 'jamkos'}')" style="padding:4px 10px;font-size:11px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:700;">
+              ${st === 'jamkos' ? 'Aktifkan KBM' : 'Alihkan Jamkos'}
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    cardsContainer.innerHTML = htmlCards;
+    tableContainer.innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Kelas</th>
+            <th>Wali Kelas</th>
+            <th>Status Operasional</th>
+            <th>Tepat Waktu</th>
+            <th>Terlambat</th>
+            <th>Izin/Sakit</th>
+            <th>Belum Hadir / Alpa</th>
+            <th>Persentase</th>
+            <th>Aksi Cepat</th>
+          </tr>
+        </thead>
+        <tbody>${htmlTableRows}</tbody>
+      </table>
+    `;
+  } catch (err) {
+    cardsContainer.innerHTML = '<div style="color:#ef4444;font-size:13px;grid-column:1/-1;">Gagal memuat monitoring 3 kelas: ' + err.message + '</div>';
+  }
+}
+
+// ===================================================================
+// MODUL SIMULASI ABSEN RFID VIRTUAL & AUTOMASI SISTEM (PRD 4.1 & 5.2)
+// ===================================================================
+function gantiModeSimulasiKartu(mode) {
+  const boxSiswa = document.getElementById('boxPilihVirtualSiswa');
+  if (boxSiswa) {
+    boxSiswa.style.display = (mode === 'virtualSiswa') ? 'block' : 'none';
+  }
+}
+
+function setJamSimulasi(jam) {
+  const input = document.getElementById('simulasiJamInput');
+  if (input) input.value = jam;
+}
+
+function populateVirtualSiswaSimulasi() {
+  const select = document.getElementById('simulasiNisn');
+  if (!select) return;
+
+  const pilotClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const daftar = Object.values(siswaCache)
+    .filter(s => pilotClasses.includes(s.kelas))
+    .sort((a, b) => (a.kelas || '').localeCompare(b.kelas || '') || (a.nama || '').localeCompare(b.nama || ''));
+
+  if (daftar.length === 0) {
+    select.innerHTML = '<option value="0091113849">0091113849 - AHSAN MAHMUD FAUZI YUSRY (XII RPL 1)</option>';
+    return;
+  }
+
+  select.innerHTML = '';
+  daftar.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.nisn;
+    opt.textContent = `${s.nisn} — ${s.nama} (${s.kelas})`;
+    select.appendChild(opt);
+  });
+}
+
+function logTerminalSimulasi(pesan, warna) {
+  const logBox = document.getElementById('simulasiTerminalLog');
+  if (!logBox) return;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
+  const div = document.createElement('div');
+  div.style.color = warna || '#38bdf8';
+  div.style.lineHeight = '1.45';
+  div.style.borderBottom = '1px dashed #1e293b';
+  div.style.padding = '3px 0';
+  div.innerHTML = `<span style="color:#64748b;">[${stamp}]</span> ${pesan}`;
+
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+async function submitSimulasiTapLengkap() {
+  const mode = document.getElementById('simulasiModeKartu')?.value || 'kartuA';
+  const jamInput = document.getElementById('simulasiJamInput')?.value || '06:20:00';
+  const tglInput = document.getElementById('simulasiTanggalInput')?.value || tanggalHariIni();
+
+  logTerminalSimulasi(`▶ Menginisiasi tap simulasi RFID mode: [${mode}] pada ${jamInput} (${tglInput})...`, '#94a3b8');
+
+  // MODE KARTU B: GURU
+  if (mode === 'kartuB') {
+    const guru = KARTU_UJI_COBA.kartuB;
+    try {
+      await db.ref('presensi_guru/' + guru.nip + '/' + tglInput).set({
+        rfidUid: guru.uid,
+        nama: guru.nama,
+        nip: guru.nip,
+        jamMasuk: jamInput,
+        status: 'hadir',
+        mapel: guru.mapel,
+        tipe: 'rfid_fisik_kartu_b',
+        timestamp: new Date().toISOString()
+      });
+
+      await db.ref('kelas/XII RPL 1').update({
+        status: 'belajar',
+        activeMapel: guru.mapel,
+        activeTeacherNama: guru.nama,
+        activeTeacherId: guru.nip,
+        updatedAt: new Date().toISOString()
+      });
+
+      logTerminalSimulasi(`✅ [TAP GURU BERHASIL] UID: <strong>${guru.uid}</strong> | Guru: <strong>${guru.nama}</strong> | Jam: ${jamInput} | KBM XII RPL 1: <strong>BELAJAR AKTIF</strong>`, '#10b981');
+      showMsg('simulasiMsg', `✅ Kartu B (Guru: ${guru.nama}) berhasil di-tap! KBM XII RPL 1 aktif.`, 'success');
+    } catch (err) {
+      logTerminalSimulasi(`❌ [ERROR TAP GURU] ${err.message}`, '#ef4444');
+      showMsg('simulasiMsg', 'Gagal tap guru: ' + err.message, 'error');
+    }
+    return;
+  }
+
+  // MODE SISWA (KARTU A ATAU SISWA VIRTUAL)
+  let targetSiswa = null;
+  if (mode === 'kartuA') {
+    targetSiswa = {
+      nisn: KARTU_UJI_COBA.kartuA.nisn,
+      nama: KARTU_UJI_COBA.kartuA.nama,
+      kelas: KARTU_UJI_COBA.kartuA.kelas,
+      uid: KARTU_UJI_COBA.kartuA.uid
+    };
+  } else {
+    const nisnTarget = document.getElementById('simulasiNisn')?.value;
+    const s = siswaCache[nisnTarget];
+    if (s) {
+      targetSiswa = { nisn: s.nisn, nama: s.nama, kelas: s.kelas || 'XII RPL 1', uid: 'VIRTUAL_' + s.nisn };
+    } else {
+      targetSiswa = { nisn: nisnTarget || '0091113849', nama: 'Siswa Virtual', kelas: 'XII RPL 1', uid: 'VIRTUAL' };
+    }
+  }
+
+  // Evaluasi Ambang Batas Waktu PRD Bab 4.1
+  const cleanJam = jamInput.length === 5 ? jamInput + ':00' : jamInput;
+  let statusBaru = 'hadir';
+  let ketBadge = 'Hadir (Tepat Waktu)';
+  let warnaLog = '#10b981';
+
+  if (cleanJam <= '06:30:00') {
+    statusBaru = 'hadir';
+    ketBadge = 'Hadir (Tepat Waktu)';
+    warnaLog = '#10b981';
+  } else if (cleanJam <= '08:00:00') {
+    statusBaru = 'terlambat';
+    ketBadge = 'Terlambat';
+    warnaLog = '#f59e0b';
+  } else {
+    statusBaru = 'terlambat';
+    ketBadge = 'Terlambat (Lewat Batas Toleransi)';
+    warnaLog = '#ef4444';
+  }
+
+  try {
+    // 1. Simpan ke presensi_jam/{kelas}/{tanggal}/1/{nisn}
+    await db.ref('presensi_jam/' + targetSiswa.kelas + '/' + tglInput + '/1/' + targetSiswa.nisn).set({
+      waktu: cleanJam,
+      status: statusBaru,
+      tipe: 'rfid_virtual_simulasi',
+      keterangan: ketBadge,
+      rfidUid: targetSiswa.uid,
+      updatedAt: new Date().toISOString()
+    });
+
+    // 2. Simpan ke history absensi/{nisn}
+    await db.ref('absensi/' + targetSiswa.nisn).push({
+      tanggal: tglInput,
+      waktu: cleanJam,
+      status: statusBaru,
+      tipe: 'masuk',
+      keterangan: ketBadge,
+      rfidUid: targetSiswa.uid
+    });
+
+    logTerminalSimulasi(
+      `🏷️ [TAP SISWA SUKSES] <strong>${targetSiswa.nama}</strong> (${targetSiswa.kelas}) | Jam: ${cleanJam} | Status: <strong>${ketBadge.toUpperCase()}</strong>`,
+      warnaLog
+    );
+    showMsg('simulasiMsg', `✅ Tap berhasil! ${targetSiswa.nama} tercatat: ${ketBadge}`, 'success');
+
+    // Refresh monitoring jika aktif
+    const activeTab = document.querySelector('.tab-panel.active')?.id;
+    if (activeTab === 'tab-monitoring3kelas') muatMonitoring3Kelas();
+  } catch (err) {
+    logTerminalSimulasi(`❌ [ERROR TAP SISWA] ${err.message}`, '#ef4444');
+    showMsg('simulasiMsg', 'Gagal tap siswa: ' + err.message, 'error');
+  }
+}
+
+// Automasi Tepat 08.00 WIB (PRD Bab 4.1):
+// Periksa seluruh siswa di 3 kelas binaan. Yang belum tap dan tanpa perijinan valid ditandai ALPA.
+async function jalankanAutomasiAutoAlpa() {
+  const tglInput = document.getElementById('autoAlpaTanggalInput')?.value || tanggalHariIni();
+  const elMsg = document.getElementById('autoAlpaMsg');
+  if (elMsg) {
+    elMsg.style.display = 'block';
+    elMsg.style.color = '#d97706';
+    elMsg.textContent = '⏳ Menjalankan algoritma pemindaian automasi 08.00 WIB...';
+  }
+
+  logTerminalSimulasi(`⏰ [AUTOMASI 08.00 WIB] Memulai inspeksi otomatis 3 kelas pilot untuk tanggal: ${tglInput}...`, '#f59e0b');
+
+  const pilotClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+
+  try {
+    const [snapPresensi, snapPerijinan] = await Promise.all([
+      db.ref('presensi_jam').once('value'),
+      db.ref('perijinan').once('value')
+    ]);
+
+    const dataPresensiAll = snapPresensi.val() || {};
+    const dataPerijinanAll = snapPerijinan.val() || {};
+
+    // Kumpulkan perijinan yang disetujui pada tanggal tersebut
+    const perijinanApprovedPerNisn = {};
+    Object.values(dataPerijinanAll).forEach(pj => {
+      if (pj.tanggal === tglInput && pj.status === 'disetujui') {
+        perijinanApprovedPerNisn[pj.nisn] = pj.jenis || 'ijin';
+      }
+    });
+
+    let countAlpa = 0;
+    let countIzinOtomatis = 0;
+    let countLewat = 0;
+
+    for (const cls of pilotClasses) {
+      const siswaDiKelas = Object.values(siswaCache).filter(s => s.kelas === cls);
+      const presensiJam1 = (dataPresensiAll[cls] && dataPresensiAll[cls][tglInput] && dataPresensiAll[cls][tglInput]['1']) || {};
+
+      for (const s of siswaDiKelas) {
+        // Jika sudah tap RFID sebelum 08.00 WIB, biarkan
+        if (presensiJam1[s.nisn]) {
+          countLewat++;
+          continue;
+        }
+
+        // Jika belum tap, periksa izin resmi
+        if (perijinanApprovedPerNisn[s.nisn]) {
+          const jenisIzin = perijinanApprovedPerNisn[s.nisn];
+          await db.ref('presensi_jam/' + cls + '/' + tglInput + '/1/' + s.nisn).set({
+            waktu: '08:00:00',
+            status: jenisIzin,
+            tipe: 'auto_perijinan_walas',
+            keterangan: 'Izin Resmi Disetujui Walas',
+            updatedAt: new Date().toISOString()
+          });
+          countIzinOtomatis++;
+          logTerminalSimulasi(`📋 [AUTO-IZIN 08.00] ${s.nama} (${cls}) ditetapkan: <strong>${jenisIzin.toUpperCase()}</strong> (Ada izin disetujui)`, '#2563eb');
+        } else {
+          // Tidak ada izin & belum tap -> AUTO-ALPA
+          await db.ref('presensi_jam/' + cls + '/' + tglInput + '/1/' + s.nisn).set({
+            waktu: '08:00:00',
+            status: 'alpha',
+            tipe: 'auto_alpa_system',
+            keterangan: 'Auto-Alpa (Tidak Hadir & Tanpa Keterangan s.d 08.00 WIB)',
+            updatedAt: new Date().toISOString()
+          });
+          countAlpa++;
+          logTerminalSimulasi(`⚠️ [AUTO-ALPA 08.00] ${s.nama} (${cls}) ditetapkan: <strong style="color:#ef4444;">ALPA</strong> (Tanpa Keterangan)`, '#dc2626');
+        }
+      }
+    }
+
+    const ringkasan = `✅ Automasi 08.00 WIB tuntas: ${countAlpa} siswa ditandai Alpa, ${countIzinOtomatis} siswa izin/sakit resmi, ${countLewat} siswa sudah tap.`;
+    logTerminalSimulasi(ringkasan, '#10b981');
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.color = '#059669';
+      elMsg.textContent = ringkasan;
+    }
+
+    // Refresh telemetry
+    muatMonitoring3Kelas();
+  } catch (err) {
+    logTerminalSimulasi(`❌ [ERROR AUTOMASI 08.00] ${err.message}`, '#ef4444');
+    if (elMsg) {
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Gagal menjalankan automasi: ' + err.message;
+    }
+  }
+}
+

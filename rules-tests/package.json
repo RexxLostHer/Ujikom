@@ -1,0 +1,19 @@
+{
+  "name": "vokalog-rules-tests",
+  "version": "1.0.0",
+  "description": "Firestore Security Rules unit test suite for VokaLog verifying 7 security invariants",
+  "main": "firestore-rules.test.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.12.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

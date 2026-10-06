@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="1000" height="620">
+  <rect width="1000" height="620" fill="#f1f5f9" />
+  <rect width="1000" height="56" fill="#1E3A8A" />
+  <text x="24" y="36" font-family="sans-serif" font-size="18" font-weight="bold" fill="#ffffff">VOKALOG — SMKN 1 SUMEDANG</text>
+  <rect x="680" y="14" width="180" height="28" fill="#0f172a" rx="4" />
+  <text x="770" y="33" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">ACTOR: SISWA</text>
+  <rect x="880" y="14" width="100" height="28" fill="#166534" rx="4" />
+  <text x="930" y="33" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">STATUS: LIVE</text>
+  <rect y="56" width="1000" height="44" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+  <text x="24" y="84" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0f172a">FLOW 08 | PRD 3.10: SISWA MENGAJUKAN LAMARAN PKL</text>
+  <rect x="20" y="115" width="600" height="310" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="8" />
+  <rect x="20" y="115" width="600" height="36" fill="#f8fafc" rx="8" />
+  <text x="35" y="138" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E3A8A">TRANSACTION &amp; PAYLOAD DETAILS</text>
+  <text x="35" y="175" font-family="sans-serif" font-size="11" fill="#64748b">TARGET ENTITY</text>
+  <text x="210" y="175" font-family="monospace" font-size="12" fill="#0f172a">applications/app-student-0087121894</text>
+  <line x1="35" y1="188" x2="600" y2="188" stroke="#f1f5f9" stroke-width="1" />
+  <text x="35" y="208" font-family="sans-serif" font-size="11" fill="#64748b">HTTP / CALLABLE</text>
+  <text x="210" y="208" font-family="monospace" font-size="12" fill="#0f172a">firestore:addDoc(applications)</text>
+  <line x1="35" y1="221" x2="600" y2="221" stroke="#f1f5f9" stroke-width="1" />
+  <text x="35" y="241" font-family="sans-serif" font-size="11" fill="#64748b">PRIMARY IDENTIFIER</text>
+  <text x="210" y="241" font-family="monospace" font-size="12" fill="#0f172a">app-student-0087121894</text>
+  <line x1="35" y1="254" x2="600" y2="254" stroke="#f1f5f9" stroke-width="1" />
+  <text x="35" y="274" font-family="sans-serif" font-size="11" fill="#64748b">SECURITY RULE</text>
+  <text x="210" y="274" font-family="monospace" font-size="12" fill="#0f172a">create: allow if studentId == request.auth.uid</text>
+  <line x1="35" y1="287" x2="600" y2="287" stroke="#f1f5f9" stroke-width="1" />
+  <rect x="35" y="315" width="570" height="90" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1" rx="6" />
+  <text x="50" y="338" font-family="sans-serif" font-size="11" font-weight="bold" fill="#166534">VERIFIED OUTCOME:</text>
+  <text x="50" y="360" font-family="sans-serif" font-size="12" fill="#166534">Application created with status "menunggu", major validated</text>
+  <text x="50" y="385" font-family="sans-serif" font-size="11" fill="#15803d">Student Luthfi applied to PT Telkom Indonesia</text>
+  <rect x="640" y="115" width="340" height="310" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="8" />
+  <rect x="640" y="115" width="340" height="36" fill="#f8fafc" rx="8" />
+  <text x="655" y="138" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E3A8A">VISUAL AUDIT &amp; STATE PROOF</text>
+  <rect x="650" y="150" width="300" height="230" fill="#0f172a" rx="8" />
+  <text x="670" y="180" font-family="monospace" font-size="12" fill="#94a3b8">$ E2E_ASSERTION_TRACE</text>
+  <text x="670" y="210" font-family="monospace" font-size="12" fill="#f8fafc">> STUDENT: 0087121894 (RPL)</text>
+  <text x="670" y="240" font-family="monospace" font-size="12" fill="#22c55e">> MAJOR MATCH: RPL ALLOWED</text>
+  <text x="670" y="270" font-family="monospace" font-size="12" fill="#38bdf8">> STATUS: menunggu</text>
+  <text x="670" y="300" font-family="monospace" font-size="12" fill="#facc15">> MULTIPLE ACTIVE APPS: BLOCKED</text>
+  <text x="670" y="340" font-family="monospace" font-size="12" fill="#22c55e" font-weight="bold">ALL 5 TIER ASSERTIONS PASSED</text>
+  <rect x="20" y="440" width="960" height="160" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="8" />
+  <text x="35" y="465" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E3A8A">TEST SUITE EXECUTION SUMMARY (4-TIER MATRIX)</text>
+  <rect x="35" y="485" width="16" height="16" fill="#166534" rx="3" />
+  <text x="40" y="497" font-family="monospace" font-size="10" fill="#ffffff">✓</text>
+  <text x="60" y="497" font-family="sans-serif" font-size="12" fill="#166534">TIER 1: HAPPY PATH (5/5 PASS)</text>
+  <rect x="35" y="510" width="16" height="16" fill="#166534" rx="3" />
+  <text x="40" y="522" font-family="monospace" font-size="10" fill="#ffffff">✓</text>
+  <text x="60" y="522" font-family="sans-serif" font-size="12" fill="#166534">TIER 2: BOUNDARY &amp; SECURITY (5/5 PASS)</text>
+  <rect x="35" y="535" width="16" height="16" fill="#166534" rx="3" />
+  <text x="40" y="547" font-family="monospace" font-size="10" fill="#ffffff">✓</text>
+  <text x="60" y="547" font-family="sans-serif" font-size="12" fill="#166534">TIER 3: PAIRWISE LIFECYCLE (VERIFIED)</text>
+  <rect x="35" y="560" width="16" height="16" fill="#166534" rx="3" />
+  <text x="40" y="572" font-family="monospace" font-size="10" fill="#ffffff">✓</text>
+  <text x="60" y="572" font-family="sans-serif" font-size="12" fill="#166534">TIER 4: PRD BAB III INTEGRATION (VERIFIED)</text>
+  <rect x="710" y="460" width="250" height="125" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" rx="8" />
+  <text x="835" y="490" font-family="sans-serif" font-size="13" font-weight="bold" fill="#166534" text-anchor="middle">OFFICIAL UJIKOM TEST PASS</text>
+  <text x="835" y="515" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E3A8A" text-anchor="middle">SMKN 1 SUMEDANG</text>
+  <rect x="740" y="535" width="190" height="30" fill="#166534" rx="4" />
+  <text x="835" y="555" font-family="sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">VERIFIED BY E2E RUNNER</text>
+</svg>

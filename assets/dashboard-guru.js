@@ -23,8 +23,8 @@ firebase.auth().onAuthStateChanged(async function(fbUser) {
     return;
   }
   const user = await prosesLoginUser(fbUser);
-  if (user.role !== 'guru' && user.role !== 'admin') {
-    alert('Akses Terbatas: Halaman ini khusus Bapak/Ibu Guru dan Tenaga Pengajar.');
+  if (user.role !== 'guru' && user.role !== 'walas' && user.role !== 'admin') {
+    alert('Akses Terbatas: Halaman ini khusus Bapak/Ibu Guru dan Wali Kelas.');
     window.location.href = 'dashboard.html';
     return;
   }
@@ -43,19 +43,48 @@ function switchGuruTab(id, btn) {
     target.style.display = 'block';
     target.classList.add('active');
   }
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 async function initPortalGuru(user) {
+  const isWalas = user.role === 'walas' || user.isWalas;
+  const walasKelas = user.walasKelasId || 'XII RPL 2';
+
   // Update Header
   document.getElementById('namaUser').textContent = user.nama || 'Guru Pengajar';
+  const roleBadge = document.querySelector('.badge-role-guru');
+  if (roleBadge) {
+    if (isWalas) {
+      roleBadge.textContent = 'WALI KELAS ' + walasKelas;
+      roleBadge.style.background = '#dcfce7';
+      roleBadge.style.color = '#15803d';
+    } else {
+      roleBadge.textContent = 'GURU PENGAJAR';
+    }
+  }
+
   document.getElementById('infoSubUser').textContent =
-    `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • Email: ${user.email}`;
+    `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • ${isWalas ? 'Binaan: ' + walasKelas : 'Guru Mata Pelajaran'}`;
 
   document.getElementById('labelTanggalHariIni').textContent = tanggalHariIni();
   const labelTglGuru = document.getElementById('labelTglAbsenGuru');
   if (labelTglGuru) labelTglGuru.textContent = tanggalHariIni();
   document.getElementById('rekapTanggal').value = tanggalHariIni();
+
+  const kendalaTgl = document.getElementById('kendalaTanggal');
+  if (kendalaTgl) kendalaTgl.value = tanggalHariIni();
+
+  const selWalas = document.getElementById('selectKelasWalasPilihan');
+  if (selWalas && isWalas) selWalas.value = walasKelas;
+
+  // Sesuaikan tab awal
+  if (isWalas) {
+    const btnWalas = document.getElementById('btnTabMonitoringWalas');
+    if (btnWalas) switchGuruTab('tabMonitoringWalas', btnWalas);
+  } else {
+    const btnAbsen = document.getElementById('btnTabAbsenGuru');
+    if (btnAbsen) switchGuruTab('tabAbsenGuru', btnAbsen);
+  }
 
   // Muat status presensi dinas guru mandiri
   await muatStatusAbsenGuruHariIni();
@@ -66,6 +95,11 @@ async function initPortalGuru(user) {
 
   // Dengarkan perizinan realtime
   initListenerPerizinan();
+
+  // Muat fitur Walas & Kendala
+  muatStatistikWalas();
+  muatLiveAlertWalas();
+  muatRiwayatKendalaGuru();
 }
 
 // ===== FITUR 1: PRESENSI DINAS GURU MANDIRI =====
@@ -659,3 +693,366 @@ async function generateRekapGuru() {
     tbody.appendChild(tr);
   });
 }
+
+// ===== FITUR WALI KELAS: MONITORING KELAS BINAAN & LIVE ALERT (PRD Bab 7.3) =====
+let kelasBinaanAktif = 'XII RPL 2';
+
+function gantiKelasBinaanWalas(k) {
+  kelasBinaanAktif = k;
+  muatStatistikWalas();
+  muatLiveAlertWalas();
+}
+
+async function muatStatistikWalas() {
+  const kelas = kelasBinaanAktif || (guruAktif && guruAktif.walasKelasId) || 'XII RPL 2';
+  const today = tanggalHariIni();
+
+  const labelBinaan = document.getElementById('badgeKelasBinaanWalas');
+  if (labelBinaan) labelBinaan.textContent = 'KELAS BINAAN: ' + kelas;
+
+  // 1. Status Kelas Realtime
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
+  db.ref('kelas/' + normKelas).on('value', snap => {
+    const kData = snap.val() || { status: 'belajar' };
+    const stBadge = document.getElementById('badgeStatusKelasWalas');
+    if (stBadge) {
+      const st = (kData.status || 'belajar').toLowerCase();
+      if (st === 'jamkos') {
+        stBadge.textContent = 'KBM: JAMKOS ⚠️';
+        stBadge.style.background = '#ef4444';
+      } else if (st === 'pulang') {
+        stBadge.textContent = 'KBM: PULANG 🏠';
+        stBadge.style.background = '#64748b';
+      } else {
+        stBadge.textContent = 'KBM: BELAJAR 🟢';
+        stBadge.style.background = '#10b981';
+      }
+    }
+  });
+
+  // 2. Ambil Semua Siswa di Kelas Binaan
+  let semuaSiswa = {};
+  try {
+    const snap = await db.ref('siswa').once('value');
+    semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snap.val()) : (snap.val() || {});
+  } catch (e) {}
+
+  if (Object.keys(semuaSiswa).length < 20) {
+    try {
+      const res = await fetch('assets/data-siswa.json');
+      const local = await res.json();
+      semuaSiswa = Object.assign({}, parseSiswaSnapshot(local), semuaSiswa);
+    } catch (e) {}
+  }
+
+  const listSiswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) =>
+    ((typeof normalisasiKelas === 'function') ? normalisasiKelas(s.kelas) : s.kelas) === normKelas
+  );
+
+  // 3. Ambil Presensi Jam Hari Ini & Izin Disetujui
+  const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value');
+  const presensiData = snapPresensi.val() || {};
+
+  const snapIzin = await db.ref('perizinan').once('value');
+  const allIzin = snapIzin.val() || {};
+  const izinApproved = {};
+  Object.values(allIzin).forEach(iz => {
+    if (((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) === normKelas && iz.tanggal === today && iz.status === 'disetujui') {
+      izinApproved[iz.nisn] = iz;
+    }
+  });
+
+  let totalSiswa = listSiswaKelas.length;
+  let hadirTepat = 0;
+  let terlambat = 0;
+  let izinSakit = 0;
+  let belumAbsen = 0;
+
+  const gridEl = document.getElementById('gridSiswaWalas');
+  if (gridEl) gridEl.innerHTML = '';
+
+  listSiswaKelas.sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || '')).forEach(([nisn, s]) => {
+    let tapWaktu = null;
+    let tapStatus = null;
+
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(j => {
+      if (presensiData[j] && presensiData[j][nisn]) {
+        tapWaktu = presensiData[j][nisn].waktu;
+        tapStatus = presensiData[j][nisn].status;
+      }
+    });
+    if (!tapStatus && presensiData[nisn]) {
+      tapWaktu = presensiData[nisn].waktu;
+      tapStatus = presensiData[nisn].status;
+    }
+
+    let statusFinal = 'belum';
+    let statusLabel = 'Belum Absen';
+    let statusCardClass = 'belum';
+
+    if (tapStatus === 'hadir' || tapStatus === 'terlambat') {
+      const isLate = (typeof evaluasiAmbangBatasWaktu === 'function')
+        ? evaluasiAmbangBatasWaktu(tapWaktu) === 'terlambat'
+        : (tapWaktu && tapWaktu > '06:30:00');
+      if (isLate) {
+        terlambat++;
+        statusFinal = 'terlambat';
+        statusLabel = `Terlambat (${tapWaktu ? tapWaktu.slice(0,5) : ''})`;
+        statusCardClass = 'izin-sakit';
+      } else {
+        hadirTepat++;
+        statusFinal = 'hadir';
+        statusLabel = `Hadir Tepat Waktu (${tapWaktu ? tapWaktu.slice(0,5) : ''})`;
+        statusCardClass = 'hadir';
+      }
+    } else if (izinApproved[nisn]) {
+      izinSakit++;
+      statusFinal = 'izin';
+      statusLabel = `Izin Resmi (${izinApproved[nisn].jenis})`;
+      statusCardClass = 'izin-sakit';
+    } else {
+      belumAbsen++;
+      statusFinal = 'belum';
+      statusLabel = 'Belum Absen';
+      statusCardClass = 'belum';
+    }
+
+    if (gridEl) {
+      const card = document.createElement('div');
+      card.className = `card-siswa-guru ${statusCardClass}`;
+      card.innerHTML = `
+        <div style="font-size:14.5px;font-weight:800;color:#1e293b;">${s.nama}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;font-weight:700;">${statusLabel}</span>
+          ${statusFinal === 'belum' ? `<button class="btn-mini-action btn-mini-izin" onclick="tandaiIzinCepatWalas('${nisn}', '${kelas}', '${s.nama}')">📝 Izin</button>` : ''}
+        </div>
+      `;
+      gridEl.appendChild(card);
+    }
+  });
+
+  const totHadirSemua = hadirTepat + terlambat + izinSakit;
+  const pct = totalSiswa > 0 ? Math.round((totHadirSemua / totalSiswa) * 100) : 0;
+
+  if (document.getElementById('walasTotalSiswa')) document.getElementById('walasTotalSiswa').textContent = totalSiswa;
+  if (document.getElementById('walasHadirTepat')) document.getElementById('walasHadirTepat').textContent = hadirTepat;
+  if (document.getElementById('walasTerlambat')) document.getElementById('walasTerlambat').textContent = terlambat;
+  if (document.getElementById('walasIzinSakit')) document.getElementById('walasIzinSakit').textContent = izinSakit;
+  if (document.getElementById('walasBelumAbsen')) document.getElementById('walasBelumAbsen').textContent = belumAbsen;
+  if (document.getElementById('persentaseHadirWalas')) document.getElementById('persentaseHadirWalas').textContent = pct + '%';
+  if (document.getElementById('barHadirWalas')) document.getElementById('barHadirWalas').style.width = pct + '%';
+}
+
+async function tandaiIzinCepatWalas(nisn, kelas, nama) {
+  const alasan = prompt(`Masukkan alasan izin untuk ${nama} (NISN: ${nisn}):`, 'Sakit dengan konfirmasi orang tua');
+  if (!alasan) return;
+  const today = tanggalHariIni();
+  await db.ref(`presensi_jam/${kelas}/${today}/1/${nisn}`).set({
+    waktu: jamSekarang(),
+    status: 'sakit',
+    keterangan: 'Izin via Walas: ' + alasan
+  });
+  muatStatistikWalas();
+  muatLiveAlertWalas();
+}
+
+// Live Alert Pagi Walas (PRD Bab 4.1 & 7.3)
+async function muatLiveAlertWalas() {
+  const container = document.getElementById('boxAlertWalasContainer');
+  if (!container) return;
+  const kelas = kelasBinaanAktif || (guruAktif && guruAktif.walasKelasId) || 'XII RPL 2';
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
+  const today = tanggalHariIni();
+
+  let semuaSiswa = {};
+  try {
+    const snap = await db.ref('siswa').once('value');
+    semuaSiswa = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snap.val()) : (snap.val() || {});
+  } catch (e) {}
+
+  if (Object.keys(semuaSiswa).length < 20) {
+    try {
+      const res = await fetch('assets/data-siswa.json');
+      const local = await res.json();
+      semuaSiswa = Object.assign({}, parseSiswaSnapshot(local), semuaSiswa);
+    } catch (e) {}
+  }
+
+  const listSiswaKelas = Object.entries(semuaSiswa).filter(([nisn, s]) =>
+    ((typeof normalisasiKelas === 'function') ? normalisasiKelas(s.kelas) : s.kelas) === normKelas
+  );
+
+  const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value');
+  const presensiData = snapPresensi.val() || {};
+
+  const snapIzin = await db.ref('perizinan').once('value');
+  const allIzin = snapIzin.val() || {};
+  const izinApproved = {};
+  Object.values(allIzin).forEach(iz => {
+    if (((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) === normKelas && iz.tanggal === today && iz.status === 'disetujui') {
+      izinApproved[iz.nisn] = iz;
+    }
+  });
+
+  const belumTapList = listSiswaKelas.filter(([nisn]) => {
+    let hasTap = false;
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(j => {
+      if (presensiData[j] && presensiData[j][nisn]) hasTap = true;
+    });
+    if (presensiData[nisn]) hasTap = true;
+    if (izinApproved[nisn]) hasTap = true;
+    return !hasTap;
+  });
+
+  container.innerHTML = '';
+  if (belumTapList.length === 0) {
+    container.innerHTML = `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:20px;border-radius:14px;text-align:center;color:#166534;">
+        <span style="font-size:24px;">🎉</span>
+        <div style="font-size:15px;font-weight:800;margin-top:6px;">Luar Biasa! Tidak Ada Siswa Tertinggal</div>
+        <div style="font-size:13px;opacity:0.85;">Seluruh siswa kelas ${kelas} telah melakukan tap kartu atau telah memiliki izin resmi pagi ini.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const alertBox = document.createElement('div');
+  alertBox.style.cssText = 'background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:16px;margin-bottom:16px;';
+  alertBox.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:22px;">⚠️</span>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:#991b1b;">PERINGATAN PAGI: ${belumTapList.length} SISWA BELUM TAP KARTU</div>
+        <div style="font-size:12px;color:#b91c1c;">Toleransi verifikasi izin sampai 08.00 WIB sebelum beralih otomatis ke status Alpa.</div>
+      </div>
+    </div>
+  `;
+
+  const listGrid = document.createElement('div');
+  listGrid.className = 'student-grid-guru';
+
+  belumTapList.forEach(([nisn, s]) => {
+    const card = document.createElement('div');
+    card.className = 'card-siswa-guru belum';
+    card.innerHTML = `
+      <div style="font-size:14px;font-weight:800;color:#0f172a;">${s.nama}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn} • Kelas: ${kelas}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn-mini-action btn-mini-hadir" onclick="catatHadirManualWalas('${nisn}', '${kelas}', '${s.nama}')">✓ Hadir Manual</button>
+        <button class="btn-mini-action btn-mini-izin" onclick="tandaiIzinCepatWalas('${nisn}', '${kelas}', '${s.nama}')">📝 Catat Izin</button>
+      </div>
+    `;
+    listGrid.appendChild(card);
+  });
+
+  alertBox.appendChild(listGrid);
+  container.appendChild(alertBox);
+}
+
+async function catatHadirManualWalas(nisn, kelas, nama) {
+  const today = tanggalHariIni();
+  const jam = jamSekarang();
+  await db.ref(`presensi_jam/${kelas}/${today}/1/${nisn}`).set({
+    waktu: jam,
+    status: (jam <= '06:30:00') ? 'hadir' : 'terlambat',
+    tipe: 'manual_walas',
+    keterangan: 'Verifikasi langsung Walas'
+  });
+  muatStatistikWalas();
+  muatLiveAlertWalas();
+}
+
+// ===== FITUR GURU: LAPOR KENDALA KBM (USULAN JAMKOS - PRD Bab 4.2 & 7.2) =====
+async function submitKendalaGuru() {
+  if (!guruAktif) return;
+  const kelas = document.getElementById('kendalaKelas').value;
+  const mapel = document.getElementById('kendalaMapel').value.trim();
+  const tanggal = document.getElementById('kendalaTanggal').value;
+  const jenis = document.getElementById('kendalaJenis').value;
+  const alasan = document.getElementById('kendalaAlasan').value.trim();
+  const msgEl = document.getElementById('msgKendalaGuru');
+  const btn = document.getElementById('btnSubmitKendala');
+
+  if (!mapel || !alasan) {
+    alert('Harap lengkapi mata pelajaran dan alasan kendala mengajar.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Mengirim Laporan...';
+
+  const ref = db.ref('kendala_guru').push();
+  const id = ref.key;
+  const payload = {
+    id,
+    guruUid: guruAktif.uid,
+    guruNama: guruAktif.nama,
+    guruNip: guruAktif.nip || '',
+    kelasId: kelas,
+    mapel: mapel,
+    tanggal: tanggal,
+    jenis: jenis,
+    alasan: alasan,
+    status: 'pending',
+    createdAt: Date.now()
+  };
+
+  try {
+    await ref.set(payload);
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#ecfdf5';
+    msgEl.style.color = '#065f46';
+    msgEl.style.border = '1px solid #a7f3d0';
+    msgEl.textContent = '✅ Laporan kendala mengajar berhasil dikirim ke Admin! Menunggu persetujuan (ACC) Jamkos.';
+    document.getElementById('kendalaAlasan').value = '';
+    muatRiwayatKendalaGuru();
+  } catch (err) {
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#fef2f2';
+    msgEl.style.color = '#991b1b';
+    msgEl.style.border = '1px solid #fecaca';
+    msgEl.textContent = 'Gagal mengirim: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Kirim Laporan Kendala (Usulkan Jamkos ke Admin)';
+  }
+}
+
+function muatRiwayatKendalaGuru() {
+  const container = document.getElementById('listRiwayatKendalaGuru');
+  if (!container || !guruAktif) return;
+
+  db.ref('kendala_guru').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    const list = Object.values(data)
+      .filter(k => k.guruUid === guruAktif.uid || guruAktif.role === 'admin')
+      .sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    container.innerHTML = '';
+    if (list.length === 0) {
+      container.innerHTML = '<p style="color:#94a3b8;font-size:13.5px;text-align:center;padding:20px;">Belum pernah mengajukan laporan kendala mengajar.</p>';
+      return;
+    }
+
+    list.forEach(k => {
+      const isApproved = k.status === 'approved';
+      const isRejected = k.status === 'rejected';
+      const badgeText = isApproved ? '✅ DISETUJUI ADMIN (JAMKOS AKTIF)' : isRejected ? '❌ DITOLAK' : '⏳ MENUNGGU VERIFIKASI ADMIN';
+      const badgeStyle = isApproved ? 'background:#dcfce7;color:#15803d;' : isRejected ? 'background:#fee2e2;color:#b91c1c;' : 'background:#fef3c7;color:#b45309;';
+
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:12px;background:#f8fafc;';
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <div style="font-size:14.5px;font-weight:800;color:#0f172a;">${k.mapel} — Kelas ${k.kelasId}</div>
+          <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;${badgeStyle}">${badgeText}</span>
+        </div>
+        <div style="font-size:12.5px;color:#64748b;margin-bottom:6px;">📅 Tanggal: ${k.tanggal} • Jenis: ${k.jenis.replace(/_/g, ' ')}</div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;">${k.alasan}</div>
+      `;
+      container.appendChild(card);
+    });
+  });
+}
+

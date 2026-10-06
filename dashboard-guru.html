@@ -173,24 +173,120 @@
     </div>
   </div>
 
-  <!-- TABS GURU -->
+  <!-- TABS GURU & WALI KELAS (PRD Bab 7.2 & 7.3) -->
   <div class="view-tabs">
-    <button class="view-tab-btn active" id="btnTabAbsenGuru" onclick="switchGuruTab('tabAbsenGuru', this)">
-      <span>🏢</span> Presensi Mandiri Guru
+    <button class="view-tab-btn active" id="btnTabMonitoringWalas" onclick="switchGuruTab('tabMonitoringWalas', this)">
+      <span>👥</span> Kelas Binaan Walas
+    </button>
+    <button class="view-tab-btn" id="btnTabLiveAlertWalas" onclick="switchGuruTab('tabLiveAlertWalas', this)">
+      <span>🚨</span> Live Alert Keterlambatan Pagi
+    </button>
+    <button class="view-tab-btn" id="btnTabApprovalIzin" onclick="switchGuruTab('tabApprovalIzin', this)">
+      <span>📬</span> Validasi Perizinan <span class="counter-badge" id="countPendingIzin" style="display:none;">0</span>
+    </button>
+    <button class="view-tab-btn" id="btnTabAbsenGuru" onclick="switchGuruTab('tabAbsenGuru', this)">
+      <span>🏢</span> Presensi Guru
     </button>
     <button class="view-tab-btn" id="btnTabLiveGuru" onclick="switchGuruTab('tabLiveGuru', this)">
       <span>📡</span> Radar Mengajar Kelas
     </button>
-    <button class="view-tab-btn" id="btnTabApprovalIzin" onclick="switchGuruTab('tabApprovalIzin', this)">
-      <span>📬</span> Validasi Perizinan <span class="counter-badge" id="countPendingIzin" style="display:none;">0</span>
+    <button class="view-tab-btn" id="btnTabKendalaGuru" onclick="switchGuruTab('tabKendalaGuru', this)">
+      <span>📝</span> Lapor Kendala KBM (Jamkos)
     </button>
     <button class="view-tab-btn" id="btnTabRekapGuru" onclick="switchGuruTab('tabRekapGuru', this)">
       <span>📊</span> Rekapitulasi Presensi
     </button>
   </div>
 
+  <!-- ===== TAB KHUSUS WALI KELAS: MONITORING KELAS BINAAN (PRD Bab 7.3) ===== -->
+  <div id="tabMonitoringWalas" class="tab-content" style="display:block;">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge-role-guru" id="badgeKelasBinaanWalas" style="background:#dcfce7;color:#166534;">KELAS BINAAN: XII RPL 2</span>
+            <span id="badgeStatusKelasWalas" style="background:#10b981;color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;">KBM: BELAJAR</span>
+          </div>
+          <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin-top:6px;">📊 Monitoring Kehadiran Kelas Binaan</h2>
+          <p style="font-size:13px;color:#64748b;margin-top:2px;">Pantau rasio kehadiran, keterlambatan pagi (06.30 - 08.00), dan status jam kosong secara realtime.</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select id="selectKelasWalasPilihan" onchange="gantiKelasBinaanWalas(this.value)" style="padding:8px 12px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13px;font-weight:700;color:#1e293b;background:#fff;">
+            <option value="XII RPL 1">XII RPL 1</option>
+            <option value="XII RPL 2" selected>XII RPL 2</option>
+            <option value="XII TKJ 1">XII TKJ 1</option>
+          </select>
+          <button onclick="muatStatistikWalas()" class="btn-mini-action" style="background:#4f46e5;color:#fff;padding:8px 14px;">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- Persentase Kehadiran Progress Bar -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:#334155;">Tingkat Kehadiran Kelas Hari Ini</span>
+          <span style="font-size:16px;font-weight:800;color:#10b981;" id="persentaseHadirWalas">0%</span>
+        </div>
+        <div style="width:100%;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;">
+          <div id="barHadirWalas" style="width:0%;height:100%;background:linear-gradient(90deg, #10b981, #059669);transition:width 0.4s ease;"></div>
+        </div>
+      </div>
+
+      <!-- 5 Stat Cards Walas -->
+      <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:12px;">
+        <div class="stat-card" style="border-left:4px solid #3b82f6;">
+          <div class="stat-num" id="walasTotalSiswa" style="color:#2563eb;">0</div>
+          <div class="stat-label">Total Siswa</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #10b981;">
+          <div class="stat-num" id="walasHadirTepat" style="color:#10b981;">0</div>
+          <div class="stat-label">Hadir (&lt;= 06.30)</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #f59e0b;">
+          <div class="stat-num" id="walasTerlambat" style="color:#d97706;">0</div>
+          <div class="stat-label">Terlambat (06.31-08.00)</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+          <div class="stat-num" id="walasIzinSakit" style="color:#7c3aed;">0</div>
+          <div class="stat-label">Izin / Sakit (ACC)</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #ef4444;">
+          <div class="stat-num" id="walasBelumAbsen" style="color:#dc2626;">0</div>
+          <div class="stat-label">Belum Absen / Alpa</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabel Siswa Kelas Binaan -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:14px;">👥 Daftar Presensi Siswa Binaan</h3>
+      <div id="gridSiswaWalas" class="student-grid-guru">
+        <div style="color:#64748b;padding:20px 0;">Memuat siswa kelas binaan...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB KHUSUS WALI KELAS: LIVE ALERT KETERLAMBATAN PAGI (PRD Bab 4.1 & 7.3) ===== -->
+  <div id="tabLiveAlertWalas" class="tab-content" style="display:none;">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:#fef2f2;color:#b91c1c;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:800;margin-bottom:6px;">
+            <span>🚨</span> AMBANG BATAS: 06.30 - 08.00 WIB
+          </div>
+          <h2 style="font-size:18px;font-weight:800;color:#0f172a;">Live Alert Siswa Belum Absen Pagi</h2>
+          <p style="font-size:13px;color:#64748b;margin-top:2px;">Siswa yang belum tap kartu setelah 06.30 WIB akan otomatis muncul di sini untuk tindakan dini Wali Kelas sebelum sistem otomatis mengubah status menjadi Alpa pukul 08.00 WIB.</p>
+        </div>
+        <button onclick="muatLiveAlertWalas()" class="btn-mini-action" style="background:#ef4444;color:#fff;padding:9px 16px;">⚡ Segarkan Alert</button>
+      </div>
+
+      <div id="boxAlertWalasContainer">
+        <div style="color:#64748b;padding:20px 0;text-align:center;">Memeriksa status kehadiran siswa pagi...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TAB 0: PRESENSI MANDIRI GURU ===== -->
-  <div id="tabAbsenGuru" class="tab-content" style="display:block;">
+  <div id="tabAbsenGuru" class="tab-content" style="display:none;">
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
         <div>
@@ -314,6 +410,65 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ===== TAB GURU: LAPOR KENDALA KBM / USULAN JAMKOS (PRD Bab 4.2 & 7.2) ===== -->
+  <div id="tabKendalaGuru" class="tab-content" style="display:none;">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:18px;font-weight:800;color:#0f172a;">📝 Lapor Kendala Mengajar ke Admin</h2>
+        <p style="font-size:13px;color:#64748b;margin-top:2px;">
+          Apabila berhalangan hadir mengajar mendadak (sakit, tugas dinas luar, keperluan darurat), laporkan kendala ke Admin. 
+          Persetujuan (ACC) Admin akan secara otomatis mengubah status operasional kelas terkait menjadi <strong>Jam Kosong (Jamkos)</strong>.
+        </p>
+      </div>
+
+      <form id="formKendalaGuru" onsubmit="event.preventDefault(); submitKendalaGuru();" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Target Kelas Terdampak</label>
+          <select id="kendalaKelas" required style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:700;background:#fff;">
+            <option value="XII RPL 1">XII RPL 1</option>
+            <option value="XII RPL 2">XII RPL 2</option>
+            <option value="XII TKJ 1">XII TKJ 1</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Mata Pelajaran (Mapel)</label>
+          <input type="text" id="kendalaMapel" required placeholder="Contoh: Pemrograman Web" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:600;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Tanggal Kendala</label>
+          <input type="date" id="kendalaTanggal" required style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:600;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Jenis Kendala</label>
+          <select id="kendalaJenis" required style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:700;background:#fff;">
+            <option value="sakit_mendadak">Sakit Mendadak</option>
+            <option value="penugasan_dinas">Penugasan Dinas Luar</option>
+            <option value="keperluan_mendesak">Keperluan Keluarga Mendesak</option>
+            <option value="kendala_teknis">Kendala Transportasi / Teknis</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Alasan & Penugasan Pengganti</label>
+          <textarea id="kendalaAlasan" rows="3" required placeholder="Jelaskan alasan ketidakhadiran dan tugas mandiri bagi siswa di kelas..." style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-family:inherit;"></textarea>
+        </div>
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+          <button type="submit" id="btnSubmitKendala" class="btn-submit-action" style="background:#ef4444;color:#fff;padding:12px 24px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
+            🚀 Kirim Laporan Kendala (Usulkan Jamkos ke Admin)
+          </button>
+        </div>
+      </form>
+      <div id="msgKendalaGuru" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;"></div>
+    </div>
+
+    <!-- Riwayat Kendala Mengajar -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:14px;">📋 Riwayat Laporan Kendala Mengajar Saya</h3>
+      <div id="listRiwayatKendalaGuru">
+        <div style="color:#64748b;padding:20px 0;text-align:center;">Memuat riwayat kendala...</div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== TAB 2: VALIDASI PERIZINAN SISWA ===== -->

@@ -1,0 +1,25 @@
+{
+  "name": "vokalog-root",
+  "version": "1.0.0",
+  "description": "VokaLog PKL Attendance & Hybrid Logbook Platform for SMKN 1 Sumedang",
+  "private": true,
+  "scripts": {
+    "emulators": "npx firebase emulators:start --project vokalog-smkn1sumedang",
+    "emulators:export": "npx firebase emulators:export ./seed/emulator-export",
+    "mock:storage": "node mock-storage/server.js",
+    "seed": "node seed/seed.js",
+    "test:rules": "npm --prefix rules-tests test",
+    "test:functions": "npm --prefix functions test",
+    "test:e2e": "node e2e/runner.js",
+    "build:functions": "npm --prefix functions run build",
+    "lint:functions": "npm --prefix functions run lint"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.1.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.30.0"
+  }
+}
