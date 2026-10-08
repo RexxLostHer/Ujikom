@@ -506,25 +506,52 @@ function cetakLaporanPresensi() {
 function exportCsvPresensi() {
   const kelas = document.getElementById('rekapKelas') ? document.getElementById('rekapKelas').value : 'Kelas';
   const tgl = document.getElementById('rekapTanggal') ? document.getElementById('rekapTanggal').value : 'Tanggal';
-  
+  const periode = document.getElementById('rekapPeriodeAdmin') ? document.getElementById('rekapPeriodeAdmin').value : 'harian';
+
   if (!rekapCacheData || rekapCacheData.length === 0) {
     alert('Tampilkan rekap terlebih dahulu sebelum export.');
     return;
   }
 
   let csvContent = 'data:text/csv;charset=utf-8,';
-  csvContent += 'REKAPITULASI PRESENSI KELAS ' + kelas + ' - TANGGAL ' + tgl + '\r\n\r\n';
-  csvContent += 'No,NISN,Nama Siswa,Jam 1,Jam 2,Jam 3,Jam 4,Status Akhir\r\n';
+  let fileName = '';
 
-  rekapCacheData.forEach(row => {
-    const namaClean = '"' + row.nama.replace(/"/g, '""') + '"';
-    csvContent += [row.no, row.nisn, namaClean, row.jam1, row.jam2, row.jam3, row.jam4, row.statusAkhir].join(',') + '\r\n';
-  });
+  if (periode === 'tahunan') {
+    fileName = 'Rekap_Presensi_Tahunan_' + kelas.replace(/\s+/g, '_') + '_2025_2026.csv';
+    csvContent += 'REKAPITULASI PRESENSI TAHUNAN KELAS ' + kelas + ' - TAHUN AJARAN 2025/2026\r\n\r\n';
+    csvContent += 'No,NISN,Nama Siswa,Total Hari Efektif,Hadir,Sakit,Izin/Dispen,Alpa,Persentase Kehadiran,Status Kelayakan\r\n';
+
+    rekapCacheData.forEach(row => {
+      const namaClean = '"' + (row.nama || '').replace(/"/g, '""') + '"';
+      const statusClean = '"' + (row.statusAkhir || '').replace(/"/g, '""') + '"';
+      csvContent += [
+        row.no,
+        row.nisn,
+        namaClean,
+        row.total || 0,
+        row.h || 0,
+        row.s || 0,
+        row.i || 0,
+        row.a || 0,
+        (row.persen !== undefined ? row.persen + '%' : '100%'),
+        statusClean
+      ].join(',') + '\r\n';
+    });
+  } else {
+    fileName = 'Rekap_Presensi_' + kelas.replace(/\s+/g, '_') + '_' + tgl + '.csv';
+    csvContent += 'REKAPITULASI PRESENSI KELAS ' + kelas + ' - TANGGAL ' + tgl + '\r\n\r\n';
+    csvContent += 'No,NISN,Nama Siswa,Jam 1,Jam 2,Jam 3,Jam 4,Status Akhir\r\n';
+
+    rekapCacheData.forEach(row => {
+      const namaClean = '"' + (row.nama || '').replace(/"/g, '""') + '"';
+      csvContent += [row.no, row.nisn, namaClean, row.jam1 || '-', row.jam2 || '-', row.jam3 || '-', row.jam4 || '-', row.statusAkhir || '-'].join(',') + '\r\n';
+    });
+  }
 
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', 'Rekap_Presensi_' + kelas.replace(/\s+/g, '_') + '_' + tgl + '.csv');
+  link.setAttribute('download', fileName);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

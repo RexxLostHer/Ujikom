@@ -39,6 +39,14 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   };
 
   await perijinanRef.set(data);
+  await db.ref('perizinan/' + pid).set({
+    ...data,
+    id: pid,
+    nama_siswa: data.nama,
+    foto_bukti: data.dokumen_url,
+    created_at: new Date(data.dibuat_pada).toISOString()
+  }).catch(() => null);
+
   await kirimChatPerijinan(pid, user, 'Saya mengajukan ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + ': ' + alasan);
   return pid;
 }
@@ -47,9 +55,10 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
 // CHAT PERIJINAN
 // ===================================================================
 async function kirimChatPerijinan(pid, user, pesan) {
+  const isStaff = user && (user.role === 'admin' || user.role === 'guru' || user.role === 'walas');
   await db.ref('chat_perijinan/' + pid).push({
-    pengirim: user.role === 'admin' ? 'admin' : 'siswa',
-    nama_pengirim: user.nama,
+    pengirim: isStaff ? 'admin' : 'siswa',
+    nama_pengirim: (user && user.nama) ? user.nama : (isStaff ? 'Wali Kelas / Guru' : 'Siswa'),
     pesan,
     waktu: Date.now()
   });
@@ -160,7 +169,10 @@ async function adminApprove(pid, nisn, tanggal, jenis) {
   const adminUser = getSessionUser();
   if (!adminUser) return;
 
-  await db.ref('perijinan/' + pid + '/status').set('disetujui');
+  await Promise.all([
+    db.ref('perijinan/' + pid + '/status').set('disetujui'),
+    db.ref('perizinan/' + pid + '/status').set('disetujui').catch(() => null)
+  ]);
   await kirimChatPerijinan(pid, adminUser,
     'Perijinan Anda telah DISETUJUI ✅. Kehadiran tercatat sebagai ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + '.');
 
@@ -187,7 +199,10 @@ async function adminTolak(pid) {
   const adminUser = getSessionUser();
   if (!adminUser) return;
   const alasan = prompt('Alasan penolakan (opsional):') || 'Perijinan ditolak.';
-  await db.ref('perijinan/' + pid + '/status').set('ditolak');
+  await Promise.all([
+    db.ref('perijinan/' + pid + '/status').set('ditolak'),
+    db.ref('perizinan/' + pid + '/status').set('ditolak').catch(() => null)
+  ]);
   await kirimChatPerijinan(pid, adminUser, 'Maaf, perijinan Anda DITOLAK ❌. ' + alasan);
 }
 
@@ -231,8 +246,9 @@ function renderChat(pid) {
     const pesan = Object.values(data).sort((a, b) => a.waktu - b.waktu);
     container.innerHTML = '';
     pesan.forEach(function (m) {
-      const isSaya = (user && user.role === 'admin' && m.pengirim === 'admin') ||
-                     (user && user.role !== 'admin' && m.pengirim === 'siswa');
+      const isStaff = user && (user.role === 'admin' || user.role === 'guru' || user.role === 'walas');
+      const isSaya = (isStaff && (m.pengirim === 'admin' || m.pengirim === 'guru')) ||
+                     (!isStaff && m.pengirim === 'siswa');
       const bubble = document.createElement('div');
       bubble.className = 'chat-bubble ' + (isSaya ? 'saya' : 'lawan');
       const waktu = new Date(m.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

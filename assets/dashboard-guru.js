@@ -341,11 +341,11 @@ async function muatDataPresensiKelas() {
   const presensiHariIni = snapPresensi.val() || {};
 
   // 4. Ambil perizinan disetujui untuk hari ini
-  const snapIzin = await db.ref('perizinan').once('value');
-  const dataIzin = snapIzin.val() || {};
+  const dataIzin = await ambilSemuaPerizinanOnce();
   const izinHariIni = {};
   Object.values(dataIzin).forEach(iz => {
-    if (iz.kelas === currentKelas && iz.tanggal === today && iz.status === 'disetujui') {
+    const k = (typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas;
+    if (k === currentKelas && iz.tanggal === today && iz.status === 'disetujui') {
       izinHariIni[iz.nisn] = iz;
     }
   });
@@ -468,29 +468,98 @@ async function beriIzinCepat(nisn, namaSiswa) {
   const today = tanggalHariIni();
   const izinId = 'IZIN-' + Date.now();
 
-  await db.ref(`perizinan/${izinId}`).set({
+  const payloadIzin = {
     id: izinId,
+    pid: izinId,
     nisn: nisn,
     nama_siswa: namaSiswa,
+    nama: namaSiswa,
     kelas: currentKelas,
     tanggal: today,
     jenis: 'izin',
     alasan: alasan,
     foto_bukti: null,
+    dokumen_url: null,
     status: 'disetujui',
     diverifikasi_oleh: guruAktif ? guruAktif.nama : 'Guru',
     catatan_guru: 'Diizinkan langsung oleh guru di kelas',
     created_at: new Date().toISOString()
-  });
+  };
+
+  await Promise.all([
+    db.ref(`perijinan/${izinId}`).set(payloadIzin).catch(() => null),
+    db.ref(`perizinan/${izinId}`).set(payloadIzin).catch(() => null)
+  ]);
 
   muatDataPresensiKelas();
 }
 
+// Helper sinkronisasi perizinan & perijinan
+async function ambilSemuaPerizinanOnce() {
+  const [snapJ, snapZ] = await Promise.all([
+    db.ref('perijinan').once('value').catch(() => null),
+    db.ref('perizinan').once('value').catch(() => null)
+  ]);
+  const dataJ = (snapJ && snapJ.val()) || {};
+  const dataZ = (snapZ && snapZ.val()) || {};
+  const merged = {};
+  Object.keys(dataJ).forEach(k => {
+    merged[k] = {
+      id: k, pid: k,
+      ...dataJ[k],
+      nama_siswa: dataJ[k].nama_siswa || dataJ[k].nama,
+      foto_bukti: dataJ[k].foto_bukti || dataJ[k].dokumen_url,
+      created_at: dataJ[k].created_at || (dataJ[k].dibuat_pada ? new Date(dataJ[k].dibuat_pada).toISOString() : '')
+    };
+  });
+  Object.keys(dataZ).forEach(k => {
+    merged[k] = {
+      id: k, pid: k,
+      ...dataZ[k],
+      ...merged[k],
+      nama_siswa: dataZ[k].nama_siswa || dataZ[k].nama || (merged[k] && merged[k].nama_siswa),
+      foto_bukti: dataZ[k].foto_bukti || dataZ[k].dokumen_url || (merged[k] && merged[k].foto_bukti)
+    };
+  });
+  return merged;
+}
+
 // ===== TAB 2: APPROVAL PERIZINAN =====
+let cachePerijinanJ = {};
+let cachePerizinanZ = {};
+
 function initListenerPerizinan() {
-  db.ref('perizinan').on('value', snap => {
-    allPerizinanData = snap.val() || {};
+  function syncAndRender() {
+    const merged = {};
+    Object.keys(cachePerijinanJ).forEach(k => {
+      merged[k] = {
+        id: k, pid: k,
+        ...cachePerijinanJ[k],
+        nama_siswa: cachePerijinanJ[k].nama_siswa || cachePerijinanJ[k].nama,
+        foto_bukti: cachePerijinanJ[k].foto_bukti || cachePerijinanJ[k].dokumen_url,
+        created_at: cachePerijinanJ[k].created_at || (cachePerijinanJ[k].dibuat_pada ? new Date(cachePerijinanJ[k].dibuat_pada).toISOString() : '')
+      };
+    });
+    Object.keys(cachePerizinanZ).forEach(k => {
+      merged[k] = {
+        id: k, pid: k,
+        ...cachePerizinanZ[k],
+        ...merged[k],
+        nama_siswa: cachePerizinanZ[k].nama_siswa || cachePerizinanZ[k].nama || (merged[k] && merged[k].nama_siswa),
+        foto_bukti: cachePerizinanZ[k].foto_bukti || cachePerizinanZ[k].dokumen_url || (merged[k] && merged[k].foto_bukti)
+      };
+    });
+    allPerizinanData = merged;
     renderListApprovalIzin();
+  }
+
+  db.ref('perijinan').on('value', snap => {
+    cachePerijinanJ = snap.val() || {};
+    syncAndRender();
+  });
+  db.ref('perizinan').on('value', snap => {
+    cachePerizinanZ = snap.val() || {};
+    syncAndRender();
   });
 }
 
@@ -536,10 +605,11 @@ function renderListApprovalIzin() {
   filtered.forEach(iz => {
     const card = document.createElement('div');
     card.className = 'card-izin-guru';
+    const fotoUrl = iz.foto_bukti || iz.dokumen_url;
     card.innerHTML = `
       <div class="card-izin-header">
         <div>
-          <div style="font-size:16px;font-weight:800;color:#0f172a;">${iz.nama_siswa || 'Siswa'} (${iz.kelas || '-'})</div>
+          <div style="font-size:16px;font-weight:800;color:#0f172a;">${iz.nama_siswa || iz.nama || 'Siswa'} (${iz.kelas || '-'})</div>
           <div style="font-size:13px;color:#64748b;margin-top:2px;">NISN: ${iz.nisn || '-'} • Tanggal Izin: <strong>${iz.tanggal}</strong></div>
         </div>
         <span class="status-tag ${iz.status}">${iz.status}</span>
@@ -552,14 +622,15 @@ function renderListApprovalIzin() {
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <div>
-          ${iz.foto_bukti ? `<button onclick="bukaModalBukti('${iz.foto_bukti}', '${iz.nama_siswa}')" class="btn-mini-action" style="background:#e0e7ff;color:#4338ca;">🔍 Lihat Lampiran Foto</button>` : '<span style="font-size:12.5px;color:#94a3b8;">Tanpa lampiran foto</span>'}
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${fotoUrl ? `<button onclick="bukaModalBukti('${fotoUrl}', '${iz.nama_siswa || iz.nama}')" class="btn-mini-action" style="background:#e0e7ff;color:#4338ca;">🔍 Lampiran Foto / Surat</button>` : '<span style="font-size:12.5px;color:#94a3b8;">Tanpa lampiran file</span>'}
+          <button onclick="if(typeof bukaModalChat==='function') bukaModalChat('${iz.id || iz.pid}', '${iz.nama_siswa || iz.nama}')" class="btn-mini-action" style="background:#f3e8ff;color:#7c3aed;border:1px solid #ddd6fe;">💬 Chat Siswa</button>
         </div>
 
         ${iz.status === 'pending' ? `
           <div style="display:flex;gap:8px;">
-            <button onclick="prosesApprovalIzin('${iz.id}', 'ditolak')" class="btn-mini-action" style="background:#ef4444;color:#fff;">✗ Tolak</button>
-            <button onclick="prosesApprovalIzin('${iz.id}', 'disetujui')" class="btn-mini-action btn-mini-hadir">✓ Setujui Izin</button>
+            <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'ditolak')" class="btn-mini-action" style="background:#ef4444;color:#fff;">✗ Tolak</button>
+            <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'disetujui')" class="btn-mini-action btn-mini-hadir">✓ Setujui Izin</button>
           </div>
         ` : `
           <span style="font-size:12px;color:#64748b;">Diverifikasi oleh: <strong>${iz.diverifikasi_oleh || '-'}</strong></span>
@@ -571,32 +642,72 @@ function renderListApprovalIzin() {
 }
 
 async function prosesApprovalIzin(idIzin, statusBaru) {
+  const iz = allPerizinanData[idIzin] || {};
   const catatan = prompt(`Masukkan catatan guru untuk verifikasi (${statusBaru}):`, statusBaru === 'disetujui' ? 'Disetujui. Cepat sembuh.' : 'Bukti kurang lengkap.');
   if (catatan === null) return;
 
-  await db.ref(`perizinan/${idIzin}`).update({
+  const updatePayload = {
     status: statusBaru,
-    diverifikasi_oleh: guruAktif ? guruAktif.nama : 'Guru',
+    diverifikasi_oleh: guruAktif ? guruAktif.nama : 'Wali Kelas',
     catatan_guru: catatan,
     updated_at: new Date().toISOString()
-  });
+  };
 
-  if (statusBaru === 'disetujui') {
-    muatDataPresensiKelas();
+  await Promise.all([
+    db.ref(`perijinan/${idIzin}`).update(updatePayload).catch(() => null),
+    db.ref(`perizinan/${idIzin}`).update(updatePayload).catch(() => null)
+  ]);
+
+  if (typeof kirimChatPerijinan === 'function' && guruAktif) {
+    const teksChat = statusBaru === 'disetujui'
+      ? `✅ Perizinan Anda telah DISETUJUI oleh Wali Kelas (${guruAktif.nama}). Catatan: "${catatan}"`
+      : `❌ Perizinan Anda DITOLAK oleh Wali Kelas (${guruAktif.nama}). Alasan: "${catatan}"`;
+    kirimChatPerijinan(idIzin, { role: 'admin', nama: guruAktif.nama }, teksChat).catch(() => null);
   }
+
+  if (statusBaru === 'disetujui' && iz.nisn && iz.tanggal) {
+    try {
+      const snapSiswa = await db.ref('siswa/' + iz.nisn).once('value');
+      const siswa = snapSiswa.val() || {};
+      const kelasTarget = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas || siswa.kelas || currentKelas) : (iz.kelas || siswa.kelas || currentKelas));
+      const jadwalSnap = await db.ref('jadwal_pelajaran/' + kelasTarget).once('value');
+      const jadwal = jadwalSnap.val() || { '1': true, '2': true, '3': true, '4': true };
+      const updates = {};
+      Object.keys(jadwal).forEach(jamKe => {
+        updates[`presensi_jam/${kelasTarget}/${iz.tanggal}/${jamKe}/${iz.nisn}`] = {
+          status: iz.jenis || 'izin',
+          waktu: '00:00:00',
+          nama: iz.nama_siswa || iz.nama || siswa.nama || 'Siswa',
+          keterangan: `Izin resmi disetujui Walas (${catatan})`
+        };
+      });
+      if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+      }
+    } catch (e) {
+      console.warn('Gagal update presensi_jam:', e);
+    }
+  }
+
+  muatDataPresensiKelas();
+  if (typeof muatStatistikWalas === 'function') muatStatistikWalas();
+  if (typeof muatLiveAlertWalas === 'function') muatLiveAlertWalas();
 }
 
-function bukaModalBukti(fotoBase64, nama) {
+function bukaModalBukti(fotoUrl, nama) {
   document.getElementById('modalBuktiTitle').textContent = `Bukti Surat Izin — ${nama}`;
   const img = document.getElementById('modalBuktiImg');
   const txt = document.getElementById('modalBuktiText');
-  if (fotoBase64 && fotoBase64.startsWith('data:image')) {
-    img.src = fotoBase64;
+  if (fotoUrl && (fotoUrl.startsWith('data:image') || fotoUrl.startsWith('http://') || fotoUrl.startsWith('https://'))) {
+    img.src = fotoUrl;
     img.style.display = 'block';
     txt.textContent = '';
+  } else if (fotoUrl) {
+    img.style.display = 'none';
+    txt.innerHTML = `<a href="${fotoUrl}" target="_blank" style="color:#4f46e5;font-weight:700;text-decoration:underline;">📎 Buka Tautan Lampiran Dokumen</a>`;
   } else {
     img.style.display = 'none';
-    txt.textContent = 'Lampiran tidak dalam format gambar yang didukung.';
+    txt.textContent = 'Tidak ada lampiran dokumen.';
   }
   document.getElementById('modalBuktiIzin').classList.add('show');
 }
@@ -640,11 +751,12 @@ async function generateRekapGuru() {
   const snapPresensi = await db.ref(`presensi_jam/${kelas}/${tanggal}`).once('value');
   const presensiTgl = snapPresensi.val() || {};
 
-  const snapIzin = await db.ref('perizinan').once('value');
-  const allIzin = snapIzin.val() || {};
+  const allIzin = await ambilSemuaPerizinanOnce();
   const izinMap = {};
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
   Object.values(allIzin).forEach(iz => {
-    if (iz.kelas === kelas && iz.tanggal === tanggal && iz.status === 'disetujui') {
+    const k = (typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas;
+    if (k === normKelas && iz.tanggal === tanggal && iz.status === 'disetujui') {
       izinMap[iz.nisn] = iz;
     }
   });
@@ -753,8 +865,7 @@ async function muatStatistikWalas() {
   const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value');
   const presensiData = snapPresensi.val() || {};
 
-  const snapIzin = await db.ref('perizinan').once('value');
-  const allIzin = snapIzin.val() || {};
+  const allIzin = await ambilSemuaPerizinanOnce();
   const izinApproved = {};
   Object.values(allIzin).forEach(iz => {
     if (((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) === normKelas && iz.tanggal === today && iz.status === 'disetujui') {
@@ -886,8 +997,7 @@ async function muatLiveAlertWalas() {
   const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value');
   const presensiData = snapPresensi.val() || {};
 
-  const snapIzin = await db.ref('perizinan').once('value');
-  const allIzin = snapIzin.val() || {};
+  const allIzin = await ambilSemuaPerizinanOnce();
   const izinApproved = {};
   Object.values(allIzin).forEach(iz => {
     if (((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) === normKelas && iz.tanggal === today && iz.status === 'disetujui') {

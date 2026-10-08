@@ -790,7 +790,7 @@ function dengarkanStatusKelasOperasional(kelasInput) {
   listenerStatusKelasOperasional = { ref, callback: cb };
 }
 
-function updateWidgetStatusKelas(namaKelas, data) {
+function updateWidgetStatusKelas(arg1, arg2) {
   const badge = document.getElementById('badgeStatusKelas');
   const judul = document.getElementById('judulStatusKelas');
   const desc = document.getElementById('descStatusKelas');
@@ -800,6 +800,9 @@ function updateWidgetStatusKelas(namaKelas, data) {
   const alertJamkosDesc = document.getElementById('alertJamkosDesc');
 
   if (!badge) return;
+
+  const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 2');
+  const data = (arg1 && typeof arg1 === 'object') ? arg1 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
 
   const st = String(data.status || 'belajar').toLowerCase();
   if (tag) tag.textContent = 'Status ' + namaKelas;
@@ -812,12 +815,15 @@ function updateWidgetStatusKelas(namaKelas, data) {
       icon.textContent = '⚠️';
       icon.style.background = '#fee2e2';
     }
-    if (judul) judul.textContent = 'Jam Kosong Dikonfirmasi (Guru Berhalangan)';
+    if (judul) {
+      judul.textContent = `Kelas ${namaKelas}: Jam Kosong Dikonfirmasi`;
+      judul.style.color = '#991b1b';
+    }
     if (desc) desc.textContent = `Mapel: ${data.activeMapel || '-'} • Keterangan: ${data.keteranganJamkos || 'Laporan kendala di-ACC Admin'}`;
     if (alertJamkos) {
       alertJamkos.style.display = 'block';
       if (alertJamkosDesc) {
-        alertJamkosDesc.textContent = `Guru pengajar (${data.activeTeacherNama || 'Guru'}) berhalangan hadir pada mapel ${data.activeMapel || '-'}: "${data.keteranganJamkos || 'Penugasan Mandiri'}". Laporan telah di-ACC Admin. Harap seluruh siswa tetap tertib di dalam kelas dan mengerjakan tugas pengganti.`;
+        alertJamkosDesc.textContent = `Guru pengajar (${data.activeTeacherNama || 'Guru'}) berhalangan hadir pada mapel ${data.activeMapel || '-'}: "${data.keteranganJamkos || 'Penugasan Mandiri'}". Laporan telah di-ACC Admin. Harap seluruh siswa kelas ${namaKelas} tetap tertib di dalam kelas dan mengerjakan tugas pengganti.`;
       }
     }
   } else if (st === 'pulang') {
@@ -828,7 +834,10 @@ function updateWidgetStatusKelas(namaKelas, data) {
       icon.textContent = '🏠';
       icon.style.background = '#f1f5f9';
     }
-    if (judul) judul.textContent = 'Jam Operasional Sekolah Selesai';
+    if (judul) {
+      judul.textContent = 'Jam Operasional Sekolah Selesai';
+      judul.style.color = '#334155';
+    }
     if (desc) desc.textContent = 'Seluruh rangkaian KBM hari ini telah berakhir. Selamat beristirahat dan hati-hati di jalan.';
     if (alertJamkos) alertJamkos.style.display = 'none';
   } else {
@@ -840,8 +849,11 @@ function updateWidgetStatusKelas(namaKelas, data) {
       icon.textContent = '🟢';
       icon.style.background = '#dcfce7';
     }
-    if (judul) judul.textContent = 'KBM Sedang Berlangsung';
-    if (desc) desc.textContent = `Mapel: ${data.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${data.activeTeacherNama || 'Guru Pengajar'}`;
+    if (judul) {
+      judul.textContent = `KBM Sedang Berlangsung Normal (${namaKelas})`;
+      judul.style.color = '#1e1b4b';
+    }
+    if (desc) desc.textContent = `Mapel: ${data.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${data.activeTeacherNama || 'Guru Terjadwal'}`;
     if (alertJamkos) alertJamkos.style.display = 'none';
   }
 }
@@ -1062,47 +1074,6 @@ function initBerandaOverview(user) {
   initClassChipsSelector(user);
 }
 
-function updateWidgetStatusKelas(kData, namaKelas) {
-  const icon = document.getElementById('iconStatusKelas');
-  const badge = document.getElementById('badgeStatusKelas');
-  const judul = document.getElementById('judulStatusKelas');
-  const desc = document.getElementById('descStatusKelas');
-  const alertJamkos = document.getElementById('alertJamkosBox');
-  const alertJamkosDesc = document.getElementById('alertJamkosDesc');
-
-  if (!badge || !judul) return;
-
-  const st = (kData && kData.status) ? kData.status.toLowerCase() : 'belajar';
-  if (st === 'jamkos') {
-    if (icon) { icon.textContent = '⚠️'; icon.style.background = '#fee2e2'; }
-    badge.textContent = 'JAM KOSONG (JAMKOS)';
-    badge.style.background = '#ef4444';
-    judul.textContent = `Kelas ${namaKelas}: Jam Kosong`;
-    judul.style.color = '#991b1b';
-    if (desc) desc.textContent = `Mapel: ${kData.activeMapel || '-'} • Guru: ${kData.activeTeacherNama || 'Guru Pengajar'} (Berhalangan Hadir)`;
-    if (alertJamkos) {
-      alertJamkos.style.display = 'block';
-      if (alertJamkosDesc) alertJamkosDesc.textContent = `Laporan kendala guru (${kData.activeTeacherNama || '-'}) telah di-ACC Admin. Siswa kelas ${namaKelas} dipersilakan belajar mandiri.`;
-    }
-  } else if (st === 'pulang') {
-    if (icon) { icon.textContent = '🏠'; icon.style.background = '#f1f5f9'; }
-    badge.textContent = 'PULANG (KBM SELESAI)';
-    badge.style.background = '#64748b';
-    judul.textContent = `KBM Selesai — Jam Pulang`;
-    judul.style.color = '#334155';
-    if (desc) desc.textContent = 'Jam pembelajaran hari ini telah usai. Siswa diperkenankan pulang.';
-    if (alertJamkos) alertJamkos.style.display = 'none';
-  } else {
-    // Belajar
-    if (icon) { icon.textContent = '🟢'; icon.style.background = '#dcfce7'; }
-    badge.textContent = 'BELAJAR (KBM AKTIF)';
-    badge.style.background = '#10b981';
-    judul.textContent = `KBM Sedang Berlangsung Normal`;
-    judul.style.color = '#1e1b4b';
-    if (desc) desc.textContent = `Mapel: ${kData.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${kData.activeTeacherNama || 'Guru Terjadwal'}`;
-    if (alertJamkos) alertJamkos.style.display = 'none';
-  }
-}
 
 // ===================================================================
 // SISTEM REKAPITULASI PRESENSI 1 TAHUN TERAKHIR (TERBUKA UNTUK SEMUA)
