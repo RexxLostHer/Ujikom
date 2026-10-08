@@ -5,7 +5,19 @@ let shouldHaltDashboard = false;
 // Early synchronous guard: dashboard.html is STRICTLY for Siswa and Pengunjung
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
-    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    let rawSess = sessionStorage.getItem('user_aktif');
+    if (!rawSess && typeof localStorage !== 'undefined') {
+      const localSess = localStorage.getItem('user_aktif');
+      if (localSess) {
+        const testUser = JSON.parse(localSess);
+        // Stale admin token in localStorage must be purged so fresh visitors aren't bounced to admin.html
+        if (testUser && testUser.role === 'admin') {
+          try { localStorage.removeItem('user_aktif'); } catch (e) {}
+        } else {
+          rawSess = localSess;
+        }
+      }
+    }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
       if (sessUser) {
@@ -25,23 +37,29 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function(fbUser) {
     if (shouldHaltDashboard) return;
     if (!fbUser) {
-      const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
-      if (session) {
-        if (session.role === 'admin') {
-          shouldHaltDashboard = true;
-          window.location.replace('admin.html');
-          return;
-        }
-        if (session.role === 'guru' || session.role === 'walas') {
-          shouldHaltDashboard = true;
-          window.location.replace('dashboard-guru.html');
-          return;
-        }
-        currentUser = session;
-        initDashboard(currentUser);
+      let session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (!session) {
+        // Unauthenticated visitor is treated as 'pengunjung' (Guest/Tamu) and STAYS on dashboard.html
+        session = {
+          role: 'pengunjung',
+          nama: 'Pengunjung / Tamu Sekolah',
+          nisn: null,
+          kelas: null,
+          isVerified: false
+        };
+      }
+      if (session.role === 'admin') {
+        shouldHaltDashboard = true;
+        window.location.replace('admin.html');
         return;
       }
-      window.location.href = 'index.html';
+      if (session.role === 'guru' || session.role === 'walas') {
+        shouldHaltDashboard = true;
+        window.location.replace('dashboard-guru.html');
+        return;
+      }
+      currentUser = session;
+      initDashboard(currentUser);
       return;
     }
     currentUser = await prosesLoginUser(fbUser);

@@ -2401,10 +2401,10 @@
       if (show) l.classList.add('show'); else l.classList.remove('show');
     }
 
-    // Auto redirect jika session aktif
+    // Fresh visitors, guests, and unauthenticated users STAY on index.html
     const userSession = getSessionUser();
-    if (userSession) {
-      window.location.href = getDashboardUrlByRole(userSession.role);
+    if (userSession && userSession.role === 'admin' && typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('user_aktif')) {
+      try { localStorage.removeItem('user_aktif'); } catch (e) {}
     }
 
     // Login Google

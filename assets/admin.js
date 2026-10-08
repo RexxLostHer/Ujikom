@@ -13,7 +13,18 @@ let shouldHaltAdmin = false;
 // ===== AUTH GUARD: admin.html is STRICTLY for Administrator =====
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
-    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    let rawSess = sessionStorage.getItem('user_aktif');
+    if (!rawSess && typeof localStorage !== 'undefined') {
+      const localSess = localStorage.getItem('user_aktif');
+      if (localSess) {
+        const testUser = JSON.parse(localSess);
+        if (testUser && testUser.role === 'admin') {
+          try { localStorage.removeItem('user_aktif'); } catch (e) {}
+        } else {
+          rawSess = localSess;
+        }
+      }
+    }
     if (rawSess) {
       const sess = JSON.parse(rawSess);
       if (sess && sess.role && sess.role !== 'admin') {

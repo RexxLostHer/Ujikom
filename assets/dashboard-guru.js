@@ -22,7 +22,18 @@ let shouldHaltGuru = false;
 // Early synchronous guard: dashboard-guru.html is STRICTLY for Guru and Walas
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
-    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    let rawSess = sessionStorage.getItem('user_aktif');
+    if (!rawSess && typeof localStorage !== 'undefined') {
+      const localSess = localStorage.getItem('user_aktif');
+      if (localSess) {
+        const testUser = JSON.parse(localSess);
+        if (testUser && testUser.role === 'admin') {
+          try { localStorage.removeItem('user_aktif'); } catch (e) {}
+        } else {
+          rawSess = localSess;
+        }
+      }
+    }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
       if (sessUser) {

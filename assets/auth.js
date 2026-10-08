@@ -10,12 +10,36 @@ function getSessionUser() {
   if (!raw) {
     try { raw = localStorage.getItem('user_aktif'); } catch (e) {}
   }
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  try {
+    const user = JSON.parse(raw);
+    if (!user || typeof user !== 'object') return null;
+    // CRITICAL: Prevent stale admin token in localStorage from escalating fresh unauthenticated visitors to admin
+    if (user.role === 'admin') {
+      const sessRaw = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('user_aktif') : null;
+      if (!sessRaw) {
+        try { localStorage.removeItem('user_aktif'); } catch (e) {}
+        return null;
+      }
+    }
+    return user;
+  } catch (e) {
+    return null;
+  }
 }
 
 function setSessionUser(data) {
+  if (!data) {
+    clearSession();
+    return;
+  }
   try { sessionStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
-  try { localStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
+  // Admin credentials must NEVER be retained globally in localStorage to prevent unauthorized redirects
+  if (data.role === 'admin') {
+    try { localStorage.removeItem('user_aktif'); } catch (e) {}
+  } else {
+    try { localStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
+  }
 }
 
 function clearSession() {
@@ -46,8 +70,9 @@ const MASTER_ADMIN_EMAILS = [
 ];
 
 function isEmailAdmin(email) {
-  if (!email) return false;
+  if (!email || typeof email !== 'string') return false;
   const clean = email.toLowerCase().trim();
+  if (!clean) return false;
   if (MASTER_ADMIN_EMAILS.includes(clean)) return true;
   if (clean.startsWith('admin@') || clean.startsWith('admin.') || clean.startsWith('administrator@')) return true;
   if (clean.endsWith('@admin.com')) return true;
@@ -209,6 +234,13 @@ async function prosesLoginUser(firebaseUser) {
         isVerified: true,
         foto_google: firebaseUser.photoURL || null
       };
+      const isSwitched = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true';
+      if (isSwitched) {
+        const activeSess = typeof getSessionUser === 'function' ? getSessionUser() : null;
+        if (activeSess && activeSess.role) {
+          userData = { ...userData, ...activeSess, isRoleSwitched: true };
+        }
+      }
     } else if (guruMatch) {
       userData = {
         uid: uid,
