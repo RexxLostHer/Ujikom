@@ -5,16 +5,25 @@ function encodeEmail(email) {
 }
 
 function getSessionUser() {
-  const raw = sessionStorage.getItem('user_aktif');
+  let raw = null;
+  try { raw = sessionStorage.getItem('user_aktif'); } catch (e) {}
+  if (!raw) {
+    try { raw = localStorage.getItem('user_aktif'); } catch (e) {}
+  }
   return raw ? JSON.parse(raw) : null;
 }
 
 function setSessionUser(data) {
-  sessionStorage.setItem('user_aktif', JSON.stringify(data));
+  try { sessionStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
 }
 
 function clearSession() {
-  sessionStorage.removeItem('user_aktif');
+  try { sessionStorage.removeItem('user_aktif'); } catch (e) {}
+  try { localStorage.removeItem('user_aktif'); } catch (e) {}
+  try { sessionStorage.removeItem('isRoleSwitched'); } catch (e) {}
+  try { localStorage.removeItem('isRoleSwitched'); } catch (e) {}
+  try { localStorage.removeItem('nisn_aktif'); } catch (e) {}
 }
 
 // 1. Google Sign-In
@@ -247,22 +256,25 @@ async function prosesLoginUser(firebaseUser) {
     }
   } else {
     // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
-    if (isAdm && userData.role !== 'admin') {
-      userData.role = 'admin';
-      if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
-      userData.isVerified = true;
-      try { await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama }); } catch (e) {}
-    } else if (guruMatch && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
-      userData.role = guruMatch.isWalas ? 'walas' : 'guru';
-      userData.nama = guruMatch.nama;
-      userData.nip = guruMatch.nip;
-      userData.mapel = guruMatch.mapel;
-      userData.isWalas = !!guruMatch.isWalas;
-      userData.walasKelasId = guruMatch.walasKelasId || null;
-      userData.isVerified = true;
-      try { await db.ref('users/' + uid).update(userData); } catch (e) {}
-    } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
-      userData.role = 'pengunjung';
+    const isSwitched = !!userData.isRoleSwitched || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
+    if (!isSwitched) {
+      if (isAdm && userData.role !== 'admin') {
+        userData.role = 'admin';
+        if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
+        userData.isVerified = true;
+        try { await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama }); } catch (e) {}
+      } else if (guruMatch && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
+        userData.role = guruMatch.isWalas ? 'walas' : 'guru';
+        userData.nama = guruMatch.nama;
+        userData.nip = guruMatch.nip;
+        userData.mapel = guruMatch.mapel;
+        userData.isWalas = !!guruMatch.isWalas;
+        userData.walasKelasId = guruMatch.walasKelasId || null;
+        userData.isVerified = true;
+        try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+      } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
+        userData.role = 'pengunjung';
+      }
     }
 
     if (firebaseUser.photoURL && userData.foto_google !== firebaseUser.photoURL) {
@@ -537,4 +549,164 @@ async function ubahProfilPengguna(namaBaru) {
     console.warn('Simpan nama profil ke database dilewati:', err.message);
   }
   return userAktif;
+}
+
+// 9. Unified Role Switcher (PRD UJIKOM 2026)
+async function gantiRoleSesi(targetRole, payload = {}) {
+  const currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  const currentSession = (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+  const uid = (currentFbUser && currentFbUser.uid) || currentSession.uid || ('DEMO_' + Date.now());
+  const email = (currentFbUser && currentFbUser.email) || currentSession.email || (targetRole + '@smkn1sumedang.sch.id');
+  const encoded = encodeEmail(email);
+
+  let defaultData = {};
+  if (targetRole === 'admin') {
+    defaultData = {
+      role: 'admin',
+      nama: 'Administrator Sistem',
+      isVerified: true,
+      nisn: null,
+      kelas: null,
+      nip: null,
+      mapel: null,
+      isWalas: false,
+      walasKelasId: null
+    };
+  } else if (targetRole === 'walas') {
+    defaultData = {
+      role: 'walas',
+      nama: 'Muhammad Echa Putra, S.Kom.Gr',
+      nip: '199209142022211007',
+      mapel: 'Basis Data & Pemodelan RPL',
+      isWalas: true,
+      walasKelasId: 'XII RPL 2',
+      isVerified: true,
+      nisn: null,
+      kelas: null
+    };
+  } else if (targetRole === 'guru') {
+    defaultData = {
+      role: 'guru',
+      nama: 'Hani Hanifah, S.Si',
+      nip: '198109012009022003',
+      mapel: 'Pemrograman Web & Perangkat Bergerak',
+      isWalas: false,
+      walasKelasId: null,
+      isVerified: true,
+      nisn: null,
+      kelas: null
+    };
+  } else if (targetRole === 'siswa') {
+    defaultData = {
+      role: 'siswa',
+      nama: 'M. Ihsan Athallah',
+      nisn: '0098263610',
+      kelas: 'XII RPL 2',
+      isVerified: true,
+      nip: null,
+      mapel: null,
+      isWalas: false,
+      walasKelasId: null
+    };
+  } else {
+    targetRole = 'pengunjung';
+    defaultData = {
+      role: 'pengunjung',
+      nama: (currentFbUser && currentFbUser.displayName) || currentSession.nama || 'Pengunjung / Tamu Sekolah',
+      nisn: null,
+      kelas: null,
+      nip: null,
+      mapel: null,
+      isWalas: false,
+      walasKelasId: null,
+      isVerified: false
+    };
+  }
+
+  const isSwitched = (targetRole !== 'admin');
+  const updatedData = {
+    uid: uid,
+    email: email,
+    foto_google: (currentFbUser && currentFbUser.photoURL) || currentSession.foto_google || null,
+    ...defaultData,
+    ...payload,
+    role: targetRole,
+    isRoleSwitched: isSwitched,
+    switched_at: new Date().toISOString()
+  };
+
+  // 1. Simpan di sessionStorage & localStorage
+  setSessionUser(updatedData);
+  try {
+    if (isSwitched) {
+      sessionStorage.setItem('isRoleSwitched', 'true');
+      localStorage.setItem('isRoleSwitched', 'true');
+    } else {
+      sessionStorage.removeItem('isRoleSwitched');
+      localStorage.removeItem('isRoleSwitched');
+    }
+    if (updatedData.nisn) {
+      localStorage.setItem('nisn_aktif', updatedData.nisn);
+    } else {
+      localStorage.removeItem('nisn_aktif');
+    }
+  } catch (e) {}
+
+  // 2. Simpan di Firebase RTDB jika db tersedia
+  if (typeof db !== 'undefined' && db) {
+    try {
+      await db.ref('users/' + uid).update(updatedData);
+    } catch (e) {
+      console.warn('Update users/{uid} dilewati:', e.message);
+    }
+
+    if (encoded) {
+      try {
+        await db.ref('email_mapping/' + encoded).set({
+          nama: updatedData.nama,
+          role: updatedData.role,
+          nisn: updatedData.nisn || null,
+          kelas: updatedData.kelas || null,
+          nip: updatedData.nip || null,
+          isWalas: !!updatedData.isWalas,
+          walasKelasId: updatedData.walasKelasId || null
+        });
+      } catch (e) {}
+    }
+  }
+
+  // 3. Clean redirect ke dashboard URL sesuai targetRole
+  const targetUrl = (typeof getDashboardUrlByRole === 'function')
+    ? getDashboardUrlByRole(targetRole)
+    : (targetRole === 'admin' ? 'admin.html' : ((targetRole === 'guru' || targetRole === 'walas') ? 'dashboard-guru.html' : 'dashboard.html'));
+
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.href = targetUrl;
+  }
+
+  return updatedData;
+}
+
+// 10. Guard Helper Akses Halaman
+function verifikasiAksesHalaman(allowedRoles) {
+  const user = (typeof getSessionUser === 'function') ? getSessionUser() : null;
+  if (!user || !user.role) {
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = 'index.html';
+    }
+    return false;
+  }
+  if (Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
+    const targetUrl = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(user.role) : 'dashboard.html';
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = targetUrl;
+    }
+    return false;
+  }
+  return true;
+}
+
+if (typeof window !== 'undefined') {
+  window.gantiRoleSesi = gantiRoleSesi;
+  window.verifikasiAksesHalaman = verifikasiAksesHalaman;
 }

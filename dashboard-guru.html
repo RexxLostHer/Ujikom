@@ -158,12 +158,13 @@
       <div class="user-info">
         <div style="display:flex;align-items:center;gap:8px;">
           <h1 id="namaUser">Memuat Profil Guru...</h1>
-          <span class="badge-role-guru">Portal Guru</span>
+          <span class="badge-role-guru" id="badgeRoleGuruHeader">Portal Guru</span>
         </div>
         <p id="infoSubUser">NIP: - • Mapel: -</p>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
+      <a href="admin.html" id="linkPanelAdminGuru" style="display:none;color:#6d28d9;background:#f5f3ff;border:1.5px solid #ddd6fe;font-weight:700;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
       <a href="dashboard.html" class="btn-logout" style="border-color:#e2e8f0;text-decoration:none;">🎓 Mode Siswa</a>
       <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Guru</button>
       <button class="btn-logout" onclick="logout()">

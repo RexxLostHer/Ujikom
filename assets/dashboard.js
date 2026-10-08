@@ -3,7 +3,16 @@ let currentUser = null;
 
 if (typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function(fbUser) {
-    if (!fbUser) { window.location.href = 'index.html'; return; }
+    if (!fbUser) {
+      const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (session) {
+        currentUser = session;
+        initDashboard(currentUser);
+        return;
+      }
+      window.location.href = 'index.html';
+      return;
+    }
     currentUser = await prosesLoginUser(fbUser);
     initDashboard(currentUser);
   });
@@ -167,6 +176,34 @@ async function initDashboard(user) {
       (user.nama || 'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
 
+  // Staff Review Banner (Admin, Walas, Guru)
+  const staffBanner = document.getElementById('bannerStaffReview');
+  const staffText = document.getElementById('staffReviewText');
+  const staffBtnGuru = document.getElementById('staffBtnGuru');
+  const staffBtnAdmin = document.getElementById('staffBtnAdmin');
+
+  if (staffBanner && (user.role === 'admin' || user.role === 'walas' || user.role === 'guru')) {
+    staffBanner.style.display = 'flex';
+    let roleTitle = 'Administrator Sistem';
+    if (user.role === 'walas') {
+      roleTitle = `Wali Kelas ${user.walasKelasId || 'Binaan'}`;
+    } else if (user.role === 'guru') {
+      roleTitle = 'Guru Pengajar';
+    }
+
+    if (staffText) {
+      staffText.innerHTML = `Anda sedang meninjau portal siswa sebagai <strong>${roleTitle} (${user.nama || ''})</strong>.`;
+    }
+    if (staffBtnGuru) {
+      staffBtnGuru.style.display = 'inline-flex';
+    }
+    if (staffBtnAdmin) {
+      staffBtnAdmin.style.display = (user.role === 'admin') ? 'inline-flex' : 'none';
+    }
+  } else if (staffBanner) {
+    staffBanner.style.display = 'none';
+  }
+
   // Jika guru, walas atau admin, tampilkan link ke portal guru
   if (user.role === 'guru' || user.role === 'walas' || user.role === 'admin') {
     const lGuru = document.getElementById('linkGuru');
@@ -196,6 +233,19 @@ async function initDashboard(user) {
 
   // Inisialisasi 3D Tilt Kartu Siswa
   initInteractive3DCard();
+
+  // 60-Second Background Timer untuk update live KBM highlight
+  if (typeof window !== 'undefined' && !window._kbmLiveInterval && typeof setInterval !== 'undefined') {
+    window._kbmLiveInterval = setInterval(() => {
+      const activeChip = (typeof document !== 'undefined' && typeof document.querySelector === 'function')
+        ? document.querySelector('.class-chip.active')
+        : null;
+      const currentKls = activeChip ? activeChip.textContent : ((user && user.kelas) ? user.kelas : 'XII RPL 2');
+      if (typeof muatJadwalBeranda === 'function') {
+        muatJadwalBeranda(currentKls);
+      }
+    }, 60000);
+  }
 }
 
 function populateDropdownSiswa(user) {

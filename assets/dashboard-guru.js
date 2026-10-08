@@ -68,24 +68,45 @@ function switchGuruTab(id, btn) {
 }
 
 async function initPortalGuru(user) {
-  const isWalas = user.role === 'walas' || user.isWalas;
+  const isAdm = user.role === 'admin';
+  const isWalas = !isAdm && (user.role === 'walas' || user.isWalas);
   const walasKelas = user.walasKelasId || 'XII RPL 2';
 
+  // Cross-portal navigation Admin
+  const lAdminGuru = document.getElementById('linkPanelAdminGuru');
+  if (lAdminGuru) {
+    lAdminGuru.style.display = isAdm ? 'inline-flex' : 'none';
+  }
+
   // Update Header
-  document.getElementById('namaUser').textContent = user.nama || 'Guru Pengajar';
-  const roleBadge = document.querySelector('.badge-role-guru');
+  document.getElementById('namaUser').textContent = user.nama || (isAdm ? 'Administrator Sistem' : 'Guru Pengajar');
+  const roleBadge = document.getElementById('badgeRoleGuruHeader') || document.querySelector('.badge-role-guru');
   if (roleBadge) {
-    if (isWalas) {
+    if (isAdm) {
+      roleBadge.textContent = 'ADMINISTRATOR (MODE REVIEW)';
+      roleBadge.style.background = '#ede9fe';
+      roleBadge.style.color = '#6d28d9';
+      roleBadge.style.border = '1px solid #ddd6fe';
+    } else if (isWalas) {
       roleBadge.textContent = 'WALI KELAS ' + walasKelas;
       roleBadge.style.background = '#dcfce7';
       roleBadge.style.color = '#15803d';
+      roleBadge.style.border = '1px solid #bbf7d0';
     } else {
       roleBadge.textContent = 'GURU PENGAJAR';
+      roleBadge.style.background = '#e0e7ff';
+      roleBadge.style.color = '#3730a3';
+      roleBadge.style.border = '1px solid #c7d2fe';
     }
   }
 
-  document.getElementById('infoSubUser').textContent =
-    `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • ${isWalas ? 'Binaan: ' + walasKelas : 'Guru Mata Pelajaran'}`;
+  if (isAdm) {
+    document.getElementById('infoSubUser').textContent =
+      `Mode Administrator Sistem • Akses Penuh Seluruh Portal & Pengawasan Kelas`;
+  } else {
+    document.getElementById('infoSubUser').textContent =
+      `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • ${isWalas ? 'Binaan: ' + walasKelas : 'Guru Mata Pelajaran'}`;
+  }
 
   document.getElementById('labelTanggalHariIni').textContent = tanggalHariIni();
   const labelTglGuru = document.getElementById('labelTglAbsenGuru');
@@ -96,10 +117,10 @@ async function initPortalGuru(user) {
   if (kendalaTgl) kendalaTgl.value = tanggalHariIni();
 
   const selWalas = document.getElementById('selectKelasWalasPilihan');
-  if (selWalas && isWalas) selWalas.value = walasKelas;
+  if (selWalas && (isWalas || isAdm)) selWalas.value = walasKelas;
 
   // Sesuaikan tab awal
-  if (isWalas) {
+  if (isWalas || isAdm) {
     const btnWalas = document.getElementById('btnTabMonitoringWalas');
     if (btnWalas) switchGuruTab('tabMonitoringWalas', btnWalas);
   } else {
@@ -121,6 +142,16 @@ async function initPortalGuru(user) {
   muatStatistikWalas();
   muatLiveAlertWalas();
   muatRiwayatKendalaGuru();
+
+  // 60-Second Background Timer untuk update live KBM highlight & radar tanpa reload
+  if (typeof window !== 'undefined' && !window._kbmGuruInterval && typeof setInterval !== 'undefined') {
+    window._kbmGuruInterval = setInterval(() => {
+      const lblTgl = document.getElementById('labelTanggalHariIni');
+      if (lblTgl) lblTgl.textContent = tanggalHariIni();
+      if (typeof muatRadarMengajarRealtime === 'function') muatRadarMengajarRealtime();
+      if (typeof muatStatistikWalas === 'function') muatStatistikWalas();
+    }, 60000);
+  }
 }
 
 // ===== FITUR 1: PRESENSI DINAS GURU MANDIRI =====
@@ -600,12 +631,22 @@ function renderListApprovalIzin() {
   const badgeCounter = document.getElementById('countPendingIzin');
 
   const items = Object.values(allPerizinanData);
-  const pendingCount = items.filter(i => i.status === 'pending').length;
+  const u = guruAktif || (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+  const isAdm = u.role === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(u.email));
+  const isWalas = !isAdm && (u.role === 'walas' || u.isWalas);
+  const walasKelasNorm = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(u.walasKelasId) : u.walasKelasId) || '';
 
-  if (pendingCount > 0) {
+  const countToShow = items.filter(i => {
+    if (i.status !== 'pending') return false;
+    if (isAdm) return true;
+    const k = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(i.kelas) : i.kelas) || '';
+    return isWalas && k === walasKelasNorm;
+  }).length;
+
+  if (countToShow > 0 && badgeCounter) {
     badgeCounter.style.display = 'inline-block';
-    badgeCounter.textContent = pendingCount;
-  } else {
+    badgeCounter.textContent = countToShow;
+  } else if (badgeCounter) {
     badgeCounter.style.display = 'none';
   }
 
@@ -627,6 +668,20 @@ function renderListApprovalIzin() {
     const card = document.createElement('div');
     card.className = 'card-izin-guru';
     const fotoUrl = iz.foto_bukti || iz.dokumen_url;
+    const kIzin = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) || '';
+    const canApprove = isAdm || (isWalas && kIzin === walasKelasNorm);
+
+    let namaWalasTarget = 'Wali Kelas ' + (iz.kelas || '');
+    if (typeof DEFAULT_STATUS_KELAS !== 'undefined' && DEFAULT_STATUS_KELAS[kIzin] && DEFAULT_STATUS_KELAS[kIzin].walasNama) {
+      namaWalasTarget = DEFAULT_STATUS_KELAS[kIzin].walasNama;
+    } else if (kIzin === 'XII RPL 1') {
+      namaWalasTarget = 'Hani Hanifah, S.Si';
+    } else if (kIzin === 'XII RPL 2') {
+      namaWalasTarget = 'Muhammad Echa Putra, S.Kom.Gr';
+    } else if (kIzin === 'XII TKJ 1') {
+      namaWalasTarget = 'Rijal Nur Rahmat, S.T';
+    }
+
     card.innerHTML = `
       <div class="card-izin-header">
         <div>
@@ -648,12 +703,20 @@ function renderListApprovalIzin() {
           <button onclick="if(typeof bukaModalChat==='function') bukaModalChat('${iz.id || iz.pid}', '${iz.nama_siswa || iz.nama}')" class="btn-mini-action" style="background:#f3e8ff;color:#7c3aed;border:1px solid #ddd6fe;">💬 Chat Siswa</button>
         </div>
 
-        ${iz.status === 'pending' ? `
-          <div style="display:flex;gap:8px;">
-            <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'ditolak')" class="btn-mini-action" style="background:#ef4444;color:#fff;">✗ Tolak</button>
-            <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'disetujui')" class="btn-mini-action btn-mini-hadir">✓ Setujui Izin</button>
-          </div>
-        ` : `
+        ${iz.status === 'pending' ? (
+          canApprove ? `
+            <div style="display:flex;gap:8px;">
+              <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'ditolak')" class="btn-mini-action" style="background:#ef4444;color:#fff;">✗ Tolak</button>
+              <button onclick="prosesApprovalIzin('${iz.id || iz.pid}', 'disetujui')" class="btn-mini-action btn-mini-hadir">✓ Setujui Izin</button>
+            </div>
+          ` : `
+            <div style="display:inline-flex;align-items:center;">
+              <span class="badge-readonly-walas" style="font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;">
+                Menunggu Approval Wali Kelas [${namaWalasTarget}]
+              </span>
+            </div>
+          `
+        ) : `
           <span style="font-size:12px;color:#64748b;">Diverifikasi oleh: <strong>${iz.diverifikasi_oleh || '-'}</strong></span>
         `}
       </div>
@@ -664,12 +727,23 @@ function renderListApprovalIzin() {
 
 async function prosesApprovalIzin(idIzin, statusBaru) {
   const iz = allPerizinanData[idIzin] || {};
+  const u = guruAktif || (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+  const isAdm = u.role === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(u.email));
+  const isWalas = !isAdm && (u.role === 'walas' || u.isWalas);
+  const walasKelasNorm = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(u.walasKelasId) : u.walasKelasId) || '';
+  const kIzin = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas) : iz.kelas) || '';
+
+  if (!isAdm && (!isWalas || kIzin !== walasKelasNorm)) {
+    alert(`Otorisasi Dibatasi: Hanya Wali Kelas ${iz.kelas || ''} atau Administrator yang memiliki wewenang untuk menyetujui atau menolak perizinan siswa ini.`);
+    return;
+  }
+
   const catatan = prompt(`Masukkan catatan guru untuk verifikasi (${statusBaru}):`, statusBaru === 'disetujui' ? 'Disetujui. Cepat sembuh.' : 'Bukti kurang lengkap.');
   if (catatan === null) return;
 
   const updatePayload = {
     status: statusBaru,
-    diverifikasi_oleh: guruAktif ? guruAktif.nama : 'Wali Kelas',
+    diverifikasi_oleh: u ? (u.nama || (isWalas ? 'Wali Kelas ' + walasKelasNorm : 'Administrator')) : 'Wali Kelas',
     catatan_guru: catatan,
     updated_at: new Date().toISOString()
   };
@@ -679,11 +753,11 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
     db.ref(`perizinan/${idIzin}`).update(updatePayload).catch(() => null)
   ]);
 
-  if (typeof kirimChatPerijinan === 'function' && guruAktif) {
+  if (typeof kirimChatPerijinan === 'function' && u) {
     const teksChat = statusBaru === 'disetujui'
-      ? `✅ Perizinan Anda telah DISETUJUI oleh Wali Kelas (${guruAktif.nama}). Catatan: "${catatan}"`
-      : `❌ Perizinan Anda DITOLAK oleh Wali Kelas (${guruAktif.nama}). Alasan: "${catatan}"`;
-    kirimChatPerijinan(idIzin, { role: 'admin', nama: guruAktif.nama }, teksChat).catch(() => null);
+      ? `✅ Perizinan Anda telah DISETUJUI oleh Wali Kelas (${u.nama || 'Wali Kelas'}). Catatan: "${catatan}"`
+      : `❌ Perizinan Anda DITOLAK oleh Wali Kelas (${u.nama || 'Wali Kelas'}). Alasan: "${catatan}"`;
+    kirimChatPerijinan(idIzin, { role: 'admin', nama: u.nama || 'Wali Kelas' }, teksChat).catch(() => null);
   }
 
   if (statusBaru === 'disetujui' && iz.nisn && iz.tanggal) {
