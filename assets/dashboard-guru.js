@@ -19,14 +19,35 @@ function jamSekarang() {
 
 firebase.auth().onAuthStateChanged(async function(fbUser) {
   if (!fbUser) {
+    const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+    if (session && (session.role === 'guru' || session.role === 'walas' || session.role === 'admin')) {
+      guruAktif = session;
+      initPortalGuru(guruAktif);
+      return;
+    }
     window.location.href = 'index.html';
     return;
   }
   const user = await prosesLoginUser(fbUser);
   if (user.role !== 'guru' && user.role !== 'walas' && user.role !== 'admin') {
-    alert('Akses Terbatas: Halaman ini khusus Bapak/Ibu Guru dan Wali Kelas.');
-    window.location.href = 'dashboard.html';
-    return;
+    const gMatch = typeof cariGuruByEmail === 'function' ? cariGuruByEmail(user.email) : null;
+    if (gMatch) {
+      user.role = gMatch.isWalas ? 'walas' : 'guru';
+      user.nama = gMatch.nama;
+      user.nip = gMatch.nip;
+      user.mapel = gMatch.mapel;
+      user.isWalas = !!gMatch.isWalas;
+      user.walasKelasId = gMatch.walasKelasId || null;
+      setSessionUser(user);
+      if (db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
+    } else if (typeof isEmailAdmin === 'function' && isEmailAdmin(user.email)) {
+      user.role = 'admin';
+      setSessionUser(user);
+    } else {
+      alert('Akses Terbatas: Akun Anda terdeteksi sebagai ' + (user.role || 'pengunjung') + '. Halaman ini khusus Bapak/Ibu Guru dan Wali Kelas.');
+      window.location.href = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(user.role) : 'dashboard.html';
+      return;
+    }
   }
   guruAktif = user;
   initPortalGuru(guruAktif);

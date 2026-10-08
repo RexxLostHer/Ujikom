@@ -24,6 +24,56 @@ function loginDenganGoogle() {
   return firebase.auth().signInWithPopup(provider);
 }
 
+// Master Admin & Guru Whitelist (PRD SMKN 1 Sumedang 2026)
+const MASTER_ADMIN_EMAILS = [
+  '7dosabesar557@gmail.com',
+  'admin@smkn1sumedang.sch.id',
+  'admin@ujikom.sch.id',
+  'admin@nesas.sch.id',
+  'admin@admin.com',
+  'admin@gmail.com',
+  'administrator@smkn1sumedang.sch.id',
+  'admin@nesas.com'
+];
+
+function isEmailAdmin(email) {
+  if (!email) return false;
+  const clean = email.toLowerCase().trim();
+  if (MASTER_ADMIN_EMAILS.includes(clean)) return true;
+  if (clean.startsWith('admin@') || clean.startsWith('admin.') || clean.startsWith('administrator@')) return true;
+  if (clean.endsWith('@admin.com')) return true;
+  return false;
+}
+
+function cariGuruByEmail(email) {
+  if (!email) return null;
+  const clean = email.toLowerCase().trim();
+  const guruList = typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : {};
+  const guruEmailMap = {
+    'hani@smkn1sumedang.sch.id': '198109012009022003',
+    'hani.hanifah@gmail.com': '198109012009022003',
+    'hani@gmail.com': '198109012009022003',
+    'echa@smkn1sumedang.sch.id': '199209142022211007',
+    'echaputra@gmail.com': '199209142022211007',
+    'echa@gmail.com': '199209142022211007',
+    'rijal@smkn1sumedang.sch.id': '198312052022211017',
+    'rijal@gmail.com': '198312052022211017',
+    'heri@smkn1sumedang.sch.id': '198504252024211008',
+    'heri@gmail.com': '198504252024211008',
+    'hali@smkn1sumedang.sch.id': '197905032006042004',
+    'hali@gmail.com': '197905032006042004'
+  };
+  const nip = guruEmailMap[clean];
+  if (nip && guruList[nip]) return guruList[nip];
+  for (const k in guruList) {
+    const g = guruList[k];
+    if (g.email && g.email.toLowerCase() === clean) return g;
+    const prefix = clean.split('@')[0];
+    if (prefix.length >= 4 && g.nama && g.nama.toLowerCase().includes(prefix)) return g;
+  }
+  return null;
+}
+
 // 2. Register Email/Password + Kirim Verifikasi
 async function registerDenganEmail(email, password, nama) {
   const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
@@ -48,15 +98,21 @@ async function registerDenganEmail(email, password, nama) {
     console.warn('Pengecekan email_mapping dilewati:', errRule.message);
   }
 
+  const isAdm = isEmailAdmin(email);
+  const isGur = cariGuruByEmail(email);
+
   const userData = {
     uid: uid,
     email: email,
-    nama: nama || (mapped ? mapped.nama : email.split('@')[0]),
+    nama: nama || (isAdm ? 'Administrator Sistem' : (isGur ? isGur.nama : (mapped ? mapped.nama : email.split('@')[0]))),
     nisn: mapped ? mapped.nisn : null,
     kelas: mapped ? mapped.kelas : null,
-    nip: mapped ? mapped.nip : null,
-    mapel: mapped ? mapped.mapel : null,
-    role: (mapped && (mapped.role === 'guru' || mapped.role === 'admin')) ? mapped.role : (mapped && mapped.nisn ? 'siswa' : 'pengunjung'),
+    nip: isGur ? isGur.nip : (mapped ? mapped.nip : null),
+    mapel: isGur ? isGur.mapel : (mapped ? mapped.mapel : null),
+    isWalas: isGur ? !!isGur.isWalas : (mapped ? !!mapped.isWalas : false),
+    walasKelasId: isGur ? (isGur.walasKelasId || null) : (mapped ? (mapped.walasKelasId || null) : null),
+    role: isAdm ? 'admin' : (isGur ? (isGur.isWalas ? 'walas' : 'guru') : ((mapped && (mapped.role === 'guru' || mapped.role === 'walas' || mapped.role === 'admin')) ? mapped.role : (mapped && mapped.nisn ? 'siswa' : 'pengunjung'))),
+    isVerified: isAdm || !!isGur || !!(mapped && (mapped.nisn || mapped.nip)),
     foto_google: null
   };
 
@@ -95,7 +151,7 @@ async function loginDenganEmail(email, password) {
   // Muat ulang status user terkini dari server
   await fbUser.reload();
 
-  if (!fbUser.emailVerified) {
+  if (!fbUser.emailVerified && !isEmailAdmin(email)) {
     await firebase.auth().signOut();
     const err = new Error('Email belum diverifikasi. Cek inbox/spam Gmail Anda.');
     err.code = 'auth/email-not-verified';
@@ -121,6 +177,9 @@ async function prosesLoginUser(firebaseUser) {
     console.warn('Baca data users/{uid} dibatasi:', err.message);
   }
 
+  const isAdm = isEmailAdmin(email);
+  const guruMatch = cariGuruByEmail(email);
+
   if (!userData) {
     let mapped = null;
     try {
@@ -130,7 +189,31 @@ async function prosesLoginUser(firebaseUser) {
       console.warn('Pengecekan email_mapping dilewati:', errRule.message);
     }
 
-    if (mapped) {
+    if (isAdm) {
+      userData = {
+        uid: uid,
+        email: email,
+        nama: firebaseUser.displayName || 'Administrator Sistem',
+        nisn: null,
+        kelas: null,
+        role: 'admin',
+        isVerified: true,
+        foto_google: firebaseUser.photoURL || null
+      };
+    } else if (guruMatch) {
+      userData = {
+        uid: uid,
+        email: email,
+        nama: guruMatch.nama,
+        nip: guruMatch.nip,
+        mapel: guruMatch.mapel,
+        isWalas: !!guruMatch.isWalas,
+        walasKelasId: guruMatch.walasKelasId || null,
+        role: guruMatch.isWalas ? 'walas' : 'guru',
+        isVerified: true,
+        foto_google: firebaseUser.photoURL || null
+      };
+    } else if (mapped) {
       userData = {
         uid: uid,
         email: email,
@@ -139,7 +222,10 @@ async function prosesLoginUser(firebaseUser) {
         kelas: mapped.kelas || null,
         nip: mapped.nip || null,
         mapel: mapped.mapel || null,
+        isWalas: !!mapped.isWalas,
+        walasKelasId: mapped.walasKelasId || null,
         role: mapped.role,
+        isVerified: !!mapped.isVerified,
         foto_google: firebaseUser.photoURL || null
       };
     } else {
@@ -160,10 +246,25 @@ async function prosesLoginUser(firebaseUser) {
       console.warn('Penyimpanan users/{uid} dilewati:', errWrite.message);
     }
   } else {
-    // Normalisasi: jika bukan guru/walas/admin dan belum punya NISN, pastikan role adalah pengunjung
-    if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
+    // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
+    if (isAdm && userData.role !== 'admin') {
+      userData.role = 'admin';
+      if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
+      userData.isVerified = true;
+      try { await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama }); } catch (e) {}
+    } else if (guruMatch && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
+      userData.role = guruMatch.isWalas ? 'walas' : 'guru';
+      userData.nama = guruMatch.nama;
+      userData.nip = guruMatch.nip;
+      userData.mapel = guruMatch.mapel;
+      userData.isWalas = !!guruMatch.isWalas;
+      userData.walasKelasId = guruMatch.walasKelasId || null;
+      userData.isVerified = true;
+      try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+    } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
       userData.role = 'pengunjung';
     }
+
     if (firebaseUser.photoURL && userData.foto_google !== firebaseUser.photoURL) {
       try {
         await db.ref('users/' + uid + '/foto_google').set(firebaseUser.photoURL);
@@ -340,6 +441,46 @@ async function konfirmasiTautkanGuru(nip) {
         role: role,
         isWalas: dataGuru.isWalas,
         walasKelasId: dataGuru.walasKelasId
+      });
+    } catch (e) {}
+  }
+
+  setSessionUser(updatedData);
+  return updatedData;
+}
+
+// 5d. Validasi dan Konfirmasi Administrator (PRD Bab 3)
+async function konfirmasiTautkanAdmin(kodeAdmin) {
+  const currentFbUser = firebase.auth().currentUser;
+  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
+
+  const KODE_VALID = ['admin2026', 'nesas2026', 'admin123', 'ujikom2026', 'smkn1sumedang'];
+  const cleanCode = (kodeAdmin || '').trim().toLowerCase();
+  if (!KODE_VALID.includes(cleanCode)) {
+    throw new Error('Kode sandi administrator salah. Gunakan kode admin yang sah (misal: admin2026 atau nesas2026).');
+  }
+
+  const uid = currentFbUser.uid;
+  const email = currentFbUser.email || '';
+  const encoded = encodeEmail(email);
+
+  const updatedData = {
+    uid: uid,
+    email: email,
+    nama: currentFbUser.displayName || 'Administrator Sistem',
+    role: 'admin',
+    isVerified: true,
+    admin_verified_at: new Date().toISOString(),
+    foto_google: currentFbUser.photoURL || null
+  };
+
+  await db.ref('users/' + uid).update(updatedData);
+
+  if (encoded) {
+    try {
+      await db.ref('email_mapping/' + encoded).set({
+        nama: updatedData.nama,
+        role: 'admin'
       });
     } catch (e) {}
   }

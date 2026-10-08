@@ -148,8 +148,11 @@ function initInteractive3DCard() {
 async function initDashboard(user) {
   // Header Profile
   document.getElementById('namaUser').textContent = user.nama;
-  if (user.role === 'guru') {
-    document.getElementById('infoSubUser').textContent = `👨‍🏫 Guru Pengajar • Mapel: ${user.mapel || '-'} • NIP: ${user.nip || '-'}`;
+  if (user.role === 'guru' || user.role === 'walas') {
+    const titleRole = user.role === 'walas' ? `Wali Kelas (${user.walasKelasId || 'Binaan'})` : 'Guru Pengajar';
+    document.getElementById('infoSubUser').textContent = `👨‍🏫 ${titleRole} • Mapel: ${user.mapel || '-'} • NIP: ${user.nip || '-'}`;
+  } else if (user.role === 'admin') {
+    document.getElementById('infoSubUser').textContent = `🛡️ Administrator Sistem SMKN 1 Sumedang`;
   } else {
     document.getElementById('infoSubUser').textContent = user.email || 'Portal Presensi & Informasi Siswa';
   }
@@ -164,14 +167,16 @@ async function initDashboard(user) {
       (user.nama || 'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
 
-  // Jika guru atau admin, tampilkan link ke portal guru
-  if (user.role === 'guru' || user.role === 'admin') {
-    document.getElementById('linkGuru').style.display = 'inline-flex';
+  // Jika guru, walas atau admin, tampilkan link ke portal guru
+  if (user.role === 'guru' || user.role === 'walas' || user.role === 'admin') {
+    const lGuru = document.getElementById('linkGuru');
+    if (lGuru) lGuru.style.display = 'inline-flex';
   }
 
   // Jika admin, tampilkan link ke panel admin
   if (user.role === 'admin') {
-    document.getElementById('linkAdmin').style.display = 'inline-flex';
+    const lAdmin = document.getElementById('linkAdmin');
+    if (lAdmin) lAdmin.style.display = 'inline-flex';
   }
 
   // Set tanggal default ijin
@@ -866,7 +871,7 @@ let rekapUserCache = [];
 let rekapRangeAktif = 'hari_ini';
 
 function initBerandaOverview(user) {
-  const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru');
+  const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru' && user.role !== 'walas');
 
   // Dengarkan status operasional kelas siswa atau kelas pilot default
   const kelasTarget = (user && user.kelas) ? user.kelas : 'XII RPL 1';
@@ -888,7 +893,14 @@ function initBerandaOverview(user) {
   const greetingEl = document.getElementById('greetingText');
   const subtextEl = document.getElementById('greetingSubtext');
 
-  if (isPengunjung) {
+  if (user.role === 'admin') {
+    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Administrator'}! 🛡️`;
+    if (subtextEl) subtextEl.innerHTML = `Akun Administrator Sistem Aktif. <a href="admin.html" style="color:#4f46e5;font-weight:700;text-decoration:underline;">Buka Panel Admin &rarr;</a>`;
+  } else if (user.role === 'guru' || user.role === 'walas') {
+    const title = user.role === 'walas' ? `Wali Kelas ${user.walasKelasId || ''}` : 'Guru Pengajar';
+    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Bapak/Ibu Guru'}! 👨‍🏫`;
+    if (subtextEl) subtextEl.innerHTML = `Akun ${title} Aktif. <a href="dashboard-guru.html" style="color:#4f46e5;font-weight:700;text-decoration:underline;">Buka Portal Guru &rarr;</a>`;
+  } else if (isPengunjung) {
     if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Pengunjung'}! 👋`;
     if (subtextEl) subtextEl.textContent = `Status Akun: Pengunjung / Tamu Sekolah (Belum Terverifikasi)`;
   } else {

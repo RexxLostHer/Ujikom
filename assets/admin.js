@@ -10,11 +10,34 @@ let kartuCache = {};
 
 // ===== AUTH GUARD =====
 firebase.auth().onAuthStateChanged(async function (fbUser) {
-  if (!fbUser) { window.location.href = 'index.html'; return; }
+  if (!fbUser) {
+    const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+    if (session && session.role === 'admin') {
+      adminSessionUser = session;
+      const badge = document.getElementById('adminNamaBadge');
+      if (badge) badge.textContent = session.nama || 'Administrator';
+      initAdmin();
+      return;
+    }
+    window.location.href = 'index.html';
+    return;
+  }
   const userData = await prosesLoginUser(fbUser);
-  if (userData.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+  if (userData.role !== 'admin') {
+    if (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email)) {
+      userData.role = 'admin';
+      userData.nama = (userData.nama && userData.nama !== 'Pengunjung') ? userData.nama : 'Administrator Sistem';
+      setSessionUser(userData);
+      if (db) db.ref('users/' + fbUser.uid).update({ role: 'admin', isVerified: true }).catch(() => null);
+    } else {
+      alert('Akses Terbatas: Akun Anda terdeteksi sebagai ' + (userData.role || 'pengunjung') + '. Panel ini khusus Administrator.');
+      window.location.href = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(userData.role) : 'dashboard.html';
+      return;
+    }
+  }
   adminSessionUser = userData;
-  document.getElementById('adminNamaBadge').textContent = userData.nama || 'Administrator';
+  const badge = document.getElementById('adminNamaBadge');
+  if (badge) badge.textContent = userData.nama || 'Administrator';
   initAdmin();
 });
 

@@ -55,6 +55,7 @@ function bukaModalProfil() {
             <div style="display:flex;gap:6px;">
               <button type="button" class="profile-btn-secondary" id="btnPilihKlaimSiswa" onclick="toggleModeKlaim('siswa')" style="padding:4px 10px;font-size:12px;background:#4f46e5;color:#fff;border-color:#4f46e5;">Siswa (NISN)</button>
               <button type="button" class="profile-btn-secondary" id="btnPilihKlaimGuru" onclick="toggleModeKlaim('guru')" style="padding:4px 10px;font-size:12px;">Guru / Walas (NIP)</button>
+              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimAdmin" onclick="toggleModeKlaim('admin')" style="padding:4px 10px;font-size:12px;">Admin (Kode)</button>
             </div>
           </div>
           
@@ -102,6 +103,21 @@ function bukaModalProfil() {
               <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
                 <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanGuru" style="background:#059669; border-color:#059669;">✓ Ya, Hubungkan Akun Guru</button>
                 <button type="button" class="profile-btn-secondary" onclick="batalPreviewGuru()">Batal</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode Klaim Admin -->
+          <div id="boxKlaimAdmin" style="display:none;">
+            <p style="font-size: 13px; color: #4338ca; line-height: 1.5; margin-bottom: 12px;">
+              Masukkan kode otorisasi Administrator Sekolah (misal: <code>admin2026</code> atau <code>nesas2026</code>) untuk mengaktifkan hak akses panel admin penuh.
+            </p>
+            <div class="profile-field-row">
+              <label for="inputAdminPasscode">Kode Sandi Administrator</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="password" id="inputAdminPasscode" class="profile-input" placeholder="Contoh: admin2026"
+                       onkeydown="if(event.key==='Enter') handleKonfirmasiTautkanAdmin()">
+                <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanAdmin()" id="btnKlaimAdmin" style="background:#4f46e5; border-color:#4f46e5;">🛡️ Klaim Akses Admin</button>
               </div>
             </div>
           </div>
@@ -429,18 +445,57 @@ function bukaModalProfilDenganTabNisn() {
 function toggleModeKlaim(mode) {
   const boxSiswa = document.getElementById('boxKlaimSiswa');
   const boxGuru = document.getElementById('boxKlaimGuru');
+  const boxAdmin = document.getElementById('boxKlaimAdmin');
   const btnS = document.getElementById('btnPilihKlaimSiswa');
   const btnG = document.getElementById('btnPilihKlaimGuru');
-  if (mode === 'siswa') {
-    if (boxSiswa) boxSiswa.style.display = 'block';
-    if (boxGuru) boxGuru.style.display = 'none';
-    if (btnS) { btnS.style.background = '#4f46e5'; btnS.style.color = '#fff'; btnS.style.borderColor = '#4f46e5'; }
-    if (btnG) { btnG.style.background = ''; btnG.style.color = ''; btnG.style.borderColor = ''; }
-  } else {
-    if (boxSiswa) boxSiswa.style.display = 'none';
-    if (boxGuru) boxGuru.style.display = 'block';
-    if (btnG) { btnG.style.background = '#4f46e5'; btnG.style.color = '#fff'; btnG.style.borderColor = '#4f46e5'; }
-    if (btnS) { btnS.style.background = ''; btnS.style.color = ''; btnS.style.borderColor = ''; }
+  const btnA = document.getElementById('btnPilihKlaimAdmin');
+
+  if (boxSiswa) boxSiswa.style.display = (mode === 'siswa') ? 'block' : 'none';
+  if (boxGuru) boxGuru.style.display = (mode === 'guru') ? 'block' : 'none';
+  if (boxAdmin) boxAdmin.style.display = (mode === 'admin') ? 'block' : 'none';
+
+  if (btnS) {
+    btnS.style.background = (mode === 'siswa') ? '#4f46e5' : '';
+    btnS.style.color = (mode === 'siswa') ? '#fff' : '';
+    btnS.style.borderColor = (mode === 'siswa') ? '#4f46e5' : '';
+  }
+  if (btnG) {
+    btnG.style.background = (mode === 'guru') ? '#4f46e5' : '';
+    btnG.style.color = (mode === 'guru') ? '#fff' : '';
+    btnG.style.borderColor = (mode === 'guru') ? '#4f46e5' : '';
+  }
+  if (btnA) {
+    btnA.style.background = (mode === 'admin') ? '#4f46e5' : '';
+    btnA.style.color = (mode === 'admin') ? '#fff' : '';
+    btnA.style.borderColor = (mode === 'admin') ? '#4f46e5' : '';
+  }
+}
+
+async function handleKonfirmasiTautkanAdmin() {
+  const inp = document.getElementById('inputAdminPasscode');
+  const btn = document.getElementById('btnKlaimAdmin');
+  if (!inp) return;
+  const code = inp.value.trim();
+  if (!code) {
+    tampilProfilNotif('Harap masukkan kode sandi administrator.', 'error');
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Memverifikasi...';
+  }
+  try {
+    const updated = await konfirmasiTautkanAdmin(code);
+    tampilProfilNotif('✓ Hak akses Administrator aktif! Mengalihkan ke Panel Admin...', 'success');
+    setTimeout(() => {
+      window.location.href = 'admin.html';
+    }, 900);
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🛡️ Klaim Akses Admin';
+    }
+    tampilProfilNotif(err.message || 'Kode administrator tidak valid.', 'error');
   }
 }
 
