@@ -675,11 +675,11 @@ function renderListApprovalIzin() {
     if (typeof DEFAULT_STATUS_KELAS !== 'undefined' && DEFAULT_STATUS_KELAS[kIzin] && DEFAULT_STATUS_KELAS[kIzin].walasNama) {
       namaWalasTarget = DEFAULT_STATUS_KELAS[kIzin].walasNama;
     } else if (kIzin === 'XII RPL 1') {
-      namaWalasTarget = 'Hani Hanifah, S.Si';
+      namaWalasTarget = 'Rijal Nur Rahmat, S.T';
     } else if (kIzin === 'XII RPL 2') {
       namaWalasTarget = 'Muhammad Echa Putra, S.Kom.Gr';
-    } else if (kIzin === 'XII TKJ 1') {
-      namaWalasTarget = 'Rijal Nur Rahmat, S.T';
+    } else if (kIzin === 'XII TKJ 2' || kIzin === 'XII TKJ 1') {
+      namaWalasTarget = 'Heri Anggara, S.Kom';
     }
 
     card.innerHTML = `

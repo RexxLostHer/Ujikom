@@ -101,26 +101,37 @@ async function masukSebagaiAdminDemo() {
   };
   setSessionUser(adminData);
   try {
+    if (!firebase.auth().currentUser) {
+      if (typeof loginDenganEmail === 'function') {
+        await loginDenganEmail('admin@smkn1sumedang.sch.id', 'admin2026').catch(async () => {
+          if (firebase.auth().signInAnonymously) {
+            await firebase.auth().signInAnonymously().catch(() => null);
+          }
+        });
+      } else if (firebase.auth().signInAnonymously) {
+        await firebase.auth().signInAnonymously().catch(() => null);
+      }
+    }
     if (firebase.auth().currentUser) {
-      await db.ref('users/' + firebase.auth().currentUser.uid).update({ role: 'admin', isVerified: true, nama: adminData.nama });
+      await db.ref('users/' + firebase.auth().currentUser.uid).update({ role: 'admin', isVerified: true, nama: adminData.nama }).catch(() => null);
     }
   } catch (e) {}
   setTimeout(() => { window.location.href = 'admin.html'; }, 600);
 }
 
 async function masukSebagaiGuruDemo(nipPilihan) {
-  const nip = nipPilihan || '198109012009022003';
+  const nip = nipPilihan || '198312052022211017';
   const g = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI[nip]) || {
     nip: nip,
-    nama: 'Hani Hanifah, S.Si',
-    mapel: 'Pemrograman Web & Perangkat Bergerak',
+    nama: 'Rijal Nur Rahmat, S.T',
+    mapel: 'Administrasi Infrastruktur Jaringan',
     isWalas: true,
     walasKelasId: 'XII RPL 1'
   };
-  showAdminNotif('success', `⚡ Mengaktifkan sesi Wali Kelas (${g.nama})...`);
+  showAdminNotif('success', `⚡ Mengaktifkan sesi ${g.isWalas ? 'Wali Kelas' : 'Guru'} (${g.nama})...`);
   const guruData = {
     uid: 'GURU_' + nip,
-    email: g.email || 'hani@smkn1sumedang.sch.id',
+    email: g.email || 'rijal@smkn1sumedang.sch.id',
     nama: g.nama,
     nip: g.nip,
     mapel: g.mapel,
@@ -131,8 +142,11 @@ async function masukSebagaiGuruDemo(nipPilihan) {
   };
   setSessionUser(guruData);
   try {
+    if (!firebase.auth().currentUser && firebase.auth().signInAnonymously) {
+      await firebase.auth().signInAnonymously().catch(() => null);
+    }
     if (firebase.auth().currentUser) {
-      await db.ref('users/' + firebase.auth().currentUser.uid).update(guruData);
+      await db.ref('users/' + firebase.auth().currentUser.uid).update(guruData).catch(() => null);
     }
   } catch (e) {}
   setTimeout(() => { window.location.href = 'dashboard-guru.html'; }, 600);

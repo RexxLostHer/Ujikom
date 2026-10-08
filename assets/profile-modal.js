@@ -68,25 +68,52 @@ function bukaModalProfil() {
               </div>
             </button>
 
-            <!-- 2. Wali Kelas XII RPL 2 -->
-            <button type="button" onclick="pilihPresetRole('walas')" class="profile-preset-btn ${user.role === 'walas' ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${user.role === 'walas' ? '#10b981' : '#e2e8f0'};border-radius:12px;background:${user.role === 'walas' ? '#dcfce7' : '#ffffff'};cursor:pointer;text-align:left;">
+            <!-- 2. Wali Kelas XII RPL 1 -->
+            <button type="button" onclick="pilihPresetRole('walas', 'rpl1')" class="profile-preset-btn ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? '#10b981' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? '#dcfce7' : '#ffffff'};cursor:pointer;text-align:left;">
               <span style="font-size:20px;">👨‍🏫</span>
               <div>
-                <div style="font-weight:800;font-size:13px;color:#14532d;">Wali Kelas XII RPL 2</div>
+                <div style="font-weight:800;font-size:13px;color:#14532d;">Walas XII RPL 1</div>
+                <div style="font-size:11px;color:#64748b;">Rijal Nur Rahmat, S.T</div>
+              </div>
+            </button>
+
+            <!-- 3. Wali Kelas XII RPL 2 -->
+            <button type="button" onclick="pilihPresetRole('walas')" class="profile-preset-btn ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 2') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 2') ? '#10b981' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'walas' && user.walasKelasId === 'XII RPL 2') ? '#dcfce7' : '#ffffff'};cursor:pointer;text-align:left;">
+              <span style="font-size:20px;">👨‍🏫</span>
+              <div>
+                <div style="font-weight:800;font-size:13px;color:#14532d;">Walas XII RPL 2</div>
                 <div style="font-size:11px;color:#64748b;">M. Echa Putra, S.Kom.Gr</div>
               </div>
             </button>
 
-            <!-- 3. Guru Pengajar XII RPL 1 -->
-            <button type="button" onclick="pilihPresetRole('guru')" class="profile-preset-btn ${user.role === 'guru' ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${user.role === 'guru' ? '#3b82f6' : '#e2e8f0'};border-radius:12px;background:${user.role === 'guru' ? '#e0e7ff' : '#ffffff'};cursor:pointer;text-align:left;">
-              <span style="font-size:20px;">👩‍🏫</span>
+            <!-- 4. Wali Kelas XII TKJ 2 -->
+            <button type="button" onclick="pilihPresetRole('walas', 'tkj2')" class="profile-preset-btn ${(user.role === 'walas' && user.walasKelasId === 'XII TKJ 2') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'walas' && user.walasKelasId === 'XII TKJ 2') ? '#10b981' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'walas' && user.walasKelasId === 'XII TKJ 2') ? '#dcfce7' : '#ffffff'};cursor:pointer;text-align:left;">
+              <span style="font-size:20px;">👨‍🏫</span>
               <div>
-                <div style="font-weight:800;font-size:13px;color:#1e3a8a;">Guru Pengajar XII RPL 1</div>
-                <div style="font-size:11px;color:#64748b;">Hani Hanifah, S.Si (Read-Only)</div>
+                <div style="font-weight:800;font-size:13px;color:#14532d;">Walas XII TKJ 2</div>
+                <div style="font-size:11px;color:#64748b;">Heri Anggara, S.Kom</div>
               </div>
             </button>
 
-            <!-- 4. Siswa Resmi: M. Ihsan Athallah -->
+            <!-- 5. Guru Pengajar: Hani Hanifah, S.Si -->
+            <button type="button" onclick="pilihPresetRole('guru')" class="profile-preset-btn ${(user.role === 'guru' && user.nip === '198109012009022003') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'guru' && user.nip === '198109012009022003') ? '#3b82f6' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'guru' && user.nip === '198109012009022003') ? '#e0e7ff' : '#ffffff'};cursor:pointer;text-align:left;">
+              <span style="font-size:20px;">👩‍🏫</span>
+              <div>
+                <div style="font-weight:800;font-size:13px;color:#1e3a8a;">Guru: Hani Hanifah, S.Si</div>
+                <div style="font-size:11px;color:#64748b;">Pengajar PWB (Read-Only)</div>
+              </div>
+            </button>
+
+            <!-- 6. Guru Pengajar: Hali, ST -->
+            <button type="button" onclick="pilihPresetRole('guru', 'hali')" class="profile-preset-btn ${(user.role === 'guru' && user.nip === '197905032006042004') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'guru' && user.nip === '197905032006042004') ? '#3b82f6' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'guru' && user.nip === '197905032006042004') ? '#e0e7ff' : '#ffffff'};cursor:pointer;text-align:left;">
+              <span style="font-size:20px;">👨‍🏫</span>
+              <div>
+                <div style="font-weight:800;font-size:13px;color:#1e3a8a;">Guru: Hali, ST</div>
+                <div style="font-size:11px;color:#64748b;">Pengajar RPL (Read-Only)</div>
+              </div>
+            </button>
+
+            <!-- 7. Siswa Resmi: M. Ihsan Athallah -->
             <button type="button" onclick="pilihPresetRole('siswa', 'ihsan')" class="profile-preset-btn ${(user.role === 'siswa' && user.nisn === '0098263610') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'siswa' && user.nisn === '0098263610') ? '#6366f1' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'siswa' && user.nisn === '0098263610') ? '#f5f3ff' : '#ffffff'};cursor:pointer;text-align:left;">
               <span style="font-size:20px;">🎓</span>
               <div>
@@ -95,7 +122,7 @@ function bukaModalProfil() {
               </div>
             </button>
 
-            <!-- 4b. Siswa Resmi: Rizky Ramadhani -->
+            <!-- 7b. Siswa Resmi: Rizky Ramadhani -->
             <button type="button" onclick="pilihPresetRole('siswa', 'rizky')" class="profile-preset-btn ${(user.role === 'siswa' && user.nisn === '0082104129') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'siswa' && user.nisn === '0082104129') ? '#6366f1' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'siswa' && user.nisn === '0082104129') ? '#f5f3ff' : '#ffffff'};cursor:pointer;text-align:left;">
               <span style="font-size:20px;">🎓</span>
               <div>
@@ -104,7 +131,7 @@ function bukaModalProfil() {
               </div>
             </button>
 
-            <!-- 5. Pengunjung / Tamu Sekolah -->
+            <!-- 8. Pengunjung / Tamu Sekolah -->
             <button type="button" onclick="pilihPresetRole('pengunjung')" class="profile-preset-btn ${isPengunjung ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${isPengunjung ? '#64748b' : '#e2e8f0'};border-radius:12px;background:${isPengunjung ? '#f1f5f9' : '#ffffff'};cursor:pointer;text-align:left;">
               <span style="font-size:20px;">👤</span>
               <div>
@@ -669,29 +696,69 @@ async function pilihPresetRole(role, subType) {
       walasKelasId: null
     };
   } else if (role === 'walas') {
-    payload = {
-      role: 'walas',
-      nama: 'Muhammad Echa Putra, S.Kom.Gr',
-      nip: '199209142022211007',
-      mapel: 'Basis Data & Pemodelan RPL',
-      isWalas: true,
-      walasKelasId: 'XII RPL 2',
-      isVerified: true,
-      nisn: null,
-      kelas: null
-    };
+    if (subType === 'rpl1') {
+      payload = {
+        role: 'walas',
+        nama: 'Rijal Nur Rahmat, S.T',
+        nip: '198312052022211017',
+        mapel: 'Administrasi Infrastruktur Jaringan',
+        isWalas: true,
+        walasKelasId: 'XII RPL 1',
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      };
+    } else if (subType === 'tkj2') {
+      payload = {
+        role: 'walas',
+        nama: 'Heri Anggara, S.Kom',
+        nip: '198504252024211008',
+        mapel: 'Teknologi Jaringan & Komputer',
+        isWalas: true,
+        walasKelasId: 'XII TKJ 2',
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      };
+    } else {
+      payload = {
+        role: 'walas',
+        nama: 'Muhammad Echa Putra, S.Kom.Gr',
+        nip: '199209142022211007',
+        mapel: 'Basis Data & Pemodelan RPL',
+        isWalas: true,
+        walasKelasId: 'XII RPL 2',
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      };
+    }
   } else if (role === 'guru') {
-    payload = {
-      role: 'guru',
-      nama: 'Hani Hanifah, S.Si',
-      nip: '198109012009022003',
-      mapel: 'Pemrograman Web & Perangkat Bergerak',
-      isWalas: false,
-      walasKelasId: null,
-      isVerified: true,
-      nisn: null,
-      kelas: null
-    };
+    if (subType === 'hali') {
+      payload = {
+        role: 'guru',
+        nama: 'Hali, ST',
+        nip: '197905032006042004',
+        mapel: 'Informatika & Rekayasa Perangkat Lunak',
+        isWalas: false,
+        walasKelasId: null,
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      };
+    } else {
+      payload = {
+        role: 'guru',
+        nama: 'Hani Hanifah, S.Si',
+        nip: '198109012009022003',
+        mapel: 'Pemrograman Web & Perangkat Bergerak',
+        isWalas: false,
+        walasKelasId: null,
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      };
+    }
   } else if (role === 'siswa') {
     if (subType === 'rizky') {
       payload = {

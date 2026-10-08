@@ -79,15 +79,23 @@ function parseSiswaSnapshot(rawVal) {
   return result;
 }
 
-// Master Guru & Walas Resmi SMKN 1 Sumedang (PRD & Laporan Projek)
+// Master Guru & Walas Resmi SMKN 1 Sumedang (PRD & Penetapan Resmi)
 var MASTER_GURU_RESMI = {
   '198109012009022003': {
     nip: '198109012009022003',
     nama: 'Hani Hanifah, S.Si',
     mapel: 'Pemrograman Web & Perangkat Bergerak',
     rfidUid: 'E5F6A7B8',
-    isWalas: true,
-    walasKelasId: 'XII RPL 1'
+    isWalas: false,
+    walasKelasId: null
+  },
+  '197905032006042004': {
+    nip: '197905032006042004',
+    nama: 'Hali, ST',
+    mapel: 'Informatika & Rekayasa Perangkat Lunak',
+    rfidUid: 'S1T2U3V4',
+    isWalas: false,
+    walasKelasId: null
   },
   '199209142022211007': {
     nip: '199209142022211007',
@@ -103,23 +111,15 @@ var MASTER_GURU_RESMI = {
     mapel: 'Administrasi Infrastruktur Jaringan',
     rfidUid: 'K3L4M5N6',
     isWalas: true,
-    walasKelasId: 'XII TKJ 1'
+    walasKelasId: 'XII RPL 1'
   },
   '198504252024211008': {
     nip: '198504252024211008',
     nama: 'Heri Anggara, S.Kom',
-    mapel: 'Produk Kreatif & Kewirausahaan RPL',
+    mapel: 'Teknologi Jaringan & Komputer',
     rfidUid: 'O7P8Q9R0',
-    isWalas: false,
-    walasKelasId: null
-  },
-  '197905032006042004': {
-    nip: '197905032006042004',
-    nama: 'Hali, ST',
-    mapel: 'Informatika & Rekayasa Perangkat Lunak',
-    rfidUid: 'S1T2U3V4',
-    isWalas: false,
-    walasKelasId: null
+    isWalas: true,
+    walasKelasId: 'XII TKJ 2'
   }
 };
 
@@ -149,10 +149,10 @@ var DEFAULT_STATUS_KELAS = {
     id: 'XII_RPL_1',
     nama: 'XII RPL 1',
     status: 'belajar',
-    activeMapel: 'Pemrograman Web & Perangkat Bergerak',
-    activeTeacherId: '198109012009022003',
-    activeTeacherNama: 'Hani Hanifah, S.Si',
-    walasNama: 'Hani Hanifah, S.Si',
+    activeMapel: 'Administrasi Infrastruktur Jaringan',
+    activeTeacherId: '198312052022211017',
+    activeTeacherNama: 'Rijal Nur Rahmat, S.T',
+    walasNama: 'Rijal Nur Rahmat, S.T',
     updatedAt: new Date().toISOString()
   },
   'XII RPL 2': {
@@ -169,10 +169,20 @@ var DEFAULT_STATUS_KELAS = {
     id: 'XII_TKJ_1',
     nama: 'XII TKJ 1',
     status: 'belajar',
-    activeMapel: 'Administrasi Infrastruktur Jaringan',
-    activeTeacherId: '198312052022211017',
-    activeTeacherNama: 'Rijal Nur Rahmat, S.T',
-    walasNama: 'Rijal Nur Rahmat, S.T',
+    activeMapel: 'Teknologi Jaringan & Komputer',
+    activeTeacherId: '198504252024211008',
+    activeTeacherNama: 'Heri Anggara, S.Kom',
+    walasNama: 'Heri Anggara, S.Kom',
+    updatedAt: new Date().toISOString()
+  },
+  'XII TKJ 2': {
+    id: 'XII_TKJ_2',
+    nama: 'XII TKJ 2',
+    status: 'belajar',
+    activeMapel: 'Teknologi Jaringan & Komputer',
+    activeTeacherId: '198504252024211008',
+    activeTeacherNama: 'Heri Anggara, S.Kom',
+    walasNama: 'Heri Anggara, S.Kom',
     updatedAt: new Date().toISOString()
   }
 };
@@ -195,31 +205,31 @@ function evaluasiAmbangBatasWaktu(waktuStr) {
 
 // Inisialisasi data penting jika belum ada di Firebase
 async function bootstrapSistemUjikom() {
-  if (typeof db === 'undefined') return;
+  if (typeof db === 'undefined' || !db) return;
   try {
-    const snapKelas = await db.ref('kelas').once('value');
-    if (!snapKelas.exists()) {
-      await db.ref('kelas').set(DEFAULT_STATUS_KELAS);
+    const snapKelas = await db.ref('kelas').once('value').catch(() => null);
+    if (snapKelas && !snapKelas.exists()) {
+      await db.ref('kelas').set(DEFAULT_STATUS_KELAS).catch(() => null);
     }
-    const snapGuru = await db.ref('guru').once('value');
-    if (!snapGuru.exists()) {
-      await db.ref('guru').set(MASTER_GURU_RESMI);
+    const snapGuru = await db.ref('guru').once('value').catch(() => null);
+    if (snapGuru && !snapGuru.exists()) {
+      await db.ref('guru').set(MASTER_GURU_RESMI).catch(() => null);
     }
-    const snapKartuA = await db.ref('kartu/' + KARTU_UJI_COBA.kartuA.uid).once('value');
-    if (!snapKartuA.exists()) {
+    const snapKartuA = await db.ref('kartu/' + KARTU_UJI_COBA.kartuA.uid).once('value').catch(() => null);
+    if (snapKartuA && !snapKartuA.exists()) {
       await db.ref('kartu/' + KARTU_UJI_COBA.kartuA.uid).set({
         nisn: KARTU_UJI_COBA.kartuA.nisn,
         tipe: 'siswa',
         device_id: 'rpi-gateway-01'
-      });
+      }).catch(() => null);
     }
-    const snapKartuB = await db.ref('kartu/' + KARTU_UJI_COBA.kartuB.uid).once('value');
-    if (!snapKartuB.exists()) {
+    const snapKartuB = await db.ref('kartu/' + KARTU_UJI_COBA.kartuB.uid).once('value').catch(() => null);
+    if (snapKartuB && !snapKartuB.exists()) {
       await db.ref('kartu/' + KARTU_UJI_COBA.kartuB.uid).set({
         nip: KARTU_UJI_COBA.kartuB.nip,
         tipe: 'guru',
         device_id: 'rpi-gateway-01'
-      });
+      }).catch(() => null);
     }
   } catch (err) {
     console.warn('[Bootstrap] Dilewati:', err.message);
