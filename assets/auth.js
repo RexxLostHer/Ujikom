@@ -257,7 +257,12 @@ async function prosesLoginUser(firebaseUser) {
   } else {
     // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
     const isSwitched = !!userData.isRoleSwitched || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
-    if (!isSwitched) {
+    if (isSwitched) {
+      const activeSess = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (activeSess && activeSess.role) {
+        userData = { ...userData, ...activeSess, isRoleSwitched: true };
+      }
+    } else {
       if (isAdm && userData.role !== 'admin') {
         userData.role = 'admin';
         if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
@@ -652,17 +657,17 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     }
   } catch (e) {}
 
-  // 2. Simpan di Firebase RTDB jika db tersedia
+  // 2. Simpan di Firebase RTDB jika db tersedia (non-blocking)
   if (typeof db !== 'undefined' && db) {
     try {
-      await db.ref('users/' + uid).update(updatedData);
-    } catch (e) {
-      console.warn('Update users/{uid} dilewati:', e.message);
-    }
+      db.ref('users/' + uid).update(updatedData).catch(e => {
+        console.warn('Update users/{uid} dilewati:', e.message);
+      });
+    } catch (e) {}
 
-    if (encoded) {
+    if (encoded && (!isSwitched || (typeof isEmailAdmin === 'function' && !isEmailAdmin(email)))) {
       try {
-        await db.ref('email_mapping/' + encoded).set({
+        db.ref('email_mapping/' + encoded).set({
           nama: updatedData.nama,
           role: updatedData.role,
           nisn: updatedData.nisn || null,
@@ -670,7 +675,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
           nip: updatedData.nip || null,
           isWalas: !!updatedData.isWalas,
           walasKelasId: updatedData.walasKelasId || null
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
   }
@@ -707,6 +712,7 @@ function verifikasiAksesHalaman(allowedRoles) {
 }
 
 if (typeof window !== 'undefined') {
+  window.getDashboardUrlByRole = getDashboardUrlByRole;
   window.gantiRoleSesi = gantiRoleSesi;
   window.verifikasiAksesHalaman = verifikasiAksesHalaman;
 }

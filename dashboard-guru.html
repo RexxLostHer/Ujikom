@@ -164,8 +164,8 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="admin.html" id="linkPanelAdminGuru" style="display:none;color:#6d28d9;background:#f5f3ff;border:1.5px solid #ddd6fe;font-weight:700;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
-      <a href="dashboard.html" class="btn-logout" style="border-color:#e2e8f0;text-decoration:none;">🎓 Mode Siswa</a>
+      <a href="admin.html" id="linkPanelAdminGuru" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('admin');return false;}" style="display:none;color:#6d28d9;background:#f5f3ff;border:1.5px solid #ddd6fe;font-weight:700;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
+      <a href="dashboard.html" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('siswa');return false;}" class="btn-logout" style="border-color:#e2e8f0;text-decoration:none;">🎓 Mode Siswa</a>
       <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Guru</button>
       <button class="btn-logout" onclick="logout()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>

@@ -1,11 +1,42 @@
 // ===== DASHBOARD JS (UNIFIED 2026 EDITION) =====
 let currentUser = null;
+let shouldHaltDashboard = false;
 
-if (typeof firebase !== 'undefined' && firebase.auth) {
+// Early synchronous guard: dashboard.html is STRICTLY for Siswa and Pengunjung
+if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
+  try {
+    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    if (rawSess) {
+      const sessUser = JSON.parse(rawSess);
+      if (sessUser) {
+        if (sessUser.role === 'admin') {
+          shouldHaltDashboard = true;
+          window.location.replace('admin.html');
+        } else if (sessUser.role === 'guru' || sessUser.role === 'walas') {
+          shouldHaltDashboard = true;
+          window.location.replace('dashboard-guru.html');
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function(fbUser) {
+    if (shouldHaltDashboard) return;
     if (!fbUser) {
       const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
       if (session) {
+        if (session.role === 'admin') {
+          shouldHaltDashboard = true;
+          window.location.replace('admin.html');
+          return;
+        }
+        if (session.role === 'guru' || session.role === 'walas') {
+          shouldHaltDashboard = true;
+          window.location.replace('dashboard-guru.html');
+          return;
+        }
         currentUser = session;
         initDashboard(currentUser);
         return;
@@ -14,6 +45,16 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
       return;
     }
     currentUser = await prosesLoginUser(fbUser);
+    if (currentUser.role === 'admin') {
+      shouldHaltDashboard = true;
+      window.location.replace('admin.html');
+      return;
+    }
+    if (currentUser.role === 'guru' || currentUser.role === 'walas') {
+      shouldHaltDashboard = true;
+      window.location.replace('dashboard-guru.html');
+      return;
+    }
     initDashboard(currentUser);
   });
 }
@@ -155,65 +196,44 @@ function initInteractive3DCard() {
 }
 
 async function initDashboard(user) {
-  // Header Profile
-  document.getElementById('namaUser').textContent = user.nama;
+  if (!user) return;
+  if (user.role === 'admin') {
+    if (typeof window !== 'undefined' && window.location) window.location.replace('admin.html');
+    return;
+  }
   if (user.role === 'guru' || user.role === 'walas') {
-    const titleRole = user.role === 'walas' ? `Wali Kelas (${user.walasKelasId || 'Binaan'})` : 'Guru Pengajar';
-    document.getElementById('infoSubUser').textContent = `👨‍🏫 ${titleRole} • Mapel: ${user.mapel || '-'} • NIP: ${user.nip || '-'}`;
-  } else if (user.role === 'admin') {
-    document.getElementById('infoSubUser').textContent = `🛡️ Administrator Sistem SMKN 1 Sumedang`;
-  } else {
-    document.getElementById('infoSubUser').textContent = user.email || 'Portal Presensi & Informasi Siswa';
+    if (typeof window !== 'undefined' && window.location) window.location.replace('dashboard-guru.html');
+    return;
   }
 
-  if (user.foto_google) {
+  // Header Profile: Strictly Siswa or Pengunjung (Anti-Leak Admin Identity)
+  const isAdminIdentity = (user.nama && /admin/i.test(user.nama)) || user.role === 'admin';
+  const displayNama = (user.role === 'siswa') ? (user.nama || 'Siswa') : (isAdminIdentity ? 'Pengunjung / Tamu Sekolah' : (user.nama || 'Pengunjung'));
+  document.getElementById('namaUser').textContent = displayNama;
+  if (user.role === 'siswa') {
+    document.getElementById('infoSubUser').textContent = user.kelas
+      ? `Siswa Kelas ${user.kelas} • NISN: ${user.nisn || '-'}`
+      : (user.email || 'Portal Presensi & Informasi Siswa');
+  } else {
+    document.getElementById('infoSubUser').textContent = 'Portal Presensi Siswa • Pengunjung / Tamu Sekolah';
+  }
+
+  if (user.foto_google && !isAdminIdentity) {
     const img = document.createElement('img');
     img.src = user.foto_google;
     document.getElementById('avatarUser').innerHTML = '';
     document.getElementById('avatarUser').appendChild(img);
   } else {
-    document.getElementById('avatarUser').textContent =
-      (user.nama || 'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const inisialText = (user.role === 'siswa' && user.nama)
+      ? (user.nama || 'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()
+      : 'P';
+    document.getElementById('avatarUser').textContent = inisialText;
   }
 
-  // Staff Review Banner (Admin, Walas, Guru)
+  // Ensure Staff Review Banner is permanently hidden to prevent admin leaks
   const staffBanner = document.getElementById('bannerStaffReview');
-  const staffText = document.getElementById('staffReviewText');
-  const staffBtnGuru = document.getElementById('staffBtnGuru');
-  const staffBtnAdmin = document.getElementById('staffBtnAdmin');
-
-  if (staffBanner && (user.role === 'admin' || user.role === 'walas' || user.role === 'guru')) {
-    staffBanner.style.display = 'flex';
-    let roleTitle = 'Administrator Sistem';
-    if (user.role === 'walas') {
-      roleTitle = `Wali Kelas ${user.walasKelasId || 'Binaan'}`;
-    } else if (user.role === 'guru') {
-      roleTitle = 'Guru Pengajar';
-    }
-
-    if (staffText) {
-      staffText.innerHTML = `Anda sedang meninjau portal siswa sebagai <strong>${roleTitle} (${user.nama || ''})</strong>.`;
-    }
-    if (staffBtnGuru) {
-      staffBtnGuru.style.display = 'inline-flex';
-    }
-    if (staffBtnAdmin) {
-      staffBtnAdmin.style.display = (user.role === 'admin') ? 'inline-flex' : 'none';
-    }
-  } else if (staffBanner) {
+  if (staffBanner) {
     staffBanner.style.display = 'none';
-  }
-
-  // Jika guru, walas atau admin, tampilkan link ke portal guru
-  if (user.role === 'guru' || user.role === 'walas' || user.role === 'admin') {
-    const lGuru = document.getElementById('linkGuru');
-    if (lGuru) lGuru.style.display = 'inline-flex';
-  }
-
-  // Jika admin, tampilkan link ke panel admin
-  if (user.role === 'admin') {
-    const lAdmin = document.getElementById('linkAdmin');
-    if (lAdmin) lAdmin.style.display = 'inline-flex';
   }
 
   // Set tanggal default ijin
@@ -965,7 +985,8 @@ let rekapUserCache = [];
 let rekapRangeAktif = 'hari_ini';
 
 function initBerandaOverview(user) {
-  const isPengunjung = user.role === 'pengunjung' || (!user.nisn && user.role !== 'admin' && user.role !== 'guru' && user.role !== 'walas');
+  const isPengunjung = user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa';
+  const isAdminIdentity = (user && user.nama && /admin/i.test(user.nama)) || (user && user.role === 'admin');
 
   // Dengarkan status operasional kelas siswa atau kelas pilot default
   const kelasTarget = (user && user.kelas) ? user.kelas : 'XII RPL 1';
@@ -987,15 +1008,9 @@ function initBerandaOverview(user) {
   const greetingEl = document.getElementById('greetingText');
   const subtextEl = document.getElementById('greetingSubtext');
 
-  if (user.role === 'admin') {
-    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Administrator'}! 🛡️`;
-    if (subtextEl) subtextEl.innerHTML = `Akun Administrator Sistem Aktif. <a href="admin.html" style="color:#4f46e5;font-weight:700;text-decoration:underline;">Buka Panel Admin &rarr;</a>`;
-  } else if (user.role === 'guru' || user.role === 'walas') {
-    const title = user.role === 'walas' ? `Wali Kelas ${user.walasKelasId || ''}` : 'Guru Pengajar';
-    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Bapak/Ibu Guru'}! 👨‍🏫`;
-    if (subtextEl) subtextEl.innerHTML = `Akun ${title} Aktif. <a href="dashboard-guru.html" style="color:#4f46e5;font-weight:700;text-decoration:underline;">Buka Portal Guru &rarr;</a>`;
-  } else if (isPengunjung) {
-    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${user.nama || 'Pengunjung'}! 👋`;
+  if (isPengunjung) {
+    const sapaNama = isAdminIdentity ? 'Pengunjung' : (user.nama ? user.nama.split(' ')[0] : 'Pengunjung');
+    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${sapaNama}! 👋`;
     if (subtextEl) subtextEl.textContent = `Status Akun: Pengunjung / Tamu Sekolah (Belum Terverifikasi)`;
   } else {
     const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
@@ -1031,16 +1046,17 @@ function initBerandaOverview(user) {
   const textEl   = document.getElementById('personalStatusText');
 
   if (isPengunjung) {
-    // Mode Pengunjung: Tampilkan kartu tamu, jangan bocorkan data siswa lain
-    if (cardNama) cardNama.textContent = user.nama || 'Tamu Pengunjung';
+    // Mode Pengunjung: Tampilkan kartu tamu, jangan bocorkan data siswa lain atau identitas admin
+    const safeCardNama = (user.role === 'siswa') ? user.nama : (isAdminIdentity ? 'Tamu Pengunjung' : (user.nama || 'Tamu Pengunjung'));
+    if (cardNama) cardNama.textContent = safeCardNama;
     if (cardMeta) cardMeta.textContent = 'Status: Pengunjung • Belum Tertaut NISN';
     if (cardImg) {
-      if (user.foto_google) {
+      if (user.foto_google && !isAdminIdentity) {
         cardImg.src = user.foto_google;
       } else {
         cardImg.onerror = null;
         cardImg.src = '';
-        if (cardImg.parentElement) cardImg.parentElement.textContent = (user.nama || 'P').charAt(0).toUpperCase();
+        if (cardImg.parentElement) cardImg.parentElement.textContent = 'P';
       }
     }
     if (cardUid) cardUid.textContent = 'BELUM TERDAFTAR';

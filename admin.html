@@ -24,8 +24,8 @@
         <span id="adminNamaBadge">Administrator</span>
       </div>
       <button class="btn-nav" onclick="bukaModalProfil()" style="background:#eff6ff;color:#2563eb;font-weight:700;">👤 Profil Admin</button>
-      <a href="dashboard-guru.html" class="btn-nav">👨‍🏫 Portal Guru</a>
-      <a href="dashboard.html" class="btn-nav">📊 Dashboard Siswa</a>
+      <a href="dashboard-guru.html" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('guru');return false;}" class="btn-nav">👨‍🏫 Portal Guru</a>
+      <a href="dashboard.html" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('siswa');return false;}" class="btn-nav">📊 Dashboard Siswa</a>
       <button id="logoutBtn" class="btn-logout-admin">↩ Keluar</button>
     </div>
   </div>

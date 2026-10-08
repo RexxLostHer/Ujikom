@@ -72,19 +72,8 @@
 <body>
 <div class="dashboard-container">
 
-  <!-- STAFF REVIEW FLOATING / TOP BANNER (PRD UJIKOM 2026) -->
-  <div id="bannerStaffReview" class="staff-review-banner" style="display:none;">
-    <div class="staff-review-content">
-      <span class="staff-review-icon">🛡️</span>
-      <div class="staff-review-text" id="staffReviewText">
-        Anda sedang meninjau portal siswa sebagai <strong>Administrator Sistem</strong>.
-      </div>
-    </div>
-    <div class="staff-review-actions">
-      <a href="dashboard-guru.html" id="staffBtnGuru" class="btn-staff-review guru">👨‍🏫 Buka Portal Guru ↗</a>
-      <a href="admin.html" id="staffBtnAdmin" class="btn-staff-review admin">⚙️ Buka Panel Admin ↗</a>
-    </div>
-  </div>
+  <!-- STAFF REVIEW BANNER (REMOVED FROM UI TO PREVENT ADMIN LEAKS) -->
+  <div id="bannerStaffReview" style="display:none !important;" hidden></div>
 
   <!-- HEADER -->
   <div class="header">
@@ -97,8 +86,6 @@
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
       <a href="presensi-live.html" class="btn-profile-header" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10b981;color:white;border:none;">📡 Presensi Live</a>
-      <a href="dashboard-guru.html" id="linkGuru" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">👨‍🏫 Portal Guru</a>
-      <a href="admin.html" id="linkAdmin" style="display:none;color:#4f46e5;border-color:#c7d2fe;text-decoration:none;" class="btn-logout">⚙️ Panel Admin</a>
       <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Saya</button>
       <button class="btn-logout" onclick="logout()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>

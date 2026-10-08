@@ -17,41 +17,88 @@ function jamSekarang() {
   return now.toTimeString().split(' ')[0];
 }
 
-firebase.auth().onAuthStateChanged(async function(fbUser) {
-  if (!fbUser) {
-    const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
-    if (session && (session.role === 'guru' || session.role === 'walas' || session.role === 'admin')) {
-      guruAktif = session;
-      initPortalGuru(guruAktif);
+let shouldHaltGuru = false;
+
+// Early synchronous guard: dashboard-guru.html is STRICTLY for Guru and Walas
+if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
+  try {
+    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    if (rawSess) {
+      const sessUser = JSON.parse(rawSess);
+      if (sessUser) {
+        if (sessUser.role === 'admin') {
+          shouldHaltGuru = true;
+          window.location.replace('admin.html');
+        } else if (sessUser.role === 'siswa' || sessUser.role === 'pengunjung') {
+          shouldHaltGuru = true;
+          window.location.replace('dashboard.html');
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged(async function(fbUser) {
+    if (shouldHaltGuru) return;
+    if (!fbUser) {
+      const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (session) {
+        if (session.role === 'admin') {
+          shouldHaltGuru = true;
+          window.location.replace('admin.html');
+          return;
+        }
+        if (session.role === 'siswa' || session.role === 'pengunjung') {
+          shouldHaltGuru = true;
+          window.location.replace('dashboard.html');
+          return;
+        }
+        if (session.role === 'guru' || session.role === 'walas') {
+          guruAktif = session;
+          initPortalGuru(guruAktif);
+          return;
+        }
+      }
+      window.location.href = 'index.html';
       return;
     }
-    window.location.href = 'index.html';
-    return;
-  }
-  const user = await prosesLoginUser(fbUser);
-  if (user.role !== 'guru' && user.role !== 'walas' && user.role !== 'admin') {
-    const gMatch = typeof cariGuruByEmail === 'function' ? cariGuruByEmail(user.email) : null;
-    if (gMatch) {
-      user.role = gMatch.isWalas ? 'walas' : 'guru';
-      user.nama = gMatch.nama;
-      user.nip = gMatch.nip;
-      user.mapel = gMatch.mapel;
-      user.isWalas = !!gMatch.isWalas;
-      user.walasKelasId = gMatch.walasKelasId || null;
-      setSessionUser(user);
-      if (db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
-    } else if (typeof isEmailAdmin === 'function' && isEmailAdmin(user.email)) {
-      user.role = 'admin';
-      setSessionUser(user);
-    } else {
-      alert('Akses Terbatas: Akun Anda terdeteksi sebagai ' + (user.role || 'pengunjung') + '. Halaman ini khusus Bapak/Ibu Guru dan Wali Kelas.');
-      window.location.href = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(user.role) : 'dashboard.html';
+    const user = await prosesLoginUser(fbUser);
+    if (user.role !== 'guru' && user.role !== 'walas') {
+      const gMatch = typeof cariGuruByEmail === 'function' ? cariGuruByEmail(user.email) : null;
+      if (gMatch && !user.isRoleSwitched) {
+        user.role = gMatch.isWalas ? 'walas' : 'guru';
+        user.nama = gMatch.nama;
+        user.nip = gMatch.nip;
+        user.mapel = gMatch.mapel;
+        user.isWalas = !!gMatch.isWalas;
+        user.walasKelasId = gMatch.walasKelasId || null;
+        setSessionUser(user);
+        if (db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
+      }
+    }
+
+    // Strict role isolation: Admin to admin.html, Siswa/Pengunjung to dashboard.html
+    if (user.role === 'admin') {
+      shouldHaltGuru = true;
+      window.location.replace('admin.html');
       return;
     }
-  }
-  guruAktif = user;
-  initPortalGuru(guruAktif);
-});
+    if (user.role === 'siswa' || user.role === 'pengunjung') {
+      shouldHaltGuru = true;
+      window.location.replace('dashboard.html');
+      return;
+    }
+    if (user.role !== 'guru' && user.role !== 'walas') {
+      shouldHaltGuru = true;
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    guruAktif = user;
+    initPortalGuru(guruAktif);
+  });
+}
 
 function switchGuruTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(el => {
@@ -68,26 +115,31 @@ function switchGuruTab(id, btn) {
 }
 
 async function initPortalGuru(user) {
-  const isAdm = user.role === 'admin';
-  const isWalas = !isAdm && (user.role === 'walas' || user.isWalas);
-  const walasKelas = user.walasKelasId || 'XII RPL 2';
-
-  // Cross-portal navigation Admin
-  const lAdminGuru = document.getElementById('linkPanelAdminGuru');
-  if (lAdminGuru) {
-    lAdminGuru.style.display = isAdm ? 'inline-flex' : 'none';
+  if (!user) return;
+  if (user.role === 'admin') {
+    if (typeof window !== 'undefined' && window.location) window.location.replace('admin.html');
+    return;
+  }
+  if (user.role === 'siswa' || user.role === 'pengunjung') {
+    if (typeof window !== 'undefined' && window.location) window.location.replace('dashboard.html');
+    return;
   }
 
-  // Update Header
-  document.getElementById('namaUser').textContent = user.nama || (isAdm ? 'Administrator Sistem' : 'Guru Pengajar');
+  const isWalas = user.role === 'walas' || !!user.isWalas;
+  const walasKelas = user.walasKelasId || 'XII RPL 2';
+
+  // Cross-portal navigation Admin (hanya tampil jika role switcher aktif)
+  const lAdminGuru = document.getElementById('linkPanelAdminGuru');
+  if (lAdminGuru) {
+    const isSwitched = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
+    lAdminGuru.style.display = isSwitched ? 'inline-flex' : 'none';
+  }
+
+  // Update Header: Strictly Guru/Walas
+  document.getElementById('namaUser').textContent = user.nama || (isWalas ? 'Wali Kelas' : 'Guru Pengajar');
   const roleBadge = document.getElementById('badgeRoleGuruHeader') || document.querySelector('.badge-role-guru');
   if (roleBadge) {
-    if (isAdm) {
-      roleBadge.textContent = 'ADMINISTRATOR (MODE REVIEW)';
-      roleBadge.style.background = '#ede9fe';
-      roleBadge.style.color = '#6d28d9';
-      roleBadge.style.border = '1px solid #ddd6fe';
-    } else if (isWalas) {
+    if (isWalas) {
       roleBadge.textContent = 'WALI KELAS ' + walasKelas;
       roleBadge.style.background = '#dcfce7';
       roleBadge.style.color = '#15803d';
@@ -100,13 +152,8 @@ async function initPortalGuru(user) {
     }
   }
 
-  if (isAdm) {
-    document.getElementById('infoSubUser').textContent =
-      `Mode Administrator Sistem • Akses Penuh Seluruh Portal & Pengawasan Kelas`;
-  } else {
-    document.getElementById('infoSubUser').textContent =
-      `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • ${isWalas ? 'Binaan: ' + walasKelas : 'Guru Mata Pelajaran'}`;
-  }
+  document.getElementById('infoSubUser').textContent =
+    `NIP: ${user.nip || '-'} • Mapel: ${user.mapel || 'Pengajar'} • ${isWalas ? 'Binaan: ' + walasKelas : 'Guru Mata Pelajaran'}`;
 
   document.getElementById('labelTanggalHariIni').textContent = tanggalHariIni();
   const labelTglGuru = document.getElementById('labelTglAbsenGuru');

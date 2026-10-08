@@ -8,44 +8,83 @@ let adminSessionUser = null;
 let siswaCache = {};
 let kartuCache = {};
 
-// ===== AUTH GUARD =====
-firebase.auth().onAuthStateChanged(async function (fbUser) {
-  if (!fbUser) {
-    const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
-    if (session && session.role === 'admin') {
-      adminSessionUser = session;
-      const badge = document.getElementById('adminNamaBadge');
-      if (badge) badge.textContent = session.nama || 'Administrator';
-      initAdmin();
-      return;
-    }
-    window.location.href = 'index.html';
-    return;
-  }
-  const userData = await prosesLoginUser(fbUser);
-  if (userData.role !== 'admin') {
-    if (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email)) {
-      userData.role = 'admin';
-      userData.nama = (userData.nama && userData.nama !== 'Pengunjung') ? userData.nama : 'Administrator Sistem';
-      setSessionUser(userData);
-      if (db) db.ref('users/' + fbUser.uid).update({ role: 'admin', isVerified: true }).catch(() => null);
-    } else {
-      alert('Akses Terbatas: Akun Anda terdeteksi sebagai ' + (userData.role || 'pengunjung') + '. Panel ini khusus Administrator.');
-      window.location.href = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(userData.role) : 'dashboard.html';
-      return;
-    }
-  }
-  adminSessionUser = userData;
-  const badge = document.getElementById('adminNamaBadge');
-  if (badge) badge.textContent = userData.nama || 'Administrator';
-  initAdmin();
-});
+let shouldHaltAdmin = false;
 
-document.getElementById('logoutBtn').addEventListener('click', function () {
-  logout();
-});
+// ===== AUTH GUARD: admin.html is STRICTLY for Administrator =====
+if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
+  try {
+    const rawSess = sessionStorage.getItem('user_aktif') || localStorage.getItem('user_aktif');
+    if (rawSess) {
+      const sess = JSON.parse(rawSess);
+      if (sess && sess.role && sess.role !== 'admin') {
+        shouldHaltAdmin = true;
+        const targetUrl = (sess.role === 'guru' || sess.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
+        window.location.replace(targetUrl);
+      }
+    }
+  } catch (e) {}
+}
+
+if (!shouldHaltAdmin && typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged(async function (fbUser) {
+    if (shouldHaltAdmin) return;
+    if (!fbUser) {
+      const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (session) {
+        if (session.role === 'admin') {
+          adminSessionUser = session;
+          const badge = document.getElementById('adminNamaBadge');
+          if (badge) badge.textContent = session.nama || 'Administrator';
+          initAdmin();
+          return;
+        }
+        shouldHaltAdmin = true;
+        const targetUrl = (session.role === 'guru' || session.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
+        window.location.replace(targetUrl);
+        return;
+      }
+      window.location.href = 'index.html';
+      return;
+    }
+    const userData = await prosesLoginUser(fbUser);
+    if (userData.role !== 'admin') {
+      if (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email) && !userData.isRoleSwitched) {
+        userData.role = 'admin';
+        userData.nama = (userData.nama && userData.nama !== 'Pengunjung') ? userData.nama : 'Administrator Sistem';
+        setSessionUser(userData);
+        if (db) db.ref('users/' + fbUser.uid).update({ role: 'admin', isVerified: true }).catch(() => null);
+      } else {
+        shouldHaltAdmin = true;
+        const targetUrl = (typeof getDashboardUrlByRole === 'function')
+          ? getDashboardUrlByRole(userData.role)
+          : ((userData.role === 'guru' || userData.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html');
+        window.location.replace(targetUrl);
+        return;
+      }
+    }
+    adminSessionUser = userData;
+    const badge = document.getElementById('adminNamaBadge');
+    if (badge) badge.textContent = userData.nama || 'Administrator';
+    initAdmin();
+  });
+}
+
+if (typeof document !== 'undefined') {
+  const logoutBtnEl = document.getElementById('logoutBtn');
+  if (logoutBtnEl) {
+    logoutBtnEl.addEventListener('click', function () {
+      logout();
+    });
+  }
+}
 
 function initAdmin() {
+  const currentSess = (typeof getSessionUser === 'function') ? getSessionUser() : adminSessionUser;
+  if (currentSess && currentSess.role && currentSess.role !== 'admin') {
+    const targetUrl = (currentSess.role === 'guru' || currentSess.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
+    if (typeof window !== 'undefined' && window.location) window.location.replace(targetUrl);
+    return;
+  }
   // Populate tanggal default di Edit Presensi & Rekap
   const tgl = document.getElementById('presensiTanggal');
   if (tgl) tgl.value = tanggalHariIni();
