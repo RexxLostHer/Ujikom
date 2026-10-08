@@ -806,11 +806,37 @@ function updateWidgetStatusKelas(arg1, arg2) {
 
   if (!badge) return;
 
-  const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 2');
+  const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 1');
   const data = (arg1 && typeof arg1 === 'object') ? arg1 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
 
   const st = String(data.status || 'belajar').toLowerCase();
   if (tag) tag.textContent = 'Status ' + namaKelas;
+
+  // Sinkronisasi status tombol pill pemilih kelas pada widget
+  document.querySelectorAll('.btn-switch-kelas-widget').forEach(btn => {
+    if (btn.getAttribute('data-kelas') === namaKelas) {
+      btn.style.background = '#4f46e5';
+      btn.style.color = '#fff';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = '#4338ca';
+      btn.style.fontWeight = '600';
+    }
+  });
+
+  // Master data fallback cerdas agar tidak pernah muncul strip "-"
+  const defaultMeta = (typeof DEFAULT_STATUS_KELAS !== 'undefined' && DEFAULT_STATUS_KELAS[namaKelas])
+    ? DEFAULT_STATUS_KELAS[namaKelas]
+    : { activeMapel: 'Pemrograman Web & Perangkat Bergerak', activeTeacherNama: 'Hani Hanifah, S.Si' };
+
+  const mapelDisplay = (data.activeMapel && data.activeMapel !== '-') 
+    ? data.activeMapel 
+    : (defaultMeta.activeMapel || 'Pemrograman Kejuruan');
+
+  const guruDisplay = (data.activeTeacherNama && data.activeTeacherNama !== '-') 
+    ? data.activeTeacherNama 
+    : (defaultMeta.activeTeacherNama || 'Guru Pengajar');
 
   if (st === 'jamkos') {
     badge.textContent = 'JAM KOSONG (JAMKOS)';
@@ -824,11 +850,11 @@ function updateWidgetStatusKelas(arg1, arg2) {
       judul.textContent = `Kelas ${namaKelas}: Jam Kosong Dikonfirmasi`;
       judul.style.color = '#991b1b';
     }
-    if (desc) desc.textContent = `Mapel: ${data.activeMapel || '-'} • Keterangan: ${data.keteranganJamkos || 'Laporan kendala di-ACC Admin'}`;
+    if (desc) desc.textContent = `Mapel: ${mapelDisplay} • Keterangan: ${data.keteranganJamkos || 'Laporan kendala di-ACC Admin'}`;
     if (alertJamkos) {
       alertJamkos.style.display = 'block';
       if (alertJamkosDesc) {
-        alertJamkosDesc.textContent = `Guru pengajar (${data.activeTeacherNama || 'Guru'}) berhalangan hadir pada mapel ${data.activeMapel || '-'}: "${data.keteranganJamkos || 'Penugasan Mandiri'}". Laporan telah di-ACC Admin. Harap seluruh siswa kelas ${namaKelas} tetap tertib di dalam kelas dan mengerjakan tugas pengganti.`;
+        alertJamkosDesc.textContent = `Guru pengajar (${guruDisplay}) berhalangan hadir pada mapel ${mapelDisplay}: "${data.keteranganJamkos || 'Penugasan Mandiri'}". Laporan telah di-ACC Admin. Harap seluruh siswa kelas ${namaKelas} tetap tertib di dalam kelas dan mengerjakan tugas pengganti.`;
       }
     }
   } else if (st === 'pulang') {
@@ -840,7 +866,7 @@ function updateWidgetStatusKelas(arg1, arg2) {
       icon.style.background = '#f1f5f9';
     }
     if (judul) {
-      judul.textContent = 'Jam Operasional Sekolah Selesai';
+      judul.textContent = `Jam Operasional Sekolah Selesai (${namaKelas})`;
       judul.style.color = '#334155';
     }
     if (desc) desc.textContent = 'Seluruh rangkaian KBM hari ini telah berakhir. Selamat beristirahat dan hati-hati di jalan.';
@@ -858,10 +884,28 @@ function updateWidgetStatusKelas(arg1, arg2) {
       judul.textContent = `KBM Sedang Berlangsung Normal (${namaKelas})`;
       judul.style.color = '#1e1b4b';
     }
-    if (desc) desc.textContent = `Mapel: ${data.activeMapel || 'Mata Pelajaran Aktif'} • Guru: ${data.activeTeacherNama || 'Guru Terjadwal'}`;
+    if (desc) desc.textContent = `Mapel: ${mapelDisplay} • Guru: ${guruDisplay}`;
     if (alertJamkos) alertJamkos.style.display = 'none';
   }
 }
+
+window.gantiKelasWidget = function(kelas) {
+  if (typeof dengarkanStatusKelasOperasional === 'function') {
+    dengarkanStatusKelasOperasional(kelas);
+  }
+  const selHome = document.getElementById('pilihKelasHome');
+  if (selHome && selHome.value !== kelas) {
+    selHome.value = kelas;
+    selHome.dispatchEvent(new Event('change'));
+  }
+  document.querySelectorAll('.class-chip').forEach(c => {
+    if (c.textContent === kelas) c.classList.add('active');
+    else c.classList.remove('active');
+  });
+  if (typeof muatJadwalBeranda === 'function') {
+    muatJadwalBeranda(kelas);
+  }
+};
 
 // ===================================================================
 // BERANDA OVERVIEW LOGIC (SMART HUB 2026)
@@ -1075,12 +1119,17 @@ function initBerandaOverview(user) {
     initRekapPresensiSiswa(user);
   }
 
-  // 5. Listener Status Operasional Kelas Terkini (PRD Bab 4.2)
-  const targetKelas = normalisasiKelas(user.kelas || 'XII RPL 2');
-  db.ref('kelas/' + targetKelas).on('value', snap => {
-    const kData = snap.val() || (typeof DEFAULT_STATUS_KELAS !== 'undefined' ? DEFAULT_STATUS_KELAS[targetKelas] : null) || { status: 'belajar' };
-    updateWidgetStatusKelas(kData, targetKelas);
-  });
+  // 5. Sinkronisasi Dropdown Monitoring dengan Status Kelas
+  const selHome = document.getElementById('pilihKelasHome');
+  if (selHome && !selHome.dataset.boundKbm) {
+    selHome.dataset.boundKbm = 'true';
+    selHome.addEventListener('change', function() {
+      if (this.value) {
+        dengarkanStatusKelasOperasional(this.value);
+        if (typeof muatJadwalBeranda === 'function') muatJadwalBeranda(this.value);
+      }
+    });
+  }
 
   // 6. Inisialisasi Class Chips Selector
   initClassChipsSelector(user);
@@ -1355,6 +1404,9 @@ function initClassChipsSelector(user) {
           else c.classList.remove('active');
         });
         muatJadwalBeranda(kelas);
+        if (typeof dengarkanStatusKelasOperasional === 'function') {
+          dengarkanStatusKelasOperasional(kelas);
+        }
       };
       cnt.appendChild(chip);
     });
