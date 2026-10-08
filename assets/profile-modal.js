@@ -59,14 +59,16 @@ function bukaModalProfil() {
 
           <!-- 1-Click Presets Grid -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:8px;margin-bottom:12px;">
+            ${user.role === 'admin' ? `
             <!-- 1. Administrator Sistem -->
-            <button type="button" onclick="pilihPresetRole('admin')" class="profile-preset-btn ${user.role === 'admin' ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${user.role === 'admin' ? '#4f46e5' : '#e2e8f0'};border-radius:12px;background:${user.role === 'admin' ? '#ede9fe' : '#ffffff'};cursor:pointer;text-align:left;">
+            <button type="button" onclick="pilihPresetRole('admin')" class="profile-preset-btn active" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #4f46e5;border-radius:12px;background:#ede9fe;cursor:pointer;text-align:left;">
               <span style="font-size:20px;">🛡️</span>
               <div>
                 <div style="font-weight:800;font-size:13px;color:#1e1b4b;">Administrator Sistem</div>
                 <div style="font-size:11px;color:#64748b;">Panel Admin & Otoritas Penuh</div>
               </div>
             </button>
+            ` : ''}
 
             <!-- 2. Wali Kelas XII RPL 1 -->
             <button type="button" onclick="pilihPresetRole('walas', 'rpl1')" class="profile-preset-btn ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? 'active' : ''}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? '#10b981' : '#e2e8f0'};border-radius:12px;background:${(user.role === 'walas' && user.walasKelasId === 'XII RPL 1') ? '#dcfce7' : '#ffffff'};cursor:pointer;text-align:left;">
@@ -144,26 +146,26 @@ function bukaModalProfil() {
           <!-- Opsi Klaim Manual (Accordion) -->
           <div style="border-top: 1px dashed #c7d2fe; padding-top: 10px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;font-weight:700;color:#4338ca;">Klaim Identitas Manual (NISN / NIP / Kode Admin)</span>
+              <span style="font-size:12px;font-weight:700;color:#4338ca;">Klaim Identitas Manual (3 Kategori: Siswa, Guru Biasa, Wali Kelas)</span>
               <button type="button" onclick="toggleAccordionKlaim()" id="btnToggleAccordionKlaim" style="background:transparent;border:none;font-size:12px;color:#4f46e5;font-weight:700;cursor:pointer;">Tampilkan Form Klaim ▾</button>
             </div>
             
             <div id="boxAccordionKlaim" style="display:none;margin-top:12px;">
-              <div style="display:flex;gap:6px;margin-bottom:12px;">
-                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimSiswa" onclick="toggleModeKlaim('siswa')" style="padding:4px 10px;font-size:12px;background:#4f46e5;color:#fff;border-color:#4f46e5;">Siswa (NISN)</button>
-                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimGuru" onclick="toggleModeKlaim('guru')" style="padding:4px 10px;font-size:12px;">Guru / Walas (NIP)</button>
-                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimAdmin" onclick="toggleModeKlaim('admin')" style="padding:4px 10px;font-size:12px;">Admin (Kode)</button>
+              <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimSiswa" onclick="toggleModeKlaim('siswa')" style="padding:4px 10px;font-size:12px;background:#4f46e5;color:#fff;border-color:#4f46e5;">🎓 1. Siswa (NISN)</button>
+                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimGuru" onclick="toggleModeKlaim('guru')" style="padding:4px 10px;font-size:12px;">👩‍🏫 2. Guru Biasa (NIP)</button>
+                <button type="button" class="profile-btn-secondary" id="btnPilihKlaimWalas" onclick="toggleModeKlaim('walas')" style="padding:4px 10px;font-size:12px;">👨‍🏫 3. Wali Kelas (NIP)</button>
               </div>
 
               <!-- Mode Klaim Siswa -->
               <div id="boxKlaimSiswa">
                 <p style="font-size: 13px; color: #4338ca; line-height: 1.5; margin-bottom: 12px;">
-                  Masukkan 10 digit NISN Anda untuk menghubungkan akun ini dengan data resmi siswa SMKN 1 Sumedang serta mengaktifkan kartu pintar presensi RFID.
+                  Masukkan 10 digit NISN Anda untuk menghubungkan akun ini dengan data resmi siswa SMKN 1 Sumedang serta mengaktifkan kartu pintar presensi RFID dan status KBM kelas.
                 </p>
                 <div class="profile-field-row">
                   <label for="inputNisnVerif">Nomor Induk Siswa Nasional (NISN)</label>
                   <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Contoh: 0098263610" maxlength="12"
+                    <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Contoh: 0098263610 atau 0091113849" maxlength="12"
                            onkeydown="if(event.key==='Enter') handlePeriksaNisn()">
                     <button type="button" class="profile-btn-action" onclick="handlePeriksaNisn()" id="btnCekNisn">🔍 Periksa NISN</button>
                   </div>
@@ -179,41 +181,52 @@ function bukaModalProfil() {
                 </div>
               </div>
 
-              <!-- Mode Klaim Guru / Walas -->
+              <!-- Mode Klaim Guru Biasa -->
               <div id="boxKlaimGuru" style="display:none;">
                 <p style="font-size: 13px; color: #4338ca; line-height: 1.5; margin-bottom: 12px;">
-                  Masukkan 18 digit NIP atau Kode Guru Anda. Sistem akan secara otomatis mendeteksi apakah Anda bertugas sebagai Guru Pengajar atau Wali Kelas (Walas).
+                  Verifikasi Guru Biasa / Guru Pengajar SMKN 1 Sumedang (Tanpa tugas Wali Kelas).<br>
+                  <span style="font-size:11.5px;color:#64748b;">Contoh: Hani Hanifah, S.Si (<code>198109012009022003</code>) atau Hali, ST (<code>197905032006042004</code>).</span>
                 </p>
                 <div class="profile-field-row">
-                  <label for="inputNipVerif">Nomor Induk Pegawai (NIP) / Kode Guru</label>
+                  <label for="inputNipVerif">NIP Guru Pengajar (Guru Biasa)</label>
                   <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="text" id="inputNipVerif" class="profile-input" placeholder="Contoh: 199209142022211007" maxlength="20"
-                           onkeydown="if(event.key==='Enter') handlePeriksaNip()">
-                    <button type="button" class="profile-btn-action" onclick="handlePeriksaNip()" id="btnCekNip">🔍 Periksa NIP</button>
+                    <input type="text" id="inputNipVerif" class="profile-input" placeholder="Contoh: 198109012009022003" maxlength="20"
+                           onkeydown="if(event.key==='Enter') handlePeriksaNip('guru')">
+                    <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('guru')" id="btnCekNip">🔍 Periksa NIP</button>
                   </div>
                 </div>
                 <div id="boxPreviewGuru" style="display:none; margin-top:14px; padding:14px; background:#ffffff; border:1px solid #c7d2fe; border-radius:12px;">
-                  <div style="font-size:11.5px; font-weight:700; color:#6366f1; text-transform:uppercase; margin-bottom:4px;">Data Guru Ditemukan:</div>
+                  <div style="font-size:11.5px; font-weight:700; color:#6366f1; text-transform:uppercase; margin-bottom:4px;">Data Guru Biasa Terverifikasi:</div>
                   <div style="font-size:15px; font-weight:800; color:#1e293b;" id="previewNamaGuru">-</div>
                   <div style="font-size:13px; color:#64748b; margin-top:2px;" id="previewMetaGuru">-</div>
                   <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanGuru" style="background:#059669; border-color:#059669;">✓ Ya, Hubungkan Akun Guru</button>
+                    <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanGuru" style="background:#059669; border-color:#059669;">✓ Ya, Hubungkan Akun Guru Biasa</button>
                     <button type="button" class="profile-btn-secondary" onclick="batalPreviewGuru()">Batal</button>
                   </div>
                 </div>
               </div>
 
-              <!-- Mode Klaim Admin -->
-              <div id="boxKlaimAdmin" style="display:none;">
+              <!-- Mode Klaim Wali Kelas -->
+              <div id="boxKlaimWalas" style="display:none;">
                 <p style="font-size: 13px; color: #4338ca; line-height: 1.5; margin-bottom: 12px;">
-                  Masukkan kode otorisasi Administrator Sekolah (misal: <code>admin2026</code> atau <code>nesas2026</code>) untuk mengaktifkan hak akses panel admin penuh.
+                  Verifikasi Wali Kelas resmi SMKN 1 Sumedang untuk mengawasi 1 kelas binaan masing-masing (Monitoring Kehadiran, Live Alert Pagi 06.30-08.00, & ACC Izin Siswa).<br>
+                  <span style="font-size:11.5px;color:#64748b;">Contoh: M. Echa Putra (<code>199209142022211007</code> - XII RPL 2), Rijal Nur Rahmat (<code>198312052022211017</code> - XII RPL 1), atau Heri Anggara (<code>198504252024211008</code> - XII TKJ 2).</span>
                 </p>
                 <div class="profile-field-row">
-                  <label for="inputAdminPasscode">Kode Sandi Administrator</label>
+                  <label for="inputNipWalasVerif">NIP Wali Kelas</label>
                   <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="password" id="inputAdminPasscode" class="profile-input" placeholder="Contoh: admin2026"
-                           onkeydown="if(event.key==='Enter') handleKonfirmasiTautkanAdmin()">
-                    <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanAdmin()" id="btnKlaimAdmin" style="background:#4f46e5; border-color:#4f46e5;">🛡️ Klaim Akses Admin</button>
+                    <input type="text" id="inputNipWalasVerif" class="profile-input" placeholder="Contoh: 199209142022211007" maxlength="20"
+                           onkeydown="if(event.key==='Enter') handlePeriksaNip('walas')">
+                    <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('walas')" id="btnCekNipWalas">🔍 Periksa NIP Walas</button>
+                  </div>
+                </div>
+                <div id="boxPreviewWalas" style="display:none; margin-top:14px; padding:14px; background:#ffffff; border:1.5px solid #10b981; border-radius:12px;">
+                  <div style="font-size:11.5px; font-weight:700; color:#059669; text-transform:uppercase; margin-bottom:4px;">Data Wali Kelas Terverifikasi:</div>
+                  <div style="font-size:15px; font-weight:800; color:#1e293b;" id="previewNamaWalas">-</div>
+                  <div style="font-size:13px; color:#64748b; margin-top:2px;" id="previewMetaWalas">-</div>
+                  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanWalas" style="background:#059669; border-color:#059669;">✓ Ya, Hubungkan Akun Wali Kelas</button>
+                    <button type="button" class="profile-btn-secondary" onclick="batalPreviewWalas()">Batal</button>
                   </div>
                 </div>
               </div>
@@ -555,72 +568,41 @@ function bukaModalProfilDenganTabNisn() {
 function toggleModeKlaim(mode) {
   const boxSiswa = document.getElementById('boxKlaimSiswa');
   const boxGuru = document.getElementById('boxKlaimGuru');
-  const boxAdmin = document.getElementById('boxKlaimAdmin');
+  const boxWalas = document.getElementById('boxKlaimWalas');
   const btnS = document.getElementById('btnPilihKlaimSiswa');
   const btnG = document.getElementById('btnPilihKlaimGuru');
-  const btnA = document.getElementById('btnPilihKlaimAdmin');
+  const btnW = document.getElementById('btnPilihKlaimWalas');
 
   if (boxSiswa) boxSiswa.style.display = (mode === 'siswa') ? 'block' : 'none';
   if (boxGuru) boxGuru.style.display = (mode === 'guru') ? 'block' : 'none';
-  if (boxAdmin) boxAdmin.style.display = (mode === 'admin') ? 'block' : 'none';
+  if (boxWalas) boxWalas.style.display = (mode === 'walas') ? 'block' : 'none';
 
-  if (btnS) {
-    btnS.style.background = (mode === 'siswa') ? '#4f46e5' : '';
-    btnS.style.color = (mode === 'siswa') ? '#fff' : '';
-    btnS.style.borderColor = (mode === 'siswa') ? '#4f46e5' : '';
-  }
-  if (btnG) {
-    btnG.style.background = (mode === 'guru') ? '#4f46e5' : '';
-    btnG.style.color = (mode === 'guru') ? '#fff' : '';
-    btnG.style.borderColor = (mode === 'guru') ? '#4f46e5' : '';
-  }
-  if (btnA) {
-    btnA.style.background = (mode === 'admin') ? '#4f46e5' : '';
-    btnA.style.color = (mode === 'admin') ? '#fff' : '';
-    btnA.style.borderColor = (mode === 'admin') ? '#4f46e5' : '';
-  }
-}
-
-async function handleKonfirmasiTautkanAdmin() {
-  const inp = document.getElementById('inputAdminPasscode');
-  const btn = document.getElementById('btnKlaimAdmin');
-  if (!inp) return;
-  const code = inp.value.trim();
-  if (!code) {
-    tampilProfilNotif('Harap masukkan kode sandi administrator.', 'error');
-    return;
-  }
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Memverifikasi...';
-  }
-  try {
-    const updated = await konfirmasiTautkanAdmin(code);
-    tampilProfilNotif('✓ Hak akses Administrator aktif! Mengalihkan ke Panel Admin...', 'success');
-    setTimeout(() => {
-      window.location.href = 'admin.html';
-    }, 900);
-  } catch (err) {
+  [
+    [btnS, 'siswa'],
+    [btnG, 'guru'],
+    [btnW, 'walas']
+  ].forEach(([btn, key]) => {
     if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🛡️ Klaim Akses Admin';
+      btn.style.background = (mode === key) ? '#4f46e5' : '';
+      btn.style.color = (mode === key) ? '#fff' : '';
+      btn.style.borderColor = (mode === key) ? '#4f46e5' : '';
     }
-    tampilProfilNotif(err.message || 'Kode administrator tidak valid.', 'error');
-  }
+  });
 }
 
 // ===== HANDLER KONFIRMASI NIP GURU / WALAS =====
 let dataGuruTerverifikasiCache = null;
 
-async function handlePeriksaNip() {
-  const inp = document.getElementById('inputNipVerif');
-  const btn = document.getElementById('btnCekNip');
-  const box = document.getElementById('boxPreviewGuru');
+async function handlePeriksaNip(source) {
+  const isWalasMode = source === 'walas';
+  const inp = isWalasMode ? (document.getElementById('inputNipWalasVerif') || document.getElementById('inputNipVerif')) : document.getElementById('inputNipVerif');
+  const btn = isWalasMode ? (document.getElementById('btnCekNipWalas') || document.getElementById('btnCekNip')) : document.getElementById('btnCekNip');
+  const box = isWalasMode ? document.getElementById('boxPreviewWalas') : document.getElementById('boxPreviewGuru');
   if (!inp || !btn) return;
 
   const nip = inp.value.trim();
   if (!nip) {
-    tampilProfilNotif('Harap masukkan NIP atau Kode Guru Anda.', 'error');
+    tampilProfilNotif('Harap masukkan NIP Anda.', 'error');
     return;
   }
 
@@ -629,23 +611,38 @@ async function handlePeriksaNip() {
   try {
     const hasil = await periksaNipGuru(nip);
     dataGuruTerverifikasiCache = hasil;
-    document.getElementById('previewNamaGuru').textContent = hasil.nama;
-    const statusWalas = hasil.isWalas ? `Wali Kelas ${hasil.walasKelasId}` : 'Guru Pengajar';
-    document.getElementById('previewMetaGuru').textContent = `NIP: ${hasil.nip} • Mapel: ${hasil.mapel} • Peran: ${statusWalas}`;
+    const elNama = isWalasMode ? document.getElementById('previewNamaWalas') : document.getElementById('previewNamaGuru');
+    const elMeta = isWalasMode ? document.getElementById('previewMetaWalas') : document.getElementById('previewMetaGuru');
+    if (elNama) elNama.textContent = hasil.nama;
+    const statusPeran = hasil.isWalas ? `Wali Kelas ${hasil.walasKelasId}` : 'Guru Biasa (Pengajar)';
+    if (elMeta) elMeta.textContent = `NIP: ${hasil.nip} • Mapel: ${hasil.mapel} • Peran Terdeteksi: ${statusPeran}`;
+
+    const btnTautWalas = document.getElementById('btnTautkanWalas');
+    const btnTautGuru = document.getElementById('btnTautkanGuru');
+    const labelTaut = hasil.isWalas ? `✓ Ya, Hubungkan Akun Wali Kelas (${hasil.walasKelasId})` : '✓ Ya, Hubungkan Akun Guru Biasa';
+    if (btnTautWalas) btnTautWalas.textContent = labelTaut;
+    if (btnTautGuru) btnTautGuru.textContent = labelTaut;
+
     if (box) box.style.display = 'block';
-    tampilProfilNotif('Data guru ditemukan! Silakan klik tombol konfirmasi di bawah.', 'success');
+    tampilProfilNotif(`Data terverifikasi: ${hasil.nama} (${statusPeran}). Silakan klik tombol hubungkan.`, 'success');
   } catch (err) {
     if (box) box.style.display = 'none';
     dataGuruTerverifikasiCache = null;
     tampilProfilNotif(err.message || 'Gagal memeriksa NIP.', 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '🔍 Periksa NIP';
+    btn.textContent = isWalasMode ? '🔍 Periksa NIP Walas' : '🔍 Periksa NIP';
   }
 }
 
 function batalPreviewGuru() {
   const box = document.getElementById('boxPreviewGuru');
+  if (box) box.style.display = 'none';
+  dataGuruTerverifikasiCache = null;
+}
+
+function batalPreviewWalas() {
+  const box = document.getElementById('boxPreviewWalas');
   if (box) box.style.display = 'none';
   dataGuruTerverifikasiCache = null;
 }
@@ -656,11 +653,14 @@ async function handleKonfirmasiTautkanGuru() {
     return;
   }
 
-  const btn = document.getElementById('btnTautkanGuru');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Menghubungkan...';
-  }
+  const btnWalas = document.getElementById('btnTautkanWalas');
+  const btnGuru = document.getElementById('btnTautkanGuru');
+  [btnWalas, btnGuru].forEach(b => {
+    if (b) {
+      b.disabled = true;
+      b.textContent = 'Menghubungkan...';
+    }
+  });
 
   try {
     const updated = await konfirmasiTautkanGuru(dataGuruTerverifikasiCache.nip);
@@ -670,16 +670,23 @@ async function handleKonfirmasiTautkanGuru() {
       window.location.href = 'dashboard-guru.html';
     }, 1200);
   } catch (err) {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '✓ Ya, Hubungkan Akun Guru';
-    }
+    [btnWalas, btnGuru].forEach(b => {
+      if (b) {
+        b.disabled = false;
+        b.textContent = b.id === 'btnTautkanWalas' ? '✓ Ya, Hubungkan Akun Wali Kelas' : '✓ Ya, Hubungkan Akun Guru Biasa';
+      }
+    });
     tampilProfilNotif(err.message || 'Gagal menautkan NIP.', 'error');
   }
 }
 
 // ===== HANDLER PRESET ROLE SWITCHER (UJIKOM 2026) =====
 async function pilihPresetRole(role, subType) {
+  const currentSess = (typeof getSessionUser === 'function') ? getSessionUser() : null;
+  if (role === 'admin' && (!currentSess || currentSess.role !== 'admin')) {
+    tampilProfilNotif('Akses Ditolak: Hak akses Administrator hanya dapat diperoleh melalui portal login khusus di admin-login.html.', 'error');
+    return;
+  }
   tampilProfilNotif(`Mengalihkan peran sesi aktif ke ${role.toUpperCase()}...`, 'success');
 
   let payload = {};

@@ -30,6 +30,40 @@ function togglePasswordVisibility(inputId, btn) {
   }
 }
 
+// 1b. Google Sign-In Khusus Staff & Admin
+async function handleStaffLoginGoogle() {
+  clearAdminNotif();
+  showAdminNotif('success', '⏳ Menghubungkan akun Google Staff & Admin...');
+
+  try {
+    const res = await loginDenganGoogle();
+    const userData = await prosesLoginUser(res.user);
+
+    if (userData.role === 'admin') {
+      showAdminNotif('success', '✓ Akses Administrator Terverifikasi. Mengalihkan ke Panel Admin...');
+      setTimeout(() => { window.location.href = 'admin.html'; }, 800);
+    } else if (userData.role === 'guru' || userData.role === 'walas') {
+      showAdminNotif('success', '✓ Akses Guru/Walas Terverifikasi. Mengalihkan ke Portal Guru...');
+      setTimeout(() => { window.location.href = 'dashboard-guru.html'; }, 800);
+    } else {
+      showAdminNotif('warning', `⚠️ Akses Ditolak: Akun Google <strong>${userData.email}</strong> bukan akun Staff/Administrator SMKN 1 Sumedang.`);
+      setTimeout(async () => {
+        if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut().catch(() => null);
+        if (typeof clearSession === 'function') clearSession();
+        window.location.href = 'index.html';
+      }, 2500);
+    }
+  } catch (err) {
+    if (err.code === 'auth/popup-closed-by-user') {
+      clearAdminNotif();
+    } else if (err.code === 'auth/unauthorized-domain') {
+      showAdminNotif('error', 'Domain lokal belum diizinkan. Tambahkan di Firebase Console -> Auth -> Authorized Domains.');
+    } else {
+      showAdminNotif('error', 'Gagal otentikasi Google: ' + (err.message || 'Kesalahan jaringan.'));
+    }
+  }
+}
+
 // 2. Email & Password Login Khusus Staff & Admin
 async function handleStaffLoginEmail(e) {
   e.preventDefault();
@@ -92,6 +126,10 @@ async function handleStaffLoginEmail(e) {
 // 3. Akses Cepat Mode Evaluasi / Demo UJIKOM 2026
 async function masukSebagaiAdminDemo() {
   showAdminNotif('success', '⚡ Mengaktifkan sesi Administrator Sistem...');
+  try {
+    sessionStorage.removeItem('isRoleSwitched');
+    localStorage.removeItem('isRoleSwitched');
+  } catch (e) {}
   const adminData = {
     uid: 'ADMIN_UJIKOM_2026',
     email: 'admin@smkn1sumedang.sch.id',
@@ -138,9 +176,14 @@ async function masukSebagaiGuruDemo(nipPilihan) {
     isWalas: !!g.isWalas,
     walasKelasId: g.walasKelasId || 'XII RPL 1',
     role: g.isWalas ? 'walas' : 'guru',
+    isRoleSwitched: true,
     isVerified: true
   };
   setSessionUser(guruData);
+  try {
+    sessionStorage.setItem('isRoleSwitched', 'true');
+    localStorage.setItem('isRoleSwitched', 'true');
+  } catch (e) {}
   try {
     if (!firebase.auth().currentUser && firebase.auth().signInAnonymously) {
       await firebase.auth().signInAnonymously().catch(() => null);

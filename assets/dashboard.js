@@ -163,6 +163,12 @@ if (typeof document !== 'undefined' && document.getElementById('statusHariIni') 
 }
 
 function switchTab(id, btn) {
+  // Sesuai PRD: Siswa tidak boleh mengakses tabKelas (pantau seluruh siswa)
+  if (id === 'tabKelas' && currentUser && currentUser.role === 'siswa') {
+    id = 'tabBeranda';
+    btn = document.getElementById('btnTabBeranda');
+  }
+
   document.querySelectorAll('.tab-content').forEach(el => {
     el.style.display = 'none';
     el.classList.remove('active');
@@ -215,6 +221,7 @@ function initInteractive3DCard() {
 
 async function initDashboard(user) {
   if (!user) return;
+  currentUser = user;
   if (user.role === 'admin') {
     if (typeof window !== 'undefined' && window.location) window.location.replace('admin.html');
     return;
@@ -272,6 +279,16 @@ async function initDashboard(user) {
   // Inisialisasi 3D Tilt Kartu Siswa
   initInteractive3DCard();
 
+  // Isolasi ketat Siswa sesuai PRD: Sembunyikan pantau kelas dan selector data siswa lain
+  if (user && user.role === 'siswa') {
+    const btnTabKls = document.getElementById('btnTabKelas');
+    if (btnTabKls) btnTabKls.style.display = 'none';
+    const secPantau = document.getElementById('sectionPantauLiveHome');
+    if (secPantau) secPantau.style.display = 'none';
+    const pillKls = document.getElementById('kelasSwitcherPill');
+    if (pillKls) pillKls.style.display = 'none';
+  }
+
   // 60-Second Background Timer untuk update live KBM highlight
   if (typeof window !== 'undefined' && !window._kbmLiveInterval && typeof setInterval !== 'undefined') {
     window._kbmLiveInterval = setInterval(() => {
@@ -287,8 +304,24 @@ async function initDashboard(user) {
 }
 
 function populateDropdownSiswa(user) {
+  const sel = document.getElementById('perijinanSiswaTarget');
+  if (!sel) return;
+
+  // Siswa terverifikasi hanya dapat mengajukan izin untuk dirinya sendiri
+  if (user && user.role === 'siswa' && user.nisn) {
+    sel.innerHTML = `<option value="${user.nisn}">${user.nama} (${user.kelas || '-'}) — NISN: ${user.nisn}</option>`;
+    sel.value = user.nisn;
+    sel.disabled = true;
+    return;
+  }
+  if (user && user.role === 'siswa') {
+    sel.innerHTML = `<option value="">${user.nama || 'Siswa'} (${user.kelas || '-'}) — NISN: Belum Terhubung</option>`;
+    sel.value = '';
+    sel.disabled = true;
+    return;
+  }
+
   function renderSel(parsed) {
-    const sel = document.getElementById('perijinanSiswaTarget');
     if (!sel) return;
     sel.innerHTML = '<option value="">-- Pilih Siswa yang Diizinkan --</option>';
 
@@ -335,7 +368,8 @@ async function handleSubmitPerijinan() {
   const user = currentUser;
   const btn = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
-  const selSiswa = document.getElementById('perijinanSiswaTarget').value;
+  const selTarget = document.getElementById('perijinanSiswaTarget');
+  const selSiswa = (user && user.role === 'siswa' && user.nisn) ? user.nisn : (selTarget ? selTarget.value : '');
   const jenis = document.getElementById('perijinanJenis').value;
   const tanggal = document.getElementById('perijinanTanggal').value;
   const alasan = document.getElementById('perijinanAlasan').value.trim();
@@ -411,8 +445,7 @@ function ambilKelasSiswa(s) {
 function normalisasiKelas(k) {
   if (!k) return '';
   let str = String(k).trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
-  // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1
-  str = str.replace(/(?:XII|12)\s*TKJ\s*2/gi, 'XII TKJ 1');
+  // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1, XII TKJ 2
   str = str.replace(/(?:XII|12)\s*(RPL|TKJ)\s*([12])/gi, 'XII $1 $2');
   str = str.replace(/\b12\s+/g, 'XII ').replace(/\b12([A-Z])/g, 'XII $1');
   return str;
@@ -894,6 +927,13 @@ function updateWidgetStatusKelas(arg1, arg2) {
 
   if (!badge) return;
 
+  const widgetBox = document.getElementById('widgetStatusKelas');
+  const u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  const isSiswaTerverifikasi = !!(u && u.role === 'siswa' && (u.isVerified === true || u.isVerified === 'true') && u.nisn);
+  if (widgetBox) {
+    widgetBox.style.display = isSiswaTerverifikasi ? 'flex' : 'none';
+  }
+
   const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 1');
   const data = (arg1 && typeof arg1 === 'object') ? arg1 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
 
@@ -1010,7 +1050,13 @@ function initBerandaOverview(user) {
   const kelasTarget = (user && user.kelas) ? user.kelas : 'XII RPL 1';
   dengarkanStatusKelasOperasional(kelasTarget);
 
-  // 1. Banner Pengunjung
+  // 1. Banner Pengunjung & Widget Status Kelas (Hanya tampil jika terverifikasi)
+  const isSiswaTerverifikasi = !isPengunjung && !!(user && user.role === 'siswa' && user.isVerified && user.nisn);
+  const widgetBox = document.getElementById('widgetStatusKelas');
+  if (widgetBox) {
+    widgetBox.style.display = isSiswaTerverifikasi ? 'flex' : 'none';
+  }
+
   const bannerGuest = document.getElementById('bannerGuestVerifikasi');
   if (bannerGuest) {
     bannerGuest.style.display = isPengunjung ? 'flex' : 'none';
@@ -1230,83 +1276,35 @@ function initRekapPresensiSiswa(user) {
   const alertPengunjung = document.getElementById('rekapPengunjungAlert');
   const contentSiswa = document.getElementById('rekapContentSiswa');
   const selSiswaRekap = document.getElementById('pilihSiswaRekap');
+  const wrapSelector = document.getElementById('wrapperSelectorRekapSiswa');
 
-  // Konten rekap presensi selalu terbuka dan dapat ditinjau oleh siapa saja
+  // Konten riwayat kehadiran siswa
   if (contentSiswa) contentSiswa.style.display = 'block';
 
-  const isPengunjung = !user || !user.nisn;
-  if (alertPengunjung) {
-    if (isPengunjung) {
-      alertPengunjung.style.display = 'flex';
-      const strongEl = alertPengunjung.querySelector('strong');
-      const pEl = alertPengunjung.querySelector('p');
-      if (strongEl) strongEl.textContent = 'Mode Peninjau Presensi Terbuka';
-      if (pEl) pEl.textContent = 'Anda dapat melihat ringkasan statistik dan riwayat presensi RFID siswa di bawah ini secara transparan.';
-    } else {
-      alertPengunjung.style.display = 'none';
-    }
-  }
-
-  // Muat opsi daftar siswa ke dropdown pilihan rekap
-  function setupRekapOptions(parsed) {
-    let siswaList = Object.values(parsed);
-    if (siswaList.length === 0) {
-      siswaList = [
-        { nisn: '0098263610', nama: 'M. Ihsan Athallah', kelas: 'XII RPL 2' },
-        { nisn: '0082104129', nama: 'Rizky Ramadhani', kelas: 'XII RPL 2' }
-      ];
-    } else {
-      siswaList.sort((a,b) => (a.nama || '').localeCompare(b.nama || ''));
-    }
-
+  const isSiswa = user && user.role === 'siswa' && user.nisn;
+  if (isSiswa) {
+    // Sesuai PRD: Siswa HANYA mengakses riwayat kehadiran pribadi, sembunyikan selector data siswa lain
+    if (wrapSelector) wrapSelector.style.display = 'none';
+    if (alertPengunjung) alertPengunjung.style.display = 'none';
+    activeNisnRekap = user.nisn;
     if (selSiswaRekap) {
-      selSiswaRekap.innerHTML = '';
-      siswaList.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.nisn;
-        opt.textContent = `${s.nama} (${s.kelas || '-'}) — NISN: ${s.nisn}`;
-        selSiswaRekap.appendChild(opt);
-      });
-
-      const targetNisn = (user && user.nisn) ? user.nisn : (siswaList.some(s => s.nisn === '0098263610') ? '0098263610' : siswaList[0].nisn);
-      selSiswaRekap.value = targetNisn;
-      muatDataRekapNisn(targetNisn);
-
-      selSiswaRekap.onchange = function() {
-        muatDataRekapNisn(this.value);
-      };
-    } else {
-      const targetNisn = (user && user.nisn) ? user.nisn : '0098263610';
-      muatDataRekapNisn(targetNisn);
+      selSiswaRekap.innerHTML = `<option value="${user.nisn}">${user.nama} (${user.kelas || '-'}) — NISN: ${user.nisn}</option>`;
+      selSiswaRekap.value = user.nisn;
     }
+    muatDataRekapNisn(user.nisn);
+    return;
   }
 
-  db.ref('siswa').once('value').then(snap => {
-    let parsed = parseSiswaSnapshot(snap.val());
-    if (Object.keys(parsed).length < 50) {
-      db.ref('data').once('value').then(snapData => {
-        if (snapData.exists()) {
-          parsed = Object.assign({}, parsed, parseSiswaSnapshot(snapData.val()));
-        }
-        if (Object.keys(parsed).length < 50 && typeof fetch === 'function') {
-          fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
-            parsed = Object.assign({}, parseSiswaSnapshot(loc), parsed);
-            setupRekapOptions(parsed);
-          }).catch(() => setupRekapOptions(parsed));
-        } else {
-          setupRekapOptions(parsed);
-        }
-      }).catch(() => setupRekapOptions(parsed));
-    } else {
-      setupRekapOptions(parsed);
-    }
-  }).catch(() => {
-    if (typeof fetch === 'function') {
-      fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
-        setupRekapOptions(parseSiswaSnapshot(loc));
-      }).catch(() => {});
-    }
-  });
+  // Jika akun pengunjung / belum tertaut NISN
+  if (wrapSelector) wrapSelector.style.display = 'none';
+  if (alertPengunjung) alertPengunjung.style.display = 'none';
+
+  const targetNisn = (user && user.nisn) ? user.nisn : '0098263610';
+  if (selSiswaRekap) {
+    selSiswaRekap.innerHTML = `<option value="${targetNisn}">M. Ihsan Athallah (XII RPL 2) — NISN: ${targetNisn}</option>`;
+    selSiswaRekap.value = targetNisn;
+  }
+  muatDataRekapNisn(targetNisn);
 }
 
 function muatDataRekapNisn(nisn) {

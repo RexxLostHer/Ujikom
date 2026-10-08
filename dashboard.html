@@ -99,11 +99,11 @@
     <button class="view-tab-btn active" id="btnTabBeranda" onclick="switchTab('tabBeranda', this)">
       <span>🏠</span> Beranda
     </button>
-    <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
+    <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)" style="display:none;">
       <span>👥</span> Pantau Presensi Kelas
     </button>
     <button class="view-tab-btn" id="btnTabRekap" onclick="switchTab('tabRekap', this)">
-      <span>📊</span> Rekap & Riwayat Presensi
+      <span>📋</span> Riwayat Kehadiran Saya
     </button>
     <button class="view-tab-btn" id="btnTabPerijinan" onclick="switchTab('tabPerijinan', this)">
       <span>📝</span> Ajukan Izin / Dispen
@@ -198,17 +198,17 @@
     </div>
 
     <!-- WIDGET STATUS OPERASIONAL KELAS TERKINI (PRD Bab 4.2 & Bab 7.1) -->
-    <div id="widgetStatusKelas" class="status-kelas-banner" style="margin-bottom:20px;padding:16px 20px;border-radius:18px;border:1.5px solid #c7d2fe;background:#eff6ff;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(79,70,229,0.05);">
+    <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none;margin-bottom:20px;padding:16px 20px;border-radius:18px;border:1.5px solid #c7d2fe;background:#eff6ff;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(79,70,229,0.05);">
       <div style="display:flex;align-items:center;gap:14px;">
         <div id="iconStatusKelas" style="font-size:26px;width:48px;height:48px;border-radius:14px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🟢</div>
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#4f46e5;" id="tagStatusKelasOperasional">Status Kelas</span>
             <span id="badgeStatusKelas" style="background:#10b981;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;">BELAJAR (KBM AKTIF)</span>
-            <div id="kelasSwitcherPill" style="display:inline-flex;gap:3px;background:#e0e7ff;padding:2px;border-radius:8px;margin-left:auto;">
+            <div id="kelasSwitcherPill" style="display:none;gap:3px;background:#e0e7ff;padding:2px;border-radius:8px;margin-left:auto;">
               <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 1" onclick="gantiKelasWidget('XII RPL 1')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:#4f46e5;color:#fff;font-weight:700;">XII RPL 1</button>
               <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 2" onclick="gantiKelasWidget('XII RPL 2')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#4338ca;font-weight:600;">XII RPL 2</button>
-              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII TKJ 1" onclick="gantiKelasWidget('XII TKJ 1')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#4338ca;font-weight:600;">XII TKJ 1</button>
+              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII TKJ 2" onclick="gantiKelasWidget('XII TKJ 2')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#4338ca;font-weight:600;">XII TKJ 2</button>
             </div>
           </div>
           <h3 id="judulStatusKelas" style="font-size:16px;font-weight:800;color:#1e1b4b;margin-top:2px;">KBM Sedang Berlangsung</h3>
@@ -223,33 +223,15 @@
       </div>
     </div>
 
-    <!-- IoT RFID Infrastructure Telemetry Banner -->
-    <div class="iot-telemetry-banner">
-      <div class="iot-telemetry-left">
-        <div class="iot-badge-status">Sistem Gateway IoT Aktif</div>
-        <div class="iot-telemetry-title">Infrastruktur Presensi Kartu RFID Kelas Mandiri</div>
-        <div class="iot-telemetry-desc">
-          Verifikasi kehadiran fisik di ruangan kelas berlangsung realtime, transparan, dan anti-titip absen saat guru pengajar berhalangan hadir.
-        </div>
-        <div class="iot-spec-chips">
-          <span class="iot-spec-item">📡 NFC / Mifare 13.56 MHz</span>
-          <span class="iot-spec-item">⚡ Latensi Realtime &lt; 50ms</span>
-          <span class="iot-spec-item">🛡️ Anti-Passback Terverifikasi</span>
-          <span class="iot-spec-item">🏫 Mode Kelas Mandiri Siaga</span>
-        </div>
-      </div>
-      <div class="iot-telemetry-icon">📡</div>
-    </div>
-
     <!-- Academic Services Shortcuts -->
     <div class="academic-services-grid">
-      <div class="academic-service-card" onclick="document.getElementById('btnTabKelas').click()">
+      <div class="academic-service-card" onclick="document.getElementById('btnTabRekap').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#eff6ff; color:#2563eb;">👥</div>
+          <div class="academic-service-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
           <span class="academic-service-arrow">→</span>
         </div>
-        <div class="academic-service-title">Pantau Presensi Kelas</div>
-        <div class="academic-service-desc">Monitoring realtime siswa yang sudah tap kartu dan belum scan di kelas.</div>
+        <div class="academic-service-title">Riwayat Kehadiran Saya</div>
+        <div class="academic-service-desc">Tinjau log kehadiran RFID pribadi dan akumulasi kehadiran Anda.</div>
       </div>
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
@@ -298,8 +280,8 @@
       </div>
     </div>
 
-    <!-- Section Live Monitoring Kehadiran Kelas (Akses Terbuka untuk Pengunjung, Siswa, Guru & Admin) -->
-    <div class="home-section-card" id="sectionPantauLiveHome" style="margin-bottom:24px; border:1.5px solid #c7d2fe; box-shadow:0 4px 20px rgba(99,102,241,0.06);">
+    <!-- Section Live Monitoring Kehadiran Kelas (Khusus Mode Supervisi Admin/Pengawas, disembunyikan untuk siswa) -->
+    <div class="home-section-card" id="sectionPantauLiveHome" style="display:none !important; margin-bottom:24px; border:1.5px solid #c7d2fe; box-shadow:0 4px 20px rgba(99,102,241,0.06);">
       <div class="home-section-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
         <div>
           <div style="display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; color:#065f46; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:999px; margin-bottom:6px; text-transform:uppercase;">
@@ -581,11 +563,11 @@
 
   </div>
 
-  <!-- ===== TAB 5: REKAP & RIWAYAT PRESENSI (1 TAHUN TERAKHIR) ===== -->
+  <!-- ===== TAB 5: RIWAYAT KEHADIRAN PRIBADI (LOG RFID & AKUMULASI) ===== -->
   <div id="tabRekap" class="tab-content" style="display:none;">
     <div class="content-header" style="margin-bottom:20px;">
-      <h2>📊 Rekap & Riwayat Presensi</h2>
-      <p>Tinjau akumulasi kehadiran, persentase kehadiran setahun terakhir, serta log presensi harian RFID.</p>
+      <h2>📋 Riwayat Kehadiran Pribadi</h2>
+      <p>Tinjau akumulasi kehadiran, persentase kehadiran pribadi Anda, serta log presensi harian RFID.</p>
     </div>
 
     <!-- Info Mode Peninjau / Pengunjung -->
@@ -601,8 +583,8 @@
     </div>
 
     <div id="rekapContentSiswa">
-      <!-- Selector Siswa untuk Rekap (Pengunjung & Siswa) -->
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <!-- Selector Siswa untuk Rekap (Disembunyikan dari Siswa Sesuai PRD) -->
+      <div id="wrapperSelectorRekapSiswa" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px; margin-bottom:20px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span style="font-size:13.5px; font-weight:700; color:#334155;">👤 Pilih Siswa yang Ditinjau:</span>
           <select id="pilihSiswaRekap" style="padding:8px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; color:#1e293b; background:#fff; outline:none; min-width:280px;">

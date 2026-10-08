@@ -54,7 +54,7 @@ if (!shouldHaltAdmin && typeof firebase !== 'undefined' && firebase.auth) {
         window.location.replace(targetUrl);
         return;
       }
-      window.location.href = 'index.html';
+      window.location.replace('admin-login.html');
       return;
     }
     const userData = await prosesLoginUser(fbUser);

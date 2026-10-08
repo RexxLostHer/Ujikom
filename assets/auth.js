@@ -59,7 +59,6 @@ function loginDenganGoogle() {
 
 // Master Admin & Guru Whitelist (PRD SMKN 1 Sumedang 2026)
 const MASTER_ADMIN_EMAILS = [
-  '7dosabesar557@gmail.com',
   'admin@smkn1sumedang.sch.id',
   'admin@ujikom.sch.id',
   'admin@nesas.sch.id',
@@ -266,7 +265,7 @@ async function prosesLoginUser(firebaseUser) {
         isWalas: !!mapped.isWalas,
         walasKelasId: mapped.walasKelasId || null,
         role: mapped.role,
-        isVerified: !!mapped.isVerified,
+        isVerified: !!mapped.isVerified || !!(mapped.nisn || mapped.nip),
         foto_google: firebaseUser.photoURL || null
       };
     } else {
@@ -300,15 +299,18 @@ async function prosesLoginUser(firebaseUser) {
         if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
         userData.isVerified = true;
         try { await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama }); } catch (e) {}
-      } else if (guruMatch && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
-        userData.role = guruMatch.isWalas ? 'walas' : 'guru';
-        userData.nama = guruMatch.nama;
-        userData.nip = guruMatch.nip;
-        userData.mapel = guruMatch.mapel;
-        userData.isWalas = !!guruMatch.isWalas;
-        userData.walasKelasId = guruMatch.walasKelasId || null;
-        userData.isVerified = true;
-        try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+      } else if (guruMatch && !userData.nisn) {
+        const expectedRole = guruMatch.isWalas ? 'walas' : 'guru';
+        if (userData.role !== expectedRole || userData.walasKelasId !== guruMatch.walasKelasId || !userData.isVerified) {
+          userData.role = expectedRole;
+          userData.nama = guruMatch.nama;
+          userData.nip = guruMatch.nip;
+          userData.mapel = guruMatch.mapel;
+          userData.isWalas = !!guruMatch.isWalas;
+          userData.walasKelasId = guruMatch.walasKelasId || null;
+          userData.isVerified = true;
+          try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+        }
       } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
         userData.role = 'pengunjung';
       }
@@ -362,13 +364,18 @@ async function periksaNisnSiswa(nisn) {
 }
 
 async function konfirmasiTautkanNisn(nisn) {
-  const currentFbUser = firebase.auth().currentUser;
-  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
+  let currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!currentFbUser && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().signInAnonymously) {
+    try {
+      const anonCred = await firebase.auth().signInAnonymously();
+      currentFbUser = anonCred.user;
+    } catch (eAnon) {}
+  }
 
   const dataSiswa = await periksaNisnSiswa(nisn);
-  const uid = currentFbUser.uid;
-  const email = currentFbUser.email || '';
-  const encoded = encodeEmail(email);
+  const uid = currentFbUser ? currentFbUser.uid : ('USER_' + dataSiswa.nisn);
+  const email = currentFbUser ? (currentFbUser.email || '') : (dataSiswa.email_terdaftar || `${dataSiswa.nisn}@siswa.nesas.sch.id`);
+  const encoded = email ? encodeEmail(email) : '';
 
   const updatedData = {
     uid: uid,
@@ -379,27 +386,29 @@ async function konfirmasiTautkanNisn(nisn) {
     role: 'siswa',
     isVerified: true,
     nisn_verified_at: new Date().toISOString(),
-    foto_google: currentFbUser.photoURL || null
+    foto_google: currentFbUser ? currentFbUser.photoURL : null
   };
 
-  await db.ref('users/' + uid).update(updatedData);
+  if (typeof db !== 'undefined' && db) {
+    await db.ref('users/' + uid).update(updatedData).catch(() => null);
+    await db.ref('nisn_claimed/' + dataSiswa.nisn).set({
+      uid: uid,
+      email: email,
+      nama: dataSiswa.nama,
+      waktu: new Date().toISOString()
+    }).catch(() => null);
 
-  await db.ref('nisn_claimed/' + dataSiswa.nisn).set({
-    uid: uid,
-    email: email,
-    nama: dataSiswa.nama,
-    waktu: new Date().toISOString()
-  });
-
-  if (encoded) {
-    try {
-      await db.ref('email_mapping/' + encoded).set({
-        nama: dataSiswa.nama,
-        nisn: dataSiswa.nisn,
-        kelas: dataSiswa.kelas,
-        role: 'siswa'
-      });
-    } catch (e) {}
+    if (encoded) {
+      try {
+        await db.ref('email_mapping/' + encoded).set({
+          nama: dataSiswa.nama,
+          nisn: dataSiswa.nisn,
+          kelas: dataSiswa.kelas,
+          role: 'siswa',
+          isVerified: true
+        });
+      } catch (e) {}
+    }
   }
 
   setSessionUser(updatedData);
@@ -444,18 +453,24 @@ async function periksaNipGuru(nip) {
     nama: guru.nama,
     mapel: guru.mapel || '-',
     isWalas: !!guru.isWalas,
-    walasKelasId: guru.walasKelasId || null
+    walasKelasId: guru.walasKelasId || null,
+    role: guru.isWalas ? 'walas' : 'guru'
   };
 }
 
 async function konfirmasiTautkanGuru(nip) {
-  const currentFbUser = firebase.auth().currentUser;
-  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
+  let currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!currentFbUser && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().signInAnonymously) {
+    try {
+      const anonCred = await firebase.auth().signInAnonymously();
+      currentFbUser = anonCred.user;
+    } catch (eAnon) {}
+  }
 
   const dataGuru = await periksaNipGuru(nip);
-  const uid = currentFbUser.uid;
-  const email = currentFbUser.email || '';
-  const encoded = encodeEmail(email);
+  const uid = currentFbUser ? currentFbUser.uid : ('GURU_' + dataGuru.nip);
+  const email = currentFbUser ? (currentFbUser.email || '') : `${dataGuru.nip}@guru.nesas.sch.id`;
+  const encoded = email ? encodeEmail(email) : '';
 
   const role = dataGuru.isWalas ? 'walas' : 'guru';
   const updatedData = {
@@ -469,73 +484,40 @@ async function konfirmasiTautkanGuru(nip) {
     role: role,
     isVerified: true,
     nip_verified_at: new Date().toISOString(),
-    foto_google: currentFbUser.photoURL || null
+    foto_google: currentFbUser ? currentFbUser.photoURL : null
   };
 
-  await db.ref('users/' + uid).update(updatedData);
+  if (typeof db !== 'undefined' && db) {
+    await db.ref('users/' + uid).update(updatedData).catch(() => null);
+    await db.ref('guru_claimed/' + dataGuru.nip).set({
+      uid: uid,
+      email: email,
+      nama: dataGuru.nama,
+      role: role,
+      waktu: new Date().toISOString()
+    }).catch(() => null);
 
-  await db.ref('guru_claimed/' + dataGuru.nip).set({
-    uid: uid,
-    email: email,
-    nama: dataGuru.nama,
-    role: role,
-    waktu: new Date().toISOString()
-  });
-
-  if (encoded) {
-    try {
-      await db.ref('email_mapping/' + encoded).set({
-        nama: dataGuru.nama,
-        nip: dataGuru.nip,
-        role: role,
-        isWalas: dataGuru.isWalas,
-        walasKelasId: dataGuru.walasKelasId
-      });
-    } catch (e) {}
+    if (encoded) {
+      try {
+        await db.ref('email_mapping/' + encoded).set({
+          nama: dataGuru.nama,
+          nip: dataGuru.nip,
+          role: role,
+          isWalas: dataGuru.isWalas,
+          walasKelasId: dataGuru.walasKelasId,
+          isVerified: true
+        });
+      } catch (e) {}
+    }
   }
 
   setSessionUser(updatedData);
   return updatedData;
 }
 
-// 5d. Validasi dan Konfirmasi Administrator (PRD Bab 3)
+// 5d. Validasi dan Konfirmasi Administrator (PRD Bab 3) — ISOLASI KETAT
 async function konfirmasiTautkanAdmin(kodeAdmin) {
-  const currentFbUser = firebase.auth().currentUser;
-  if (!currentFbUser) throw new Error('Sesi tidak aktif. Silakan masuk kembali.');
-
-  const KODE_VALID = ['admin2026', 'nesas2026', 'admin123', 'ujikom2026', 'smkn1sumedang'];
-  const cleanCode = (kodeAdmin || '').trim().toLowerCase();
-  if (!KODE_VALID.includes(cleanCode)) {
-    throw new Error('Kode sandi administrator salah. Gunakan kode admin yang sah (misal: admin2026 atau nesas2026).');
-  }
-
-  const uid = currentFbUser.uid;
-  const email = currentFbUser.email || '';
-  const encoded = encodeEmail(email);
-
-  const updatedData = {
-    uid: uid,
-    email: email,
-    nama: currentFbUser.displayName || 'Administrator Sistem',
-    role: 'admin',
-    isVerified: true,
-    admin_verified_at: new Date().toISOString(),
-    foto_google: currentFbUser.photoURL || null
-  };
-
-  await db.ref('users/' + uid).update(updatedData);
-
-  if (encoded) {
-    try {
-      await db.ref('email_mapping/' + encoded).set({
-        nama: updatedData.nama,
-        role: 'admin'
-      });
-    } catch (e) {}
-  }
-
-  setSessionUser(updatedData);
-  return updatedData;
+  throw new Error('Akses Ditolak: Hak akses Administrator hanya dapat diperoleh melalui portal login khusus di admin-login.html.');
 }
 
 function getDashboardUrlByRole(role) {
@@ -545,10 +527,23 @@ function getDashboardUrlByRole(role) {
 }
 
 function logout() {
+  const currentRole = (getSessionUser() || {}).role;
   clearSession();
-  firebase.auth().signOut().then(() => {
-    window.location.href = 'index.html';
-  });
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().signOut().catch(() => null).finally(() => {
+      if (currentRole === 'admin') {
+        window.location.href = 'admin-login.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
+  } else {
+    if (currentRole === 'admin') {
+      window.location.href = 'admin-login.html';
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
 }
 
 // 6. Reset Kata Sandi via Email Gmail

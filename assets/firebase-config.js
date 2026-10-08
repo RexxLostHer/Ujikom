@@ -9,7 +9,9 @@ const firebaseConfig = {
   appId: "1:632114437491:web:4b0c90ec78669e7cc0b906"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+  firebase.initializeApp(firebaseConfig);
+}
 var db = (typeof firebase !== 'undefined' && firebase.database) ? firebase.database() : null;
 
 // Master Konfigurasi & Normalisasi Data Siswa Resmi SMKN 1 Sumedang
@@ -26,8 +28,7 @@ function ambilKelasSiswa(s) {
 function normalisasiKelas(k) {
   if (!k) return '';
   let str = String(k).trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
-  // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1
-  str = str.replace(/(?:XII|12)\s*TKJ\s*2/gi, 'XII TKJ 1');
+  // Standarisasi variasi rombel XII RPL 1, XII RPL 2, XII TKJ 1, XII TKJ 2
   str = str.replace(/(?:XII|12)\s*(RPL|TKJ)\s*([12])/gi, 'XII $1 $2');
   str = str.replace(/\b12\s+/g, 'XII ').replace(/\b12([A-Z])/g, 'XII $1');
   return str;
@@ -247,4 +248,19 @@ if (typeof window !== 'undefined') {
   window.evaluasiAmbangBatasWaktu = evaluasiAmbangBatasWaktu;
   window.bootstrapSistemUjikom = bootstrapSistemUjikom;
   bootstrapSistemUjikom();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    firebaseConfig,
+    DAFTAR_KELAS_RESMI,
+    MASTER_GURU_RESMI,
+    KARTU_UJI_COBA,
+    DEFAULT_STATUS_KELAS,
+    ambilKelasSiswa,
+    normalisasiKelas,
+    parseSiswaSnapshot,
+    evaluasiAmbangBatasWaktu,
+    bootstrapSistemUjikom
+  };
 }
