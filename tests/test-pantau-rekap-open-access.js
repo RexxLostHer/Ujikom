@@ -6,6 +6,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
 
 function buatElement(tag = 'div') {
@@ -43,7 +44,8 @@ function buatElement(tag = 'div') {
 console.log('=== MEMULAI TEST AKSES TERBUKA PANTAU & REKAP PRESENSI ===\n');
 
 // 1. Verifikasi dashboard.html struktur filter bar & rekap
-const html = fs.readFileSync('dashboard.html', 'utf8');
+const htmlPath = fs.existsSync('dashboard.html') ? 'dashboard.html' : path.join(__dirname, '..', 'dashboard.html');
+const html = fs.readFileSync(htmlPath, 'utf8');
 
 assert(html.includes('id="pilihKelasPantau"'), 'Dropdown pilihKelasPantau harus ada');
 assert(html.includes('value="XII RPL 2"'), 'Dropdown pilihKelasPantau harus memiliki opsi XII RPL 2 secara default');

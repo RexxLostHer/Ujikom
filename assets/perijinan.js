@@ -11,6 +11,9 @@ const JENIS_PERIJINAN = {
 // SUBMIT PERIJINAN BARU
 // ===================================================================
 async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
+  if (!user || user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa') {
+    throw new Error('Akses Ditolak: Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.');
+  }
   const perijinanRef = db.ref('perijinan').push();
   const pid = perijinanRef.key;
   let dokumen_url = null;
@@ -182,7 +185,12 @@ async function adminApprove(pid, nisn, tanggal, jenis) {
     if (siswa && siswa.kelas) {
       const kelas = siswa.kelas;
       const jadwalSnap = await db.ref('jadwal_pelajaran/' + kelas).once('value');
-      const jadwal = jadwalSnap.val() || {};
+      const resolvedJadwal = (typeof ambilJadwalKelasHariIni === 'function')
+        ? ambilJadwalKelasHariIni(jadwalSnap.val(), kelas)
+        : { jadwal: jadwalSnap.val() || {} };
+      const jadwal = (resolvedJadwal && resolvedJadwal.jadwal && Object.keys(resolvedJadwal.jadwal).length > 0)
+        ? resolvedJadwal.jadwal
+        : (jadwalSnap.val() || { '1': true, '2': true, '3': true, '4': true, '5': true, '6': true, '7': true, '8': true });
       const updates = {};
       Object.keys(jadwal).forEach(function (jamKe) {
         updates['presensi_jam/' + kelas + '/' + tanggal + '/' + jamKe + '/' + nisn] = {

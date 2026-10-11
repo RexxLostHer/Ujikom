@@ -56,6 +56,8 @@ async function handleStaffLoginGoogle() {
   } catch (err) {
     if (err.code === 'auth/popup-closed-by-user') {
       clearAdminNotif();
+    } else if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request' || (err.message && (err.message.includes('popup-blocked') || err.message.includes('cancelled-popup-request')))) {
+      showAdminNotif('error', 'Jendela popup Google diblokir oleh browser. Harap izinkan pop-up pada peramban Anda atau gunakan tombol Masuk Cepat Administrator (Demo UJIKOM) di bawah.');
     } else if (err.code === 'auth/unauthorized-domain') {
       showAdminNotif('error', 'Domain lokal belum diizinkan. Tambahkan di Firebase Console -> Auth -> Authorized Domains.');
     } else {

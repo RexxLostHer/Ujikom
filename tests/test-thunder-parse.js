@@ -1,6 +1,24 @@
 const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
 
-const thunderData = JSON.parse(fs.readFileSync('C:/Users/SMKN 1 SMD -WEB TECH/Downloads/thunder-file_19325038.json', 'utf8'));
+const defaultThunderPath = 'C:/Users/SMKN 1 SMD -WEB TECH/Downloads/thunder-file_19325038.json';
+const localCandidates = [
+  path.join(__dirname, '..', 'siswa-clean-firebase.json'),
+  path.join(__dirname, '..', 'assets', 'data-siswa.json')
+];
+
+let thunderData;
+if (fs.existsSync(defaultThunderPath)) {
+  thunderData = JSON.parse(fs.readFileSync(defaultThunderPath, 'utf8'));
+} else {
+  const found = localCandidates.find(p => fs.existsSync(p));
+  if (found) {
+    thunderData = JSON.parse(fs.readFileSync(found, 'utf8'));
+  } else {
+    throw new Error('File data siswa untuk pengujian thunder-parse tidak ditemukan');
+  }
+}
 
 function ambilKelasSiswa(s) {
   if (!s || typeof s !== 'object') return '';
@@ -73,3 +91,11 @@ console.log('Class count:', c1);
 
 console.log('\nSample Ihsan:', p1['0098263610']);
 console.log('\nSample Rizky:', p1['0082104129']);
+
+assert.ok(Object.keys(p1).length > 0, 'Harus ada data siswa yang berhasil diparsing');
+assert.ok(p1['0098263610'], 'Siswa M. Ihsan Athallah (0098263610) harus ditemukan');
+assert.strictEqual(p1['0098263610'].kelas, 'XII RPL 2', 'Kelas Ihsan harus XII RPL 2');
+assert.ok(p1['0082104129'], 'Siswa Rizky Ramadani (0082104129) harus ditemukan');
+assert.strictEqual(p1['0082104129'].kelas, 'XII RPL 2', 'Kelas Rizky harus XII RPL 2');
+
+console.log('\nSEMUA TEST THUNDER PARSE SUKSES 100% ✅');

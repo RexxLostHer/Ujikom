@@ -1,9 +1,11 @@
 const assert = require('assert');
 const fs = require('fs');
+const path = require('path');
 
 // Baca konfigurasi dan fungsi parsing
 global.firebase = { initializeApp: () => {}, database: () => ({}) };
-const configCode = fs.readFileSync('assets/firebase-config.js', 'utf8');
+const configPath = fs.existsSync('assets/firebase-config.js') ? 'assets/firebase-config.js' : path.join(__dirname, '..', 'assets', 'firebase-config.js');
+const configCode = fs.readFileSync(configPath, 'utf8');
 eval(configCode);
 
 console.log('=== MEMULAI TEST KOMPATIBILITAS DATA FIREBASE & 3 KELAS RESMI ===\n');

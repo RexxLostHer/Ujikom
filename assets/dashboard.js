@@ -187,6 +187,9 @@ function switchTab(id, btn) {
   if (id === 'tabBeranda' && typeof renderPantauBeranda === 'function') {
     renderPantauBeranda();
   }
+  if (id === 'tabRekap' && typeof initRekapPresensiSiswa === 'function') {
+    initRekapPresensiSiswa(currentUser);
+  }
 }
 
 // Interaktivitas 3D Tilt & Hologram Glare pada Kartu Pelajar RFID Siswa
@@ -305,6 +308,8 @@ async function initDashboard(user) {
 
 function populateDropdownSiswa(user) {
   const sel = document.getElementById('perijinanSiswaTarget');
+  const btnSubmit = document.getElementById('btnSubmitPerijinan');
+  const msg = document.getElementById('perijinanMsg');
   if (!sel) return;
 
   // Siswa terverifikasi hanya dapat mengajukan izin untuk dirinya sendiri
@@ -312,56 +317,30 @@ function populateDropdownSiswa(user) {
     sel.innerHTML = `<option value="${user.nisn}">${user.nama} (${user.kelas || '-'}) — NISN: ${user.nisn}</option>`;
     sel.value = user.nisn;
     sel.disabled = true;
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.title = '';
+    }
+    if (msg) msg.textContent = '';
     return;
   }
-  if (user && user.role === 'siswa') {
-    sel.innerHTML = `<option value="">${user.nama || 'Siswa'} (${user.kelas || '-'}) — NISN: Belum Terhubung</option>`;
-    sel.value = '';
-    sel.disabled = true;
-    return;
+
+  // Akun pengunjung/tamu dilarang memilih siswa lain dari dropdown dan dilarang submit form perizinan
+  sel.innerHTML = `<option value="">🔒 Terkunci — Khusus Siswa Terverifikasi NISN</option>`;
+  sel.value = '';
+  sel.disabled = true;
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.title = 'Pengajuan izin hanya untuk siswa terverifikasi NISN';
+    btnSubmit.style.opacity = '0.5';
+    btnSubmit.style.cursor = 'not-allowed';
   }
-
-  function renderSel(parsed) {
-    if (!sel) return;
-    sel.innerHTML = '<option value="">-- Pilih Siswa yang Diizinkan --</option>';
-
-    Object.values(parsed).sort((a,b) => (a.nama || '').localeCompare(b.nama || '')).forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.nisn;
-      opt.textContent = s.nama + ' (' + (s.kelas || '-') + ')';
-      if (user && (user.nisn === s.nisn || (s.email && user.email && s.email.toLowerCase() === user.email.toLowerCase()))) {
-        opt.selected = true;
-      }
-      sel.appendChild(opt);
-    });
+  if (msg) {
+    msg.style.color = '#ef4444';
+    msg.innerHTML = '⚠️ <b>Khusus Siswa Terverifikasi:</b> Akun pengunjung / tamu dilarang mengajukan izin. Silakan hubungkan dan verifikasi NISN Anda terlebih dahulu melalui menu Profil.';
   }
-
-  db.ref('siswa').once('value').then(snap => {
-    let parsed = parseSiswaSnapshot(snap.val());
-    if (Object.keys(parsed).length < 50) {
-      db.ref('data').once('value').then(snapData => {
-        if (snapData.exists()) {
-          parsed = Object.assign({}, parsed, parseSiswaSnapshot(snapData.val()));
-        }
-        if (Object.keys(parsed).length < 50 && typeof fetch === 'function') {
-          fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
-            parsed = Object.assign({}, parseSiswaSnapshot(loc), parsed);
-            renderSel(parsed);
-          }).catch(() => renderSel(parsed));
-        } else {
-          renderSel(parsed);
-        }
-      }).catch(() => renderSel(parsed));
-    } else {
-      renderSel(parsed);
-    }
-  }).catch(() => {
-    if (typeof fetch === 'function') {
-      fetch('assets/data-siswa.json').then(r => r.json()).then(loc => {
-        renderSel(parseSiswaSnapshot(loc));
-      }).catch(() => {});
-    }
-  });
 }
 
 async function handleSubmitPerijinan() {
@@ -369,7 +348,18 @@ async function handleSubmitPerijinan() {
   const btn = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
   const selTarget = document.getElementById('perijinanSiswaTarget');
-  const selSiswa = (user && user.role === 'siswa' && user.nisn) ? user.nisn : (selTarget ? selTarget.value : '');
+
+  // Akun pengunjung/tamu dilarang submit form perizinan
+  if (!user || user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa') {
+    if (msg) {
+      msg.style.color = '#ef4444';
+      msg.innerHTML = '⚠️ <b>Akses Ditolak:</b> Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.';
+    }
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  const selSiswa = user.nisn;
   const jenis = document.getElementById('perijinanJenis').value;
   const tanggal = document.getElementById('perijinanTanggal').value;
   const alasan = document.getElementById('perijinanAlasan').value.trim();
@@ -377,7 +367,7 @@ async function handleSubmitPerijinan() {
 
   if (!selSiswa) {
     msg.style.color = '#ef4444';
-    msg.textContent = 'Silakan pilih siswa yang ingin diizinkan.';
+    msg.textContent = 'Silakan verifikasi NISN Anda terlebih dahulu.';
     return;
   }
   if (!tanggal) {
@@ -402,8 +392,8 @@ async function handleSubmitPerijinan() {
     const userPayload = {
       uid: user.uid,
       nisn: selSiswa,
-      nama: s.nama || 'Siswa',
-      kelas: s.kelas || '',
+      nama: s.nama || user.nama || 'Siswa',
+      kelas: s.kelas || user.kelas || '',
       pengaju: user.nama
     };
 
@@ -412,13 +402,13 @@ async function handleSubmitPerijinan() {
     msg.style.color = '#10b981';
     msg.textContent = '✅ Pengajuan berhasil dikirim! Silakan buka tab Chat & Status Ijin untuk konfirmasi.';
     document.getElementById('perijinanAlasan').value = '';
-    fileInput.value = '';
+    if (fileInput) fileInput.value = '';
   } catch(e) {
     msg.style.color = '#ef4444';
     msg.textContent = 'Gagal: ' + e.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Kirim Pengajuan ke Admin';
+    btn.textContent = 'Kirim Pengajuan Izin';
   }
 }
 
@@ -1278,12 +1268,10 @@ function initRekapPresensiSiswa(user) {
   const selSiswaRekap = document.getElementById('pilihSiswaRekap');
   const wrapSelector = document.getElementById('wrapperSelectorRekapSiswa');
 
-  // Konten riwayat kehadiran siswa
-  if (contentSiswa) contentSiswa.style.display = 'block';
-
   const isSiswa = user && user.role === 'siswa' && user.nisn;
   if (isSiswa) {
     // Sesuai PRD: Siswa HANYA mengakses riwayat kehadiran pribadi, sembunyikan selector data siswa lain
+    if (contentSiswa) contentSiswa.style.display = 'block';
     if (wrapSelector) wrapSelector.style.display = 'none';
     if (alertPengunjung) alertPengunjung.style.display = 'none';
     activeNisnRekap = user.nisn;
@@ -1295,16 +1283,16 @@ function initRekapPresensiSiswa(user) {
     return;
   }
 
-  // Jika akun pengunjung / belum tertaut NISN
+  // Jika akun pengunjung / tamu / belum tertaut NISN:
+  // Dilarang me-load data M. Ihsan Athallah (targetNisn = '0098263610'). Sembunyikan tabel rekap dan tampilkan alert rekapPengunjungAlert
+  if (contentSiswa) contentSiswa.style.display = 'none';
+  if (alertPengunjung) alertPengunjung.style.display = 'block';
   if (wrapSelector) wrapSelector.style.display = 'none';
-  if (alertPengunjung) alertPengunjung.style.display = 'none';
-
-  const targetNisn = (user && user.nisn) ? user.nisn : '0098263610';
-  if (selSiswaRekap) {
-    selSiswaRekap.innerHTML = `<option value="${targetNisn}">M. Ihsan Athallah (XII RPL 2) — NISN: ${targetNisn}</option>`;
-    selSiswaRekap.value = targetNisn;
+  activeNisnRekap = null;
+  if (listenerRekapPresensi) {
+    listenerRekapPresensi.ref.off('value', listenerRekapPresensi.cb);
+    listenerRekapPresensi = null;
   }
-  muatDataRekapNisn(targetNisn);
 }
 
 function muatDataRekapNisn(nisn) {
@@ -1468,43 +1456,93 @@ function renderRekapSiswaUI(range) {
   });
 }
 
+let currentSelectedKelasJadwal = 'XII RPL 2';
+let currentSelectedHariJadwal = (function() {
+  const h = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
+  return (h === 'sabtu' || h === 'minggu') ? 'senin' : h;
+})();
+
 function initClassChipsSelector(user) {
   const container = document.getElementById('classChipsList');
   const containerTab = document.getElementById('classChipsListTab');
-  const listKelas = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const dayContainer = document.getElementById('dayChipsList');
+  const dayContainerTab = document.getElementById('dayChipsListTab');
 
+  const listKelas = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const listHari = [
+    { key: 'senin', label: 'Senin' },
+    { key: 'selasa', label: 'Selasa' },
+    { key: 'rabu', label: 'Rabu' },
+    { key: 'kamis', label: 'Kamis' },
+    { key: 'jumat', label: 'Jumat' }
+  ];
+
+  if (user && user.kelas && listKelas.includes(user.kelas)) {
+    currentSelectedKelasJadwal = user.kelas;
+  }
+
+  // 1. Render Selector Kelas
   [container, containerTab].forEach(cnt => {
     if (!cnt) return;
     cnt.innerHTML = '';
     listKelas.forEach(kelas => {
       const chip = document.createElement('button');
-      chip.className = 'class-chip';
+      chip.type = 'button';
+      chip.className = 'class-chip' + (kelas === currentSelectedKelasJadwal ? ' active' : '');
       chip.textContent = kelas;
       chip.onclick = function() {
-        document.querySelectorAll('.class-chip').forEach(c => {
+        currentSelectedKelasJadwal = kelas;
+        document.querySelectorAll('#classChipsList .class-chip, #classChipsListTab .class-chip').forEach(c => {
           if (c.textContent === kelas) c.classList.add('active');
           else c.classList.remove('active');
         });
-        muatJadwalBeranda(kelas);
+        muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
         if (typeof dengarkanStatusKelasOperasional === 'function') {
           dengarkanStatusKelasOperasional(kelas);
         }
       };
       cnt.appendChild(chip);
     });
-
-    const targetKelas = (user && user.kelas && listKelas.includes(user.kelas)) ? user.kelas : 'XII RPL 2';
-    const defaultChip = Array.from(cnt.children).find(c => c.textContent === targetKelas);
-    if (defaultChip) {
-      defaultChip.classList.add('active');
-    }
   });
 
-  const targetAwal = (user && user.kelas && listKelas.includes(user.kelas)) ? user.kelas : 'XII RPL 2';
-  muatJadwalBeranda(targetAwal);
+  // 2. Render Selector Hari (Senin s/d Jumat)
+  [dayContainer, dayContainerTab].forEach(dcnt => {
+    if (!dcnt) return;
+    dcnt.innerHTML = '';
+    listHari.forEach(item => {
+      const dchip = document.createElement('button');
+      dchip.type = 'button';
+      dchip.className = 'class-chip' + (item.key === currentSelectedHariJadwal ? ' active' : '');
+      dchip.setAttribute('data-hari', item.key);
+      dchip.innerHTML = item.key === currentSelectedHariJadwal ? `✨ ${item.label}` : item.label;
+      dchip.onclick = function() {
+        currentSelectedHariJadwal = item.key;
+        document.querySelectorAll('#dayChipsList .class-chip, #dayChipsListTab .class-chip').forEach(c => {
+          const hk = c.getAttribute('data-hari');
+          const lbl = listHari.find(h => h.key === hk)?.label || hk;
+          if (hk === item.key) {
+            c.classList.add('active');
+            c.innerHTML = `✨ ${lbl}`;
+          } else {
+            c.classList.remove('active');
+            c.innerHTML = lbl;
+          }
+        });
+        muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+      };
+      dcnt.appendChild(dchip);
+    });
+  });
+
+  muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
 }
 
-function muatJadwalBeranda(kelas) {
+function muatJadwalBeranda(kelas, hari) {
+  const targetKelas = kelas || currentSelectedKelasJadwal || 'XII RPL 2';
+  const targetHari = hari || currentSelectedHariJadwal || 'senin';
+  currentSelectedKelasJadwal = targetKelas;
+  currentSelectedHariJadwal = targetHari;
+
   const gridEl = document.getElementById('homeScheduleGrid');
   const gridTabEl = document.getElementById('tabScheduleGrid');
   const badgePulang = document.getElementById('homeJamPulangBadge');
@@ -1512,17 +1550,23 @@ function muatJadwalBeranda(kelas) {
   const bannerMandiri = document.getElementById('bannerKelasMandiri');
   const bannerText = document.getElementById('bannerMandiriText');
 
-  if (badgePulang) badgePulang.textContent = `Memeriksa ${kelas}...`;
-  if (badgePulangTab) badgePulangTab.textContent = `Memeriksa ${kelas}...`;
+  const namaHariCap = targetHari.charAt(0).toUpperCase() + targetHari.slice(1);
+  if (badgePulang) badgePulang.textContent = `Memeriksa ${targetKelas} (${namaHariCap})...`;
+  if (badgePulangTab) badgePulangTab.textContent = `Memeriksa ${targetKelas} (${namaHariCap})...`;
 
   // Jadwal Pelajaran & Auto-Sync Jam Pulang
-  db.ref(`jadwal_pelajaran/${kelas}`).on('value', snapshot => {
-    const data = snapshot.val() || {};
+  db.ref(`jadwal_pelajaran/${targetKelas}`).on('value', snapshot => {
+    const rawVal = snapshot.val();
+    const resolved = (typeof ambilJadwalKelasHariIni === 'function')
+      ? ambilJadwalKelasHariIni(rawVal, targetKelas, targetHari)
+      : { hari: targetHari, jadwal: rawVal || {}, jamPulang: (targetHari === 'jumat' ? '11:45' : '15:30') };
+
+    const data = resolved.jadwal || {};
     [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = ''; });
 
     const jamKeys = Object.keys(data).sort((a, b) => Number(a) - Number(b));
     if (jamKeys.length === 0) {
-      const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${kelas}.</div>`;
+      const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${targetKelas} pada hari ${namaHariCap}.</div>`;
       [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = emptyHtml; });
       if (bannerMandiri) bannerMandiri.style.display = 'none';
       if (badgePulang) badgePulang.textContent = `Jam Pulang: -`;
@@ -1530,16 +1574,15 @@ function muatJadwalBeranda(kelas) {
       return;
     }
 
-    // Ambil jam selesai dari mapel paling terakhir
-    const keyTerakhir = jamKeys[jamKeys.length - 1];
-    const mapelTerakhir = data[keyTerakhir];
-    const jamSelesaiAkhir = (mapelTerakhir && mapelTerakhir.selesai) ? mapelTerakhir.selesai : '15:15';
-
-    const jamPulangStr = `Jam Pulang ${kelas}: ${jamSelesaiAkhir} WIB`;
+    // Ambil jam selesai dari mapel paling terakhir atau ketetapan jam pulang resmi
+    const jamPulangResmi = resolved.jamPulang || (targetHari === 'jumat' ? '11:45' : '15:30');
+    const jamPulangStr = `Jam Pulang ${targetKelas} (${namaHariCap}): ${jamPulangResmi} WIB`;
     if (badgePulang) badgePulang.textContent = jamPulangStr;
     if (badgePulangTab) badgePulangTab.textContent = jamPulangStr;
 
     const jamSkrg = jamSekarang();
+    const hariIniReal = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
+    const isToday = (targetHari === hariIniReal);
     const listJamMandiri = [];
 
     jamKeys.forEach(jamKe => {
@@ -1556,8 +1599,8 @@ function muatJadwalBeranda(kelas) {
         listJamMandiri.push(`Jam ke-${jamKe} (${namaMapelBersih})`);
       }
 
-      // 3. Cek apakah jam ini aktif sekarang
-      const isActive = p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg <= p.selesai;
+      // 3. Cek apakah jam ini aktif sekarang (hanya berlaku jika melihat jadwal hari ini)
+      const isActive = isToday && p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg <= p.selesai;
 
       const cardHtml = `
         ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}

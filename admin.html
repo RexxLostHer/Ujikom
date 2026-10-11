@@ -396,6 +396,16 @@
               <select id="pelajaranKelas"></select>
             </div>
             <div class="form-group">
+              <label>Hari Pembelajaran</label>
+              <select id="pelajaranHari" onchange="gantiHariPelajaranAdmin()">
+                <option value="senin" selected>Senin</option>
+                <option value="selasa">Selasa</option>
+                <option value="rabu">Rabu</option>
+                <option value="kamis">Kamis</option>
+                <option value="jumat">Jumat</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>Jam Ke-</label>
               <input type="number" id="pelajaranJamKe" min="1" max="12" placeholder="1">
             </div>
@@ -416,8 +426,11 @@
               <input type="time" id="pelajaranSelesai">
             </div>
           </div>
-          <div class="form-actions">
+          <div class="form-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn-primary" onclick="submitPelajaran()">+ Tambah Jam Pelajaran</button>
+            <button type="button" class="btn-primary" onclick="terapkanMasterJadwalResmi()" style="background:#059669; border-color:#059669;">
+              ⚡ Terapkan Master Jadwal Resmi (Semua Kelas & 5 Hari KBM)
+            </button>
           </div>
           <div class="msg" id="pelajaranMsg"></div>
         </div>

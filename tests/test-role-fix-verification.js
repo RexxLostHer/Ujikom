@@ -18,7 +18,9 @@ const MASTER_ADMIN_EMAILS = [
   'admin@admin.com',
   'admin@gmail.com',
   'administrator@smkn1sumedang.sch.id',
-  'admin@nesas.com'
+  'admin@nesas.com',
+  'rexxydc1@gmail.com',
+  'rexxydc1@smkn1sumedang.sch.id'
 ];
 
 function isEmailAdmin(email) {
@@ -33,6 +35,8 @@ function isEmailAdmin(email) {
 console.log('[Test 1] Evaluasi Deteksi Email Admin...');
 assert.strictEqual(isEmailAdmin('7dosabesar557@gmail.com'), true, 'Email user tester harus dikenali sebagai admin');
 assert.strictEqual(isEmailAdmin('admin@smkn1sumedang.sch.id'), true, 'Email resmi admin harus dikenali');
+assert.strictEqual(isEmailAdmin('rexxydc1@gmail.com'), true, 'Email rexxydc1@gmail.com harus dikenali sebagai admin');
+assert.strictEqual(isEmailAdmin('rexxydc1@smkn1sumedang.sch.id'), true, 'Email rexxydc1@smkn1sumedang.sch.id harus dikenali sebagai admin');
 assert.strictEqual(isEmailAdmin('admin.lab@gmail.com'), true, 'Email admin.* harus dikenali');
 assert.strictEqual(isEmailAdmin('siswa@smkn1sumedang.sch.id'), false, 'Email siswa bukan admin');
 console.log('✓ Deteksi email admin lulus 100%.\n');

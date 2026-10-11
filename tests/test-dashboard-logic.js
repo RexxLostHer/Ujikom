@@ -3,10 +3,13 @@
 
 const vm = require('vm');
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
 
-const src = fs.readFileSync('assets/dashboard.js', 'utf8');
-const srcUtil = fs.readFileSync('assets/jadwal-util.js', 'utf8');
+const srcPath = fs.existsSync('assets/dashboard.js') ? 'assets/dashboard.js' : path.join(__dirname, '..', 'assets', 'dashboard.js');
+const src = fs.readFileSync(srcPath, 'utf8');
+const srcUtilPath = fs.existsSync('assets/jadwal-util.js') ? 'assets/jadwal-util.js' : path.join(__dirname, '..', 'assets', 'jadwal-util.js');
+const srcUtil = fs.readFileSync(srcUtilPath, 'utf8');
 
 function tanggalHariIni() {
   const d = new Date();

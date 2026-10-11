@@ -65,7 +65,9 @@ const MASTER_ADMIN_EMAILS = [
   'admin@admin.com',
   'admin@gmail.com',
   'administrator@smkn1sumedang.sch.id',
-  'admin@nesas.com'
+  'admin@nesas.com',
+  'rexxydc1@gmail.com',
+  'rexxydc1@smkn1sumedang.sch.id'
 ];
 
 function isEmailAdmin(email) {
@@ -278,6 +280,16 @@ async function prosesLoginUser(firebaseUser) {
         role: 'pengunjung',
         foto_google: firebaseUser.photoURL || null
       };
+    }
+
+    // CRITICAL: Jika user sedang dalam sesi switched/demo role (misal 1-Click Demo Testing),
+    // pertahankan role aktif dari sessionStorage agar akun anonim/baru tidak tertimpa ke pengunjung
+    const isSwitchedGlobal = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true';
+    if (isSwitchedGlobal) {
+      const activeSess = typeof getSessionUser === 'function' ? getSessionUser() : null;
+      if (activeSess && activeSess.role) {
+        userData = { ...userData, ...activeSess, isRoleSwitched: true };
+      }
     }
 
     try {
@@ -596,6 +608,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     defaultData = {
       role: 'admin',
       nama: 'Administrator Sistem',
+      email: 'admin@smkn1sumedang.sch.id',
       isVerified: true,
       nisn: null,
       kelas: null,
@@ -608,6 +621,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     defaultData = {
       role: 'walas',
       nama: 'Muhammad Echa Putra, S.Kom.Gr',
+      email: 'echa@smkn1sumedang.sch.id',
       nip: '199209142022211007',
       mapel: 'Basis Data & Pemodelan RPL',
       isWalas: true,
@@ -620,6 +634,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     defaultData = {
       role: 'guru',
       nama: 'Hani Hanifah, S.Si',
+      email: 'hani@smkn1sumedang.sch.id',
       nip: '198109012009022003',
       mapel: 'Pemrograman Web & Perangkat Bergerak',
       isWalas: false,
@@ -632,6 +647,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     defaultData = {
       role: 'siswa',
       nama: 'M. Ihsan Athallah',
+      email: 'ihsanathallah@gmail.com',
       nisn: '0098263610',
       kelas: 'XII RPL 2',
       isVerified: true,
@@ -645,6 +661,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     defaultData = {
       role: 'pengunjung',
       nama: (currentFbUser && currentFbUser.displayName) || currentSession.nama || 'Pengunjung / Tamu Sekolah',
+      email: 'pengunjung@nesas.sch.id',
       nisn: null,
       kelas: null,
       nip: null,

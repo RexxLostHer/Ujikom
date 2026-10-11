@@ -685,7 +685,7 @@ function submitSiswa() {
     return;
   }
 
-  const payload = { nama, kelas };
+  const payload = { nisn, nama, kelas };
   if (email) payload.email = email;
 
   const key = editingKey || nisn;
@@ -797,7 +797,8 @@ function submitKartu() {
     return;
   }
 
-  db.ref('kartu/' + idKartu).set({ nisn })
+  const namaPemilik = (siswaCache[nisn] && siswaCache[nisn].nama) || '';
+  db.ref('kartu/' + idKartu).set({ nisn, pemilik: namaPemilik })
     .then(function () {
       showMsg('kartuMsg', 'Mapping kartu disimpan.', 'success');
       document.getElementById('kartuId').value = '';
@@ -927,8 +928,17 @@ function renderJadwalTable(data) {
 // ===================================================================
 let pelajaranListenerAktif = null;
 
+function gantiHariPelajaranAdmin() {
+  const selPelKls = document.getElementById('pelajaranKelas');
+  if (selPelKls && selPelKls.value) {
+    pasangListenerPelajaran(selPelKls.value);
+  }
+}
+
 function submitPelajaran() {
   const kelas   = document.getElementById('pelajaranKelas').value;
+  const hariEl  = document.getElementById('pelajaranHari');
+  const hari    = hariEl ? hariEl.value : 'senin';
   const jamKe   = document.getElementById('pelajaranJamKe').value.trim();
   const mapel   = document.getElementById('pelajaranMapel').value.trim();
   const mulai   = document.getElementById('pelajaranMulai').value;
@@ -943,9 +953,14 @@ function submitPelajaran() {
     return;
   }
 
-  db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).set({ mapel, mulai, selesai })
+  const payload = { mapel, mulai, selesai };
+  const p1 = db.ref('jadwal_pelajaran/' + kelas + '/' + hari + '/' + jamKe).set(payload);
+  const p2 = db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).set(payload);
+
+  Promise.all([p1, p2])
     .then(function () {
-      showMsg('pelajaranMsg', 'Jam ke-' + jamKe + ' kelas ' + kelas + ' disimpan.', 'success');
+      const namaHariCap = hari.charAt(0).toUpperCase() + hari.slice(1);
+      showMsg('pelajaranMsg', 'Jam ke-' + jamKe + ' kelas ' + kelas + ' (' + namaHariCap + ') disimpan.', 'success');
       document.getElementById('pelajaranJamKe').value = '';
       document.getElementById('pelajaranMapel').value = '';
       document.getElementById('pelajaranMulai').value = '';
@@ -954,9 +969,13 @@ function submitPelajaran() {
     .catch(function (err) { showMsg('pelajaranMsg', 'Gagal: ' + err.message, 'error'); });
 }
 
-function hapusPelajaran(kelas, jamKe) {
-  if (!confirm('Hapus jam ke-' + jamKe + ' dari kelas ' + kelas + '?')) return;
-  db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).remove()
+function hapusPelajaran(kelas, jamKe, hari) {
+  const hariAktif = hari || (document.getElementById('pelajaranHari') ? document.getElementById('pelajaranHari').value : 'senin');
+  if (!confirm('Hapus jam ke-' + jamKe + ' dari kelas ' + kelas + ' (' + hariAktif + ')?')) return;
+  const p1 = db.ref('jadwal_pelajaran/' + kelas + '/' + hariAktif + '/' + jamKe).remove();
+  const p2 = db.ref('jadwal_pelajaran/' + kelas + '/' + jamKe).remove();
+
+  Promise.all([p1, p2])
     .then(function () { showMsg('pelajaranMsg', 'Jam ke-' + jamKe + ' dihapus.', 'success'); })
     .catch(function (err) { showMsg('pelajaranMsg', 'Gagal: ' + err.message, 'error'); });
 }
@@ -966,18 +985,33 @@ function renderPelajaranTable(kelas, data) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  if (!data) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📚</div><p>Belum ada jadwal untuk kelas ' + kelas + '.</p></div></td></tr>';
+  const hariEl = document.getElementById('pelajaranHari');
+  const hariAktif = hariEl ? hariEl.value : 'senin';
+  const namaHariCap = hariAktif.charAt(0).toUpperCase() + hariAktif.slice(1);
+
+  // Ambil jadwal untuk hari aktif atau fallback
+  let jadwalHari = null;
+  if (data && data[hariAktif] && typeof data[hariAktif] === 'object') {
+    jadwalHari = data[hariAktif];
+  } else if (data && Object.keys(data).some(k => !isNaN(Number(k)))) {
+    jadwalHari = data;
+  } else if (typeof ambilJadwalKelasHariIni === 'function') {
+    const res = ambilJadwalKelasHariIni(data, kelas, hariAktif);
+    jadwalHari = res.jadwal;
+  }
+
+  if (!jadwalHari || Object.keys(jadwalHari).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📚</div><p>Belum ada jadwal untuk kelas ' + kelas + ' pada hari ' + namaHariCap + '.</p></div></td></tr>';
     return;
   }
 
-  const jamKeList = Object.keys(data).sort((a, b) => Number(a) - Number(b));
+  const jamKeList = Object.keys(jadwalHari).sort((a, b) => Number(a) - Number(b));
   jamKeList.forEach(function (jamKe) {
-    const p = data[jamKe];
+    const p = jadwalHari[jamKe];
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td><strong>Jam ke-' + jamKe + '</strong></td>' +
-      '<td>' + (p.mapel || '') + '</td>' +
+      '<td><strong>Jam ke-' + jamKe + '</strong> <span style="font-size:11px;color:#64748b;">(' + namaHariCap + ')</span></td>' +
+      '<td>' + (p.mapel || '') + (p.guru ? '<div style="font-size:11.5px;color:#64748b;">👨‍🏫 ' + p.guru + '</div>' : '') + '</td>' +
       '<td>' + (p.mulai || '') + '</td>' +
       '<td>' + (p.selesai || '') + '</td>' +
       '<td></td>';
@@ -985,7 +1019,7 @@ function renderPelajaranTable(kelas, data) {
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Hapus';
     delBtn.className = 'btn-row-delete';
-    delBtn.onclick = function () { hapusPelajaran(kelas, jamKe); };
+    delBtn.onclick = function () { hapusPelajaran(kelas, jamKe, hariAktif); };
     tr.cells[4].appendChild(delBtn);
     tbody.appendChild(tr);
   });
@@ -999,6 +1033,44 @@ function pasangListenerPelajaran(kelas) {
   const callback = function (snapshot) { renderPelajaranTable(kelas, snapshot.val()); };
   db.ref('jadwal_pelajaran/' + kelas).on('value', callback);
   pelajaranListenerAktif = { kelas, callback };
+}
+
+// FUNGSI BULK SEED MASTER JADWAL RESMI SEMUA KELAS & 5 HARI
+async function terapkanMasterJadwalResmi() {
+  if (!confirm('Terapkan Master Jadwal Resmi (Senin s/d Jumat) untuk seluruh 3 kelas pilot (XII RPL 1, XII RPL 2, XII TKJ 1) ke database Firebase?')) {
+    return;
+  }
+
+  const master = (typeof MASTER_JADWAL_RESMI !== 'undefined') ? MASTER_JADWAL_RESMI : {};
+  if (Object.keys(master).length === 0) {
+    showMsg('pelajaranMsg', 'Master data jadwal belum termuat.', 'error');
+    return;
+  }
+
+  showMsg('pelajaranMsg', '⏳ Menulis master jadwal ke database Firebase...', 'info');
+
+  try {
+    const promises = [];
+    const classes = Object.keys(master);
+
+    classes.forEach(function (kls) {
+      // 1. Simpan jadwal lengkap per hari
+      promises.push(db.ref('jadwal_pelajaran/' + kls).set(master[kls]));
+
+      // 2. Simpan jam pulang
+      promises.push(db.ref('jadwal/' + kls).set('15:30'));
+    });
+
+    await Promise.all(promises);
+    showMsg('pelajaranMsg', '✓ Sukses! Master jadwal resmi untuk 3 kelas pilot (Senin s/d Jumat) berhasil diterapkan ke Firebase!', 'success');
+
+    const selPelKls = document.getElementById('pelajaranKelas');
+    if (selPelKls && selPelKls.value) {
+      pasangListenerPelajaran(selPelKls.value);
+    }
+  } catch (err) {
+    showMsg('pelajaranMsg', 'Gagal menerapkan jadwal: ' + err.message, 'error');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

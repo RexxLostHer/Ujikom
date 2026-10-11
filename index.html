@@ -411,16 +411,19 @@
   .daevora-auth-card {
     width: 100%;
     max-width: 440px;
+    max-height: 92vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.4) transparent;
     background: rgba(11, 17, 33, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 26px;
-    padding: 34px 30px;
+    padding: 30px 28px;
     box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8),
                 0 0 40px -10px rgba(56, 189, 248, 0.2);
     position: relative;
-    overflow: hidden;
     pointer-events: auto;
   }
   .daevora-auth-card.emerald-glow {
@@ -904,6 +907,42 @@
           <div id="notifBoxLogin" class="toast-alert"></div>
         </form>
 
+        <!-- PANEL MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING) -->
+        <div class="demo-testing-box" style="margin-top:16px;padding:12px 14px;background:rgba(15,23,42,0.85);border:1px solid rgba(56,189,248,0.3);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;">⚡</span>
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;font-family:var(--mono);color:#38bdf8;text-transform:uppercase;">Masuk Cepat Pengujian</span>
+            </div>
+            <span style="font-size:10px;color:#94a3b8;font-family:var(--mono);background:rgba(56,189,248,0.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(56,189,248,0.2);">1-Click Demo</span>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:10px;">
+            Akses langsung untuk penguji / asesor tanpa terhambat pop-up browser:
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <button type="button" onclick="masukCepatDemo('siswa')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(99,102,241,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#818cf8';this.style.background='rgba(49,46,129,0.4)'" onmouseout="this.style.borderColor='rgba(99,102,241,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#818cf8;font-family:var(--mono);">🎓 SISWA</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Ihsan Athallah</span>
+              <span style="font-size:9.5px;color:#94a3b8;">XII RPL 2</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('guru')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(16,185,129,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#34d399';this.style.background='rgba(6,78,59,0.4)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#34d399;font-family:var(--mono);">👩‍🏫 GURU</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Hani Hanifah, S.Si</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Guru Mapel</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('walas')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(245,158,11,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#fbbf24';this.style.background='rgba(120,53,15,0.4)'" onmouseout="this.style.borderColor='rgba(245,158,11,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#fbbf24;font-family:var(--mono);">🧑‍🏫 WALI KELAS</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Echa Putra</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Walas XII RPL 2</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('pengunjung')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#cbd5e1';this.style.background='rgba(51,65,85,0.4)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#cbd5e1;font-family:var(--mono);">👤 PENGUNJUNG</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Tamu / Asesor</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Mode Peninjau</span>
+            </button>
+          </div>
+        </div>
+
         <div class="card-footer-caption">
           Belum punya akun? <a onclick="goScene('register')">Daftar akun RPL ↓</a>
         </div>
@@ -985,6 +1024,42 @@
           <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun RPL</button>
           <div id="notifBoxRegister" class="toast-alert"></div>
         </form>
+
+        <!-- PANEL MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING) -->
+        <div class="demo-testing-box" style="margin-top:16px;padding:12px 14px;background:rgba(15,23,42,0.85);border:1px solid rgba(16,185,129,0.3);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;">⚡</span>
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;font-family:var(--mono);color:#34d399;text-transform:uppercase;">Masuk Cepat Pengujian</span>
+            </div>
+            <span style="font-size:10px;color:#94a3b8;font-family:var(--mono);background:rgba(16,185,129,0.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(16,185,129,0.2);">1-Click Demo</span>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:10px;">
+            Akses langsung untuk penguji / asesor tanpa terhambat pop-up browser:
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <button type="button" onclick="masukCepatDemo('siswa')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(99,102,241,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#818cf8';this.style.background='rgba(49,46,129,0.4)'" onmouseout="this.style.borderColor='rgba(99,102,241,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#818cf8;font-family:var(--mono);">🎓 SISWA</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Ihsan Athallah</span>
+              <span style="font-size:9.5px;color:#94a3b8;">XII RPL 2</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('guru')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(16,185,129,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#34d399';this.style.background='rgba(6,78,59,0.4)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#34d399;font-family:var(--mono);">👩‍🏫 GURU</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Hani Hanifah, S.Si</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Guru Mapel</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('walas')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(245,158,11,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#fbbf24';this.style.background='rgba(120,53,15,0.4)'" onmouseout="this.style.borderColor='rgba(245,158,11,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#fbbf24;font-family:var(--mono);">🧑‍🏫 WALI KELAS</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Echa Putra</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Walas XII RPL 2</span>
+            </button>
+            <button type="button" onclick="masukCepatDemo('pengunjung')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#cbd5e1';this.style.background='rgba(51,65,85,0.4)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.35)';this.style.background='rgba(30,41,59,0.9)'">
+              <span style="font-size:10px;font-weight:700;color:#cbd5e1;font-family:var(--mono);">👤 PENGUNJUNG</span>
+              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Tamu / Asesor</span>
+              <span style="font-size:9.5px;color:#94a3b8;">Mode Peninjau</span>
+            </button>
+          </div>
+        </div>
 
         <div class="card-footer-caption emerald">
           Sudah punya akun? <a onclick="goScene('login')">Masuk ke akun ↑</a>
@@ -2486,6 +2561,8 @@
           tampilNotif(notifTarget, 'Harap tambahkan domain lokal ke Firebase Console -> Auth -> Authorized domains.', 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
           tampilNotif(notifTarget, 'Login dibatalkan.', 'error');
+        } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || (e.message && (e.message.includes('popup-blocked') || e.message.includes('cancelled-popup-request')))) {
+          tampilNotif(notifTarget, 'Jendela pop-up Google diblokir oleh browser. Harap izinkan pop-up pada peramban Anda atau gunakan opsi "Masuk Cepat Pengujian (1-Click Demo)" di bawah.', 'error');
         } else {
           tampilNotif(notifTarget, e.message || 'Gagal login Google.', 'error');
         }
@@ -2571,6 +2648,102 @@
           tampilNotif('notifBoxRegister', err.message || 'Gagal mendaftar.', 'error');
         }
       }
+    }
+
+    // ===== 5. MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING UJIKOM 2026) =====
+    async function masukCepatDemo(roleKey) {
+      bersihkanNotif('notifBoxLogin');
+      bersihkanNotif('notifBoxRegister');
+      loading(true, 'Menyiapkan sesi pengujian demo...');
+
+      try {
+        if (typeof firebase !== 'undefined' && firebase.auth && !firebase.auth().currentUser) {
+          if (firebase.auth().signInAnonymously) {
+            await firebase.auth().signInAnonymously().catch(() => null);
+          }
+        }
+      } catch (e) {}
+
+      let role = 'siswa';
+      let payload = {};
+
+      if (roleKey === 'siswa') {
+        role = 'siswa';
+        payload = {
+          role: 'siswa',
+          nama: 'M. Ihsan Athallah',
+          nisn: '0098263610',
+          kelas: 'XII RPL 2',
+          email: 'ihsanathallah@gmail.com',
+          isVerified: true,
+          nip: null,
+          mapel: null,
+          isWalas: false,
+          walasKelasId: null
+        };
+      } else if (roleKey === 'guru') {
+        role = 'guru';
+        payload = {
+          role: 'guru',
+          nama: 'Hani Hanifah, S.Si',
+          nip: '198109012009022003',
+          email: 'hani@smkn1sumedang.sch.id',
+          mapel: 'Pemrograman Web & Perangkat Bergerak',
+          isWalas: false,
+          walasKelasId: null,
+          isVerified: true,
+          nisn: null,
+          kelas: null
+        };
+      } else if (roleKey === 'walas') {
+        role = 'walas';
+        payload = {
+          role: 'walas',
+          nama: 'Muhammad Echa Putra, S.Kom.Gr',
+          nip: '199209142022211007',
+          email: 'echa@smkn1sumedang.sch.id',
+          mapel: 'Basis Data & Pemodelan RPL',
+          isWalas: true,
+          walasKelasId: 'XII RPL 2',
+          isVerified: true,
+          nisn: null,
+          kelas: null
+        };
+      } else if (roleKey === 'pengunjung') {
+        role = 'pengunjung';
+        payload = {
+          role: 'pengunjung',
+          nama: 'Pengunjung / Tamu Penguji',
+          email: 'pengunjung@nesas.sch.id',
+          nisn: null,
+          kelas: null,
+          nip: null,
+          mapel: null,
+          isWalas: false,
+          walasKelasId: null,
+          isVerified: false
+        };
+      }
+
+      try {
+        if (typeof gantiRoleSesi === 'function') {
+          await gantiRoleSesi(role, payload);
+        } else {
+          setSessionUser(payload);
+          const targetUrl = (typeof getDashboardUrlByRole === 'function')
+            ? getDashboardUrlByRole(role)
+            : (role === 'admin' ? 'admin.html' : ((role === 'guru' || role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html'));
+          window.location.href = targetUrl;
+        }
+      } catch (err) {
+        loading(false);
+        tampilNotif('notifBoxLogin', 'Gagal masuk cepat: ' + (err.message || 'Terjadi kesalahan.'), 'error');
+        tampilNotif('notifBoxRegister', 'Gagal masuk cepat: ' + (err.message || 'Terjadi kesalahan.'), 'error');
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.masukCepatDemo = masukCepatDemo;
     }
   </script>
 </body>

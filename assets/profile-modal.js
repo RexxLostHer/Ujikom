@@ -565,6 +565,20 @@ function bukaModalProfilDenganTabNisn() {
   }, 250);
 }
 
+function bukaModalProfilDenganTabNip(mode) {
+  const targetMode = mode || 'walas';
+  bukaModalProfil();
+  setTimeout(() => {
+    const box = document.getElementById('boxAccordionKlaim');
+    const btn = document.getElementById('btnToggleAccordionKlaim');
+    if (box) box.style.display = 'block';
+    if (btn) btn.textContent = 'Sembunyikan Form Klaim ▴';
+    if (typeof toggleModeKlaim === 'function') toggleModeKlaim(targetMode);
+    const inp = targetMode === 'walas' ? document.getElementById('inputNipWalasVerif') : document.getElementById('inputNipVerif');
+    if (inp) inp.focus();
+  }, 250);
+}
+
 function toggleModeKlaim(mode) {
   const boxSiswa = document.getElementById('boxKlaimSiswa');
   const boxGuru = document.getElementById('boxKlaimGuru');

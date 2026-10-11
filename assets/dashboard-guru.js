@@ -35,18 +35,9 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
       }
     }
     if (!rawSess) {
-      // Sesi default Walas untuk evaluasi/eksekusi langsung portal guru (cold run)
-      const defaultWalas = {
-        role: 'walas',
-        nama: 'Muhammad Echa Putra, S.Kom.Gr',
-        nip: '199209142022211007',
-        mapel: 'Basis Data & Pemodelan RPL',
-        isWalas: true,
-        walasKelasId: 'XII RPL 2',
-        isVerified: true
-      };
-      rawSess = JSON.stringify(defaultWalas);
-      try { sessionStorage.setItem('user_aktif', rawSess); } catch (e) {}
+      // Tolak seketika pengguna anonim atau pengunjung yang belum login membuka dashboard-guru.html, arahkan ke portal utama (index.html)
+      shouldHaltGuru = true;
+      window.location.replace('index.html');
     }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
@@ -69,7 +60,17 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
         } else if (sessUser.role === 'siswa' || sessUser.role === 'pengunjung') {
           shouldHaltGuru = true;
           window.location.replace('dashboard.html');
+        } else if ((sessUser.role === 'guru' || sessUser.role === 'walas') && (!sessUser.nip || !sessUser.isVerified)) {
+          // Akun baru (login via Google/Email) yang belum verifikasi NIP dilarang masuk ke dashboard-guru.html
+          shouldHaltGuru = true;
+          window.location.replace('dashboard.html');
+        } else if (sessUser.role !== 'guru' && sessUser.role !== 'walas') {
+          shouldHaltGuru = true;
+          window.location.replace('index.html');
         }
+      } else {
+        shouldHaltGuru = true;
+        window.location.replace('index.html');
       }
     }
   } catch (e) {}
@@ -81,16 +82,10 @@ if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
     if (!fbUser) {
       let session = typeof getSessionUser === 'function' ? getSessionUser() : null;
       if (!session) {
-        session = {
-          role: 'walas',
-          nama: 'Muhammad Echa Putra, S.Kom.Gr',
-          nip: '199209142022211007',
-          mapel: 'Basis Data & Pemodelan RPL',
-          isWalas: true,
-          walasKelasId: 'XII RPL 2',
-          isVerified: true
-        };
-        setSessionUser(session);
+        // Pengguna anonim ditolak seketika dan diarahkan ke portal utama index.html
+        shouldHaltGuru = true;
+        window.location.replace('index.html');
+        return;
       }
       if (session.role === 'admin') {
         session.isRoleSwitched = true;
@@ -102,6 +97,16 @@ if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
         return;
       }
       if (session.role === 'siswa' || session.role === 'pengunjung') {
+        shouldHaltGuru = true;
+        window.location.replace('dashboard.html');
+        return;
+      }
+      if ((session.role === 'guru' || session.role === 'walas') && (!session.nip || !session.isVerified)) {
+        shouldHaltGuru = true;
+        window.location.replace('dashboard.html');
+        return;
+      }
+      if (session.role !== 'guru' && session.role !== 'walas' && session.role !== 'admin') {
         shouldHaltGuru = true;
         window.location.replace('dashboard.html');
         return;
@@ -131,12 +136,20 @@ if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
         user.mapel = gMatch.mapel;
         user.isWalas = !!gMatch.isWalas;
         user.walasKelasId = gMatch.walasKelasId || null;
+        user.isVerified = true;
         setSessionUser(user);
         if (db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
       }
     }
 
     if (user.role === 'siswa' || user.role === 'pengunjung') {
+      shouldHaltGuru = true;
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    // Akun baru (login via Google/Email) yang belum verifikasi NIP dilarang masuk ke dashboard-guru.html
+    if ((user.role !== 'admin' && user.prevRole !== 'admin') && (!user.nip || !user.isVerified || (user.role !== 'guru' && user.role !== 'walas'))) {
       shouldHaltGuru = true;
       window.location.replace('dashboard.html');
       return;
@@ -155,7 +168,7 @@ function switchGuruTab(id, btn) {
   }
 
   // Guru mapel murni tidak boleh mengakses tab walas
-  const isW = guruAktif && (guruAktif.role === 'walas' || guruAktif.isWalas || guruAktif.role === 'admin');
+  const isW = (guruAktif && (guruAktif.role === 'walas' || !!guruAktif.isWalas)) || (guruAktif && (guruAktif.role === 'admin' || guruAktif.prevRole === 'admin'));
   if (!isW && (id === 'tabMonitoringWalas' || id === 'tabLiveAlertWalas' || id === 'tabApprovalIzin')) {
     id = 'tabLiveGuru';
     btn = document.getElementById('btnTabLiveGuru');
@@ -182,19 +195,20 @@ async function initPortalGuru(user) {
     user.isWalas = true;
     user.walasKelasId = user.walasKelasId || 'XII RPL 2';
   }
-  if (user.role === 'siswa' || user.role === 'pengunjung') {
+  if (user.role === 'siswa' || user.role === 'pengunjung' || (!isAdm && (!user.nip || !user.isVerified || (user.role !== 'guru' && user.role !== 'walas')))) {
     if (typeof window !== 'undefined' && window.location) window.location.replace('dashboard.html');
     return;
   }
 
-  const isWalas = user.role === 'walas' || !!user.isWalas || isAdm;
+  const isWalas = (!isAdm && (user.role === 'walas' || !!user.isWalas)) || isAdm;
   const walasKelas = user.walasKelasId || 'XII RPL 2';
 
-  // Cross-portal navigation Admin (tampil jika role switcher aktif atau mode supervisi admin)
+  // Sembunyikan tombol "⚙️ Panel Admin" (linkPanelAdminGuru) untuk Guru/Walas murni.
+  // Tombol tersebut hanya boleh tampil jika user adalah admin asli (isAdm || (guruAktif && guruAktif.prevRole === 'admin'))
   const lAdminGuru = document.getElementById('linkPanelAdminGuru');
   if (lAdminGuru) {
-    const isSwitched = isAdm || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
-    lAdminGuru.style.display = isSwitched ? 'inline-flex' : 'none';
+    const isRealAdmin = isAdm || (guruAktif && guruAktif.prevRole === 'admin') || (user && user.prevRole === 'admin');
+    lAdminGuru.style.display = isRealAdmin ? 'inline-flex' : 'none';
   }
 
   // Update Header: Strictly Guru/Walas
@@ -280,6 +294,13 @@ async function initPortalGuru(user) {
     if (btnLiveGuru) btnLiveGuru.style.display = 'inline-flex';
     if (btnKendala) btnKendala.style.display = 'inline-flex';
     if (btnAbsen) btnAbsen.style.display = 'inline-flex';
+
+    const tabWalas = document.getElementById('tabMonitoringWalas');
+    if (tabWalas) { tabWalas.style.display = 'none'; tabWalas.classList.remove('active'); }
+    const tabLiveAlert = document.getElementById('tabLiveAlertWalas');
+    if (tabLiveAlert) { tabLiveAlert.style.display = 'none'; tabLiveAlert.classList.remove('active'); }
+    const tabIzin = document.getElementById('tabApprovalIzin');
+    if (tabIzin) { tabIzin.style.display = 'none'; tabIzin.classList.remove('active'); }
 
     if (btnLiveGuru) switchGuruTab('tabLiveGuru', btnLiveGuru);
     else if (btnAbsen) switchGuruTab('tabAbsenGuru', btnAbsen);
@@ -538,7 +559,10 @@ async function muatDataPresensiKelas() {
   let mapelAktif = 'Jam Bebas / Istirahat';
   try {
     const snapJadwal = await db.ref('jadwal_pelajaran/' + currentKelas).once('value');
-    const jadwalKelas = snapJadwal.val();
+    const resolved = (typeof ambilJadwalKelasHariIni === 'function')
+      ? ambilJadwalKelasHariIni(snapJadwal.val(), currentKelas)
+      : { jadwal: snapJadwal.val() || {} };
+    const jadwalKelas = resolved.jadwal;
     if (typeof cariJamKeAktif === 'function' && jadwalKelas) {
       const aktif = cariJamKeAktif(jadwalKelas, jamSekarang());
       if (aktif) {
@@ -769,6 +793,9 @@ let cachePerijinanJ = {};
 let cachePerizinanZ = {};
 
 function initListenerPerizinan() {
+  const isW = (guruAktif && (guruAktif.role === 'walas' || !!guruAktif.isWalas)) || (guruAktif && (guruAktif.role === 'admin' || guruAktif.prevRole === 'admin'));
+  if (!isW) return;
+
   function syncAndRender() {
     const merged = {};
     Object.keys(cachePerijinanJ).forEach(k => {
@@ -954,7 +981,12 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
       const siswa = snapSiswa.val() || {};
       const kelasTarget = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas || siswa.kelas || currentKelas) : (iz.kelas || siswa.kelas || currentKelas));
       const jadwalSnap = await db.ref('jadwal_pelajaran/' + kelasTarget).once('value');
-      const jadwal = jadwalSnap.val() || { '1': true, '2': true, '3': true, '4': true };
+      const resolvedJadwal = (typeof ambilJadwalKelasHariIni === 'function')
+        ? ambilJadwalKelasHariIni(jadwalSnap.val(), kelasTarget)
+        : { jadwal: jadwalSnap.val() || {} };
+      const jadwal = (resolvedJadwal && resolvedJadwal.jadwal && Object.keys(resolvedJadwal.jadwal).length > 0)
+        ? resolvedJadwal.jadwal
+        : (jadwalSnap.val() || { '1': true, '2': true, '3': true, '4': true, '5': true, '6': true, '7': true, '8': true });
       const updates = {};
       Object.keys(jadwal).forEach(jamKe => {
         updates[`presensi_jam/${kelasTarget}/${iz.tanggal}/${jamKe}/${iz.nisn}`] = {
@@ -1099,6 +1131,8 @@ function gantiKelasBinaanWalas(k) {
 }
 
 async function muatStatistikWalas() {
+  const isW = (guruAktif && (guruAktif.role === 'walas' || !!guruAktif.isWalas)) || (guruAktif && (guruAktif.role === 'admin' || guruAktif.prevRole === 'admin'));
+  if (!isW) return;
   const kelas = kelasBinaanAktif || (guruAktif && guruAktif.walasKelasId) || 'XII RPL 2';
   const today = tanggalHariIni();
 
@@ -1263,6 +1297,8 @@ async function tandaiIzinCepatWalas(nisn, kelas, nama) {
 
 // Live Alert Pagi Walas (PRD Bab 4.1 & 7.3)
 async function muatLiveAlertWalas() {
+  const isW = (guruAktif && (guruAktif.role === 'walas' || !!guruAktif.isWalas)) || (guruAktif && (guruAktif.role === 'admin' || guruAktif.prevRole === 'admin'));
+  if (!isW) return;
   const container = document.getElementById('boxAlertWalasContainer');
   if (!container) return;
   const kelas = kelasBinaanAktif || (guruAktif && guruAktif.walasKelasId) || 'XII RPL 2';

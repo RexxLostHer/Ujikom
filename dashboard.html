@@ -125,10 +125,13 @@
         <div class="guest-banner-icon">ℹ️</div>
         <div class="guest-banner-text">
           <strong>Akun Pengunjung / Belum Terverifikasi</strong>
-          <p>Akun ini belum ditautkan dengan data resmi siswa SMKN 1 Sumedang. Tautkan NISN Anda untuk mengaktifkan kartu pintar digital dan pencatatan presensi RFID.</p>
+          <p>Akun ini belum ditautkan dengan data resmi. Tautkan <strong>NISN</strong> untuk Siswa atau <strong>NIP</strong> untuk Guru / Wali Kelas guna mengaktifkan hak akses resmi.</p>
         </div>
       </div>
-      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN Siswa</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="background:#4f46e5;color:#fff;">🎓 Verifikasi NISN Siswa</button>
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="background:#059669;color:#fff;">👨‍🏫 Verifikasi NIP Guru / Walas</button>
+      </div>
     </div>
     
     <!-- Hero Profile Greeting & Smart Student ID Card RFID -->
@@ -346,9 +349,14 @@
         </span>
       </div>
       
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih kelas yang ingin dicek hari ini:</p>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih kelas yang ingin dicek:</p>
       <div class="class-chip-container" id="classChipsList">
         <!-- Render dinamis via JS -->
+      </div>
+
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih hari pembelajaran:</p>
+      <div class="class-chip-container" id="dayChipsList" style="margin-bottom:18px;">
+        <!-- Render dinamis via JS: Senin, Selasa, Rabu, Kamis, Jumat -->
       </div>
 
       <!-- Live Schedule Grid -->
@@ -514,10 +522,18 @@
       </div>
 
       <!-- Class selector -->
-      <div style="margin-top:14px; margin-bottom:12px;">
+      <div style="margin-top:14px; margin-bottom:8px;">
         <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Rombongan Belajar (Kelas):</label>
         <div class="class-chip-container" id="classChipsListTab">
           <!-- Render dinamis via JS -->
+        </div>
+      </div>
+
+      <!-- Day selector -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Hari Pembelajaran:</label>
+        <div class="class-chip-container" id="dayChipsListTab">
+          <!-- Render dinamis via JS: Senin, Selasa, Rabu, Kamis, Jumat -->
         </div>
       </div>
 

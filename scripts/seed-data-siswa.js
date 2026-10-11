@@ -32,20 +32,18 @@ const SEED_DATA = {
     }
   },
   jadwal: {
-    "XII RPL 2": "15:30"
+    "XII RPL 1": "15:30",
+    "XII RPL 2": "15:30",
+    "XII TKJ 1": "15:30"
   },
-  jadwal_pelajaran: {
-    "XII RPL 2": {
-      "1": { mapel: "Pemrograman Web & Perangkat Bergerak", guru: "Guru Pengajar RPL", mulai: "07:00", selesai: "07:45" },
-      "2": { mapel: "Pemrograman Web & Perangkat Bergerak", guru: "Guru Pengajar RPL", mulai: "07:45", selesai: "08:30" },
-      "3": { mapel: "Basis Data & Cloud Architecture", guru: "Guru Pengajar RPL", mulai: "08:30", selesai: "09:15" },
-      "4": { mapel: "Basis Data & Cloud Architecture", guru: "Guru Pengajar RPL", mulai: "09:30", selesai: "10:15" },
-      "5": { mapel: "Pemodelan Perangkat Lunak (UML)", guru: "Guru Pengajar RPL", mulai: "10:15", selesai: "11:00" },
-      "6": { mapel: "Uji Kompetensi Keahlian (UKK Lab)", guru: "Guru Pengajar RPL", mulai: "11:00", selesai: "11:45" },
-      "7": { mapel: "Produk Kreatif & Kewirausahaan", guru: "Guru Pengajar RPL", mulai: "12:45", selesai: "13:30" },
-      "8": { mapel: "Produk Kreatif & Kewirausahaan", guru: "Guru Pengajar RPL", mulai: "13:30", selesai: "14:15" }
+  jadwal_pelajaran: (function() {
+    try {
+      const util = require('../assets/jadwal-util.js');
+      return util.MASTER_JADWAL_RESMI || {};
+    } catch (e) {
+      return {};
     }
-  },
+  })(),
   email_mapping: {
     "ihsan,athallah(at)gmail,com": {
       nama: "M. IHSAN ATHALLAH",
