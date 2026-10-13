@@ -4,8 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Siswa & Wali Murid — Presensi IoT RFID</title>
-<link rel="stylesheet" href="assets/style.css?v=20261001_9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Space Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { font-family: var(--font-sans); }
+  h1, h2, h3, h4, .user-info h1, .view-tab-btn, .btn-profile-header, .stat-value, .stat-label { font-family: var(--font-heading); }
+  .mono, .rfid-tag, .jam-digital, code, pre { font-family: var(--font-mono); }
   .staff-review-banner {
     background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
     color: #ffffff;
@@ -70,6 +81,17 @@
 </style>
 </head>
 <body>
+<!-- GLASSMORPHISM SPINNER LOADER -->
+<div id="glassLoader" class="glass-loader-overlay">
+  <div class="glass-loader-spinner">
+    <div class="glass-loader-ring-outer"></div>
+    <div class="glass-loader-ring-inner"></div>
+    <div class="glass-loader-core"></div>
+  </div>
+  <div class="glass-loader-text">Memuat Portal Presensi...</div>
+  <div class="glass-loader-subtext">Menghubungkan ke Realtime Database IoT...</div>
+</div>
+
 <div class="dashboard-container">
 
   <!-- STAFF REVIEW BANNER (REMOVED FROM UI TO PREVENT ADMIN LEAKS) -->
@@ -85,7 +107,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <a href="presensi-live.html" class="btn-profile-header" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10b981;color:white;border:none;">📡 Presensi Live</a>
+      <!-- presensi-live.html dinonaktifkan dari header dashboard publik: portal admin eksklusif terpisah -->
       <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Saya</button>
       <button class="btn-logout" onclick="logout()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -351,12 +373,18 @@
       
       <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih kelas yang ingin dicek:</p>
       <div class="class-chip-container" id="classChipsList">
-        <!-- Render dinamis via JS -->
+        <button type="button" class="class-chip" onclick="pilihKelasJadwal('XII RPL 1')">XII RPL 1</button>
+        <button type="button" class="class-chip active" onclick="pilihKelasJadwal('XII RPL 2')">XII RPL 2</button>
+        <button type="button" class="class-chip" onclick="pilihKelasJadwal('XII TKJ 1')">XII TKJ 1</button>
       </div>
 
       <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih hari pembelajaran:</p>
       <div class="class-chip-container" id="dayChipsList" style="margin-bottom:18px;">
-        <!-- Render dinamis via JS: Senin, Selasa, Rabu, Kamis, Jumat -->
+        <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">✨ Senin</button>
+        <button type="button" class="class-chip" data-hari="selasa" onclick="pilihHariJadwal('selasa')">Selasa</button>
+        <button type="button" class="class-chip" data-hari="rabu" onclick="pilihHariJadwal('rabu')">Rabu</button>
+        <button type="button" class="class-chip" data-hari="kamis" onclick="pilihHariJadwal('kamis')">Kamis</button>
+        <button type="button" class="class-chip" data-hari="jumat" onclick="pilihHariJadwal('jumat')">Jumat</button>
       </div>
 
       <!-- Live Schedule Grid -->
@@ -525,7 +553,9 @@
       <div style="margin-top:14px; margin-bottom:8px;">
         <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Rombongan Belajar (Kelas):</label>
         <div class="class-chip-container" id="classChipsListTab">
-          <!-- Render dinamis via JS -->
+          <button type="button" class="class-chip" onclick="pilihKelasJadwal('XII RPL 1')">XII RPL 1</button>
+          <button type="button" class="class-chip active" onclick="pilihKelasJadwal('XII RPL 2')">XII RPL 2</button>
+          <button type="button" class="class-chip" onclick="pilihKelasJadwal('XII TKJ 1')">XII TKJ 1</button>
         </div>
       </div>
 
@@ -533,7 +563,20 @@
       <div style="margin-bottom:16px;">
         <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Hari Pembelajaran:</label>
         <div class="class-chip-container" id="dayChipsListTab">
-          <!-- Render dinamis via JS: Senin, Selasa, Rabu, Kamis, Jumat -->
+          <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">✨ Senin</button>
+          <button type="button" class="class-chip" data-hari="selasa" onclick="pilihHariJadwal('selasa')">Selasa</button>
+          <button type="button" class="class-chip" data-hari="rabu" onclick="pilihHariJadwal('rabu')">Rabu</button>
+          <button type="button" class="class-chip" data-hari="kamis" onclick="pilihHariJadwal('kamis')">Kamis</button>
+          <button type="button" class="class-chip" data-hari="jumat" onclick="pilihHariJadwal('jumat')">Jumat</button>
+        </div>
+      </div>
+
+      <!-- Info Kelas Mandiri di Tab Jadwal (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
+      <div class="guru-alert" id="bannerKelasMandiriTab" style="margin-bottom:16px; display:none;">
+        <div class="alert-icon">⚡</div>
+        <div>
+          <strong id="bannerMandiriTitleTab">Pemberitahuan Kelas Mandiri:</strong>
+          <span id="bannerMandiriTextTab">Guru pengajar berhalangan hadir pada jam tertentu. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada scanner kelas agar kehadiran tetap terverifikasi sah.</span>
         </div>
       </div>
 
@@ -687,15 +730,83 @@
 </div>
 
 <!-- SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_9"></script>
-<script src="assets/jadwal-util.js?v=20261001_9"></script>
-<script src="assets/auth.js?v=20261001_9"></script>
-<script src="assets/perijinan.js?v=20261001_9"></script>
-<script src="assets/dashboard.js?v=20261001_9"></script>
-<script src="assets/profile-modal.js?v=20261001_9"></script>
+<script src="assets/firebase-config.js?v=20261001_10"></script>
+<script src="assets/jadwal-util.js?v=20261001_10"></script>
+<script src="assets/auth.js?v=20261001_10"></script>
+<script src="assets/perijinan.js?v=20261001_10"></script>
+<script src="assets/dashboard.js?v=20261001_10"></script>
+<script src="assets/profile-modal.js?v=20261001_10"></script>
+
+<script>
+  // Lenis Smooth Scroll Synchronized with GSAP Ticker
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lenis = null;
+  if (!prefersReducedMotion && window.Lenis) {
+    try {
+      lenis = new Lenis({
+        duration: 1.2,
+        smoothWheel: true,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+      });
+      if (window.gsap) {
+        gsap.ticker.add((time) => {
+          lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+      } else {
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+      }
+    } catch (e) {
+      console.warn('Lenis init:', e);
+    }
+  }
+
+  // Dismiss Glass Loader and Run GSAP Entrance Animation
+  function dismissGlassLoader() {
+    const loader = document.getElementById('glassLoader');
+    if (!loader) return;
+    loader.style.pointerEvents = 'none';
+    if (window.gsap) {
+      gsap.to(loader, {
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+        onComplete: () => {
+          loader.style.display = 'none';
+        }
+      });
+      if (!prefersReducedMotion) {
+        gsap.from('.header, .view-tabs, .stat-grid, .jadwal-card, .table-container, .card-kbm', {
+          opacity: 0,
+          y: 20,
+          duration: 0.7,
+          stagger: 0.08,
+          ease: 'power2.out',
+          clearProps: 'all'
+        });
+      }
+    } else {
+      loader.classList.add('fade-out');
+      setTimeout(() => { loader.style.display = 'none'; }, 600);
+    }
+  }
+
+  window.dismissGlassLoader = dismissGlassLoader;
+  window.addEventListener('load', () => {
+    setTimeout(dismissGlassLoader, 400);
+  });
+  // Fallback safety timeout
+  setTimeout(dismissGlassLoader, 2500);
+</script>
 </body>
 </html>

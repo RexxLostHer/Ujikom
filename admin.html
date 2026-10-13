@@ -4,9 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel Admin — Presensi Siswa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/admin.css">
+<style>
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Space Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { font-family: var(--font-sans); }
+  h1, h2, h3, h4, .admin-brand strong, .sidebar-btn, .admin-stat-card strong, th { font-family: var(--font-heading); }
+  .mono, code, pre, #simulasiTerminalLog { font-family: var(--font-mono); }
+</style>
 </head>
 <body>
+<!-- GLASSMORPHISM SPINNER LOADER -->
+<div id="glassLoader" class="glass-loader-overlay">
+  <div class="glass-loader-spinner">
+    <div class="glass-loader-ring-outer"></div>
+    <div class="glass-loader-ring-inner"></div>
+    <div class="glass-loader-core"></div>
+  </div>
+  <div class="glass-loader-text">Memuat Panel Admin...</div>
+  <div class="glass-loader-subtext">Menghubungkan ke Realtime Database IoT...</div>
+</div>
 
 <div class="admin-wrap">
   <!-- APP BAR -->
@@ -627,15 +650,84 @@
   </div>
 </div>
 
+<!-- GSAP & Lenis CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_9"></script>
-<script src="assets/jadwal-util.js?v=20261001_9"></script>
-<script src="assets/auth.js?v=20261001_9"></script>
-<script src="assets/perijinan.js?v=20261001_9"></script>
-<script src="assets/admin.js?v=20261001_9"></script>
-<script src="assets/profile-modal.js?v=20261001_9"></script>
+<script src="assets/firebase-config.js?v=20261001_10"></script>
+<script src="assets/jadwal-util.js?v=20261001_10"></script>
+<script src="assets/auth.js?v=20261001_10"></script>
+<script src="assets/perijinan.js?v=20261001_10"></script>
+<script src="assets/admin.js?v=20261001_10"></script>
+<script src="assets/profile-modal.js?v=20261001_10"></script>
+
+<script>
+  // Lenis Smooth Scroll Synchronized with GSAP Ticker
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lenis = null;
+  if (!prefersReducedMotion && window.Lenis) {
+    try {
+      lenis = new Lenis({
+        duration: 1.2,
+        smoothWheel: true,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+      });
+      if (window.gsap) {
+        gsap.ticker.add((time) => {
+          lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+      } else {
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+      }
+    } catch (e) {
+      console.warn('Lenis init:', e);
+    }
+  }
+
+  // Dismiss Glass Loader and Run GSAP Entrance Animation
+  function dismissGlassLoader() {
+    const loader = document.getElementById('glassLoader');
+    if (!loader) return;
+    loader.style.pointerEvents = 'none';
+    if (window.gsap) {
+      gsap.to(loader, {
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+        onComplete: () => {
+          loader.style.display = 'none';
+        }
+      });
+      if (!prefersReducedMotion) {
+        gsap.from('.admin-appbar, .admin-sidebar, .admin-section-header, .admin-stat-card, .admin-table-card, .admin-form-card', {
+          opacity: 0,
+          y: 20,
+          duration: 0.7,
+          stagger: 0.06,
+          ease: 'power2.out',
+          clearProps: 'all'
+        });
+      }
+    } else {
+      loader.classList.add('fade-out');
+      setTimeout(() => { loader.style.display = 'none'; }, 600);
+    }
+  }
+
+  window.dismissGlassLoader = dismissGlassLoader;
+  window.addEventListener('load', () => {
+    setTimeout(dismissGlassLoader, 400);
+  });
+  // Fallback safety timeout
+  setTimeout(dismissGlassLoader, 2500);
+</script>
 </body>
 </html>

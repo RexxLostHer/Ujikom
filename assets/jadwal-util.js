@@ -22,14 +22,21 @@ function namaHariDariTanggal(tanggalStr) {
 }
 
 // Cari jam ke berapa yang sedang aktif berdasarkan waktu sekarang.
-// jadwalPelajaran: { "1": {mapel, mulai:"HH:MM", selesai:"HH:MM"}, "2": {...}, ... }
+// Mendukung format flat { "1": {...} } maupun format pohon multi-hari { "senin": {...} }
 // return null kalau nggak lagi ada jam pelajaran (istirahat/di luar jam sekolah)
 function cariJamKeAktif(jadwalPelajaran, waktuSekarang) {
   if (!jadwalPelajaran) return null;
-  const jamKeList = Object.keys(jadwalPelajaran);
+  let target = jadwalPelajaran;
+  const listHari = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'];
+  if (typeof target === 'object' && listHari.some(h => target[h] && typeof target[h] === 'object')) {
+    const hariIni = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
+    const hariAktif = (hariIni === 'sabtu' || hariIni === 'minggu') ? 'senin' : hariIni;
+    target = target[hariAktif] || {};
+  }
+  const jamKeList = Object.keys(target);
   for (let i = 0; i < jamKeList.length; i++) {
     const jamKe = jamKeList[i];
-    const p = jadwalPelajaran[jamKe];
+    const p = target[jamKe];
     if (p && p.mulai && p.selesai && waktuSekarang >= p.mulai && waktuSekarang < p.selesai) {
       return { jam_ke: jamKe, mapel: p.mapel, mulai: p.mulai, selesai: p.selesai, guru: p.guru };
     }
@@ -219,24 +226,64 @@ function ambilJadwalKelasHariIni(jadwalData, kelas, hari) {
   const namaHari = hari ? String(hari).toLowerCase() : namaHariDariTanggal(tanggalHariIni());
   const hariAktif = (namaHari === 'sabtu' || namaHari === 'minggu') ? 'senin' : namaHari;
 
-  // 1. Jika data dari Firebase terstruktur per-hari: jadwalData[hariAktif]
-  if (jadwalData && jadwalData[hariAktif] && typeof jadwalData[hariAktif] === 'object') {
-    return { hari: hariAktif, jadwal: jadwalData[hariAktif], jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30' };
+  let targetData = jadwalData;
+  if (targetData && typeof targetData === 'object') {
+    if (targetData[normKelas] && typeof targetData[normKelas] === 'object') {
+      targetData = targetData[normKelas];
+    } else if (kelas && targetData[kelas] && typeof targetData[kelas] === 'object') {
+      targetData = targetData[kelas];
+    }
   }
 
-  // 2. Jika data dari Firebase flat (key '1', '2', dll.)
-  if (jadwalData && Object.keys(jadwalData).some(k => !isNaN(Number(k)))) {
-    return { hari: hariAktif, jadwal: jadwalData, jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30' };
+  // Master schedule fallback reference
+  const masterKelas = MASTER_JADWAL_RESMI[normKelas] || MASTER_JADWAL_RESMI['XII RPL 2'] || {};
+  const masterHariIni = (masterKelas && masterKelas[hariAktif]) ? masterKelas[hariAktif] : ((masterKelas && masterKelas['senin']) || {});
+
+  const listHari = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+  const hasDayStructure = targetData && typeof targetData === 'object' && listHari.some(d => targetData[d] && typeof targetData[d] === 'object');
+
+  // 1. Jika data terstruktur per-hari dan memiliki jam pelajaran di hariAktif
+  if (hasDayStructure) {
+    const dataHariIni = targetData[hariAktif];
+    if (dataHariIni && typeof dataHariIni === 'object' && Object.keys(dataHariIni).length > 0) {
+      // Gabungkan dengan master data agar tidak ada jam yang terputus
+      const merged = Object.assign({}, masterHariIni, dataHariIni);
+      return { hari: hariAktif, jadwal: merged, jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30' };
+    }
+    // Jika hariAktif belum ada di data target, gunakan master jadwal resmi hariAktif
+    return {
+      hari: hariAktif,
+      jadwal: masterHariIni,
+      jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30'
+    };
+  }
+
+  // 2. Jika data flat (key '1', '2', dll.) tanpa struktur hari
+  if (targetData && typeof targetData === 'object' && Object.keys(targetData).some(k => !isNaN(Number(k)))) {
+    const hariIniReal = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
+    const isTodayOrSenin = (hariAktif === hariIniReal || hariAktif === 'senin');
+    if (isTodayOrSenin) {
+      const merged = Object.assign({}, masterHariIni, targetData);
+      return { hari: hariAktif, jadwal: merged, jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30' };
+    }
   }
 
   // 3. Fallback cerdas ke MASTER_JADWAL_RESMI
-  const masterKelas = MASTER_JADWAL_RESMI[normKelas] || MASTER_JADWAL_RESMI['XII RPL 2'];
-  const jadwalHari = (masterKelas && masterKelas[hariAktif]) ? masterKelas[hariAktif] : ((masterKelas && masterKelas['senin']) || {});
   return {
     hari: hariAktif,
-    jadwal: jadwalHari,
+    jadwal: masterHariIni,
     jamPulang: JAM_PULANG_RESMI[hariAktif] || '15:30'
   };
+}
+
+if (typeof window !== 'undefined') {
+  window.tanggalHariIni = tanggalHariIni;
+  window.jamSekarang = jamSekarang;
+  window.namaHariDariTanggal = namaHariDariTanggal;
+  window.cariJamKeAktif = cariJamKeAktif;
+  window.MASTER_JADWAL_RESMI = MASTER_JADWAL_RESMI;
+  window.JAM_PULANG_RESMI = JAM_PULANG_RESMI;
+  window.ambilJadwalKelasHariIni = ambilJadwalKelasHariIni;
 }
 
 if (typeof module !== 'undefined' && module.exports) {

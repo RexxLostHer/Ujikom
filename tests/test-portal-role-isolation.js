@@ -17,7 +17,9 @@ assert.ok(!dashHtml.includes('id="linkAdmin"'), 'Tombol linkAdmin tidak boleh ad
 assert.ok(!dashHtml.includes('id="linkGuru"'), 'Tombol linkGuru tidak boleh ada di navbar dashboard.html');
 assert.ok(dashHtml.includes('id="bannerStaffReview"'), 'Element bannerStaffReview tetap ada untuk backward-compatibility');
 assert.ok(dashHtml.includes('display:none !important;') || dashHtml.includes('style="display:none;"'), 'Banner review harus tersembunyi');
-console.log('✓ Navbar dashboard.html bersih dari tombol Admin/Guru dan banner mengganggu tidak tampil.\n');
+assert.ok(!dashHtml.includes('pilihPresetRole'), 'dashboard.html publik tidak boleh memiliki tombol/pemanggilan pilihPresetRole');
+assert.ok(!dashHtml.includes('1-Click Preset'), 'dashboard.html publik tidak boleh menampilkan 1-Click Preset');
+console.log('✓ Navbar dashboard.html bersih dari tombol Admin/Guru, bebas switcher preset, dan banner mengganggu tidak tampil.\n');
 
 // 2. Verifikasi Guard Isolasi Role pada dashboard.js
 const dashJs = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');

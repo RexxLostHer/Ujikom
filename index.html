@@ -6,23 +6,24 @@
 <title>Presensi Siswa — SMK Negeri 1 Sumedang</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
   :root {
     --bg: #060911;
-    --bg-card: rgba(15, 23, 42, 0.88);
+    --bg-card: rgba(15, 23, 42, 0.82);
     --ink: #f8fafc;
     --ink-mut: #94a3b8;
     --hair: rgba(255, 255, 255, 0.12);
-    --hair-active: rgba(56, 189, 248, 0.4);
+    --hair-active: rgba(56, 189, 248, 0.5);
     --blue: #38bdf8;
     --indigo: #4f46e5;
     --emerald: #10b981;
     --purple: #a855f7;
-    --serif: 'Instrument Serif', Georgia, serif;
+    --serif: 'Space Grotesk', system-ui, sans-serif;
+    --heading: 'Space Grotesk', system-ui, sans-serif;
     --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --mono: 'IBM Plex Mono', monospace;
+    --mono: 'JetBrains Mono', monospace;
   }
 
   * {
@@ -408,28 +409,62 @@
   }
 
   /* ELEVATED GLASSMORPHIC AUTH CARD */
+  /* ELEVATED LUXURY GLASSMORPHIC AUTH CARD */
   .daevora-auth-card {
     width: 100%;
-    max-width: 440px;
+    max-width: 420px;
     max-height: 92vh;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(56, 189, 248, 0.4) transparent;
-    background: rgba(11, 17, 33, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 26px;
-    padding: 30px 28px;
-    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8),
-                0 0 40px -10px rgba(56, 189, 248, 0.2);
+    scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+    background: rgba(10, 15, 28, 0.78);
+    backdrop-filter: blur(32px) saturate(190%);
+    -webkit-backdrop-filter: blur(32px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 24px 60px -12px rgba(0, 0, 0, 0.8),
+                0 0 45px -10px rgba(56, 189, 248, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18);
     position: relative;
     pointer-events: auto;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .daevora-auth-card:hover {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+                0 30px 70px -10px rgba(0, 0, 0, 0.9),
+                0 0 55px -8px rgba(56, 189, 248, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    border-color: rgba(56, 189, 248, 0.35);
   }
   .daevora-auth-card.emerald-glow {
-    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8),
-                0 0 40px -10px rgba(16, 185, 129, 0.25);
-    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 24px 60px -12px rgba(0, 0, 0, 0.8),
+                0 0 45px -10px rgba(16, 185, 129, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+  .daevora-auth-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(56, 189, 248, 0.09), transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+  }
+  .daevora-auth-card:hover::before {
+    opacity: 1;
+  }
+  .daevora-auth-card.emerald-glow::before {
+    background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.09), transparent 70%);
+  }
+  .daevora-auth-card > * {
+    position: relative;
+    z-index: 1;
   }
 
   /* Card Header */
@@ -440,61 +475,70 @@
     margin-bottom: 22px;
   }
   .card-logo-thumb {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
   .card-logo-thumb img {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
   }
   .card-title-group h2 {
-    font-size: 19px;
+    font-size: 18.5px;
     font-weight: 800;
     color: #ffffff;
-    letter-spacing: -0.01em;
-    margin-bottom: 2px;
+    letter-spacing: -0.02em;
+    margin-bottom: 3px;
+    line-height: 1.2;
   }
   .card-title-group p {
-    font-size: 12.5px;
-    color: var(--ink-mut);
+    font-size: 12px;
+    color: #94a3b8;
     line-height: 1.35;
+    font-weight: 500;
   }
 
-  /* Google 1-Click Button */
+  /* Google Sign-In Button (Sleek Dark Glass) */
   .btn-google-glow {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     width: 100%;
-    padding: 12px;
-    background: #ffffff;
-    color: #0f172a;
-    border: none;
-    border-radius: 12px;
+    padding: 11px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 13px;
     font-size: 13.5px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-    transition: all 0.22s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
   }
   .btn-google-glow:hover {
-    background: #f1f5f9;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(66, 133, 244, 0.3);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
-  .btn-google-glow img {
-    width: 18px;
-    height: 18px;
+  .btn-google-glow:active {
+    transform: scale(0.985);
+  }
+  .btn-google-glow svg {
+    flex-shrink: 0;
   }
 
   /* Separator Line */
@@ -502,165 +546,217 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 16px 0;
+    margin: 18px 0;
   }
   .card-sep::before, .card-sep::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--hair);
+    background: rgba(255, 255, 255, 0.08);
   }
   .card-sep span {
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.14em;
-    color: var(--ink-mut);
+    color: #64748b;
     text-transform: uppercase;
+    font-weight: 600;
   }
 
-  /* Scene Switcher Tab */
+  /* Segmented Switcher Tab */
   .scene-switch-tabs {
     display: flex;
-    background: rgba(15, 23, 42, 0.7);
+    background: rgba(8, 12, 22, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     padding: 4px;
-    border-radius: 12px;
-    border: 1px solid var(--hair);
-    margin-bottom: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 22px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+    gap: 4px;
   }
   .scene-tab-btn {
     flex: 1;
     padding: 8px 0;
     font-size: 13px;
-    font-weight: 700;
-    color: var(--ink-mut);
+    font-weight: 600;
+    color: #94a3b8;
     border: none;
     background: transparent;
     cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.22s ease;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     text-align: center;
+    position: relative;
+    letter-spacing: 0.01em;
+  }
+  .scene-tab-btn:hover:not(.active) {
+    color: #e2e8f0;
   }
   .scene-tab-btn.active {
-    background: rgba(56, 189, 248, 0.18);
-    color: var(--blue);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
   .scene-switch-tabs.emerald .scene-tab-btn.active {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-    border-color: rgba(16, 185, 129, 0.45);
+    background: rgba(16, 185, 129, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(16, 185, 129, 0.25);
   }
 
   /* Form Elements */
   .auth-input-group {
-    margin-bottom: 13px;
+    margin-bottom: 16px;
   }
   .auth-input-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #cbd5e1;
-    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
   .input-field-wrap {
     position: relative;
+    display: flex;
+    align-items: center;
   }
   .input-field-wrap input {
     width: 100%;
-    padding: 11px 14px 11px 38px;
-    border-radius: 11px;
-    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    padding: 12px 14px 12px 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 13.5px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(8, 13, 24, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: #ffffff;
     font-family: inherit;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+  .input-field-wrap input::placeholder {
+    color: #475569;
   }
   .input-field-wrap input:focus {
     outline: none;
-    border-color: var(--blue);
-    background: rgba(15, 23, 42, 0.95);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    background: rgba(11, 18, 34, 0.95);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16), 0 4px 16px rgba(56, 189, 248, 0.12);
   }
   .input-field-wrap.emerald input:focus {
-    border-color: var(--emerald);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16), 0 4px 16px rgba(16, 185, 129, 0.12);
   }
   .input-prefix-icon {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 15px;
-    color: var(--ink-mut);
+    color: #64748b;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+  }
+  .input-field-wrap input:focus ~ .input-prefix-icon,
+  .input-field-wrap:focus-within .input-prefix-icon {
+    color: #38bdf8;
+  }
+  .input-field-wrap.emerald:focus-within .input-prefix-icon {
+    color: #10b981;
   }
   .btn-eye-toggle {
     position: absolute;
-    right: 8px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: var(--ink-mut);
+    color: #64748b;
     cursor: pointer;
     padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
   }
   .btn-eye-toggle:hover {
     color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
   }
 
   /* Action Submit Button */
   .btn-card-submit {
     width: 100%;
-    margin-top: 8px;
-    padding: 12px;
-    background: linear-gradient(135deg, #2563eb, #0284c7);
+    margin-top: 10px;
+    padding: 13px 20px;
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
     color: #ffffff;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 13px;
     font-size: 14px;
     font-weight: 700;
+    letter-spacing: 0.01em;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
-    transition: all 0.22s ease;
+    box-shadow: 0 8px 22px -4px rgba(2, 132, 199, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
   .btn-card-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.45);
+    background: linear-gradient(180deg, #5ecaff 0%, #0369a1 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -4px rgba(2, 132, 199, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  .btn-card-submit:active {
+    transform: scale(0.985);
+    box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.4);
   }
   .btn-card-submit.emerald {
-    background: linear-gradient(135deg, #059669, #10b981);
-    border-color: rgba(52, 211, 153, 0.4);
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+    background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+    box-shadow: 0 8px 22px -4px rgba(4, 120, 87, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   }
   .btn-card-submit.emerald:hover {
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
+    background: linear-gradient(180deg, #34d399 0%, #065f46 100%);
+    box-shadow: 0 12px 28px -4px rgba(4, 120, 87, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
   .card-footer-caption {
-    margin-top: 16px;
+    margin-top: 18px;
     font-size: 12.5px;
-    color: var(--ink-mut);
+    color: #94a3b8;
     text-align: center;
+    font-weight: 500;
   }
   .card-footer-caption a {
     color: var(--blue);
     font-weight: 700;
     cursor: pointer;
     text-decoration: none;
+    transition: color 0.2s;
   }
   .card-footer-caption a:hover {
+    color: #7dd3fc;
     text-decoration: underline;
   }
   .card-footer-caption.emerald a {
     color: #34d399;
+  }
+  .card-footer-caption.emerald a:hover {
+    color: #6ee7b7;
   }
 
   /* MODAL RESET PASSWORD */
@@ -818,9 +914,8 @@
     <footer class="hud-bot">
       <div style="display:flex;align-items:center;gap:18px;">
         <p class="mono" id="caption">01 — BLUEPRINT GATEWAY</p>
-        <a href="admin-login.html" class="mono" style="opacity:0.35;font-size:0.58rem;letter-spacing:0.18em;color:var(--ink-mut);text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='0.35'">[ 🔒 STAFF GATEWAY ]</a>
       </div>
-      <p class="mono" id="read">000 / 100</p>
+      <p class="mono" id="read">AURA MESH // 0%</p>
     </footer>
 
     <!-- Center Bottom Scroll Hint -->
@@ -839,7 +934,7 @@
         <p class="hero-t2">From card tap to real-time intelligence</p>
         <div class="hero-actions">
           <button type="button" class="btn-hero-primary" onclick="goScene('login')">Masuk ke Portal ↓</button>
-          <button type="button" class="btn-hero-ghost" onclick="goScene('register')">Daftar Akun RPL ↓</button>
+          <button type="button" class="btn-hero-ghost" onclick="goScene('register')">Daftar Akun ↓</button>
         </div>
       </div>
     </div>
@@ -887,7 +982,12 @@
             <label for="loginEmail">Email Gmail</label>
             <div class="input-field-wrap">
               <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
-              <span class="input-prefix-icon">✉️</span>
+              <span class="input-prefix-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </span>
             </div>
           </div>
 
@@ -898,8 +998,18 @@
             </div>
             <div class="input-field-wrap">
               <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
-              <span class="input-prefix-icon">🔒</span>
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
+              <span class="input-prefix-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -907,54 +1017,14 @@
           <div id="notifBoxLogin" class="toast-alert"></div>
         </form>
 
-        <!-- PANEL MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING) -->
-        <div class="demo-testing-box" style="margin-top:16px;padding:12px 14px;background:rgba(15,23,42,0.85);border:1px solid rgba(56,189,248,0.3);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:13px;">⚡</span>
-              <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;font-family:var(--mono);color:#38bdf8;text-transform:uppercase;">Masuk Cepat Pengujian</span>
-            </div>
-            <span style="font-size:10px;color:#94a3b8;font-family:var(--mono);background:rgba(56,189,248,0.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(56,189,248,0.2);">1-Click Demo</span>
-          </div>
-          <div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:10px;">
-            Akses langsung untuk penguji / asesor tanpa terhambat pop-up browser:
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <button type="button" onclick="masukCepatDemo('siswa')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(99,102,241,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#818cf8';this.style.background='rgba(49,46,129,0.4)'" onmouseout="this.style.borderColor='rgba(99,102,241,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#818cf8;font-family:var(--mono);">🎓 SISWA</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Ihsan Athallah</span>
-              <span style="font-size:9.5px;color:#94a3b8;">XII RPL 2</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('guru')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(16,185,129,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#34d399';this.style.background='rgba(6,78,59,0.4)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#34d399;font-family:var(--mono);">👩‍🏫 GURU</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Hani Hanifah, S.Si</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Guru Mapel</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('walas')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(245,158,11,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#fbbf24';this.style.background='rgba(120,53,15,0.4)'" onmouseout="this.style.borderColor='rgba(245,158,11,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#fbbf24;font-family:var(--mono);">🧑‍🏫 WALI KELAS</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Echa Putra</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Walas XII RPL 2</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('pengunjung')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#cbd5e1';this.style.background='rgba(51,65,85,0.4)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#cbd5e1;font-family:var(--mono);">👤 PENGUNJUNG</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Tamu / Asesor</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Mode Peninjau</span>
-            </button>
-          </div>
-        </div>
-
         <div class="card-footer-caption">
-          Belum punya akun? <a onclick="goScene('register')">Daftar akun RPL ↓</a>
-        </div>
-        <div class="card-footer-caption" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11.5px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
-          <span>Guru / Walas? <a href="dashboard-guru.html" style="color: var(--blue);">Buka Portal Guru →</a></span>
-          <span>Staff Admin? <a href="admin-login.html" style="color: var(--cyan);">Masuk Portal Staff →</a></span>
+          Belum punya akun? <a onclick="goScene('register')">Daftar akun di sini ↓</a>
         </div>
       </div>
     </div>
 
     <!-- ──────────────────────────────────────────────
-         SCENE 03: MATRIX REGISTRASI RPL (Scroll 0.60 – 0.85)
+         SCENE 03: MATRIX REGISTRASI SISWA (Scroll 0.60 – 0.85)
          ────────────────────────────────────────────── -->
     <div class="scene-overlay" id="sceneRegister">
       <div class="daevora-auth-card emerald-glow" id="cardRegisterWrap">
@@ -969,7 +1039,7 @@
           </div>
           <div class="card-title-group">
             <h2>Pendaftaran Akun</h2>
-            <p>Jaringan Presensi & Akademik Siswa / Wali Murid RPL</p>
+            <p>Jaringan Presensi & Portal Akademik Siswa SMKN 1 Sumedang</p>
           </div>
         </div>
 
@@ -999,8 +1069,13 @@
           <div class="auth-input-group">
             <label for="regNama">Nama Lengkap</label>
             <div class="input-field-wrap emerald">
-              <input type="text" id="regNama" placeholder="Nama lengkap siswa atau wali murid" required autocomplete="name">
-              <span class="input-prefix-icon">👤</span>
+              <input type="text" id="regNama" placeholder="Nama lengkap siswa" required autocomplete="name">
+              <span class="input-prefix-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
             </div>
           </div>
 
@@ -1008,7 +1083,12 @@
             <label for="regEmail">Email Gmail</label>
             <div class="input-field-wrap emerald">
               <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
-              <span class="input-prefix-icon">✉️</span>
+              <span class="input-prefix-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </span>
             </div>
           </div>
 
@@ -1016,50 +1096,24 @@
             <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
             <div class="input-field-wrap emerald">
               <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
-              <span class="input-prefix-icon">🔒</span>
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)">👁️</button>
+              <span class="input-prefix-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun RPL</button>
+          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun</button>
           <div id="notifBoxRegister" class="toast-alert"></div>
         </form>
-
-        <!-- PANEL MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING) -->
-        <div class="demo-testing-box" style="margin-top:16px;padding:12px 14px;background:rgba(15,23,42,0.85);border:1px solid rgba(16,185,129,0.3);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:13px;">⚡</span>
-              <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;font-family:var(--mono);color:#34d399;text-transform:uppercase;">Masuk Cepat Pengujian</span>
-            </div>
-            <span style="font-size:10px;color:#94a3b8;font-family:var(--mono);background:rgba(16,185,129,0.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(16,185,129,0.2);">1-Click Demo</span>
-          </div>
-          <div style="font-size:11px;color:#94a3b8;line-height:1.4;margin-bottom:10px;">
-            Akses langsung untuk penguji / asesor tanpa terhambat pop-up browser:
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <button type="button" onclick="masukCepatDemo('siswa')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(99,102,241,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#818cf8';this.style.background='rgba(49,46,129,0.4)'" onmouseout="this.style.borderColor='rgba(99,102,241,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#818cf8;font-family:var(--mono);">🎓 SISWA</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Ihsan Athallah</span>
-              <span style="font-size:9.5px;color:#94a3b8;">XII RPL 2</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('guru')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(16,185,129,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#34d399';this.style.background='rgba(6,78,59,0.4)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#34d399;font-family:var(--mono);">👩‍🏫 GURU</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Hani Hanifah, S.Si</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Guru Mapel</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('walas')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(245,158,11,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#fbbf24';this.style.background='rgba(120,53,15,0.4)'" onmouseout="this.style.borderColor='rgba(245,158,11,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#fbbf24;font-family:var(--mono);">🧑‍🏫 WALI KELAS</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">M. Echa Putra</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Walas XII RPL 2</span>
-            </button>
-            <button type="button" onclick="masukCepatDemo('pengunjung')" style="display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.35);border-radius:9px;color:#ffffff;cursor:pointer;text-align:left;transition:all 0.18s ease;" onmouseover="this.style.borderColor='#cbd5e1';this.style.background='rgba(51,65,85,0.4)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.35)';this.style.background='rgba(30,41,59,0.9)'">
-              <span style="font-size:10px;font-weight:700;color:#cbd5e1;font-family:var(--mono);">👤 PENGUNJUNG</span>
-              <span style="font-size:11px;font-weight:700;color:#f8fafc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">Tamu / Asesor</span>
-              <span style="font-size:9.5px;color:#94a3b8;">Mode Peninjau</span>
-            </button>
-          </div>
-        </div>
 
         <div class="card-footer-caption emerald">
           Sudah punya akun? <a onclick="goScene('login')">Masuk ke akun ↑</a>
@@ -1085,7 +1139,12 @@
           <label for="resetEmail">Email Gmail Terdaftar</label>
           <div class="input-field-wrap">
             <input type="email" id="resetEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            <span class="input-prefix-icon">✉️</span>
+            <span class="input-prefix-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </span>
           </div>
         </div>
         <div id="resetNotifBox" class="toast-alert"></div>
@@ -1094,25 +1153,41 @@
     </div>
   </div>
 
+  <!-- MODAL ANIMASI SUKSES LOGIN / REGISTER -->
+  <div id="authSuccessOverlay" class="auth-success-overlay">
+    <div class="auth-success-card">
+      <div class="auth-success-icon-wrap">
+        <svg class="auth-success-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+      </div>
+      <h3 class="auth-success-title" id="authSuccessTitle">Autentikasi Berhasil!</h3>
+      <p class="auth-success-desc" id="authSuccessDesc">Menyiapkan Portal Presensi...</p>
+      <div class="auth-success-progress-track">
+        <div class="auth-success-progress-bar" id="authSuccessProgressBar"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPTS & ENGINE -->
-  <script src="assets/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="assets/firebase-config.js"></script>
   <script src="assets/auth.js"></script>
 
-  <!-- Optional Lenis Smooth Scroll -->
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-
   <script>
-    // ===== 1. CORE SCROLL MANAGER (ALA DAEVORA.ID) =====
+    // ===== 1. CORE SCROLL MANAGER & LENIS GSAP SYNC =====
     let currentProgress = 0;
     let targetProgress = 0;
     let lenis = null;
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     try {
-      if (window.Lenis) {
+      if (!prefersReducedMotion && window.Lenis) {
         lenis = new Lenis({
           duration: 1.2,
           smoothWheel: true,
@@ -1121,6 +1196,19 @@
         lenis.on('scroll', () => {
           updateScrollTarget();
         });
+
+        if (window.gsap) {
+          gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+          });
+          gsap.ticker.lagSmoothing(0);
+        } else {
+          function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+          }
+          requestAnimationFrame(raf);
+        }
       }
     } catch (e) {
       console.warn('Lenis fallback to native scroll listener:', e);
@@ -1163,28 +1251,274 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // ===== 2. THREE.JS SCROLL 3D ENGINE (ALA DAEVORA.ID) =====
-    let scene, camera, renderer;
-    let login3DGroup, register3DGroup, cyberGateGroup, gridPlane, particleField;
-    let bluePointLight, purplePointLight;
-    let cyberComputerData = null;
-    let cyberGlobeData = null;
-    let smartCardData = null;
-    let cyberGateData = null;
-    let isDragging = false, previousMouseX = 0, currentRotationY = 0;
-    let mouseTiltX = 0, mouseTiltY = 0, curTiltX = 0, curTiltY = 0;
-
+    // ===== 2. INTERACTIVE CONSTELLATION & GRADIENT AURA MESH CANVAS =====
     const CAPTIONS = [
-      [0.00, '01 — BLUEPRINT GATEWAY & RFID TERMINAL'],
-      [0.32, '02 — VERIFIKASI KARTU RFID & GERBANG CYBER'],
-      [0.68, '03 — CYBER INTERNET GLOBE & DATA STREAM']
+      [0.00, '01 — INTERACTIVE CONSTELLATION PORTAL & RFID CORE'],
+      [0.32, '02 — VERIFIKASI IDENTITAS & GERBANG MASUK SISWA'],
+      [0.68, '03 — MATRIX REGISTRASI AKUN SISWA']
     ];
 
-    function init3D() {
-      const canvas = document.getElementById('gl');
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+    let canvas, ctx;
+    let width = 0, height = 0;
+    let particles = [];
+    const PARTICLE_COUNT = 90;
+    let mouse = { x: -1000, y: -1000, active: false };
+    let auraOrbs = [
+      { x: 0.25, y: 0.35, radius: 0.55, r: 56, g: 189, b: 248 }, // Cyan
+      { x: 0.75, y: 0.65, radius: 0.60, r: 79, g: 70, b: 229 },  // Indigo
+      { x: 0.50, y: 0.85, radius: 0.50, r: 16, g: 185, b: 129 }  // Emerald
+    ];
 
+    function initConstellation() {
+      canvas = document.getElementById('gl');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      window.addEventListener('pointermove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
+      });
+
+      window.addEventListener('pointerleave', () => {
+        mouse.active = false;
+        mouse.x = -1000;
+        mouse.y = -1000;
+      });
+
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.7,
+          vy: (Math.random() - 0.5) * 0.7,
+          z: 0.3 + Math.random() * 0.9,
+          radius: 1.2 + Math.random() * 2.2,
+          pulse: Math.random() * Math.PI * 2,
+          pulseSpeed: 0.02 + Math.random() * 0.03
+        });
+      }
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      if (ctx) ctx.scale(dpr, dpr);
+    }
+
+    function renderConstellation(time) {
+      if (!ctx) return;
+
+      currentProgress += (targetProgress - currentProgress) * 0.085;
+      const p = currentProgress;
+
+      const barEl = document.getElementById('bar');
+      if (barEl) barEl.style.transform = `scaleX(${p})`;
+
+      const readEl = document.getElementById('read');
+      if (readEl) readEl.textContent = `AURA MESH // ${String(Math.round(p * 100)).padStart(2, '0')}%`;
+
+      const captionEl = document.getElementById('caption');
+      let activeCap = CAPTIONS[0][1];
+      for (let i = 0; i < CAPTIONS.length; i++) {
+        if (p >= CAPTIONS[i][0]) activeCap = CAPTIONS[i][1];
+      }
+      if (captionEl && captionEl.textContent !== activeCap) {
+        captionEl.textContent = activeCap;
+      }
+
+      const hintEl = document.getElementById('hint');
+      if (hintEl) {
+        hintEl.style.opacity = p > 0.03 ? '0' : '1';
+      }
+
+      const navHero = document.getElementById('navBtnHero');
+      const navLogin = document.getElementById('navBtnLogin');
+      const navRegister = document.getElementById('navBtnRegister');
+      [navHero, navLogin, navRegister].forEach(btn => btn && btn.classList.remove('active'));
+      if (p < 0.25 && navHero) navHero.classList.add('active');
+      else if (p >= 0.25 && p < 0.65 && navLogin) navLogin.classList.add('active');
+      else if (p >= 0.65 && navRegister) navRegister.classList.add('active');
+
+      const sHero = document.getElementById('sceneHero');
+      const sLogin = document.getElementById('sceneLogin');
+      const sRegister = document.getElementById('sceneRegister');
+      if (sHero) sHero.classList.toggle('is-active', p < 0.22);
+      if (sLogin) sLogin.classList.toggle('is-active', p >= 0.25 && p < 0.65);
+      if (sRegister) sRegister.classList.toggle('is-active', p >= 0.65);
+
+      // Draw obsidian background
+      ctx.fillStyle = '#060911';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw Gradient Aura Mesh
+      const t = (time || performance.now()) * 0.001;
+      auraOrbs.forEach((orb, idx) => {
+        const ox = (orb.x + Math.sin(t * 0.4 + idx) * 0.12) * width;
+        const oy = (orb.y + Math.cos(t * 0.3 + idx) * 0.12) * height;
+        const rSize = Math.max(width, height) * orb.radius;
+
+        let alpha = 0.18;
+        if (idx === 0 && p < 0.35) alpha = 0.24;
+        if (idx === 1 && p >= 0.25 && p < 0.7) alpha = 0.26;
+        if (idx === 2 && p >= 0.6) alpha = 0.24;
+
+        const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, rSize);
+        grad.addColorStop(0, `rgba(${orb.r}, ${orb.g}, ${orb.b}, ${alpha})`);
+        grad.addColorStop(0.5, `rgba(${orb.r}, ${orb.g}, ${orb.b}, ${alpha * 0.35})`);
+        grad.addColorStop(1, 'rgba(6, 9, 17, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      });
+
+      // Draw Constellation
+      const maxDist = 125;
+      const mouseDistMax = 170;
+
+      let lineR = 56, lineG = 189, lineB = 248;
+      if (p >= 0.25 && p < 0.65) {
+        lineR = 99; lineG = 102; lineB = 241;
+      } else if (p >= 0.65) {
+        lineR = 16; lineG = 185; lineB = 129;
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        const pt = particles[i];
+
+        pt.x += pt.vx * pt.z;
+        pt.y += pt.vy * pt.z;
+
+        if (pt.x < -20) pt.x = width + 20;
+        if (pt.x > width + 20) pt.x = -20;
+        if (pt.y < -20) pt.y = height + 20;
+        if (pt.y > height + 20) pt.y = -20;
+
+        if (mouse.active) {
+          const dx = pt.x - mouse.x;
+          const dy = pt.y - mouse.y;
+          const distM = Math.sqrt(dx * dx + dy * dy);
+          if (distM < mouseDistMax) {
+            const force = (1 - distM / mouseDistMax) * 0.05;
+            pt.x += dx * force;
+            pt.y += dy * force;
+          }
+        }
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const pt2 = particles[j];
+          const dx = pt.x - pt2.x;
+          const dy = pt.y - pt2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < maxDist) {
+            const alphaLine = (1 - dist / maxDist) * 0.35 * Math.min(pt.z, pt2.z);
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(pt2.x, pt2.y);
+            ctx.strokeStyle = `rgba(${lineR}, ${lineG}, ${lineB}, ${alphaLine})`;
+            ctx.lineWidth = 0.85 * Math.min(pt.z, pt2.z);
+            ctx.stroke();
+          }
+        }
+
+        if (mouse.active) {
+          const dxM = pt.x - mouse.x;
+          const dyM = pt.y - mouse.y;
+          const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+          if (distM < mouseDistMax) {
+            const alphaM = (1 - distM / mouseDistMax) * 0.45;
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${alphaM})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+
+        pt.pulse += pt.pulseSpeed;
+        const currentR = pt.radius * (1 + Math.sin(pt.pulse) * 0.22);
+        const nodeAlpha = 0.5 + Math.sin(pt.pulse) * 0.35;
+
+        const haloGrad = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, currentR * 3.5);
+        haloGrad.addColorStop(0, `rgba(${lineR}, ${lineG}, ${lineB}, ${nodeAlpha * 0.6})`);
+        haloGrad.addColorStop(1, `rgba(${lineR}, ${lineG}, ${lineB}, 0)`);
+        ctx.fillStyle = haloGrad;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, currentR * 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, currentR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+
+      requestAnimationFrame(renderConstellation);
+    }
+
+    // ===== 3. AUTH SUCCESS MODAL ANIMATION HELPER =====
+    function showAuthSuccessModal(title, message, onDone) {
+      const overlay = document.getElementById('authSuccessOverlay');
+      const bar = document.getElementById('authSuccessProgressBar');
+      const tEl = document.getElementById('authSuccessTitle');
+      const dEl = document.getElementById('authSuccessDesc');
+      if (tEl) tEl.textContent = title || 'Autentikasi Berhasil!';
+      if (dEl) dEl.textContent = message || 'Menyiapkan Portal Presensi...';
+      if (overlay) overlay.classList.add('show');
+
+      if (window.gsap && overlay) {
+        gsap.fromTo(overlay.querySelector('.auth-success-card'),
+          { scale: 0.88, opacity: 0, y: 25 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: 'back.out(1.6)' }
+        );
+        gsap.fromTo(overlay.querySelector('.auth-success-icon-wrap'),
+          { scale: 0, rotate: -45 },
+          { scale: 1, rotate: 0, duration: 0.55, delay: 0.1, ease: 'elastic.out(1, 0.6)' }
+        );
+        if (bar) {
+          gsap.fromTo(bar,
+            { width: '0%' },
+            { width: '100%', duration: 1.2, ease: 'power2.inOut', onComplete: onDone }
+          );
+        } else {
+          setTimeout(onDone, 1200);
+        }
+      } else {
+        if (bar) bar.style.width = '100%';
+        setTimeout(onDone, 1200);
+      }
+    }
+
+    function initVisualStage() {
+      initConstellation();
+      requestAnimationFrame(renderConstellation);
+
+      // React Bits Spotlight Card effect
+      document.querySelectorAll('.daevora-auth-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+          card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+        });
+      });
+    }
+
+    // Backward-compatibility aliases
+    function init3D() { initVisualStage(); }
+    function animate() { /* Handled via renderConstellation */ }
+
+    /* --- DEPRECATED THREE.JS DAEVORA WIREFRAME ENGINE (SUPERSEDED BY INTERACTIVE CONSTELLATION MESH) ---
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x060911);
       scene.fog = new THREE.Fog(0x060911, 14, 38);
@@ -2116,10 +2450,10 @@
     // ===== 3. RENDER LOOP DENGAN KOREOGRAFI SCROLL LERP (ALA DAEVORA) =====
     const clock = new THREE.Clock();
 
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (lenis) lenis.raf(performance.now());
+    function animate(time) {
+      renderConstellation(time);
+      return;
+    }
 
       // Smooth Lerp Scroll Progress
       currentProgress += (targetProgress - currentProgress) * 0.085;
@@ -2422,11 +2756,13 @@
         renderer.render(scene, camera);
       }
     }
+    --- END DEPRECATED THREE.JS --- */
 
-    window.addEventListener('DOMContentLoaded', () => {
-      init3D();
-      animate();
-    });
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initVisualStage);
+    } else {
+      initVisualStage();
+    }
 
     // ===== 4. AUTHENTICATION & FORM LOGIC =====
 
@@ -2435,7 +2771,17 @@
       if (!inp) return;
       const isPass = inp.type === 'password';
       inp.type = isPass ? 'text' : 'password';
-      btn.textContent = isPass ? '🙈' : '👁️';
+      if (isPass) {
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>`;
+      } else {
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>`;
+      }
     }
 
     function bukaModalLupaPassword() {
@@ -2490,7 +2836,11 @@
     function tampilNotif(boxId, pesan, tipe) {
       const b = document.getElementById(boxId);
       if (!b) return;
-      b.textContent = pesan;
+      if (typeof pesan === 'string' && (pesan.includes('<') || pesan.includes('&'))) {
+        b.innerHTML = pesan;
+      } else {
+        b.textContent = pesan;
+      }
       b.className = 'toast-alert ' + tipe;
     }
 
@@ -2522,6 +2872,31 @@
           clearSession();
         }
       });
+      if (firebase.auth().getRedirectResult) {
+        firebase.auth().getRedirectResult().then(async function(result) {
+          if (result && result.user) {
+            const userData = await prosesLoginUser(result.user);
+            if (userData && (userData.role === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email)))) {
+              await firebase.auth().signOut().catch(() => null);
+              clearSession();
+              tampilNotif('notifBoxLogin', 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html.', 'error');
+              return;
+            }
+            const targetUrl = ((userData.role === 'guru' || userData.role === 'walas') && (!userData.nip || !userData.isVerified))
+              ? 'dashboard.html'
+              : getDashboardUrlByRole(userData.role);
+            if (targetUrl === 'admin.html') {
+              await firebase.auth().signOut().catch(() => null);
+              clearSession();
+              tampilNotif('notifBoxLogin', 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html.', 'error');
+              return;
+            }
+            showAuthSuccessModal('Autentikasi Berhasil!', 'Menyiapkan Portal Presensi...', () => {
+              window.location.href = targetUrl;
+            });
+          }
+        }).catch(function() {});
+      }
     }
 
     // Login Google
@@ -2531,9 +2906,16 @@
       const isReg = document.getElementById('sceneRegister') && document.getElementById('sceneRegister').classList.contains('is-active');
       const notifTarget = isReg ? 'notifBoxRegister' : 'notifBoxLogin';
 
-      loading(true, 'Menghubungkan akun Google...');
+      const btnGoogle = document.getElementById(isReg ? 'btnGoogleRegister' : 'btnGoogleLogin');
+      const origBtnContent = btnGoogle ? btnGoogle.innerHTML : '';
+      if (btnGoogle) {
+        btnGoogle.disabled = true;
+        btnGoogle.innerHTML = '<span>⏳ Menghubungkan akun Google...</span>';
+      }
+
       try {
         const result = await loginDenganGoogle();
+        loading(true, 'Menyiapkan Portal Presensi...');
         const userData = await prosesLoginUser(result.user);
 
         // ISOLASI KETAT ADMIN: Akun Administrator DILARANG login dari portal siswa (index.html)
@@ -2541,28 +2923,61 @@
           await firebase.auth().signOut().catch(() => null);
           clearSession();
           loading(false);
+          if (btnGoogle) { btnGoogle.disabled = false; btnGoogle.innerHTML = origBtnContent; }
           tampilNotif(notifTarget, 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html. Anda tidak dapat masuk ke dashboard admin melalui portal siswa ini.', 'error');
           return;
         }
 
-        const targetUrl = getDashboardUrlByRole(userData.role);
+        const targetUrl = ((userData.role === 'guru' || userData.role === 'walas') && (!userData.nip || !userData.isVerified))
+          ? 'dashboard.html'
+          : getDashboardUrlByRole(userData.role);
         if (targetUrl === 'admin.html') {
           await firebase.auth().signOut().catch(() => null);
           clearSession();
           loading(false);
+          if (btnGoogle) { btnGoogle.disabled = false; btnGoogle.innerHTML = origBtnContent; }
           tampilNotif(notifTarget, 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html. Anda tidak dapat masuk ke dashboard admin melalui portal siswa ini.', 'error');
           return;
         }
 
-        window.location.href = targetUrl;
+        loading(false);
+        showAuthSuccessModal('Autentikasi Berhasil!', 'Menyiapkan Portal Presensi...', () => {
+          window.location.href = targetUrl;
+        });
       } catch (e) {
         loading(false);
+        if (btnGoogle) {
+          btnGoogle.disabled = false;
+          btnGoogle.innerHTML = origBtnContent;
+        }
+
         if (e.code === 'auth/unauthorized-domain') {
           tampilNotif(notifTarget, 'Harap tambahkan domain lokal ke Firebase Console -> Auth -> Authorized domains.', 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
           tampilNotif(notifTarget, 'Login dibatalkan.', 'error');
         } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || (e.message && (e.message.includes('popup-blocked') || e.message.includes('cancelled-popup-request')))) {
-          tampilNotif(notifTarget, 'Jendela pop-up Google diblokir oleh browser. Harap izinkan pop-up pada peramban Anda atau gunakan opsi "Masuk Cepat Pengujian (1-Click Demo)" di bawah.', 'error');
+          if (window.location.protocol !== 'file:' && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().signInWithRedirect) {
+            try {
+              const provider = new firebase.auth.GoogleAuthProvider();
+              provider.setCustomParameters({ prompt: 'select_account' });
+              await firebase.auth().signInWithRedirect(provider);
+              return;
+            } catch (errRedir) {}
+          }
+
+          let pesan = '⚠️ Jendela pop-up Google diblokir oleh peramban browser.<br>';
+          pesan += '• Harap izinkan pop-up pada ikon peramban di bilah alamat Anda, atau silakan login menggunakan formulir Email di bawah.';
+          tampilNotif(notifTarget, pesan, 'error');
+        } else if (e.code === 'auth/network-request-failed' || (e.message && e.message.includes('network-request-failed'))) {
+          const isFile = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:');
+          let pesan = '⚠️ Gagal terhubung ke Google Auth (auth/network-request-failed).<br>';
+          if (isFile) {
+            pesan += '• Aplikasi dibuka via <code>file://</code> (tanpa web server). Firebase Google Auth mewajibkan origin HTTP/HTTPS. Jalankan via Live Server (misal <code>http://localhost:5500</code>) di editor Anda.<br>';
+          } else {
+            pesan += '• Gangguan koneksi internet atau kontak ke server Google OAuth diblokir firewall/jaringan.<br>';
+          }
+          pesan += '• Silakan masuk menggunakan formulir Email di bawah.';
+          tampilNotif(notifTarget, pesan, 'error');
         } else {
           tampilNotif(notifTarget, e.message || 'Gagal login Google.', 'error');
         }
@@ -2596,7 +3011,9 @@
           return;
         }
 
-        const targetUrl = getDashboardUrlByRole(userData.role);
+        const targetUrl = ((userData.role === 'guru' || userData.role === 'walas') && (!userData.nip || !userData.isVerified))
+          ? 'dashboard.html'
+          : getDashboardUrlByRole(userData.role);
         if (targetUrl === 'admin.html') {
           await firebase.auth().signOut().catch(() => null);
           clearSession();
@@ -2605,7 +3022,10 @@
           return;
         }
 
-        window.location.href = targetUrl;
+        loading(false);
+        showAuthSuccessModal('Autentikasi Berhasil!', 'Menyiapkan Portal Presensi...', () => {
+          window.location.href = targetUrl;
+        });
       } catch (err) {
         loading(false);
         if (err.code === 'auth/email-not-verified') {
@@ -2636,8 +3056,10 @@
         await registerDenganEmail(email, pass, nama);
         loading(false);
         tampilNotif('notifBoxRegister', 'Link verifikasi telah dikirim ke ' + email + '. Buka Gmail Anda dan klik tautan verifikasi, lalu masuk.', 'success');
-        document.getElementById('formRegister').reset();
-        setTimeout(() => goScene('login'), 3500);
+        showAuthSuccessModal('Pendaftaran Berhasil!', 'Link verifikasi telah dikirim ke ' + email + '. Mengalihkan ke tab Masuk...', () => {
+          document.getElementById('formRegister').reset();
+          goScene('login');
+        });
       } catch (err) {
         loading(false);
         if (err.code === 'auth/operation-not-allowed') {
@@ -2650,101 +3072,6 @@
       }
     }
 
-    // ===== 5. MASUK CEPAT PENGUJIAN (1-CLICK DEMO TESTING UJIKOM 2026) =====
-    async function masukCepatDemo(roleKey) {
-      bersihkanNotif('notifBoxLogin');
-      bersihkanNotif('notifBoxRegister');
-      loading(true, 'Menyiapkan sesi pengujian demo...');
-
-      try {
-        if (typeof firebase !== 'undefined' && firebase.auth && !firebase.auth().currentUser) {
-          if (firebase.auth().signInAnonymously) {
-            await firebase.auth().signInAnonymously().catch(() => null);
-          }
-        }
-      } catch (e) {}
-
-      let role = 'siswa';
-      let payload = {};
-
-      if (roleKey === 'siswa') {
-        role = 'siswa';
-        payload = {
-          role: 'siswa',
-          nama: 'M. Ihsan Athallah',
-          nisn: '0098263610',
-          kelas: 'XII RPL 2',
-          email: 'ihsanathallah@gmail.com',
-          isVerified: true,
-          nip: null,
-          mapel: null,
-          isWalas: false,
-          walasKelasId: null
-        };
-      } else if (roleKey === 'guru') {
-        role = 'guru';
-        payload = {
-          role: 'guru',
-          nama: 'Hani Hanifah, S.Si',
-          nip: '198109012009022003',
-          email: 'hani@smkn1sumedang.sch.id',
-          mapel: 'Pemrograman Web & Perangkat Bergerak',
-          isWalas: false,
-          walasKelasId: null,
-          isVerified: true,
-          nisn: null,
-          kelas: null
-        };
-      } else if (roleKey === 'walas') {
-        role = 'walas';
-        payload = {
-          role: 'walas',
-          nama: 'Muhammad Echa Putra, S.Kom.Gr',
-          nip: '199209142022211007',
-          email: 'echa@smkn1sumedang.sch.id',
-          mapel: 'Basis Data & Pemodelan RPL',
-          isWalas: true,
-          walasKelasId: 'XII RPL 2',
-          isVerified: true,
-          nisn: null,
-          kelas: null
-        };
-      } else if (roleKey === 'pengunjung') {
-        role = 'pengunjung';
-        payload = {
-          role: 'pengunjung',
-          nama: 'Pengunjung / Tamu Penguji',
-          email: 'pengunjung@nesas.sch.id',
-          nisn: null,
-          kelas: null,
-          nip: null,
-          mapel: null,
-          isWalas: false,
-          walasKelasId: null,
-          isVerified: false
-        };
-      }
-
-      try {
-        if (typeof gantiRoleSesi === 'function') {
-          await gantiRoleSesi(role, payload);
-        } else {
-          setSessionUser(payload);
-          const targetUrl = (typeof getDashboardUrlByRole === 'function')
-            ? getDashboardUrlByRole(role)
-            : (role === 'admin' ? 'admin.html' : ((role === 'guru' || role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html'));
-          window.location.href = targetUrl;
-        }
-      } catch (err) {
-        loading(false);
-        tampilNotif('notifBoxLogin', 'Gagal masuk cepat: ' + (err.message || 'Terjadi kesalahan.'), 'error');
-        tampilNotif('notifBoxRegister', 'Gagal masuk cepat: ' + (err.message || 'Terjadi kesalahan.'), 'error');
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      window.masukCepatDemo = masukCepatDemo;
-    }
   </script>
 </body>
 </html>

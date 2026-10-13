@@ -278,6 +278,7 @@ async function prosesLoginUser(firebaseUser) {
         nisn: null,
         kelas: null,
         role: 'pengunjung',
+        isVerified: false,
         foto_google: firebaseUser.photoURL || null
       };
     }
@@ -325,6 +326,10 @@ async function prosesLoginUser(firebaseUser) {
         }
       } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
         userData.role = 'pengunjung';
+      } else if ((userData.role === 'guru' || userData.role === 'walas') && (!userData.nip || !userData.isVerified) && !guruMatch) {
+        userData.role = 'pengunjung';
+        userData.isVerified = false;
+        try { await db.ref('users/' + uid).update({ role: 'pengunjung', isVerified: false }); } catch (e) {}
       }
     }
 
@@ -565,9 +570,22 @@ async function kirimResetPassword(email) {
 }
 
 // 7. Ubah Kata Sandi Akun (User Sedang Login)
-async function ubahKataSandi(passwordBaru) {
-  const user = firebase.auth().currentUser;
+async function ubahKataSandi(passwordBaru, passwordSaatIni = '') {
+  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
   if (!user) throw new Error('Sesi pengguna tidak aktif. Harap masuk kembali.');
+  if (passwordSaatIni && user.email && firebase.auth && firebase.auth.EmailAuthProvider) {
+    try {
+      const cred = firebase.auth.EmailAuthProvider.credential(user.email, passwordSaatIni);
+      if (typeof user.reauthenticateWithCredential === 'function') {
+        await user.reauthenticateWithCredential(cred);
+      }
+    } catch (authErr) {
+      if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential') {
+        throw new Error('Kata sandi saat ini salah. Pastikan kata sandi lama Anda benar.');
+      }
+      throw authErr;
+    }
+  }
   if (!passwordBaru || passwordBaru.length < 6) {
     throw new Error('Kata sandi baru minimal 6 karakter.');
   }
@@ -596,9 +614,33 @@ async function ubahProfilPengguna(namaBaru) {
 }
 
 // 9. Unified Role Switcher (PRD UJIKOM 2026)
-async function gantiRoleSesi(targetRole, payload = {}) {
+function gantiRoleSesi(targetRole, payload = {}) {
   const currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
   const currentSession = (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+
+  // Proteksi Keamanan: Cegah pembajakan peran dari halaman publik (hanya diizinkan di admin.html)
+  const isPublicPage = (typeof window !== 'undefined' && window.location && (
+    window.location.pathname.toLowerCase().endsWith('dashboard.html') ||
+    window.location.href.toLowerCase().includes('dashboard.html') ||
+    window.location.pathname.toLowerCase().endsWith('/dashboard') ||
+    window.location.pathname.toLowerCase() === '/dashboard' ||
+    window.location.pathname.toLowerCase().endsWith('index.html') ||
+    window.location.pathname.toLowerCase() === '/' ||
+    (!window.location.pathname.toLowerCase().includes('admin.html') && !window.location.href.toLowerCase().includes('admin.html'))
+  ));
+  const isRoleSwitchedSession = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
+  const sessionOrFbEmail = currentSession.email || (currentFbUser && currentFbUser.email);
+  const isAuthorizedAdmin = currentSession && (
+    currentSession.role === 'admin' ||
+    (sessionOrFbEmail && typeof isEmailAdmin === 'function' && isEmailAdmin(sessionOrFbEmail)) ||
+    (isRoleSwitchedSession && currentSession.role !== 'pengunjung')
+  );
+
+  if (targetRole !== 'pengunjung' && (isPublicPage || !isAuthorizedAdmin)) {
+    console.warn('gantiRoleSesi ditolak: Perubahan peran instan hanya diizinkan untuk Administrator pada portal admin.');
+    throw new Error('Akses Ditolak: Fitur switcher peran pengujian hanya diizinkan untuk Administrator pada portal admin.');
+  }
+
   const uid = (currentFbUser && currentFbUser.uid) || currentSession.uid || ('DEMO_' + Date.now());
   const email = (currentFbUser && currentFbUser.email) || currentSession.email || (targetRole + '@smkn1sumedang.sch.id');
   const encoded = encodeEmail(email);
@@ -672,7 +714,7 @@ async function gantiRoleSesi(targetRole, payload = {}) {
     };
   }
 
-  const isSwitched = (targetRole !== 'admin');
+  const isSwitched = (targetRole !== 'admin' && targetRole !== 'pengunjung');
   const updatedData = {
     uid: uid,
     email: email,
@@ -709,7 +751,12 @@ async function gantiRoleSesi(targetRole, payload = {}) {
       });
     } catch (e) {}
 
-    if (encoded && (!isSwitched || (typeof isEmailAdmin === 'function' && !isEmailAdmin(email)))) {
+    const isAdmEmail = (typeof isEmailAdmin === 'function' && isEmailAdmin(email));
+    const shouldUpdateEmailMapping = encoded && (
+      (!isSwitched && !isAdmEmail) ||
+      (isAdmEmail && updatedData.role === 'admin')
+    );
+    if (shouldUpdateEmailMapping) {
       try {
         db.ref('email_mapping/' + encoded).set({
           nama: updatedData.nama,

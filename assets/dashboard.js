@@ -25,8 +25,14 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
           shouldHaltDashboard = true;
           window.location.replace('admin.html');
         } else if (sessUser.role === 'guru' || sessUser.role === 'walas') {
-          shouldHaltDashboard = true;
-          window.location.replace('dashboard-guru.html');
+          if (sessUser.nip && sessUser.isVerified) {
+            shouldHaltDashboard = true;
+            window.location.replace('dashboard-guru.html');
+          } else {
+            sessUser.role = 'pengunjung';
+            try { sessionStorage.setItem('user_aktif', JSON.stringify(sessUser)); } catch (e) {}
+            try { localStorage.setItem('user_aktif', JSON.stringify(sessUser)); } catch (e) {}
+          }
         }
       }
     }
@@ -54,9 +60,14 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
         return;
       }
       if (session.role === 'guru' || session.role === 'walas') {
-        shouldHaltDashboard = true;
-        window.location.replace('dashboard-guru.html');
-        return;
+        if (session.nip && session.isVerified) {
+          shouldHaltDashboard = true;
+          window.location.replace('dashboard-guru.html');
+          return;
+        } else {
+          session.role = 'pengunjung';
+          if (typeof setSessionUser === 'function') setSessionUser(session);
+        }
       }
       currentUser = session;
       initDashboard(currentUser);
@@ -69,9 +80,14 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
       return;
     }
     if (currentUser.role === 'guru' || currentUser.role === 'walas') {
-      shouldHaltDashboard = true;
-      window.location.replace('dashboard-guru.html');
-      return;
+      if (currentUser.nip && currentUser.isVerified) {
+        shouldHaltDashboard = true;
+        window.location.replace('dashboard-guru.html');
+        return;
+      } else {
+        currentUser.role = 'pengunjung';
+        if (typeof setSessionUser === 'function') setSessionUser(currentUser);
+      }
     }
     initDashboard(currentUser);
   });
@@ -190,6 +206,9 @@ function switchTab(id, btn) {
   if (id === 'tabRekap' && typeof initRekapPresensiSiswa === 'function') {
     initRekapPresensiSiswa(currentUser);
   }
+  if (id === 'tabJadwalTataTertib' && typeof muatJadwalBeranda === 'function') {
+    muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  }
 }
 
 // Interaktivitas 3D Tilt & Hologram Glare pada Kartu Pelajar RFID Siswa
@@ -230,8 +249,13 @@ async function initDashboard(user) {
     return;
   }
   if (user.role === 'guru' || user.role === 'walas') {
-    if (typeof window !== 'undefined' && window.location) window.location.replace('dashboard-guru.html');
-    return;
+    if (user.nip && user.isVerified) {
+      if (typeof window !== 'undefined' && window.location) window.location.replace('dashboard-guru.html');
+      return;
+    } else {
+      user.role = 'pengunjung';
+      if (typeof setSessionUser === 'function') setSessionUser(user);
+    }
   }
 
   // Header Profile: Strictly Siswa or Pengunjung (Anti-Leak Admin Identity)
@@ -295,12 +319,8 @@ async function initDashboard(user) {
   // 60-Second Background Timer untuk update live KBM highlight
   if (typeof window !== 'undefined' && !window._kbmLiveInterval && typeof setInterval !== 'undefined') {
     window._kbmLiveInterval = setInterval(() => {
-      const activeChip = (typeof document !== 'undefined' && typeof document.querySelector === 'function')
-        ? document.querySelector('.class-chip.active')
-        : null;
-      const currentKls = activeChip ? activeChip.textContent : ((user && user.kelas) ? user.kelas : 'XII RPL 2');
       if (typeof muatJadwalBeranda === 'function') {
-        muatJadwalBeranda(currentKls);
+        muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
       }
     }, 60000);
   }
@@ -1016,12 +1036,19 @@ window.gantiKelasWidget = function(kelas) {
     selHome.value = kelas;
     selHome.dispatchEvent(new Event('change'));
   }
-  document.querySelectorAll('.class-chip').forEach(c => {
-    if (c.textContent === kelas) c.classList.add('active');
-    else c.classList.remove('active');
-  });
-  if (typeof muatJadwalBeranda === 'function') {
-    muatJadwalBeranda(kelas);
+  if (typeof pilihKelasJadwal === 'function') {
+    pilihKelasJadwal(kelas);
+  } else {
+    currentSelectedKelasJadwal = kelas;
+    if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+      document.querySelectorAll('#classChipsList .class-chip, #classChipsListTab .class-chip').forEach(c => {
+        if (c.textContent === kelas) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }
+    if (typeof muatJadwalBeranda === 'function') {
+      muatJadwalBeranda(kelas, currentSelectedHariJadwal);
+    }
   }
 };
 
@@ -1246,7 +1273,8 @@ function initBerandaOverview(user) {
     selHome.addEventListener('change', function() {
       if (this.value) {
         dengarkanStatusKelasOperasional(this.value);
-        if (typeof muatJadwalBeranda === 'function') muatJadwalBeranda(this.value);
+        if (typeof pilihKelasJadwal === 'function') pilihKelasJadwal(this.value);
+        else if (typeof muatJadwalBeranda === 'function') muatJadwalBeranda(this.value);
       }
     });
   }
@@ -1462,11 +1490,218 @@ let currentSelectedHariJadwal = (function() {
   return (h === 'sabtu' || h === 'minggu') ? 'senin' : h;
 })();
 
+let cacheJadwalFirebase = {};
+let activeJadwalListenerRef = null;
+let activeJadwalListenerCallback = null;
+
+function renderTampilanJadwal(resolved, targetKelas, targetHari) {
+  const gridEl = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('homeScheduleGrid') : null;
+  const gridTabEl = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('tabScheduleGrid') : null;
+  const badgePulang = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('homeJamPulangBadge') : null;
+  const badgePulangTab = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('tabJamPulangBadge') : null;
+  const bannerMandiri = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('bannerKelasMandiri') : null;
+  const bannerText = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('bannerMandiriText') : null;
+  const bannerMandiriTab = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('bannerKelasMandiriTab') : null;
+  const bannerTextTab = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('bannerMandiriTextTab') : null;
+
+  const namaHariCap = targetHari.charAt(0).toUpperCase() + targetHari.slice(1);
+  const data = (resolved && resolved.jadwal) ? resolved.jadwal : {};
+
+  [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = ''; });
+
+  const jamKeys = Object.keys(data).sort((a, b) => Number(a) - Number(b));
+  if (jamKeys.length === 0) {
+    const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${targetKelas} pada hari ${namaHariCap}.</div>`;
+    [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = emptyHtml; });
+    [bannerMandiri, bannerMandiriTab].forEach(b => { if (b) b.style.display = 'none'; });
+    if (badgePulang) badgePulang.textContent = `⏰ Jam Pulang: -`;
+    if (badgePulangTab) badgePulangTab.textContent = `⏰ Jam Pulang: -`;
+    return;
+  }
+
+  // Ambil jam selesai dari mapel paling terakhir atau ketetapan jam pulang resmi
+  const jamPulangResmi = resolved.jamPulang || (targetHari === 'jumat' ? '11:45' : '15:30');
+  const jamPulangStr = `⏰ Jam Pulang ${targetKelas} (${namaHariCap}): ${jamPulangResmi} WIB`;
+  if (badgePulang) badgePulang.textContent = jamPulangStr;
+  if (badgePulangTab) badgePulangTab.textContent = jamPulangStr;
+
+  const jamSkrg = (typeof jamSekarang === 'function') ? jamSekarang() : '08:00';
+  const hariIniReal = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
+  const isToday = (targetHari === hariIniReal);
+  const listJamMandiri = [];
+
+  jamKeys.forEach(jamKe => {
+    const p = data[jamKe] || {};
+
+    // 1. Bersihkan nama mapel dari sisa teks statis lama
+    const namaMapelBersih = (p.mapel || 'Pelajaran')
+      .replace(/\s*\(Guru Ada Halangan \/ Mandiri\)/gi, '')
+      .trim();
+
+    // 2. Cek apakah ada konfirmasi resmi guru berhalangan hadir
+    const isGuruBerhalangan = p.guru_status === 'berhalangan' || p.guru_status === 'mandiri';
+    if (isGuruBerhalangan) {
+      listJamMandiri.push(`Jam ke-${jamKe} (${namaMapelBersih})`);
+    }
+
+    // 3. Cek apakah jam ini aktif sekarang (hanya berlaku jika melihat jadwal hari ini)
+    const isActive = isToday && p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg < p.selesai;
+
+    const cardHtml = `
+      ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}
+      <div class="schedule-jam">Jam Ke-${jamKe}</div>
+      <div class="schedule-mapel">${namaMapelBersih}</div>
+      <div class="schedule-waktu">⏰ ${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
+      ${p.guru ? `<div style="font-size:12px;color:#64748b;margin-top:4px;">👨‍🏫 ${p.guru}</div>` : ''}
+      ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;">⚡ Guru Berhalangan (Mandiri)</span></div>' : ''}
+    `;
+
+    [gridEl, gridTabEl].forEach(g => {
+      if (!g) return;
+      const card = document.createElement('div');
+      card.className = 'schedule-card' + (isActive ? ' is-active' : '');
+      card.innerHTML = cardHtml;
+      g.appendChild(card);
+    });
+  });
+
+  // 4. Atur tampilan banner secara dinamis
+  if (listJamMandiri.length > 0) {
+    const pesanMandiri = `Guru pengajar pada <b>${listJamMandiri.join(', ')}</b> mengonfirmasi ada halangan. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada device kelas agar presensi jam tersebut terverifikasi sah.`;
+    [bannerMandiri, bannerMandiriTab].forEach(b => { if (b) b.style.display = 'flex'; });
+    if (bannerText) bannerText.innerHTML = pesanMandiri;
+    if (bannerTextTab) bannerTextTab.innerHTML = pesanMandiri;
+  } else {
+    [bannerMandiri, bannerMandiriTab].forEach(b => { if (b) b.style.display = 'none'; });
+  }
+}
+
+function sinkronkanChipJadwal(kelas, hari) {
+  const targetKelas = kelas || currentSelectedKelasJadwal || 'XII RPL 2';
+  const targetHari = (hari || currentSelectedHariJadwal || 'senin').toLowerCase();
+  currentSelectedKelasJadwal = targetKelas;
+  currentSelectedHariJadwal = targetHari;
+
+  const listHari = [
+    { key: 'senin', label: 'Senin' },
+    { key: 'selasa', label: 'Selasa' },
+    { key: 'rabu', label: 'Rabu' },
+    { key: 'kamis', label: 'Kamis' },
+    { key: 'jumat', label: 'Jumat' }
+  ];
+
+  if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+    // Sinkronkan Chip Kelas
+    document.querySelectorAll('#classChipsList .class-chip, #classChipsListTab .class-chip').forEach(c => {
+      if (c.textContent.trim() === targetKelas.trim()) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+
+    // Sinkronkan Chip Hari
+    document.querySelectorAll('#dayChipsList .class-chip, #dayChipsListTab .class-chip').forEach(c => {
+      const rawHk = c.getAttribute('data-hari');
+      const hk = rawHk ? rawHk.toLowerCase().trim() : c.textContent.replace(/[^a-zA-Z]/g, '').toLowerCase().trim();
+      const item = listHari.find(h => h.key === hk);
+      const lbl = item ? item.label : (hk.charAt(0).toUpperCase() + hk.slice(1));
+      c.setAttribute('data-hari', hk);
+      if (hk === targetHari) {
+        c.classList.add('active');
+        c.innerHTML = `✨ ${lbl}`;
+      } else {
+        c.classList.remove('active');
+        c.innerHTML = lbl;
+      }
+    });
+  }
+}
+window.sinkronkanChipJadwal = sinkronkanChipJadwal;
+
+function pilihKelasJadwal(kelas) {
+  if (!kelas) return;
+  currentSelectedKelasJadwal = kelas;
+  sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  if (typeof dengarkanStatusKelasOperasional === 'function') {
+    dengarkanStatusKelasOperasional(kelas);
+  }
+}
+window.pilihKelasJadwal = pilihKelasJadwal;
+
+function pilihHariJadwal(hari) {
+  if (!hari) return;
+  currentSelectedHariJadwal = String(hari).toLowerCase().trim();
+  sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+}
+window.pilihHariJadwal = pilihHariJadwal;
+
+function muatJadwalBeranda(kelas, hari) {
+  const targetKelas = kelas || currentSelectedKelasJadwal || 'XII RPL 2';
+  const targetHari = (hari || currentSelectedHariJadwal || 'senin').toLowerCase();
+  currentSelectedKelasJadwal = targetKelas;
+  currentSelectedHariJadwal = targetHari;
+
+  // 1. Render instan dengan master jadwal resmi (Zero Latency & 100% Guaranteed)
+  const localResolved = (typeof ambilJadwalKelasHariIni === 'function')
+    ? ambilJadwalKelasHariIni(cacheJadwalFirebase[targetKelas] || null, targetKelas, targetHari)
+    : {
+        hari: targetHari,
+        jadwal: (typeof MASTER_JADWAL_RESMI !== 'undefined' && MASTER_JADWAL_RESMI[targetKelas] && MASTER_JADWAL_RESMI[targetKelas][targetHari])
+          ? MASTER_JADWAL_RESMI[targetKelas][targetHari]
+          : {},
+        jamPulang: (targetHari === 'jumat' ? '11:45' : '15:30')
+      };
+
+  renderTampilanJadwal(localResolved, targetKelas, targetHari);
+
+  // 2. Fetch data-jadwal.json jika ada dan belum ter-cache
+  if (!cacheJadwalFirebase[targetKelas] && typeof fetch === 'function') {
+    fetch('assets/data-jadwal.json')
+      .then(r => r.json())
+      .then(jsonData => {
+        if (jsonData && jsonData[targetKelas]) {
+          cacheJadwalFirebase[targetKelas] = jsonData[targetKelas];
+          const jsonResolved = (typeof ambilJadwalKelasHariIni === 'function')
+            ? ambilJadwalKelasHariIni(jsonData[targetKelas], targetKelas, targetHari)
+            : { hari: targetHari, jadwal: jsonData[targetKelas][targetHari] || {}, jamPulang: (targetHari === 'jumat' ? '11:45' : '15:30') };
+          renderTampilanJadwal(jsonResolved, targetKelas, targetHari);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // 3. Listener Realtime Firebase (Live Guru Berhalangan / Perubahan KBM Realtime)
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    try {
+      if (activeJadwalListenerRef && activeJadwalListenerCallback) {
+        activeJadwalListenerRef.off('value', activeJadwalListenerCallback);
+      }
+      activeJadwalListenerRef = db.ref(`jadwal_pelajaran/${targetKelas}`);
+      activeJadwalListenerCallback = activeJadwalListenerRef.on('value', snapshot => {
+        const rawVal = snapshot.val();
+        if (rawVal) {
+          cacheJadwalFirebase[targetKelas] = rawVal;
+        }
+        const resolved = (typeof ambilJadwalKelasHariIni === 'function')
+          ? ambilJadwalKelasHariIni(rawVal || cacheJadwalFirebase[targetKelas] || null, targetKelas, targetHari)
+          : localResolved;
+
+        renderTampilanJadwal(resolved, targetKelas, targetHari);
+      }, err => {
+        console.warn('Realtime sync jadwal_pelajaran offline/terbatas:', err && err.message);
+      });
+    } catch (e) {
+      console.warn('Init listener jadwal_pelajaran gagal:', e);
+    }
+  }
+}
+window.muatJadwalBeranda = muatJadwalBeranda;
+
 function initClassChipsSelector(user) {
-  const container = document.getElementById('classChipsList');
-  const containerTab = document.getElementById('classChipsListTab');
-  const dayContainer = document.getElementById('dayChipsList');
-  const dayContainerTab = document.getElementById('dayChipsListTab');
+  const container = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('classChipsList') : null;
+  const containerTab = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('classChipsListTab') : null;
+  const dayContainer = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('dayChipsList') : null;
+  const dayContainerTab = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('dayChipsListTab') : null;
 
   const listKelas = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
   const listHari = [
@@ -1491,15 +1726,7 @@ function initClassChipsSelector(user) {
       chip.className = 'class-chip' + (kelas === currentSelectedKelasJadwal ? ' active' : '');
       chip.textContent = kelas;
       chip.onclick = function() {
-        currentSelectedKelasJadwal = kelas;
-        document.querySelectorAll('#classChipsList .class-chip, #classChipsListTab .class-chip').forEach(c => {
-          if (c.textContent === kelas) c.classList.add('active');
-          else c.classList.remove('active');
-        });
-        muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
-        if (typeof dengarkanStatusKelasOperasional === 'function') {
-          dengarkanStatusKelasOperasional(kelas);
-        }
+        pilihKelasJadwal(kelas);
       };
       cnt.appendChild(chip);
     });
@@ -1516,122 +1743,14 @@ function initClassChipsSelector(user) {
       dchip.setAttribute('data-hari', item.key);
       dchip.innerHTML = item.key === currentSelectedHariJadwal ? `✨ ${item.label}` : item.label;
       dchip.onclick = function() {
-        currentSelectedHariJadwal = item.key;
-        document.querySelectorAll('#dayChipsList .class-chip, #dayChipsListTab .class-chip').forEach(c => {
-          const hk = c.getAttribute('data-hari');
-          const lbl = listHari.find(h => h.key === hk)?.label || hk;
-          if (hk === item.key) {
-            c.classList.add('active');
-            c.innerHTML = `✨ ${lbl}`;
-          } else {
-            c.classList.remove('active');
-            c.innerHTML = lbl;
-          }
-        });
-        muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+        pilihHariJadwal(item.key);
       };
       dcnt.appendChild(dchip);
     });
   });
 
+  sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
   muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
-}
-
-function muatJadwalBeranda(kelas, hari) {
-  const targetKelas = kelas || currentSelectedKelasJadwal || 'XII RPL 2';
-  const targetHari = hari || currentSelectedHariJadwal || 'senin';
-  currentSelectedKelasJadwal = targetKelas;
-  currentSelectedHariJadwal = targetHari;
-
-  const gridEl = document.getElementById('homeScheduleGrid');
-  const gridTabEl = document.getElementById('tabScheduleGrid');
-  const badgePulang = document.getElementById('homeJamPulangBadge');
-  const badgePulangTab = document.getElementById('tabJamPulangBadge');
-  const bannerMandiri = document.getElementById('bannerKelasMandiri');
-  const bannerText = document.getElementById('bannerMandiriText');
-
-  const namaHariCap = targetHari.charAt(0).toUpperCase() + targetHari.slice(1);
-  if (badgePulang) badgePulang.textContent = `Memeriksa ${targetKelas} (${namaHariCap})...`;
-  if (badgePulangTab) badgePulangTab.textContent = `Memeriksa ${targetKelas} (${namaHariCap})...`;
-
-  // Jadwal Pelajaran & Auto-Sync Jam Pulang
-  db.ref(`jadwal_pelajaran/${targetKelas}`).on('value', snapshot => {
-    const rawVal = snapshot.val();
-    const resolved = (typeof ambilJadwalKelasHariIni === 'function')
-      ? ambilJadwalKelasHariIni(rawVal, targetKelas, targetHari)
-      : { hari: targetHari, jadwal: rawVal || {}, jamPulang: (targetHari === 'jumat' ? '11:45' : '15:30') };
-
-    const data = resolved.jadwal || {};
-    [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = ''; });
-
-    const jamKeys = Object.keys(data).sort((a, b) => Number(a) - Number(b));
-    if (jamKeys.length === 0) {
-      const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${targetKelas} pada hari ${namaHariCap}.</div>`;
-      [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = emptyHtml; });
-      if (bannerMandiri) bannerMandiri.style.display = 'none';
-      if (badgePulang) badgePulang.textContent = `Jam Pulang: -`;
-      if (badgePulangTab) badgePulangTab.textContent = `Jam Pulang: -`;
-      return;
-    }
-
-    // Ambil jam selesai dari mapel paling terakhir atau ketetapan jam pulang resmi
-    const jamPulangResmi = resolved.jamPulang || (targetHari === 'jumat' ? '11:45' : '15:30');
-    const jamPulangStr = `Jam Pulang ${targetKelas} (${namaHariCap}): ${jamPulangResmi} WIB`;
-    if (badgePulang) badgePulang.textContent = jamPulangStr;
-    if (badgePulangTab) badgePulangTab.textContent = jamPulangStr;
-
-    const jamSkrg = jamSekarang();
-    const hariIniReal = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(tanggalHariIni()) : 'senin';
-    const isToday = (targetHari === hariIniReal);
-    const listJamMandiri = [];
-
-    jamKeys.forEach(jamKe => {
-      const p = data[jamKe];
-
-      // 1. Bersihkan nama mapel dari sisa teks statis lama
-      const namaMapelBersih = (p.mapel || 'Pelajaran')
-        .replace(/\s*\(Guru Ada Halangan \/ Mandiri\)/gi, '')
-        .trim();
-
-      // 2. Cek apakah ada konfirmasi resmi guru berhalangan hadir
-      const isGuruBerhalangan = p.guru_status === 'berhalangan' || p.guru_status === 'mandiri';
-      if (isGuruBerhalangan) {
-        listJamMandiri.push(`Jam ke-${jamKe} (${namaMapelBersih})`);
-      }
-
-      // 3. Cek apakah jam ini aktif sekarang (hanya berlaku jika melihat jadwal hari ini)
-      const isActive = isToday && p.mulai && p.selesai && jamSkrg >= p.mulai && jamSkrg <= p.selesai;
-
-      const cardHtml = `
-        ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}
-        <div class="schedule-jam">Jam Ke-${jamKe}</div>
-        <div class="schedule-mapel">${namaMapelBersih}</div>
-        <div class="schedule-waktu">⏰ ${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
-        ${p.guru ? `<div style="font-size:12px;color:#64748b;margin-top:4px;">👨‍🏫 ${p.guru}</div>` : ''}
-        ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;">⚡ Guru Berhalangan (Mandiri)</span></div>' : ''}
-      `;
-
-      [gridEl, gridTabEl].forEach(g => {
-        if (!g) return;
-        const card = document.createElement('div');
-        card.className = 'schedule-card' + (isActive ? ' is-active' : '');
-        card.innerHTML = cardHtml;
-        g.appendChild(card);
-      });
-    });
-
-    // 4. Atur tampilan banner secara dinamis
-    if (bannerMandiri) {
-      if (listJamMandiri.length > 0) {
-        bannerMandiri.style.display = 'flex';
-        if (bannerText) {
-          bannerText.innerHTML = `Guru pengajar pada <b>${listJamMandiri.join(', ')}</b> mengonfirmasi ada halangan. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada device kelas agar presensi jam tersebut terverifikasi sah.`;
-        }
-      } else {
-        bannerMandiri.style.display = 'none';
-      }
-    }
-  });
 }
 
 // ===== HELPER ACTIONS DARI SERVICE GRID =====
@@ -1663,3 +1782,34 @@ function bukaModalTataTertib() {
     "4. Izin sakit/dispensasi harus diajukan melalui menu 'Ajukan Izin' disertai surat keterangan resmi."
   );
 }
+
+function inisialisasiJadwalAwal() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById && document.getElementById('statusHariIni') && !document.getElementById('namaUser')) return;
+  try {
+    sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+    muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  } catch (e) {
+    console.warn('Inisialisasi jadwal awal:', e);
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading' && typeof document.addEventListener === 'function') {
+    document.addEventListener('DOMContentLoaded', inisialisasiJadwalAwal);
+  } else if (typeof setTimeout === 'function') {
+    setTimeout(inisialisasiJadwalAwal, 0);
+  }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    muatJadwalBeranda,
+    pilihKelasJadwal,
+    pilihHariJadwal,
+    sinkronkanChipJadwal,
+    initClassChipsSelector,
+    renderTampilanJadwal
+  };
+}
+

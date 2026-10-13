@@ -1,13 +1,16 @@
-// Gate akses: harus login admin dulu
-const adminUser = localStorage.getItem('admin_aktif');
-if (!adminUser) {
-  window.location.href = 'admin-login.html';
-}
+// Monitoring Presensi RFID — Akses Terbuka (Siswa, Guru & Pengunjung)
+const adminUser = localStorage.getItem('admin_aktif') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('user_aktif'));
 
-document.getElementById('logoutBtn').addEventListener('click', function () {
-  localStorage.removeItem('admin_aktif');
-  window.location.href = 'admin-login.html';
-});
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', function () {
+    try {
+      localStorage.removeItem('admin_aktif');
+      if (typeof clearSession === 'function') clearSession();
+    } catch (e) {}
+    window.location.href = 'index.html';
+  });
+}
 
 // ---- State ----
 let siswaCache = {};

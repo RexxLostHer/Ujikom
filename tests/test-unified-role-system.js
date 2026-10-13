@@ -18,17 +18,20 @@ assert.ok(authJs.includes('isRoleSwitched'), 'Flag isRoleSwitched harus diimplem
 assert.ok(authJs.includes('sessionStorage.getItem(\'isRoleSwitched\')'), 'Flag isRoleSwitched harus disinkronkan ke sessionStorage');
 console.log('✓ gantiRoleSesi dan proteksi flag isRoleSwitched valid 100%.\n');
 
-// 2. Verifikasi 5 Presets Role di assets/profile-modal.js
+// 2. Verifikasi 5 Presets Role di assets/profile-modal.js (Khusus Admin & Diblokir dari Dashboard Publik)
 const modalJs = fs.readFileSync(path.join(__dirname, '../assets/profile-modal.js'), 'utf8');
 
-console.log('[Test 2] Evaluasi 5 Presets UJIKOM pada Modal Profil...');
-assert.ok(modalJs.includes("pilihPresetRole('admin')"), 'Preset Administrator Sistem harus tersedia');
-assert.ok(modalJs.includes("pilihPresetRole('walas')"), 'Preset Wali Kelas XII RPL 2 harus tersedia');
-assert.ok(modalJs.includes("pilihPresetRole('guru')"), 'Preset Guru Pengajar XII RPL 1 harus tersedia');
-assert.ok(modalJs.includes("pilihPresetRole('siswa'"), 'Preset Siswa Resmi harus tersedia');
-assert.ok(modalJs.includes("pilihPresetRole('pengunjung')"), 'Preset Reset ke Pengunjung harus tersedia');
+console.log('[Test 2] Evaluasi 5 Presets UJIKOM: Dibatasi Khusus Admin & Diblokir dari Dashboard Publik...');
+assert.ok(modalJs.includes("pilihPresetRole('admin')"), 'Preset Administrator Sistem harus tersedia untuk admin');
+assert.ok(modalJs.includes("pilihPresetRole('walas')"), 'Preset Wali Kelas XII RPL 2 harus tersedia untuk admin');
+assert.ok(modalJs.includes("pilihPresetRole('guru')"), 'Preset Guru Pengajar XII RPL 1 harus tersedia untuk admin');
+assert.ok(modalJs.includes("pilihPresetRole('siswa'"), 'Preset Siswa Resmi harus tersedia untuk admin');
+assert.ok(modalJs.includes("pilihPresetRole('pengunjung')"), 'Preset Reset ke Pengunjung harus tersedia untuk admin');
 assert.ok(modalJs.includes('gantiRoleSesi(role, payload)'), 'pilihPresetRole harus mendelegasikan ke gantiRoleSesi');
-console.log('✓ Seluruh 5 Preset Role UJIKOM terpasang lengkap pada modal profil.\n');
+// Proteksi isolasi role switcher UJIKOM dari dashboard publik
+assert.ok(modalJs.includes('isPublicDashboard'), 'profile-modal.js harus mendeteksi dashboard publik');
+assert.ok(modalJs.includes('isAuthAdmin'), 'profile-modal.js harus membatasi switcher role hanya untuk administrator');
+console.log('✓ Seluruh 5 Preset Role UJIKOM terisolasi eksklusif untuk Admin dan diblokir dari dashboard publik.\n');
 
 // 3. Verifikasi Pembatasan Hak Approval Wali Kelas di assets/dashboard-guru.js
 const guruJs = fs.readFileSync(path.join(__dirname, '../assets/dashboard-guru.js'), 'utf8');

@@ -138,7 +138,7 @@ if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
         user.walasKelasId = gMatch.walasKelasId || null;
         user.isVerified = true;
         setSessionUser(user);
-        if (db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
+        if (typeof db !== 'undefined' && db) db.ref('users/' + fbUser.uid).update(user).catch(() => null);
       }
     }
 

@@ -58,6 +58,15 @@ async function handleStaffLoginGoogle() {
       clearAdminNotif();
     } else if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request' || (err.message && (err.message.includes('popup-blocked') || err.message.includes('cancelled-popup-request')))) {
       showAdminNotif('error', 'Jendela popup Google diblokir oleh browser. Harap izinkan pop-up pada peramban Anda atau gunakan tombol Masuk Cepat Administrator (Demo UJIKOM) di bawah.');
+    } else if (err.code === 'auth/network-request-failed' || (err.message && err.message.includes('network-request-failed'))) {
+      const isFile = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:');
+      let msg = '⚠️ Gagal terhubung ke Google Auth (auth/network-request-failed). ';
+      if (isFile) {
+        msg += 'Aplikasi dibuka via <code>file://</code> tanpa Web Server. Gunakan Live Server atau gunakan tombol "⚡ Masuk Cepat Administrator (Demo UJIKOM)" di bawah.';
+      } else {
+        msg += 'Periksa koneksi internet Anda atau gunakan tombol "⚡ Masuk Cepat Administrator (Demo UJIKOM)" di bawah.';
+      }
+      showAdminNotif('error', msg);
     } else if (err.code === 'auth/unauthorized-domain') {
       showAdminNotif('error', 'Domain lokal belum diizinkan. Tambahkan di Firebase Console -> Auth -> Authorized Domains.');
     } else {
