@@ -13,6 +13,8 @@ const assert = require('assert');
 // 1. Mock Database In-Memory
 const mockDb = {
   kartu: {
+    '006787337': { nisn: '0098263610' },
+    '1058384422': { nisn: '0082104129' },
     '04A1B2C3': { nisn: '0098263610' },
     '04D4E5F6': { nisn: '0082104129' },
     'CORRUPT01': {} // Data kartu tanpa NISN

@@ -13,7 +13,9 @@ if (logoutBtn) {
 }
 
 // ---- State ----
-let siswaCache = {};
+let siswaCache = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && Object.keys(MASTER_DATA_SISWA_RESMI).length > 0)
+  ? Object.assign({}, MASTER_DATA_SISWA_RESMI)
+  : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? Object.assign({}, window.MASTER_DATA_SISWA_RESMI) : {});
 let jadwalPelajaranKelas = null;
 let jamKeAktifSekarang = null;
 let listenerPresensiJam = null;
@@ -35,16 +37,22 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
   // Foto / Avatar Inisial
   const photoEl = document.createElement('div');
   photoEl.className = 'siswa-card-photo';
-  const img = document.createElement('img');
-  img.src = 'assets/foto/' + nisn + '.jpg';
-  img.alt = s.nama;
   photoEl.textContent = inisial;
+  const fotoSrc = s.foto || ('assets/foto/' + nisn + '.jpg');
+  const img = document.createElement('img');
+  img.src = fotoSrc;
+  img.alt = s.nama || 'Siswa';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.objectFit = 'cover';
+  img.style.objectPosition = 'center top';
   img.onload = function() {
-    photoEl.textContent = '';
+    photoEl.innerHTML = '';
     photoEl.appendChild(img);
   };
-  img.onerror = function() { /* biarkan inisial */ };
-  photoEl.appendChild(img);
+  img.onerror = function() {
+    photoEl.textContent = inisial;
+  };
   card.appendChild(photoEl);
 
   // Info
@@ -148,16 +156,22 @@ function pasangListenerPresensiJam(kelas) {
     listenerPresensiJam.ref.off('value', listenerPresensiJam.callback);
     listenerPresensiJam = null;
   }
-  sudahAbsenSet = new Set();
-  detailAbsensi = {};
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
+  const defaultPresensi = (typeof generateDefaultPresensiResmi === 'function')
+    ? generateDefaultPresensiResmi(normKelas, tanggalHariIni())
+    : {};
+  detailAbsensi = Object.assign({}, defaultPresensi);
+  delete detailAbsensi['0098263610'];
+  delete detailAbsensi['0082104129'];
+  sudahAbsenSet = new Set(Object.keys(detailAbsensi));
 
-  if (!kelas) {
+  if (!normKelas) {
     renderRoster();
     return;
   }
 
-  // Dengarkan seluruh data presensi jam hari ini secara kumulatif
-  const path = 'presensi_jam/' + kelas + '/' + tanggalHariIni();
+  renderRoster();
+  const path = 'presensi_jam/' + normKelas + '/' + tanggalHariIni();
   const ref = db.ref(path);
   const callback = function (snapshot) {
     const semuaJam = snapshot.val() || {};
@@ -180,8 +194,16 @@ function pasangListenerPresensiJam(kelas) {
       }
     });
 
-    sudahAbsenSet = new Set(Object.keys(gabungan));
-    detailAbsensi = gabungan;
+    const mergedLive = Object.assign({}, defaultPresensi, gabungan);
+    if (!gabungan['0098263610']) {
+      delete mergedLive['0098263610'];
+    }
+    if (!gabungan['0082104129']) {
+      delete mergedLive['0082104129'];
+    }
+
+    sudahAbsenSet = new Set(Object.keys(mergedLive));
+    detailAbsensi = mergedLive;
     renderRoster();
   };
   ref.on('value', callback);
@@ -206,9 +228,10 @@ function pindahKelas(kelas) {
     listenerJadwalPelajaran = null;
   }
   jadwalPelajaranKelas = null;
-  if (!kelas) return;
+  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
+  if (!normKelas) return;
 
-  const ref = db.ref('jadwal_pelajaran/' + kelas);
+  const ref = db.ref('jadwal_pelajaran/' + normKelas);
   const callback = function (snapshot) {
     jadwalPelajaranKelas = snapshot.val();
     cekJamAktifTerkini();

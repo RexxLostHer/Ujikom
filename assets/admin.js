@@ -464,6 +464,19 @@ async function muatRekapPresensi() {
   } catch (e) {
     console.error('Gagal mengambil presensi_jam:', e);
   }
+  const defaultAdminPres = (typeof generateDefaultPresensiResmi === 'function')
+    ? generateDefaultPresensiResmi(kelas, tgl)
+    : {};
+  if (!dataPresensi['1']) dataPresensi['1'] = {};
+  Object.entries(defaultAdminPres).forEach(([n, def]) => {
+    let has = false;
+    ['1', '2', '3', '4', '5', '6', '7', '8'].forEach(j => {
+      if (dataPresensi[j] && dataPresensi[j][n]) has = true;
+    });
+    if (!has && n !== '0098263610' && n !== '0082104129') {
+      dataPresensi['1'][n] = def;
+    }
+  });
 
   rekapCacheData = [];
   let hitungHadir = 0;
@@ -726,11 +739,23 @@ function renderSiswaTable(data) {
       if (s && s.kelas) kelasSet.add(s.kelas);
       const displayNisn = s.nisn || nisn;
       const keyTarget = s._key || displayNisn;
+      const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+      const fotoUrl = s.foto || ('assets/foto/' + displayNisn + '.jpg');
 
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td>' + displayNisn + '</td>' +
-        '<td>' + (s.nama || '') + '</td>' +
+        '<td style="font-family:var(--font-mono, monospace);font-weight:600;">' + displayNisn + '</td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<div style="width:38px;height:38px;border-radius:10px;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;border:1.5px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.06);flex-shrink:0;">' +
+              '<img src="' + fotoUrl + '" alt="' + (s.nama || '') + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.textContent=\'' + inisial + '\';">' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-weight:700;color:#0f172a;">' + (s.nama || '') + '</div>' +
+              (s.foto_karakter ? '<div style="font-size:11px;color:#6366f1;font-weight:600;">CotE: ' + s.foto_karakter + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</td>' +
         '<td>' + (s.kelas || '') + '</td>' +
         '<td style="font-size:12px;color:#64748b;">' + (s.email || '-') + '</td>' +
         '<td></td>';

@@ -20,6 +20,16 @@ const SEED_DATA = {
     }
   },
   kartu: {
+    "006787337": {
+      nisn: "0098263610",
+      device_id: "gateway-rpl-01",
+      pemilik: "M. IHSAN ATHALLAH"
+    },
+    "1058384422": {
+      nisn: "0082104129",
+      device_id: "gateway-rpl-01",
+      pemilik: "RIZKY RAMADANI"
+    },
     "04A1B2C3": {
       nisn: "0098263610",
       device_id: "gateway-rpl-01",

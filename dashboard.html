@@ -6,20 +6,21 @@
 <title>Portal Siswa & Wali Murid — Presensi IoT RFID</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
   :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --font-heading: 'Space Grotesk', system-ui, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
-  * { font-family: var(--font-sans); }
+  * { font-family: var(--font-body); }
   h1, h2, h3, h4, .user-info h1, .view-tab-btn, .btn-profile-header, .stat-value, .stat-label { font-family: var(--font-heading); }
   .mono, .rfid-tag, .jam-digital, code, pre { font-family: var(--font-mono); }
   .staff-review-banner {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+    color: #1E293B;
     border-radius: 16px;
     padding: 12px 18px;
     margin-bottom: 16px;
@@ -27,9 +28,9 @@
     justify-content: space-between;
     align-items: center;
     gap: 14px;
-    box-shadow: 0 4px 15px rgba(67, 56, 202, 0.25);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    border: 1px solid #E2E8F0;
     flex-wrap: wrap;
-    border: 1px solid rgba(199, 210, 254, 0.3);
   }
   .staff-review-content {
     display: flex;
@@ -41,10 +42,10 @@
   }
   .staff-review-text {
     font-size: 13.5px;
-    color: #e0e7ff;
+    color: #64748B;
   }
   .staff-review-text strong {
-    color: #ffffff;
+    color: #1E293B;
     font-weight: 700;
   }
   .staff-review-actions {
@@ -53,30 +54,32 @@
     align-items: center;
   }
   .btn-staff-review {
-    padding: 6px 12px;
-    border-radius: 10px;
+    padding: 8px 14px;
+    border-radius: 12px;
     font-size: 12px;
     font-weight: 700;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    border: 1px solid #E2E8F0;
+  }
+  .btn-staff-review:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
   }
   .btn-staff-review.guru {
-    background: #ffffff;
-    color: #4338ca;
-  }
-  .btn-staff-review.guru:hover {
-    background: #e0e7ff;
+    color: #4F46E5;
+    background: #EEF2FF;
+    border-color: #C7D2FE;
   }
   .btn-staff-review.admin {
-    background: #4f46e5;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-  }
-  .btn-staff-review.admin:hover {
-    background: #6366f1;
+    color: #0D9488;
+    background: #F0FDFA;
+    border-color: #99F6E4;
   }
 </style>
 </head>
@@ -104,11 +107,15 @@
       <div class="user-info">
         <h1 id="namaUser">Memuat Profil...</h1>
         <p id="infoSubUser">Portal Presensi & Informasi Siswa</p>
+        <span id="roleBadge" class="badge-role-guru" style="display:none;"></span>
       </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <!-- presensi-live.html dinonaktifkan dari header dashboard publik: portal admin eksklusif terpisah -->
-      <button class="btn-profile-header" onclick="bukaModalProfil()">👤 Profil Saya</button>
+      <button class="btn-profile-header" onclick="bukaModalProfil()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profil Saya
+      </button>
       <button class="btn-logout" onclick="logout()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         Keluar
@@ -119,22 +126,28 @@
   <!-- TABS NAVIGASI UTAMA -->
   <div class="view-tabs">
     <button class="view-tab-btn active" id="btnTabBeranda" onclick="switchTab('tabBeranda', this)">
-      <span>🏠</span> Beranda
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Beranda
     </button>
-    <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)" style="display:none;">
-      <span>👥</span> Pantau Presensi Kelas
+    <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Pantau Kelas
     </button>
     <button class="view-tab-btn" id="btnTabRekap" onclick="switchTab('tabRekap', this)">
-      <span>📋</span> Riwayat Kehadiran Saya
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+      Riwayat Kehadiran
     </button>
     <button class="view-tab-btn" id="btnTabPerijinan" onclick="switchTab('tabPerijinan', this)">
-      <span>📝</span> Ajukan Izin / Dispen
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Ajukan Izin / Dispen
     </button>
     <button class="view-tab-btn" id="btnTabRiwayatIjin" onclick="switchTab('tabRiwayatIjin', this)">
-      <span>💬</span> Status Perizinan
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 10 2 2 4-4"/></svg>
+      Status Perizinan
     </button>
     <button class="view-tab-btn" id="btnTabJadwalTataTertib" onclick="switchTab('tabJadwalTataTertib', this)">
-      <span>📚</span> Jadwal & Tata Tertib
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Jadwal & Tata Tertib
     </button>
   </div>
 
@@ -150,16 +163,16 @@
           <p>Akun ini belum ditautkan dengan data resmi. Tautkan <strong>NISN</strong> untuk Siswa atau <strong>NIP</strong> untuk Guru / Wali Kelas guna mengaktifkan hak akses resmi.</p>
         </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="background:#4f46e5;color:#fff;">🎓 Verifikasi NISN Siswa</button>
-        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="background:#059669;color:#fff;">👨‍🏫 Verifikasi NIP Guru / Walas</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="color:#6C63FF;">🎓 Verifikasi NISN Siswa</button>
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="color:#38B2AC;">👨‍🏫 Verifikasi NIP Guru / Walas</button>
       </div>
     </div>
     
     <!-- Hero Profile Greeting & Smart Student ID Card RFID -->
     <div class="hero-welcome">
       <div class="hero-welcome-left">
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(79,70,229,0.1);border:1px solid rgba(99,102,241,0.25);padding:5px 12px;border-radius:999px;font-size:11.5px;font-weight:800;color:#4338ca;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:#EEF2FF;border:1px solid #C7D2FE;padding:6px 14px;border-radius:9999px;font-size:11.5px;font-weight:800;color:#4F46E5;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">
           <span>🏫</span> SMK NEGERI 1 SUMEDANG • REKAYASA PERANGKAT LUNAK
         </div>
         <h2 id="greetingText">Selamat Datang! 👋</h2>
@@ -167,14 +180,14 @@
         <div class="hero-clock" id="liveClockWidget">
           <span>🕒</span> <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
         </div>
-        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-          <span style="font-size:12px;font-weight:700;background:#fff;border:1px solid #e2e8f0;padding:4px 10px;border-radius:8px;color:#475569;">
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;background:#F1F5F9;border:1px solid #CBD5E1;padding:5px 12px;border-radius:9999px;color:#334155;">
             📡 Gateway RFID Siaga
           </span>
-          <span style="font-size:12px;font-weight:700;background:#eff6ff;border:1px solid #bfdbfe;padding:4px 10px;border-radius:8px;color:#1e40af;">
+          <span style="font-size:12px;font-weight:700;background:#EEF2FF;border:1px solid #C7D2FE;padding:5px 12px;border-radius:9999px;color:#4F46E5;">
             🏫 Kelas XII RPL 2
           </span>
-          <span style="font-size:12px;font-weight:700;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 10px;border-radius:8px;color:#065f46;">
+          <span style="font-size:12px;font-weight:700;background:#ECFDF5;border:1px solid #A7F3D0;padding:5px 12px;border-radius:9999px;color:#059669;">
             🛡️ Anti-Passback Aktif
           </span>
         </div>
@@ -200,7 +213,7 @@
           
           <div class="smart-card-main">
             <div class="smart-card-avatar" id="smartCardAvatar">
-              <img id="smartCardImg" src="assets/foto/0098263610.jpg" alt="Foto Siswa" onerror="this.onerror=null; this.src=''; this.parentElement.textContent='MI';">
+              <img id="smartCardImg" src="assets/foto/0098263610.jpg" alt="Foto Siswa" onerror="this.onerror=null; this.style.display='none'; if(this.parentElement) this.parentElement.innerHTML='<span style=\'font-weight:800;font-size:20px;color:#ffffff;\'>MI</span>';">
             </div>
             <div class="smart-card-info">
               <div class="smart-card-name" id="smartCardNama">M. IHSAN ATHALLAH</div>
@@ -215,7 +228,7 @@
           </div>
 
           <div class="smart-card-barcode-row">
-            <span>UID: <strong id="smartCardUidTag">04A1B2C3</strong></span>
+            <span>UID: <strong id="smartCardUidTag">006787337</strong></span>
             <span>SMART CARD PRESENSI NESAS</span>
           </div>
         </div>
@@ -223,28 +236,28 @@
     </div>
 
     <!-- WIDGET STATUS OPERASIONAL KELAS TERKINI (PRD Bab 4.2 & Bab 7.1) -->
-    <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none;margin-bottom:20px;padding:16px 20px;border-radius:18px;border:1.5px solid #c7d2fe;background:#eff6ff;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(79,70,229,0.05);">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div id="iconStatusKelas" style="font-size:26px;width:48px;height:48px;border-radius:14px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🟢</div>
+    <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none;margin-bottom:24px;padding:20px 24px;border-radius:24px;background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);border:1.5px solid #C7D2FE;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 8px 24px -4px rgba(99,102,241,0.15);">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div id="iconStatusKelas" style="font-size:26px;width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(99,102,241,0.3);">🟢</div>
         <div style="flex:1;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#4f46e5;" id="tagStatusKelasOperasional">Status Kelas</span>
-            <span id="badgeStatusKelas" style="background:#10b981;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;">BELAJAR (KBM AKTIF)</span>
-            <div id="kelasSwitcherPill" style="display:none;gap:3px;background:#e0e7ff;padding:2px;border-radius:8px;margin-left:auto;">
-              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 1" onclick="gantiKelasWidget('XII RPL 1')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:#4f46e5;color:#fff;font-weight:700;">XII RPL 1</button>
-              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 2" onclick="gantiKelasWidget('XII RPL 2')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#4338ca;font-weight:600;">XII RPL 2</button>
-              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII TKJ 2" onclick="gantiKelasWidget('XII TKJ 2')" style="padding:2px 8px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#4338ca;font-weight:600;">XII TKJ 2</button>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#4F46E5;" id="tagStatusKelasOperasional">Status Kelas</span>
+            <span id="badgeStatusKelas" style="background:#4338CA;color:#ffffff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:9999px;box-shadow:0 2px 6px rgba(67,56,202,0.3);">BELAJAR (KBM AKTIF)</span>
+            <div id="kelasSwitcherPill" style="display:none;gap:4px;background:#FFFFFF;border:1px solid #CBD5E1;padding:3px;border-radius:10px;margin-left:auto;">
+              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 1" onclick="gantiKelasWidget('XII RPL 1')" style="padding:4px 10px;font-size:11px;border-radius:8px;border:none;cursor:pointer;background:#EEF2FF;color:#4F46E5;font-weight:800;">XII RPL 1</button>
+              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII RPL 2" onclick="gantiKelasWidget('XII RPL 2')" style="padding:4px 10px;font-size:11px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#64748B;font-weight:600;">XII RPL 2</button>
+              <button type="button" class="btn-switch-kelas-widget" data-kelas="XII TKJ 2" onclick="gantiKelasWidget('XII TKJ 2')" style="padding:4px 10px;font-size:11px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#64748B;font-weight:600;">XII TKJ 2</button>
             </div>
           </div>
-          <h3 id="judulStatusKelas" style="font-size:16px;font-weight:800;color:#1e1b4b;margin-top:2px;">KBM Sedang Berlangsung</h3>
-          <p id="descStatusKelas" style="font-size:13px;color:#4338ca;margin-top:2px;">Mapel: Pemrograman Web &amp; Perangkat Bergerak &bull; Guru: Hani Hanifah, S.Si</p>
+          <h3 id="judulStatusKelas" style="font-size:16px;font-weight:800;color:#1E1B4B;margin-top:2px;">KBM Sedang Berlangsung</h3>
+          <p id="descStatusKelas" style="font-size:13px;color:#4338CA;margin-top:2px;">Mapel: Pemrograman Web &amp; Perangkat Bergerak &bull; Guru: Hani Hanifah, S.Si</p>
         </div>
       </div>
-      <div id="alertJamkosBox" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;padding:12px 16px;border-radius:14px;max-width:440px;">
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#b91c1c;">
+      <div id="alertJamkosBox" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;box-shadow:0 4px 12px rgba(239,68,68,0.1);padding:14px 18px;border-radius:18px;max-width:440px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#DC2626;">
           <span>⚠️</span> JAM KOSONG (JAMKOS) DIKONFIRMASI
         </div>
-        <p id="alertJamkosDesc" style="font-size:12px;color:#991b1b;margin-top:4px;line-height:1.4;">Guru pengajar berhalangan hadir dan laporan kendala telah di-ACC Admin. Harap tetap tertib di dalam kelas atau mengerjakan tugas mandiri.</p>
+        <p id="alertJamkosDesc" style="font-size:12px;color:#991B1B;margin-top:4px;line-height:1.4;">Guru pengajar berhalangan hadir dan laporan kendala telah di-ACC Admin. Harap tetap tertib di dalam kelas atau mengerjakan tugas mandiri.</p>
       </div>
     </div>
 
@@ -252,16 +265,20 @@
     <div class="academic-services-grid">
       <div class="academic-service-card" onclick="document.getElementById('btnTabRekap').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
+          <div class="academic-service-icon" style="color:#6C63FF;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
-        <div class="academic-service-title">Riwayat Kehadiran Saya</div>
+        <div class="academic-service-title">Riwayat Kehadiran</div>
         <div class="academic-service-desc">Tinjau log kehadiran RFID pribadi dan akumulasi kehadiran Anda.</div>
       </div>
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#ecfdf5; color:#059669;">📚</div>
+          <div class="academic-service-icon" style="color:#0891B2;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Jadwal Pelajaran</div>
@@ -270,7 +287,9 @@
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabPerijinan').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#fef3c7; color:#d97706;">📝</div>
+          <div class="academic-service-icon" style="color:#D97706;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Pengajuan Izin</div>
@@ -279,7 +298,9 @@
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabRiwayatIjin').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#f3e8ff; color:#7c3aed;">💬</div>
+          <div class="academic-service-icon" style="color:#9333EA;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 10 2 2 4-4"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Status Perizinan</div>
@@ -288,7 +309,9 @@
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#fee2e2; color:#dc2626;">⏰</div>
+          <div class="academic-service-icon" style="color:#E11D48;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Jam Pulang Sekolah</div>
@@ -297,7 +320,9 @@
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabJadwalTataTertib').click()">
         <div class="academic-service-header">
-          <div class="academic-service-icon" style="background:#f1f5f9; color:#475569;">📜</div>
+          <div class="academic-service-icon" style="color:#059669;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Tata Tertib Presensi</div>
@@ -305,43 +330,43 @@
       </div>
     </div>
 
-    <!-- Section Live Monitoring Kehadiran Kelas (Khusus Mode Supervisi Admin/Pengawas, disembunyikan untuk siswa) -->
-    <div class="home-section-card" id="sectionPantauLiveHome" style="display:none !important; margin-bottom:24px; border:1.5px solid #c7d2fe; box-shadow:0 4px 20px rgba(99,102,241,0.06);">
-      <div class="home-section-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+    <!-- Section Live Monitoring Kehadiran Kelas (Mode Peninjau Terbuka Read-Only Siswa & Tamu) -->
+    <div class="home-section-card" id="sectionPantauLiveHome" style="margin-bottom:28px;">
+      <div class="home-section-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px;">
         <div>
-          <div style="display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; color:#065f46; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:999px; margin-bottom:6px; text-transform:uppercase;">
-            <span class="pulsing-dot" style="background:#10b981; width:6px; height:6px;"></span> Akses Terbuka Real-Time
+          <div style="display:inline-flex; align-items:center; gap:6px; background:#ECFDF5; color:#059669; font-size:11.5px; font-weight:800; padding:5px 12px; border-radius:9999px; margin-bottom:8px; text-transform:uppercase; border:1px solid #A7F3D0;">
+            <span class="pulsing-dot" style="background:#10B981; width:6px; height:6px;"></span> Akses Terbuka Real-Time
           </div>
           <h3 style="margin:0;">👥 Monitoring Kehadiran Siswa Hari Ini</h3>
           <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0 0;">
             Data kehadiran siswa yang sudah tap kartu RFID dan yang belum scan. Terbuka transparan untuk Pengunjung, Siswa, Guru, dan Admin.
           </p>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <select id="pilihKelasHome" style="padding:8px 14px; border-radius:10px; border:1px solid #cbd5e1; font-weight:700; font-size:13px; color:#1e293b; background:#f8fafc; cursor:pointer;">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <select id="pilihKelasHome" onchange="if(typeof onKelasPantauGanti==='function') onKelasPantauGanti(this.value); else if(typeof onKelasGanti==='function') onKelasGanti(this.value);" style="padding:10px 16px; border-radius:14px; border:1.5px solid #CBD5E1; font-weight:700; font-size:13px; color:#1E293B; background:#FFFFFF; cursor:pointer;">
             <option value="XII RPL 1">Kelas XII RPL 1</option>
             <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
             <option value="XII TKJ 1">Kelas XII TKJ 1</option>
           </select>
-          <button type="button" class="btn-guest-verify" onclick="switchTab('tabKelas', document.getElementById('btnTabKelas'))" style="margin:0; font-size:12px; padding:7px 12px;">
+          <button type="button" class="btn-guest-verify" onclick="switchTab('tabKelas', document.getElementById('btnTabKelas'))" style="margin:0; font-size:12px; padding:9px 14px;">
             Layar Penuh ↗
           </button>
         </div>
       </div>
 
       <!-- Live Counters -->
-      <div class="ringkasan-grid" style="margin: 16px 0 20px 0;">
+      <div class="ringkasan-grid" style="margin: 24px 0 28px 0;">
         <div class="stat-box sudah">
           <div class="stat-icon">✓</div>
           <div>
-            <div class="stat-number" id="homeCountSudah">0</div>
+            <div class="stat-number" id="homeCountSudah">32</div>
             <div class="stat-label">Siswa Sudah Hadir (Scan Masuk)</div>
           </div>
         </div>
         <div class="stat-box belum">
           <div class="stat-icon">!</div>
           <div>
-            <div class="stat-number" id="homeCountBelum">0</div>
+            <div class="stat-number" id="homeCountBelum">2</div>
             <div class="stat-label">Siswa Belum Scan Hari Ini</div>
           </div>
         </div>
@@ -349,14 +374,14 @@
 
       <!-- Live Roster List -->
       <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-          <div style="font-size:13.5px; font-weight:700; color:#1e293b;">
-            Daftar Kehadiran Siswa: <span id="homeNamaKelasLabel" style="color:#4f46e5;">Kelas XII RPL 2</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:14px;">
+          <div style="font-size:14px; font-weight:800; color:#1E293B;">
+            Daftar Kehadiran Siswa: <span id="homeNamaKelasLabel" style="color:#4F46E5;">Kelas XII RPL 2</span>
           </div>
-          <input type="text" id="cariNamaSiswaHome" placeholder="Cari nama atau NISN..." style="padding:7px 14px; font-size:12.5px; border:1px solid #cbd5e1; border-radius:10px; min-width:220px;">
+          <input type="text" id="cariNamaSiswaHome" placeholder="Cari nama atau NISN..." style="padding:11px 18px; font-size:13px; border:1.5px solid #CBD5E1; border-radius:14px; min-width:250px; background:#FFFFFF; color:#1E293B;">
         </div>
 
-        <div class="siswa-grid" id="homeGridPresensi" style="max-height:420px; overflow-y:auto; padding-right:4px;">
+        <div class="siswa-grid" id="homeGridPresensi" style="max-height:440px; overflow-y:auto; padding-right:4px;">
           <!-- Rendered live via JS -->
         </div>
       </div>
@@ -366,7 +391,7 @@
     <div class="home-section-card" id="sectionJadwalHome">
       <div class="home-section-header">
         <h3>📚 Jadwal Pelajaran & Monitoring Jam Aktif</h3>
-        <span id="homeJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4f46e5; background:#eff6ff; padding:5px 12px; border-radius:10px;">
+        <span id="homeJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:6px 14px; border-radius:9999px;">
           Pilih kelas untuk melihat jadwal
         </span>
       </div>
@@ -389,7 +414,7 @@
 
       <!-- Live Schedule Grid -->
       <div class="schedule-timeline-grid" id="homeScheduleGrid">
-        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:16px;">
+        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#64748B; font-size:14px; background:#F8FAFC; border-radius:20px; border:1px dashed #CBD5E1;">
           Silakan pilih kelas di atas untuk melihat jam pelajaran hari ini.
         </div>
       </div>
@@ -431,6 +456,34 @@
             <div class="feed-desc">Siswa wajib melakukan tap kartu saat masuk gerbang dan saat pergantian jam pelajaran di kelas. Titip kartu dinyatakan pelanggaran disiplin.</div>
           </div>
         </div>
+        <div class="feed-card" id="cardInfoToeic" onclick="bukaDetailInfoToeic()" style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span class="feed-badge event" style="background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; margin-bottom:0;">Program TOEIC</span>
+              <span style="font-size:11px; font-weight:800; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:3px 10px; border-radius:9999px;">Sesi Terjadwal</span>
+            </div>
+            <div class="feed-title">Sertifikasi Bahasa Inggris TOEIC Internasional</div>
+            <div class="feed-desc">Pelaksanaan program sertifikasi Bahasa Inggris TOEIC Internasional bagi siswa SMK untuk standardisasi kecakapan kerja global. Cek jadwal sesi tes, ruang CBT, dan verifikasi status kelulusan berkala.</div>
+          </div>
+          <div style="margin-top:12px; padding-top:10px; font-size:11.5px; font-weight:700; color:#4F46E5; display:flex; align-items:center; gap:6px;">
+            <span>🌐</span> Batch Berjalan • CBT Center SMKN 1 Sumedang
+          </div>
+        </div>
+        <div class="feed-card" id="cardInfoTka" onclick="bukaDetailInfoTka()" style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span class="feed-badge info" style="background:#ECFEFF; color:#0891B2; border:1px solid #A5F3FC; margin-bottom:0;">Asesmen TKA</span>
+              <span style="font-size:11px; font-weight:800; color:#0891B2; background:#ECFEFF; border:1px solid #A5F3FC; padding:3px 10px; border-radius:9999px; display:inline-flex; align-items:center; gap:4px;">
+                <span class="pulsing-dot" style="background:#0891B2; width:6px; height:6px;"></span> Sedang Berlangsung
+              </span>
+            </div>
+            <div class="feed-title">Tes Kemampuan Akademik (TKA) 2026</div>
+            <div class="feed-desc">Asesmen Tes Kemampuan Akademik (TKA) sedang berlangsung saat ini. Seluruh peserta sesi aktif wajib hadir tepat waktu di Laboratorium Komputer RPL dan membawa kartu RFID untuk verifikasi presensi.</div>
+          </div>
+          <div style="margin-top:12px; padding-top:10px; font-size:11.5px; font-weight:700; color:#0891B2; display:flex; align-items:center; gap:6px;">
+            <span>⚡</span> Laboratorium Komputer RPL • Sesi Aktif Berlangsung
+          </div>
+        </div>
       </div>
     </div>
 
@@ -439,7 +492,7 @@
   <!-- ===== TAB 1: PANTAU PRESENSI KELAS ===== -->
   <div id="tabKelas" class="tab-content" style="display:none;">
     <div class="filter-bar">
-      <select id="pilihKelasPantau">
+      <select id="pilihKelasPantau" onchange="if(typeof onKelasPantauGanti==='function') onKelasPantauGanti(this.value); else if(typeof onKelasGanti==='function') onKelasGanti(this.value);">
         <option value="XII RPL 1">Kelas XII RPL 1</option>
         <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
         <option value="XII TKJ 1">Kelas XII TKJ 1</option>
@@ -447,36 +500,31 @@
       <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">
     </div>
 
-    <!-- Status Jam Pelajaran -->
-    <div id="infoJamPelajaran" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:14px 18px;border-radius:14px;font-size:13.5px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
-      🔔 <b>Presensi Realtime Aktif:</b> Menampilkan status kehadiran siswa kelas hari ini.
-    </div>
-
     <!-- Statistik Ringkasan -->
     <div class="ringkasan-grid">
       <div class="stat-box sudah">
         <div class="stat-icon">✓</div>
         <div>
-          <div class="stat-number" id="countSudah">0</div>
+          <div class="stat-number" id="countSudah">32</div>
           <div class="stat-label">Sudah Hadir di Kelas</div>
         </div>
       </div>
       <div class="stat-box belum">
         <div class="stat-icon">!</div>
         <div>
-          <div class="stat-number" id="countBelum">0</div>
+          <div class="stat-number" id="countBelum">2</div>
           <div class="stat-label">Belum Absen / Belum Scan</div>
         </div>
       </div>
     </div>
 
     <div class="section-title">
-      <span style="color:#10b981;font-size:18px;">●</span> Sudah Absen (<span id="titleCountSudah">0</span>)
+      <span style="color:#38B2AC;font-size:18px;">●</span> Sudah Absen (<span id="titleCountSudah">32</span>)
     </div>
     <div class="siswa-grid" id="gridSudahAbsen"></div>
 
-    <div class="section-title" style="margin-top:16px;">
-      <span style="color:#ef4444;font-size:18px;">●</span> Belum Absen (<span id="titleCountBelum">0</span>)
+    <div class="section-title" style="margin-top:32px;">
+      <span style="color:#E53E3E;font-size:18px;">●</span> Belum Absen (<span id="titleCountBelum">2</span>)
     </div>
     <div class="siswa-grid" id="gridBelumAbsen"></div>
   </div>
@@ -485,7 +533,7 @@
   <div id="tabPerijinan" class="tab-content" style="display:none;">
     <div class="form-card">
       <h2>Pengajuan Perizinan Siswa</h2>
-      <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+      <p style="color:#6B7280;font-size:14px;margin-bottom:24px;">
         Pilih nama siswa yang ingin diizinkan (sakit, dispensasi kegiatan, atau dinas). Guru dan admin akan memverifikasi dan memberikan status persetujuan.
       </p>
 
@@ -516,7 +564,7 @@
       <div class="form-group" id="uploadDokumenWrap">
         <label for="perijinanFile">📎 Lampirkan Bukti / Surat Izin (Foto / PDF)</label>
         <input type="file" id="perijinanFile" accept=".pdf,.jpg,.jpeg,.png">
-        <small style="color:#94a3b8;font-size:12px;margin-top:4px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
+        <small style="color:#6B7280;font-size:12px;margin-top:6px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
       </div>
 
       <button class="btn-primary-action" onclick="handleSubmitPerijinan()" id="btnSubmitPerijinan">
@@ -544,14 +592,14 @@
             Jadwal kegiatan belajar mengajar resmi Kompetensi Keahlian Rekayasa Perangkat Lunak SMKN 1 Sumedang.
           </p>
         </div>
-        <span id="tabJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4f46e5; background:#eff6ff; padding:6px 14px; border-radius:10px;">
+        <span id="tabJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:8px 16px; border-radius:9999px;">
           ⏰ Jam Pulang: 15:30 WIB
         </span>
       </div>
 
       <!-- Class selector -->
       <div style="margin-top:14px; margin-bottom:8px;">
-        <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Rombongan Belajar (Kelas):</label>
+        <label style="font-size:12.5px; font-weight:700; color:#1E293B; display:block; margin-bottom:8px;">Pilih Rombongan Belajar (Kelas):</label>
         <div class="class-chip-container" id="classChipsListTab">
           <button type="button" class="class-chip" onclick="pilihKelasJadwal('XII RPL 1')">XII RPL 1</button>
           <button type="button" class="class-chip active" onclick="pilihKelasJadwal('XII RPL 2')">XII RPL 2</button>
@@ -561,7 +609,7 @@
 
       <!-- Day selector -->
       <div style="margin-bottom:16px;">
-        <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Pilih Hari Pembelajaran:</label>
+        <label style="font-size:12.5px; font-weight:700; color:#1E293B; display:block; margin-bottom:8px;">Pilih Hari Pembelajaran:</label>
         <div class="class-chip-container" id="dayChipsListTab">
           <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">✨ Senin</button>
           <button type="button" class="class-chip" data-hari="selasa" onclick="pilihHariJadwal('selasa')">Selasa</button>
@@ -581,39 +629,39 @@
       </div>
 
       <div class="schedule-timeline-grid" id="tabScheduleGrid">
-        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:16px;">
+        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; color:#64748B; font-size:14px; background:#F8FAFC; border-radius:20px; border:1px dashed #CBD5E1;">
           Silakan pilih kelas di atas untuk melihat jam pelajaran hari ini.
         </div>
       </div>
     </div>
 
     <!-- Tata Tertib & Ketentuan Presensi RFID -->
-    <div class="home-section-card" style="margin-top:24px;">
+    <div class="home-section-card" style="margin-top:28px;">
       <div class="home-section-header">
         <h3>📜 Tata Tertib & Pedoman Presensi RFID SMKN 1 Sumedang</h3>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-top:12px;">
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
-          <div style="font-size:14.5px; font-weight:800; color:#1e293b; margin-bottom:6px;">1. Kewajiban Kartu Fisik</div>
-          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin-top:14px;">
+        <div style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+          <div style="font-size:14.5px; font-weight:800; color:#0F172A; margin-bottom:6px;">1. Kewajiban Kartu Fisik</div>
+          <p style="font-size:13px; color:#64748B; line-height:1.5;">
             Setiap siswa wajib membawa kartu pelajar RFID masing-masing setiap hari sekolah. Kartu tidak boleh dipindahtangankan, dipinjamkan, atau dirusak.
           </p>
         </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
-          <div style="font-size:14.5px; font-weight:800; color:#1e293b; margin-bottom:6px;">2. Waktu Tap Gerbang & Kelas</div>
-          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+        <div style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+          <div style="font-size:14.5px; font-weight:800; color:#0F172A; margin-bottom:6px;">2. Waktu Tap Gerbang & Kelas</div>
+          <p style="font-size:13px; color:#64748B; line-height:1.5;">
             Tap Masuk dilakukan di gerbang sekolah maksimal pukul <strong>07.00 WIB</strong>. Keterlambatan akan tercatat otomatis dengan tanda merah di laporan presensi.
           </p>
         </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
-          <div style="font-size:14.5px; font-weight:800; color:#b91c1c; margin-bottom:6px;">3. Larangan Titip Kartu</div>
-          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+        <div style="background:#FFF1F2; border:1.5px solid #FECDD3; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(244,63,94,0.08);">
+          <div style="font-size:14.5px; font-weight:800; color:#E11D48; margin-bottom:6px;">3. Larangan Titip Kartu</div>
+          <p style="font-size:13px; color:#BE123C; line-height:1.5;">
             Sistem dilengkapi sensor <em>Anti-Passback Hardware</em>. Menitipkan kartu kepada orang lain dinyatakan sebagai pelanggaran berat dengan sanksi kedisiplinan sekolah.
           </p>
         </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+        <div style="background:#ECFDF5; border:1.5px solid #A7F3D0; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(16,185,129,0.08);">
           <div style="font-size:14.5px; font-weight:800; color:#059669; margin-bottom:6px;">4. Pengajuan Izin Sakit / Dinas</div>
-          <p style="font-size:13px; color:#64748b; line-height:1.5;">
+          <p style="font-size:13px; color:#047857; line-height:1.5;">
             Siswa yang berhalangan hadir wajib melampirkan surat dokter atau surat tugas resmi melalui menu <strong>Pengajuan Izin</strong> di portal ini paling lambat pukul 08.00 WIB.
           </p>
         </div>
@@ -626,7 +674,7 @@
   <div id="tabRekap" class="tab-content" style="display:none;">
     <div class="content-header" style="margin-bottom:20px;">
       <h2>📋 Riwayat Kehadiran Pribadi</h2>
-      <p>Tinjau akumulasi kehadiran, persentase kehadiran pribadi Anda, serta log presensi harian RFID.</p>
+      <p style="color:#64748B;font-size:14px;">Tinjau akumulasi kehadiran, persentase kehadiran pribadi Anda, serta log presensi harian RFID.</p>
     </div>
 
     <!-- Info Mode Peninjau / Pengunjung -->
@@ -643,55 +691,55 @@
 
     <div id="rekapContentSiswa">
       <!-- Selector Siswa untuk Rekap (Disembunyikan dari Siswa Sesuai PRD) -->
-      <div id="wrapperSelectorRekapSiswa" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px; margin-bottom:20px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span style="font-size:13.5px; font-weight:700; color:#334155;">👤 Pilih Siswa yang Ditinjau:</span>
-          <select id="pilihSiswaRekap" style="padding:8px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; color:#1e293b; background:#fff; outline:none; min-width:280px;">
+      <div id="wrapperSelectorRekapSiswa" style="display:none; background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:20px; padding:18px 22px; margin-bottom:24px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span style="font-size:13.5px; font-weight:700; color:#1E293B;">👤 Pilih Siswa yang Ditinjau:</span>
+          <select id="pilihSiswaRekap" style="padding:10px 16px; border:1.5px solid #CBD5E1; border-radius:14px; font-size:13px; font-weight:700; color:#1E293B; background:#FFFFFF; outline:none; min-width:280px;">
             <option value="0098263610">M. Ihsan Athallah (XII RPL 2) — NISN: 0098263610</option>
             <option value="0082104129">Rizky Ramadhani (XII RPL 2) — NISN: 0082104129</option>
           </select>
         </div>
-        <div id="rekapModeBadge" style="font-size:12px; font-weight:700; color:#4338ca; background:#e0e7ff; padding:5px 12px; border-radius:999px;">
+        <div id="rekapModeBadge" style="font-size:12px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:6px 14px; border-radius:9999px;">
           👁️ Peninjauan Presensi Terbuka
         </div>
       </div>
       <!-- STATISTIK KEHADIRAN 1 TAHUN -->
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px;">
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; text-align:center;">
-          <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Persentase Hadir</span>
-          <h3 id="rekapStatPersen" style="font-size:24px; font-weight:800; color:#4f46e5; margin-top:4px;">0%</h3>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:16px; margin-bottom:28px;">
+        <div style="background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border:1.5px solid #C7D2FE; border-radius:20px; padding:20px 16px; text-align:center; box-shadow:0 4px 12px rgba(99,102,241,0.1);">
+          <span style="font-size:11.5px; font-weight:700; color:#4338CA; text-transform:uppercase;">Persentase Hadir</span>
+          <h3 id="rekapStatPersen" style="font-size:24px; font-weight:800; color:#4338CA; margin-top:4px;">0%</h3>
         </div>
-        <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:14px; padding:16px; text-align:center;">
-          <span style="font-size:11.5px; font-weight:700; color:#065f46; text-transform:uppercase;">Total Hadir</span>
+        <div style="background:linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border:1.5px solid #86EFAC; border-radius:20px; padding:20px 16px; text-align:center; box-shadow:0 4px 12px rgba(16,185,129,0.1);">
+          <span style="font-size:11.5px; font-weight:700; color:#059669; text-transform:uppercase;">Total Hadir</span>
           <h3 id="rekapStatHadir" style="font-size:24px; font-weight:800; color:#059669; margin-top:4px;">0 Hari</h3>
         </div>
-        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:14px; padding:16px; text-align:center;">
-          <span style="font-size:11.5px; font-weight:700; color:#1e40af; text-transform:uppercase;">Sakit</span>
-          <h3 id="rekapStatSakit" style="font-size:24px; font-weight:800; color:#2563eb; margin-top:4px;">0 Hari</h3>
+        <div style="background:linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border:1.5px solid #93C5FD; border-radius:20px; padding:20px 16px; text-align:center; box-shadow:0 4px 12px rgba(59,130,246,0.1);">
+          <span style="font-size:11.5px; font-weight:700; color:#2563EB; text-transform:uppercase;">Sakit</span>
+          <h3 id="rekapStatSakit" style="font-size:24px; font-weight:800; color:#2563EB; margin-top:4px;">0 Hari</h3>
         </div>
-        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:16px; text-align:center;">
-          <span style="font-size:11.5px; font-weight:700; color:#92400e; text-transform:uppercase;">Izin / Dispen</span>
-          <h3 id="rekapStatIzin" style="font-size:24px; font-weight:800; color:#d97706; margin-top:4px;">0 Hari</h3>
+        <div style="background:linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border:1.5px solid #FDE68A; border-radius:20px; padding:20px 16px; text-align:center; box-shadow:0 4px 12px rgba(245,158,11,0.1);">
+          <span style="font-size:11.5px; font-weight:700; color:#D97706; text-transform:uppercase;">Izin / Dispen</span>
+          <h3 id="rekapStatIzin" style="font-size:24px; font-weight:800; color:#D97706; margin-top:4px;">0 Hari</h3>
         </div>
-        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:16px; text-align:center;">
-          <span style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">Alpha</span>
-          <h3 id="rekapStatAlpha" style="font-size:24px; font-weight:800; color:#dc2626; margin-top:4px;">0 Hari</h3>
+        <div style="background:linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%); border:1.5px solid #FDA4AF; border-radius:20px; padding:20px 16px; text-align:center; box-shadow:0 4px 12px rgba(244,63,94,0.1);">
+          <span style="font-size:11.5px; font-weight:700; color:#E11D48; text-transform:uppercase;">Alpha</span>
+          <h3 id="rekapStatAlpha" style="font-size:24px; font-weight:800; color:#E11D48; margin-top:4px;">0 Hari</h3>
         </div>
       </div>
 
       <!-- FILTER RENTANG WAKTU -->
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button type="button" class="filter-btn active" data-range="hari_ini" onclick="filterRekapSiswa('hari_ini', this)">Hari Ini</button>
           <button type="button" class="filter-btn" data-range="7_hari" onclick="filterRekapSiswa('7_hari', this)">7 Hari Terakhir</button>
           <button type="button" class="filter-btn" data-range="bulan_ini" onclick="filterRekapSiswa('bulan_ini', this)">Bulan Ini</button>
           <button type="button" class="filter-btn" data-range="setahun" onclick="filterRekapSiswa('setahun', this)">1 Tahun Terakhir (TA 2025/2026)</button>
         </div>
-        <span id="rekapPeriodeLabel" style="font-size:13px; font-weight:700; color:#64748b;">Memuat data...</span>
+        <span id="rekapPeriodeLabel" style="font-size:13px; font-weight:700; color:#64748B;">Memuat data...</span>
       </div>
 
       <!-- TABEL RIWAYAT LOG PRESENSI -->
-      <div style="overflow-x:auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px;">
+      <div style="overflow-x:auto; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:20px; box-shadow:0 1px 3px rgba(0,0,0,0.04); padding:8px;">
         <table class="data-table" style="width:100%;">
           <thead>
             <tr>
@@ -717,14 +765,14 @@
 <div id="modalChat" class="chat-modal-overlay">
   <div class="chat-modal-box">
     <div class="chat-modal-header">
-      <span style="font-weight:800;font-size:15px;color:#1e293b;" id="modalChatJudul">Konfirmasi & Chat Perizinan</span>
-      <button onclick="tutupModalChat()" style="background:#f1f5f9;border:none;padding:6px 12px;border-radius:8px;font-weight:700;cursor:pointer;">✕ Tutup</button>
+      <span style="font-weight:800;font-size:15px;color:#0F172A;" id="modalChatJudul">Konfirmasi & Chat Perizinan</span>
+      <button onclick="tutupModalChat()" class="btn-chat-close" style="background:#F1F5F9;border:1px solid #CBD5E1;padding:8px 16px;border-radius:12px;font-weight:700;cursor:pointer;color:#334155;">✕ Tutup</button>
     </div>
-    <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:#f8fafc;"></div>
-    <div style="padding:14px 18px;border-top:1px solid #e2e8f0;display:flex;gap:10px;background:#fff;">
-      <input type="text" id="chatInputPesan" placeholder="Ketik pesan konfirmasi..." style="flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;"
+    <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:#F8FAFC;"></div>
+    <div style="padding:14px 18px;border-top:1px solid #E2E8F0;display:flex;gap:12px;background:#FFFFFF;">
+      <input type="text" id="chatInputPesan" class="chat-input-field" placeholder="Ketik pesan konfirmasi..." style="flex:1;padding:12px 16px;border:1.5px solid #CBD5E1;border-radius:14px;background:#FFFFFF;color:#0F172A;"
              onkeydown="if(event.key==='Enter') kirimPesanChat()">
-      <button onclick="kirimPesanChat()" style="background:#4f46e5;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;">Kirim</button>
+      <button onclick="kirimPesanChat()" class="btn-chat-send" style="background:linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);color:#FFFFFF;border:none;border-radius:14px;padding:12px 22px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(99,102,241,0.35);">Kirim</button>
     </div>
   </div>
 </div>
@@ -786,7 +834,7 @@
         }
       });
       if (!prefersReducedMotion) {
-        gsap.from('.header, .view-tabs, .stat-grid, .jadwal-card, .table-container, .card-kbm', {
+        gsap.from('.header, .view-tabs, .hero-welcome, .stat-box, .home-section-card, .academic-service-card', {
           opacity: 0,
           y: 20,
           duration: 0.7,

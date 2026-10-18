@@ -18,22 +18,32 @@ console.log('[Test 1] Evaluasi Isolasi Dashboard Siswa...');
 const dashHtml = fs.readFileSync(path.join(__dirname, '../dashboard.html'), 'utf8');
 const dashJs = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
 
-// A. Tab Pantau Presensi Kelas harus disembunyikan dari siswa
+// A. Tab Pantau Presensi Kelas terbuka dalam mode read-only
 assert.ok(
-  dashHtml.includes('id="btnTabKelas"') && dashHtml.includes('style="display:none;"'),
-  'Tombol btnTabKelas harus disembunyikan untuk siswa'
+  dashHtml.includes('id="btnTabKelas"') && !dashHtml.includes('id="btnTabKelas" onclick="switchTab(\'tabKelas\', this)" style="display:none;"'),
+  'Tombol btnTabKelas harus terbuka untuk akses read-only'
+);
+assert.ok(
+  !dashJs.includes("id === 'tabKelas' && currentUser && currentUser.role === 'siswa'"),
+  'dashboard.js tidak boleh memblokir/mengalihkan siswa saat membuka tabKelas'
 );
 
-// B. Section Pantau Live seluruh siswa di Beranda harus disembunyikan
+// B. Section Pantau Live seluruh siswa di Beranda harus tampil terbuka
 assert.ok(
-  dashHtml.includes('id="sectionPantauLiveHome"') && dashHtml.includes('display:none !important;'),
-  'sectionPantauLiveHome harus disembunyikan dari dashboard siswa'
+  dashHtml.includes('id="sectionPantauLiveHome"') && !dashHtml.includes('id="sectionPantauLiveHome" style="display:none !important;"'),
+  'sectionPantauLiveHome harus tampil terbuka dalam mode read-only'
+);
+
+// B2. Ketat Read-Only: Dilarang ada tombol mutasi / formulir manipulasi data kelas di dashboard.html
+assert.ok(
+  !dashHtml.includes('id="btnTambahKelas"') && !dashHtml.includes('id="btnEditKelas"') && !dashHtml.includes('id="btnHapusKelas"'),
+  'dashboard.html harus murni read-only tanpa formulir atau aksi mutasi data kelas'
 );
 
 // C. Tab Rekap diubah menjadi Riwayat Kehadiran Pribadi
 assert.ok(
-  dashHtml.includes('id="btnTabRekap"') && dashHtml.includes('Riwayat Kehadiran Saya'),
-  'Tombol tab rekap harus bertuliskan Riwayat Kehadiran Saya'
+  dashHtml.includes('id="btnTabRekap"') && dashHtml.includes('Riwayat Kehadiran'),
+  'Tombol tab rekap harus bertuliskan Riwayat Kehadiran'
 );
 assert.ok(
   dashHtml.includes('Riwayat Kehadiran Pribadi'),

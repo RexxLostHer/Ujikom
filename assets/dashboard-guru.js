@@ -637,17 +637,28 @@ async function muatDataPresensiKelas() {
     const absen = presensiHariIni[nisn];
     const izin = izinHariIni[nisn];
     const punyaKartu = kartuNisnGuruSet.has(nisn);
+    const inisialSiswa = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fotoSiswa = s.foto || `assets/foto/${nisn}.jpg`;
+
+    const avatarHtml = `
+      <div style="width:42px;height:42px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#475569;border:1.5px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <img src="${fotoSiswa}" alt="${s.nama}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${inisialSiswa}';">
+      </div>
+    `;
 
     if (absen && absen.status === 'hadir') {
       totalHadir++;
       card.className = 'card-siswa-guru hadir';
       card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div style="font-weight:800;font-size:15px;color:#0f172a;">${s.nama}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            ${avatarHtml}
+            <div style="min-width:0;">
+              <div style="font-weight:800;font-size:14.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+              <div style="font-size:11.5px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+            </div>
           </div>
-          <span style="background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;">✓ HADIR</span>
+          <span style="background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0;">✓ HADIR</span>
         </div>
         <div style="font-size:12px;color:#059669;font-weight:600;margin-top:10px;">
           ⏱️ Scan: ${absen.waktu || '-'} ${absen.tipe === 'manual_guru' ? '(Manual Guru)' : '(Tap NFC)'}
@@ -657,12 +668,15 @@ async function muatDataPresensiKelas() {
       totalIzin++;
       card.className = 'card-siswa-guru izin-sakit';
       card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div style="font-weight:800;font-size:15px;color:#0f172a;">${s.nama}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            ${avatarHtml}
+            <div style="min-width:0;">
+              <div style="font-weight:800;font-size:14.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+              <div style="font-size:11.5px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+            </div>
           </div>
-          <span style="background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;">${izin.jenis}</span>
+          <span style="background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;flex-shrink:0;">${izin.jenis}</span>
         </div>
         <div style="font-size:12px;color:#d97706;font-weight:600;margin-top:10px;">
           📝 Izin Disetujui: "${izin.alasan}"
@@ -672,12 +686,15 @@ async function muatDataPresensiKelas() {
       totalHadir++;
       card.className = 'card-siswa-guru hadir';
       card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div style="font-weight:800;font-size:15px;color:#0f172a;">${s.nama}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            ${avatarHtml}
+            <div style="min-width:0;">
+              <div style="font-weight:800;font-size:14.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+              <div style="font-size:11.5px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+            </div>
           </div>
-          <span style="background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;">✓ HADIR</span>
+          <span style="background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0;">✓ HADIR</span>
         </div>
         <div style="font-size:12px;color:#059669;font-weight:600;margin-top:10px;">
           ✓ Hadir Otomatis (Tanpa Kartu RFID)
@@ -687,12 +704,15 @@ async function muatDataPresensiKelas() {
       totalBelum++;
       card.className = 'card-siswa-guru belum';
       card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div style="font-weight:800;font-size:15px;color:#0f172a;">${s.nama}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            ${avatarHtml}
+            <div style="min-width:0;">
+              <div style="font-weight:800;font-size:14.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+              <div style="font-size:11.5px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+            </div>
           </div>
-          <span style="background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;">BELUM SCAN</span>
+          <span style="background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0;">BELUM SCAN</span>
         </div>
         <div style="display:flex;gap:6px;margin-top:12px;">
           <button onclick="hadirkanManual('${nisn}', '${s.nama}', ${jamKeAktif})" class="btn-mini-action btn-mini-hadir" title="Hadirkan Manual jika siswa lupa kartu">✓ Hadir Manual</button>
@@ -897,13 +917,21 @@ function renderListApprovalIzin() {
       namaWalasTarget = 'Heri Anggara, S.Kom';
     }
 
+    const inisialIz = (iz.nama_siswa || iz.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fotoIz = iz.foto || (iz.nisn ? `assets/foto/${iz.nisn}.jpg` : '');
+
     card.innerHTML = `
-      <div class="card-izin-header">
-        <div>
-          <div style="font-size:16px;font-weight:800;color:#0f172a;">${iz.nama_siswa || iz.nama || 'Siswa'} (${iz.kelas || '-'})</div>
-          <div style="font-size:13px;color:#64748b;margin-top:2px;">NISN: ${iz.nisn || '-'} • Tanggal Izin: <strong>${iz.tanggal}</strong></div>
+      <div class="card-izin-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+          <div style="width:42px;height:42px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#475569;border:1.5px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            ${fotoIz ? `<img src="${fotoIz}" alt="${iz.nama_siswa || iz.nama || ''}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${inisialIz}';">` : `<span>${inisialIz}</span>`}
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size:15.5px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${iz.nama_siswa || iz.nama || 'Siswa'} (${iz.kelas || '-'})</div>
+            <div style="font-size:12.5px;color:#64748b;margin-top:2px;">NISN: ${iz.nisn || '-'} • Tanggal Izin: <strong>${iz.tanggal}</strong></div>
+          </div>
         </div>
-        <span class="status-tag ${iz.status}">${iz.status}</span>
+        <span class="status-tag ${iz.status}" style="flex-shrink:0;">${iz.status}</span>
       </div>
 
       <div style="background:#f8fafc;padding:12px 14px;border-radius:12px;margin-bottom:12px;font-size:13.5px;color:#334155;">
@@ -1258,9 +1286,18 @@ async function muatStatistikWalas() {
     if (gridEl) {
       const card = document.createElement('div');
       card.className = `card-siswa-guru ${statusCardClass}`;
+      const inisialS = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+      const fotoS = s.foto || `assets/foto/${nisn}.jpg`;
       card.innerHTML = `
-        <div style="font-size:14.5px;font-weight:800;color:#1e293b;">${s.nama}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn}</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;border:1px solid #cbd5e1;">
+            <img src="${fotoS}" alt="${s.nama}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${inisialS}';">
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:14px;font-weight:800;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+            <div style="font-size:11.5px;color:#64748b;margin-top:1px;">NISN: ${nisn}</div>
+          </div>
+        </div>
         <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-size:12px;font-weight:700;">${statusLabel}</span>
           ${statusFinal === 'belum' ? `<button class="btn-mini-action btn-mini-izin" onclick="tandaiIzinCepatWalas('${nisn}', '${kelas}', '${s.nama}')">📝 Izin</button>` : ''}
@@ -1384,9 +1421,18 @@ async function muatLiveAlertWalas() {
   belumTapList.forEach(([nisn, s]) => {
     const card = document.createElement('div');
     card.className = 'card-siswa-guru belum';
+    const inisialS = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fotoS = s.foto || `assets/foto/${nisn}.jpg`;
     card.innerHTML = `
-      <div style="font-size:14px;font-weight:800;color:#0f172a;">${s.nama}</div>
-      <div style="font-size:12px;color:#64748b;margin-top:2px;">NISN: ${nisn} • Kelas: ${kelas}</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;border:1.5px solid #cbd5e1;">
+          <img src="${fotoS}" alt="${s.nama}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${inisialS}';">
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:14px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nama}</div>
+          <div style="font-size:11.5px;color:#64748b;margin-top:1px;">NISN: ${nisn} • Kelas: ${kelas}</div>
+        </div>
+      </div>
       <div style="margin-top:10px;display:flex;gap:8px;">
         <button class="btn-mini-action btn-mini-hadir" onclick="catatHadirManualWalas('${nisn}', '${kelas}', '${s.nama}')">✓ Hadir Manual</button>
         <button class="btn-mini-action btn-mini-izin" onclick="tandaiIzinCepatWalas('${nisn}', '${kelas}', '${s.nama}')">📝 Catat Izin</button>

@@ -38,13 +38,19 @@ function bukaModalProfil() {
 
   const namaTampilan = user.nama || (isPengunjung ? 'Pengunjung / Tamu Sekolah' : 'Pengguna');
   const userEmail = user.email || (fbUser ? fbUser.email : '');
+  const isSiswa = user.role === 'siswa' && (user.nisn || user.foto);
+  const fotoSiswa = isSiswa ? (user.foto || ('assets/foto/' + user.nisn + '.jpg')) : null;
+  const fotoUser = fotoSiswa || user.foto_google || user.foto || null;
+  const fallbackAvatarAction = user.foto_google
+    ? `this.src='${user.foto_google}';`
+    : `this.parentElement.innerHTML='<span>${initial}</span>';`;
 
   overlay.innerHTML = `
     <div class="profile-modal-card">
       <div class="profile-modal-header">
         <div style="display:flex;align-items:center;gap:14px;">
           <div class="profile-avatar-circle">
-            ${user.foto_google ? `<img src="${user.foto_google}" alt="Foto Profil">` : `<span>${initial}</span>`}
+            ${fotoUser ? `<img src="${fotoUser}" alt="Foto Profil" style="width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:inherit;" onerror="this.onerror=null; ${fallbackAvatarAction}">` : `<span>${initial}</span>`}
           </div>
           <div>
             <h2 class="profile-user-name">${namaTampilan}</h2>
@@ -169,10 +175,10 @@ function bukaModalProfil() {
           </div>
 
           <div id="boxAccordionKlaim" style="display:block;">
-            <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimSiswa" onclick="toggleModeKlaim('siswa')" style="padding:6px 12px;font-size:12px;background:#4f46e5;color:#fff;border-color:#4f46e5;font-weight:700;border-radius:8px;">🎓 1. Siswa (NISN)</button>
-              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimGuru" onclick="toggleModeKlaim('guru')" style="padding:6px 12px;font-size:12px;font-weight:700;border-radius:8px;">👩‍🏫 2. Guru Biasa (NIP)</button>
-              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimWalas" onclick="toggleModeKlaim('walas')" style="padding:6px 12px;font-size:12px;font-weight:700;border-radius:8px;">👨‍🏫 3. Wali Kelas (NIP)</button>
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimSiswa" onclick="toggleModeKlaim('siswa')" style="padding:8px 14px;font-size:12.5px;background:#4f46e5;color:#fff;border-color:#4f46e5;font-weight:700;border-radius:10px;">🎓 1. Siswa (NISN)</button>
+              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimGuru" onclick="toggleModeKlaim('guru')" style="padding:8px 14px;font-size:12.5px;font-weight:700;border-radius:10px;">👩‍🏫 2. Guru Biasa (NIP)</button>
+              <button type="button" class="profile-btn-secondary" id="btnPilihKlaimWalas" onclick="toggleModeKlaim('walas')" style="padding:8px 14px;font-size:12.5px;font-weight:700;border-radius:10px;">👨‍🏫 3. Wali Kelas (NIP)</button>
             </div>
 
             <!-- Mode Klaim Siswa -->
@@ -182,19 +188,19 @@ function bukaModalProfil() {
               </p>
               <div class="profile-field-row" style="margin-bottom:0;">
                 <label for="inputNisnVerif" style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Nomor Induk Siswa Nasional (NISN)</label>
-                <div style="display:flex;gap:8px;align-items:center;">
+                <div style="display:flex;gap:10px;align-items:center;">
                   <input type="text" id="inputNisnVerif" class="profile-input" placeholder="Masukkan 10 digit NISN (Contoh: 0012345678)" maxlength="12"
                          onkeydown="if(event.key==='Enter') handlePeriksaNisn()">
-                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNisn()" id="btnCekNisn">🔍 Periksa NISN</button>
+                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNisn()" id="btnCekNisn" style="padding:11px 18px;border-radius:12px;font-weight:700;">🔍 Periksa NISN</button>
                 </div>
               </div>
-              <div id="boxPreviewSiswa" style="display:none;margin-top:12px;padding:12px 14px;background:#ffffff;border:1px solid #c7d2fe;border-radius:12px;">
+              <div id="boxPreviewSiswa" style="display:none;margin-top:14px;padding:14px 16px;background:#ffffff;border:1px solid #c7d2fe;border-radius:14px;">
                 <div style="font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:3px;">Data Siswa Ditemukan:</div>
                 <div style="font-size:14.5px;font-weight:800;color:#1e293b;" id="previewNamaSiswa">-</div>
                 <div style="font-size:12.5px;color:#64748b;margin-top:2px;" id="previewMetaSiswa">-</div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanNisn()" id="btnTautkanNisn" style="background:#059669;border-color:#059669;padding:8px 14px;font-size:12.5px;">✓ Ya, Hubungkan Akun Siswa</button>
-                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewNisn()" style="padding:8px 14px;font-size:12.5px;">Batal</button>
+                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanNisn()" id="btnTautkanNisn" style="background:#059669;border-color:#059669;padding:9px 16px;font-size:12.5px;border-radius:12px;">✓ Ya, Hubungkan Akun Siswa</button>
+                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewNisn()" style="padding:9px 16px;font-size:12.5px;border-radius:12px;">Batal</button>
                 </div>
               </div>
             </div>
@@ -206,19 +212,19 @@ function bukaModalProfil() {
               </p>
               <div class="profile-field-row" style="margin-bottom:0;">
                 <label for="inputNipVerif" style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">NIP Guru Pengajar (Guru Biasa)</label>
-                <div style="display:flex;gap:8px;align-items:center;">
+                <div style="display:flex;gap:10px;align-items:center;">
                   <input type="text" id="inputNipVerif" class="profile-input" placeholder="Masukkan 18 digit NIP resmi (Contoh: 198501012010011001)" maxlength="20"
                          onkeydown="if(event.key==='Enter') handlePeriksaNip('guru')">
-                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('guru')" id="btnCekNip">🔍 Periksa NIP</button>
+                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('guru')" id="btnCekNip" style="padding:11px 18px;border-radius:12px;font-weight:700;">🔍 Periksa NIP</button>
                 </div>
               </div>
-              <div id="boxPreviewGuru" style="display:none;margin-top:12px;padding:12px 14px;background:#ffffff;border:1px solid #c7d2fe;border-radius:12px;">
+              <div id="boxPreviewGuru" style="display:none;margin-top:14px;padding:14px 16px;background:#ffffff;border:1px solid #c7d2fe;border-radius:14px;">
                 <div style="font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:3px;">Data Guru Terverifikasi:</div>
                 <div style="font-size:14.5px;font-weight:800;color:#1e293b;" id="previewNamaGuru">-</div>
                 <div style="font-size:12.5px;color:#64748b;margin-top:2px;" id="previewMetaGuru">-</div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanGuru" style="background:#059669;border-color:#059669;padding:8px 14px;font-size:12.5px;">✓ Ya, Hubungkan Akun Guru</button>
-                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewGuru()" style="padding:8px 14px;font-size:12.5px;">Batal</button>
+                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanGuru" style="background:#059669;border-color:#059669;padding:9px 16px;font-size:12.5px;border-radius:12px;">✓ Ya, Hubungkan Akun Guru</button>
+                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewGuru()" style="padding:9px 16px;font-size:12.5px;border-radius:12px;">Batal</button>
                 </div>
               </div>
             </div>
@@ -230,19 +236,19 @@ function bukaModalProfil() {
               </p>
               <div class="profile-field-row" style="margin-bottom:0;">
                 <label for="inputNipWalasVerif" style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">NIP Wali Kelas</label>
-                <div style="display:flex;gap:8px;align-items:center;">
+                <div style="display:flex;gap:10px;align-items:center;">
                   <input type="text" id="inputNipWalasVerif" class="profile-input" placeholder="Masukkan 18 digit NIP Walas (Contoh: 198501012010011001)" maxlength="20"
                          onkeydown="if(event.key==='Enter') handlePeriksaNip('walas')">
-                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('walas')" id="btnCekNipWalas">🔍 Periksa NIP Walas</button>
+                  <button type="button" class="profile-btn-action" onclick="handlePeriksaNip('walas')" id="btnCekNipWalas" style="padding:11px 18px;border-radius:12px;font-weight:700;">🔍 Periksa NIP Walas</button>
                 </div>
               </div>
-              <div id="boxPreviewWalas" style="display:none;margin-top:12px;padding:12px 14px;background:#ffffff;border:1.5px solid #10b981;border-radius:12px;">
+              <div id="boxPreviewWalas" style="display:none;margin-top:14px;padding:14px 16px;background:#ffffff;border:1.5px solid #10b981;border-radius:14px;">
                 <div style="font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;margin-bottom:3px;">Data Wali Kelas Terverifikasi:</div>
                 <div style="font-size:14.5px;font-weight:800;color:#1e293b;" id="previewNamaWalas">-</div>
                 <div style="font-size:12.5px;color:#64748b;margin-top:2px;" id="previewMetaWalas">-</div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanWalas" style="background:#059669;border-color:#059669;padding:8px 14px;font-size:12.5px;">✓ Ya, Hubungkan Akun Wali Kelas</button>
-                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewWalas()" style="padding:8px 14px;font-size:12.5px;">Batal</button>
+                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                  <button type="button" class="profile-btn-action" onclick="handleKonfirmasiTautkanGuru()" id="btnTautkanWalas" style="background:#059669;border-color:#059669;padding:9px 16px;font-size:12.5px;border-radius:12px;">✓ Ya, Hubungkan Akun Wali Kelas</button>
+                  <button type="button" class="profile-btn-secondary" onclick="batalPreviewWalas()" style="padding:9px 16px;font-size:12.5px;border-radius:12px;">Batal</button>
                 </div>
               </div>
             </div>

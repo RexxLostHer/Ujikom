@@ -107,27 +107,36 @@ function generateDatasetSetahun() {
   return result;
 }
 
-const dataGenerated = generateDatasetSetahun();
+let dataGenerated = null;
 
-// Hitung rekap statistik hasil generate
-TARGET_STUDENTS.forEach(s => {
-  const records = Object.values(dataGenerated[s.nisn]);
-  const hadirCount = records.filter(r => r.status === 'hadir').length;
-  const sakitCount = records.filter(r => r.status === 'sakit').length;
-  const dispenCount = records.filter(r => r.status === 'dispensasi').length;
-  const totalHari = hadirCount + sakitCount + dispenCount;
-  const persentase = totalHari > 0 ? Math.round((hadirCount / totalHari) * 100) : 0;
+if (require.main === module) {
+  dataGenerated = generateDatasetSetahun();
+  // Hitung rekap statistik hasil generate
+  TARGET_STUDENTS.forEach(s => {
+    const records = Object.values(dataGenerated[s.nisn]);
+    const hadirCount = records.filter(r => r.status === 'hadir').length;
+    const sakitCount = records.filter(r => r.status === 'sakit').length;
+    const dispenCount = records.filter(r => r.status === 'dispensasi').length;
+    const totalHari = hadirCount + sakitCount + dispenCount;
+    const persentase = totalHari > 0 ? Math.round((hadirCount / totalHari) * 100) : 0;
 
-  console.log(`[Generated] ${s.nama} (${s.nisn}):`);
-  console.log(`  Total Hari Sekolah : ${totalHari} Hari`);
-  console.log(`  Hadir              : ${hadirCount} Hari (${persentase}%)`);
-  console.log(`  Sakit              : ${sakitCount} Hari`);
-  console.log(`  Dispensasi         : ${dispenCount} Hari`);
-});
+    console.log(`[Generated] ${s.nama} (${s.nisn}):`);
+    console.log(`  Total Hari Sekolah : ${totalHari} Hari`);
+    console.log(`  Hadir              : ${hadirCount} Hari (${persentase}%)`);
+    console.log(`  Sakit              : ${sakitCount} Hari`);
+    console.log(`  Dispensasi         : ${dispenCount} Hari`);
+  });
 
-// Simpan ke file data JSON untuk backup / import
-const outputPath = path.join(__dirname, 'data-riwayat-setahun.json');
-fs.writeFileSync(outputPath, JSON.stringify(dataGenerated, null, 2), 'utf8');
-console.log(`✓ Data riwayat 1 tahun berhasil disimpan ke ${outputPath}`);
+  // Simpan ke file data JSON untuk backup / import
+  const outputPath = path.join(__dirname, 'data-riwayat-setahun.json');
+  fs.writeFileSync(outputPath, JSON.stringify(dataGenerated, null, 2), 'utf8');
+  console.log(`✓ Data riwayat 1 tahun berhasil disimpan ke ${outputPath}`);
+}
 
-module.exports = { generateDatasetSetahun, dataGenerated };
+module.exports = {
+  generateDatasetSetahun,
+  get dataGenerated() {
+    if (!dataGenerated) dataGenerated = generateDatasetSetahun();
+    return dataGenerated;
+  }
+};

@@ -327,6 +327,8 @@ function renderFlowScreenshot(flowInfo) {
     canvas.drawText("> ARTIFACT CAPTURED: SUCCESS", 675, 305, [250, 204, 21, 255], 1);
     canvas.drawText("ALL 5 TIER ASSERTIONS PASSED", 675, 345, [34, 197, 94, 255], 1);
   }
+  return canvas.toPngBuffer();
+}
 
 /**
  * Render an SVG representation of the UI screenshot
