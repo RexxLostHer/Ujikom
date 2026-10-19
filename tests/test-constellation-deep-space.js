@@ -1,9 +1,9 @@
 // ===================================================================
 // TEST SUITE: test-constellation-deep-space.js
-// Verifikasi Implementasi Animasi Rasi Bintang Realistis & Deep Space
-// 1. Validasi Background Hitam Pekat (#000000)
-// 2. Validasi Struktur Rasi Bintang Nyata (Orion, Crux, Cassiopeia, Ursa Major, Cygnus)
-// 3. Validasi Eliminasi Animasi Jaring Laba-Laba (Spiderweb Mesh)
+// Verifikasi Implementasi Galaksi & Taburan Bintang Fotorealistik (Zero Jaring / Zero Lines)
+// 1. Validasi Background Hitam Pekat (#000000 / Deep Space Void)
+// 2. Validasi Bintang-Bintang Utama & Astrofisika Nyata
+// 3. Validasi Eliminasi Mutlak Garis Jaring (Zero Lines / Anti-Spiderweb)
 // 4. Validasi Fitur Astrofisika: Diffraction Spikes & Shooting Stars / Meteor
 // 5. Validasi Keutuhan Form & Auth ID DOM pada index.html
 // ===================================================================
@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-console.log('--- MEMULAI PENGUJIAN ANIMASI RASI BINTANG REALISTIS (INDEX.HTML) ---');
+console.log('--- MEMULAI PENGUJIAN GALAKSI & TABURAN BINTANG FOTOREALISTIK (INDEX.HTML) ---');
 
 const indexHtmlPath = path.join(__dirname, '../index.html');
 const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
@@ -20,40 +20,29 @@ const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
 // TEST 1: Background Hitam Pekat
 console.log('\n[Test 1] Validasi Background Hitam Pekat (#000000 / Deep Space)');
 assert.ok(indexHtml.includes('--bg: #000000;'), 'CSS :root harus mendefinisikan --bg: #000000');
-assert.ok(indexHtml.includes("ctx.fillStyle = '#010206';"), 'Canvas render loop harus membersihkan layar dengan deep obsidian black (#010206)');
-console.log('✓ Background terverifikasi menggunakan hitam pekat angkasa murni');
+assert.ok(indexHtml.includes("ctx.fillStyle = '#000000';"), 'Canvas render loop harus membersihkan layar dengan deep obsidian black (#000000)');
+console.log('✓ Background terverifikasi menggunakan hitam pekat angkasa murni (#000000)');
 
-// TEST 2: Keberadaan Rasi Bintang Astronomis Resmi
-console.log('\n[Test 2] Validasi Konstelasi Rasi Bintang Astronomis Asli');
-const requiredConstellations = [
-  'ORION • WALUKU',
-  'CRUX • SALIB SELATAN',
-  'CASSIOPEIA',
-  'URSA MAJOR • BIDUK BESAR',
-  'CYGNUS • SALIB UTARA'
-];
-
-requiredConstellations.forEach(name => {
-  assert.ok(indexHtml.includes(name), `Rasi bintang "${name}" harus terdaftar dalam CONSTELLATIONS array`);
-});
-
-const keyStars = ['Betelgeuse', 'Rigel', 'Acrux', 'Gacrux', 'Dubhe', 'Deneb', 'Schedar'];
+// TEST 2: Keberadaan Bintang Utama Astrofisika Resmi
+console.log('\n[Test 2] Validasi Bintang-Bintang Utama & Taburan Bintang Realistis');
+const keyStars = ['Sirius', 'Betelgeuse', 'Rigel', 'Polaris', 'Vega', 'Arcturus', 'Antares', 'Deneb', 'Acrux'];
 keyStars.forEach(star => {
-  assert.ok(indexHtml.includes(star), `Bintang utama "${star}" harus dimodelkan dalam konstelasi`);
+  assert.ok(indexHtml.includes(star), `Bintang utama "${star}" harus dimodelkan dalam PROMINENT_STARS`);
 });
-console.log('✓ 5 Rasi bintang astronomis terverifikasi lengkap beserta bintang-bintang utamanya');
+assert.ok(indexHtml.includes('const FIELD_STAR_COUNT = 380;'), 'Jumlah bintang natural multi-tiered harus dense (380+)');
+console.log('✓ Taburan bintang fotorealistik dan bintang-bintang utama terverifikasi lengkap');
 
-// TEST 3: Eliminasi Efek Jaring Laba-Laba (Spiderweb)
-console.log('\n[Test 3] Validasi Eliminasi Algoritma Spiderweb Random Mesh');
-// Tidak boleh ada loop all-pairs partikel acak dan tidak boleh ada garis jaring yang ditarik ke kursor mouse
-assert.ok(!indexHtml.includes('ctx.lineTo(mouse.x, mouse.y)'), 'DILARANG menarik garis jaring langsung ke kursor mouse');
-assert.ok(!indexHtml.includes('const PARTICLE_COUNT = 90'), 'Particle count acak jaring laba-laba lama harus sudah digantikan');
-console.log('✓ Algoritma jaring laba-laba tereliminasi dan digantikan oleh geometri rasi bintang sejati');
+// TEST 3: Eliminasi Total Efek Garis Jaring (Zero Lines / Anti-Spiderweb)
+console.log('\n[Test 3] Validasi Eliminasi Mutlak Efek Garis Jaring / Spiderweb');
+assert.ok(!indexHtml.includes('ctx.lineTo(mouse.x, mouse.y)'), 'DILARANG menarik garis jaring ke kursor mouse');
+assert.ok(!indexHtml.includes('const PARTICLE_COUNT = 90'), 'Algoritma particle mesh lama harus tereliminasi');
+assert.ok(!indexHtml.includes('ctx.lineTo(s2.screenX, s2.screenY)'), 'DILARANG menghubungkan bintang dengan garis stik buatan');
+console.log('✓ Zero Lines: Tidak ada garis-garis jaring laba-laba buatan di langit malam');
 
-// TEST 4: Astrofisika Realistis (Diffraction Spikes, Scintillation, Shooting Stars)
+// TEST 4: Astrofisika Realistis (Diffraction Spikes & Shooting Stars)
 console.log('\n[Test 4] Validasi Efek Astrofisika (Diffraction Spikes & Shooting Stars)');
 assert.ok(indexHtml.includes('drawDiffractionSpike'), 'Fungsi drawDiffractionSpike harus diimplementasikan untuk kilau 4-titik optik');
-assert.ok(indexHtml.includes('spawnShootingStar'), 'Fungsi spawnShootingStar harus ada untuk meteor / bintang jatuh sesekali');
+assert.ok(indexHtml.includes('spawnShootingStar'), 'Fungsi spawnShootingStar harus ada untuk meteor / bintang jatuh berkala');
 assert.ok(indexHtml.includes('twinklePhase'), 'Fisika kelap-kelip atmosferik (scintillation) harus dihitung per-bintang');
 console.log('✓ Efek optik astronomis (diffraction spikes & shooting stars) terverifikasi aktif');
 
@@ -79,5 +68,5 @@ requiredIds.forEach(id => {
 console.log('✓ Seluruh elemen DOM autentikasi dan form login/register tetap 100% utuh');
 
 console.log('\n=======================================================');
-console.log('SEMUA PENGUJIAN ANIMASI RASI BINTANG REALISTIS BERHASIL! (5/5 PASSED)');
+console.log('SEMUA PENGUJIAN GALAKSI & BINTANG REALISTIS BERHASIL! (5/5 PASSED)');
 console.log('=======================================================');
