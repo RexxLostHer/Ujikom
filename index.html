@@ -10,19 +10,20 @@
 <link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
   :root {
-    --bg-page: #070d19;
-    --bg-surface: #0f172a;
-    --bg-card: rgba(15, 23, 42, 0.88);
+    --bg-page: #040814;
+    --bg-surface: #0a1020;
+    --bg-card: rgba(13, 22, 40, 0.72);
     --border-glass: rgba(255, 255, 255, 0.08);
-    --border-highlight: rgba(56, 189, 248, 0.35);
+    --border-highlight: rgba(56, 189, 248, 0.3);
+    --border-glow: rgba(56, 189, 248, 0.15);
     --text-primary: #f8fafc;
     --text-muted: #94a3b8;
     --text-dim: #64748b;
     --brand-blue: #38bdf8;
     --brand-sky: #0284c7;
+    --brand-indigo: #6366f1;
     --brand-emerald: #10b981;
-    --brand-emerald-glow: rgba(16, 185, 129, 0.4);
-    --brand-amber: #f59e0b;
+    --brand-emerald-glow: rgba(16, 185, 129, 0.35);
     --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --heading: 'Space Grotesk', system-ui, sans-serif;
     --mono: 'JetBrains Mono', monospace;
@@ -41,18 +42,11 @@
     font-family: var(--sans);
     overflow-x: hidden;
     position: relative;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Grid Layout 2 Kolom Responsif */
-  .school-portal-wrapper {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    position: relative;
-    z-index: 2;
-  }
-
-  /* Subtle Ambient Background Mesh */
+  /* Canvas Latar Belakang Ambient Partikel */
   .bg-mesh-canvas {
     position: fixed;
     inset: 0;
@@ -61,13 +55,30 @@
     pointer-events: none;
     z-index: 1;
     background:
-      radial-gradient(circle at 18% 22%, rgba(2, 132, 199, 0.14) 0%, transparent 48%),
-      radial-gradient(circle at 82% 78%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
-      linear-gradient(180deg, #070d19 0%, #0b1426 100%);
+      radial-gradient(circle at 20% 25%, rgba(2, 132, 199, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 75%, rgba(16, 185, 129, 0.09) 0%, transparent 45%),
+      linear-gradient(180deg, #040814 0%, #070d1a 100%);
+  }
+
+  #ambientCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Grid Layout 2 Kolom Responsif */
+  .school-portal-wrapper {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.18fr 0.82fr;
+    position: relative;
+    z-index: 2;
   }
 
   /* ══════════════════════════════════════════════════════════
-     KOLOM KIRI: GERBANG SEKOLAH & ANIMASI SISWA TAP TURNSTILE
+     KOLOM KIRI: GERBANG PINTU PUTAR IOT & TAP KARTU RFID REALISTIS
      ══════════════════════════════════════════════════════════ */
   .school-stage-pane {
     position: relative;
@@ -96,16 +107,16 @@
   }
 
   .brand-logo-nesas {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    padding: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   }
 
   .brand-logo-nesas img {
@@ -118,39 +129,24 @@
     font-family: var(--heading);
     font-size: 1.15rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     color: #ffffff;
     line-height: 1.2;
-    text-transform: uppercase;
-  }
-
-  .brand-title p {
-    font-size: 0.78rem;
-    color: var(--brand-blue);
-    font-weight: 500;
-    letter-spacing: 0.02em;
-  }
-
-  .telemetry-time-badge {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
   }
 
   .live-clock-pill {
     font-family: var(--mono);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #38bdf8;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    padding: 4px 10px;
-    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 6px 14px;
+    border-radius: 999px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+    gap: 8px;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
   }
 
   .live-clock-pill .pulse-dot {
@@ -158,52 +154,55 @@
     height: 7px;
     border-radius: 50%;
     background: #38bdf8;
-    animation: pulseDot 1.8s infinite;
+    animation: pulseDot 2s infinite ease-in-out;
+  }
+
+  .live-clock-pill .session-divider {
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  .live-clock-pill .session-time {
+    color: var(--text-muted);
+    font-size: 0.72rem;
   }
 
   @keyframes pulseDot {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  .session-status-text {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    font-family: var(--mono);
-    letter-spacing: 0.04em;
+    50% { opacity: 0.4; transform: scale(0.75); }
   }
 
   /* ══════════════════════════════════════════════════════════
-     AREA PANGGUNG ILUSTRASI: GERBANG & KARAKTER SISWA TAP
+     AREA PANGGUNG REALISTIS: SMART TURNSTILE & HOLOGRAPHIC CARD
      ══════════════════════════════════════════════════════════ */
   .turnstile-stage-container {
     position: relative;
     margin: 1.8rem 0;
-    background: radial-gradient(ellipse at 50% 65%, rgba(15, 23, 42, 0.95), rgba(7, 13, 25, 0.98));
+    background: radial-gradient(ellipse at 50% 65%, rgba(14, 23, 42, 0.92), rgba(6, 11, 22, 0.98));
     border: 1px solid var(--border-glass);
     border-radius: 24px;
     padding: 1.5rem 1.8rem;
     overflow: hidden;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
-  /* Ambient Morning Glow di Panggung */
-  .morning-sun-glow {
+  /* Ambient Flare Glow di Panggung */
+  .stage-ambient-flare {
     position: absolute;
-    top: -50px;
-    right: -40px;
-    width: 220px;
-    height: 220px;
+    top: -60px;
+    left: 45%;
+    transform: translateX(-50%);
+    width: 320px;
+    height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, rgba(251, 146, 60, 0.08) 45%, transparent 70%);
-    filter: blur(28px);
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 75%);
+    filter: blur(32px);
     pointer-events: none;
   }
 
-  /* Banner Status Layar LCD Gate */
+  /* LCD Status Display Terminal Gerbang */
   .gate-terminal-lcd {
-    background: rgba(3, 7, 18, 0.85);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(3, 7, 18, 0.75);
+    border: 1px solid rgba(56, 189, 248, 0.25);
     border-radius: 12px;
     padding: 10px 16px;
     display: flex;
@@ -211,75 +210,55 @@
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 1.2rem;
+    backdrop-filter: blur(10px);
     box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
   }
 
   .gate-terminal-lcd.verified {
     border-color: rgba(16, 185, 129, 0.6);
-    background: rgba(6, 78, 59, 0.28);
+    background: rgba(6, 78, 59, 0.25);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), inset 0 0 16px rgba(0, 0, 0, 0.6);
   }
 
-  .lcd-reader-info {
+  .lcd-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
   }
 
-  .rfid-icon-pulse {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--brand-blue);
+  .terminal-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
     transition: all 0.3s ease;
   }
 
-  .gate-terminal-lcd.verified .rfid-icon-pulse {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: rgba(16, 185, 129, 0.6);
-    color: #34d399;
-  }
-
-  .lcd-title {
+  .terminal-name {
     font-family: var(--mono);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   .lcd-status-text {
     font-family: var(--heading);
-    font-size: 0.92rem;
-    font-weight: 700;
+    font-size: 0.88rem;
+    font-weight: 600;
     color: #ffffff;
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: color 0.3s ease;
   }
 
-  .gate-terminal-lcd.verified .lcd-status-text {
-    color: #34d399;
-  }
-
-  .lcd-telemetry-tag {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--brand-blue);
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-  }
-
-  /* SVG Panggung Gerbang Turnstile & Siswa */
+  /* Panggung SVG & Ilustrasi 3D Turnstile Gate */
   .turnstile-illustration-wrap {
     width: 100%;
-    min-height: 310px;
+    min-height: 320px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -288,62 +267,52 @@
 
   .school-gate-svg {
     width: 100%;
-    max-width: 580px;
+    max-width: 620px;
     height: auto;
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.5));
   }
 
-  /* Animasi Tap Kartu & Sensor Wave */
+  /* Animasi Gelombang Sensor RFID */
   .rfid-scan-ring {
     opacity: 0;
-    transform-origin: 300px 240px;
-    animation: none;
+    transform-origin: 452px 159px;
+    pointer-events: none;
   }
 
   .rfid-scan-ring.active-pulse {
-    animation: ringEmit 1.4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    animation: ringEmit 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
   }
 
   @keyframes ringEmit {
     0% {
       r: 8;
-      opacity: 0.9;
-      stroke-width: 3.5;
+      opacity: 0.95;
+      stroke-width: 3;
     }
     100% {
-      r: 72;
+      r: 68;
       opacity: 0;
       stroke-width: 1;
     }
   }
 
-  /* Siswa Card Hand Motion */
-  .student-hand-card {
-    transform-origin: 210px 260px;
-    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .student-hand-card.tapping {
-    transform: translate(28px, -18px) rotate(-6deg);
-  }
-
-  /* Turnstile Glass Flap Gate (Membuka saat Tap Sukses) */
+  /* Sayap Kaca Turnstile Gate (Flap Barrier) */
   .turnstile-gate-wing-left {
-    transform-origin: 275px 290px;
-    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: 224px 225px;
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .turnstile-gate-wing-right {
-    transform-origin: 345px 290px;
-    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: 416px 225px;
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .turnstile-open .turnstile-gate-wing-left {
-    transform: rotate(-65deg);
+    transform: rotate(-72deg);
   }
 
   .turnstile-open .turnstile-gate-wing-right {
-    transform: rotate(65deg);
+    transform: rotate(72deg);
   }
 
   /* Scanner Glow Indicator */
@@ -352,81 +321,41 @@
   }
 
   .turnstile-open .reader-led-light {
-    fill: #10b981;
-    filter: drop-shadow(0 0 10px #10b981);
+    fill: #10b981 !important;
+    filter: drop-shadow(0 0 12px #10b981) !important;
   }
 
-  /* Kontrol Interaktif Simulasi Tap */
+  /* Kontrol Interaktif Simulasi Tap Kartu */
   .stage-interactive-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+    justify-content: center;
     margin-top: 1.2rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .btn-simulasi-tap {
     font-family: var(--sans);
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #ffffff;
     background: linear-gradient(135deg, rgba(2, 132, 199, 0.8), rgba(16, 185, 129, 0.8));
     border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 8px 16px;
-    border-radius: 10px;
+    padding: 9px 22px;
+    border-radius: 999px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
   }
 
   .btn-simulasi-tap:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.35);
     border-color: rgba(16, 185, 129, 0.7);
-  }
-
-  .simulasi-note {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    font-family: var(--mono);
-  }
-
-  /* Footer Sisi Kiri */
-  .school-footer-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-glass);
-    position: relative;
-    z-index: 10;
-  }
-
-  .footer-quote {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    font-style: italic;
-  }
-
-  .footer-badges {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .tag-iot-pill {
-    font-family: var(--mono);
-    font-size: 0.64rem;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.08);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    padding: 3px 8px;
-    border-radius: 6px;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -438,66 +367,44 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(11, 20, 38, 0.65);
-    backdrop-filter: blur(20px);
+    background: rgba(8, 14, 28, 0.65);
+    backdrop-filter: blur(24px) saturate(180%);
   }
 
   .auth-form-card {
     width: 100%;
-    max-width: 440px;
+    max-width: 420px;
     background: var(--bg-card);
     border: 1px solid var(--border-glass);
     border-radius: 24px;
-    padding: 2.2rem 2.2rem 1.8rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    padding: 2.2rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
   }
 
-  /* Top Accent Light on Card */
   .auth-form-card::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 10%;
-    right: 10%;
+    left: 15%;
+    right: 15%;
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--brand-blue), var(--brand-emerald), transparent);
   }
 
-  .card-header-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--brand-blue);
-    font-family: var(--mono);
-    margin-bottom: 0.8rem;
-  }
-
-  .card-header-badge span.dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--brand-blue);
-  }
-
   .auth-card-title {
     font-family: var(--heading);
-    font-size: 1.55rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: #ffffff;
     line-height: 1.2;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
   }
 
   .auth-card-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.83rem;
     color: var(--text-muted);
     line-height: 1.45;
     margin-bottom: 1.5rem;
@@ -543,10 +450,10 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 11px 16px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
     font-family: var(--sans);
     font-size: 0.85rem;
@@ -557,9 +464,9 @@
   }
 
   .btn-google-glow:hover {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
     transform: translateY(-1px);
   }
 
@@ -582,13 +489,13 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .auth-separator span {
     font-family: var(--mono);
     font-size: 0.64rem;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     color: var(--text-dim);
     text-transform: uppercase;
   }
@@ -602,7 +509,7 @@
   }
 
   .auth-input-group label {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
     color: var(--text-muted);
   }
@@ -615,21 +522,21 @@
 
   .auth-input-field input {
     width: 100%;
-    background: rgba(3, 7, 18, 0.7);
+    background: rgba(3, 7, 18, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 11px 42px 11px 38px;
+    padding: 11px 40px 11px 38px;
     color: #ffffff;
     font-family: var(--sans);
-    font-size: 0.86rem;
+    font-size: 0.85rem;
     outline: none;
     transition: all 0.2s ease;
   }
 
   .auth-input-field input:focus {
     border-color: var(--brand-blue);
-    background: rgba(3, 7, 18, 0.95);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    background: rgba(3, 7, 18, 0.9);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
   }
 
   .auth-input-icon {
@@ -663,9 +570,9 @@
   .btn-card-submit {
     width: 100%;
     margin-top: 0.6rem;
-    padding: 12px 16px;
+    padding: 11px 16px;
     border-radius: 12px;
-    border: 1px solid rgba(56, 189, 248, 0.5);
+    border: 1px solid rgba(56, 189, 248, 0.4);
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: #ffffff;
     font-family: var(--sans);
@@ -674,24 +581,24 @@
     letter-spacing: 0.02em;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
+    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
   }
 
   .btn-card-submit:hover {
     background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
-    box-shadow: 0 8px 26px rgba(56, 189, 248, 0.45);
+    box-shadow: 0 8px 26px rgba(56, 189, 248, 0.4);
     transform: translateY(-1px);
   }
 
   .btn-card-submit.emerald {
-    border-color: rgba(16, 185, 129, 0.5);
+    border-color: rgba(16, 185, 129, 0.4);
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
   }
 
   .btn-card-submit.emerald:hover {
     background: linear-gradient(135deg, #047857 0%, #059669 100%);
-    box-shadow: 0 8px 26px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 8px 26px rgba(16, 185, 129, 0.4);
   }
 
   /* Footer Teks Card */
@@ -760,8 +667,8 @@
   }
 
   .spin-wheel {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border: 3px solid rgba(255, 255, 255, 0.15);
     border-top-color: var(--brand-blue);
     border-radius: 50%;
@@ -787,7 +694,7 @@
 
   .modal-box {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
     background: #0f172a;
     border: 1px solid var(--border-highlight);
     border-radius: 20px;
@@ -804,7 +711,7 @@
 
   .modal-header h3 {
     font-family: var(--heading);
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     color: #ffffff;
   }
 
@@ -859,8 +766,8 @@
   }
 
   .auth-success-icon-wrap {
-    width: 58px;
-    height: 58px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: rgba(16, 185, 129, 0.15);
     border: 1px solid rgba(16, 185, 129, 0.5);
@@ -871,13 +778,13 @@
   }
 
   .auth-success-icon-svg {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .auth-success-title {
     font-family: var(--heading);
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 0.4rem;
@@ -924,15 +831,17 @@
       padding: 1.2rem;
     }
     .turnstile-illustration-wrap {
-      min-height: 240px;
+      min-height: 250px;
     }
   }
 </style>
 </head>
 <body>
 
-  <!-- AMBIENT BACKGROUND MESH -->
-  <div class="bg-mesh-canvas"></div>
+  <!-- AMBIENT BACKGROUND CANVAS -->
+  <div class="bg-mesh-canvas">
+    <canvas id="ambientCanvas"></canvas>
+  </div>
 
   <!-- LOADING OVERLAY -->
   <div id="loadingBox">
@@ -944,7 +853,7 @@
   <main class="school-portal-wrapper">
 
     <!-- ══════════════════════════════════════════════════════════
-         KOLOM KIRI: GERBANG SEKOLAH & ANIMASI SISWA TAP KARTU
+         KOLOM KIRI: GERBANG SEKOLAH & TAP KARTU PRESENSI
          ══════════════════════════════════════════════════════════ -->
     <section class="school-stage-pane" aria-label="Gerbang Presensi Cerdas SMKN 1 Sumedang">
       
@@ -952,201 +861,301 @@
       <header class="school-header-brand">
         <div class="brand-identity">
           <div class="brand-logo-nesas">
-            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang (NESAS)">
+            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang">
           </div>
           <div class="brand-title">
             <h1>SMK Negeri 1 Sumedang</h1>
-            <p>Rekayasa Perangkat Lunak • IoT Smart Attendance</p>
           </div>
         </div>
 
-        <div class="telemetry-time-badge">
-          <div class="live-clock-pill">
-            <span class="pulse-dot"></span>
-            <span id="liveClock">06:45:00 WIB</span>
-          </div>
-          <span class="session-status-text">SESI PAGI • 06.30 - 08.00 WIB</span>
+        <div class="live-clock-pill">
+          <span class="pulse-dot"></span>
+          <span id="liveClock">06:45:00 WIB</span>
+          <span class="session-divider">•</span>
+          <span class="session-time">06.30 - 08.00 WIB</span>
         </div>
       </header>
 
       <!-- Panggung Ilustrasi Gerbang & Siswa Tap Turnstile -->
       <div class="turnstile-stage-container" id="turnstileStage">
-        <div class="morning-sun-glow"></div>
+        <div class="stage-ambient-flare"></div>
 
         <!-- LCD Status Display Terminal Gerbang -->
         <div class="gate-terminal-lcd" id="gateLcd">
-          <div class="lcd-reader-info">
-            <div class="rfid-icon-pulse" id="rfidIcon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                <circle cx="12" cy="20" r="1"></circle>
-              </svg>
-            </div>
-            <div>
-              <div class="lcd-title">Smart Turnstile Gate 01</div>
-              <div class="lcd-status-text" id="lcdStatusText">Menunggu Kartu Pelajar...</div>
-            </div>
+          <div class="lcd-left">
+            <div class="terminal-status-dot" id="terminalStatusDot"></div>
+            <span class="terminal-name">Smart Turnstile Gate</span>
           </div>
-          <div class="lcd-telemetry-tag" id="lcdTag">RFID 13.56MHz</div>
+          <div class="lcd-status-text" id="lcdStatusText">Menunggu Kartu Pelajar...</div>
         </div>
 
-        <!-- SVG Visualisasi: Gedung Sekolah, Turnstile Gate, dan Siswa Berseragam -->
+        <!-- SVG Visualisasi 3D Turnstile Gate & Hand Card Tap -->
         <div class="turnstile-illustration-wrap" id="gateAnimWrapper">
-          <svg class="school-gate-svg" viewBox="0 0 600 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="school-gate-svg" viewBox="0 0 640 380" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <!-- Linear & Radial Gradients -->
-              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#0b1b3b"/>
-                <stop offset="65%" stop-color="#0e2a4a"/>
-                <stop offset="100%" stop-color="#0d3752"/>
+              <!-- Filters for realistic depth and lighting -->
+              <filter id="shadowBlur" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="8"/>
+              </filter>
+              <filter id="groundShadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="12"/>
+              </filter>
+              <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="5" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+              <filter id="laserGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="7" result="blur1"/>
+                <feGaussianBlur stdDeviation="3" result="blur2"/>
+                <feMerge>
+                  <feMergeNode in="blur1"/>
+                  <feMergeNode in="blur2"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+
+              <!-- Metallic & Glass Gradients -->
+              <linearGradient id="pedestalBody" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#0f172a"/>
+                <stop offset="15%" stop-color="#1e293b"/>
+                <stop offset="45%" stop-color="#334155"/>
+                <stop offset="70%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0b1120"/>
               </linearGradient>
 
-              <linearGradient id="buildingGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1e293b"/>
-                <stop offset="100%" stop-color="#0f172a"/>
+              <linearGradient id="pedestalTop" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#090d16"/>
+                <stop offset="35%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0a101d"/>
               </linearGradient>
 
-              <linearGradient id="turnstileMetal" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#334155"/>
-                <stop offset="35%" stop-color="#64748b"/>
-                <stop offset="70%" stop-color="#475569"/>
-                <stop offset="100%" stop-color="#1e293b"/>
+              <linearGradient id="pedestalSide" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0a0f1d"/>
+                <stop offset="100%" stop-color="#050811"/>
               </linearGradient>
 
-              <linearGradient id="glassWingGrad" x1="0" y1="0" x2="1" y2="1">
+              <linearGradient id="glassFlapGrad" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="rgba(56, 189, 248, 0.45)"/>
-                <stop offset="100%" stop-color="rgba(16, 185, 129, 0.3)"/>
+                <stop offset="30%" stop-color="rgba(56, 189, 248, 0.12)"/>
+                <stop offset="70%" stop-color="rgba(16, 185, 129, 0.18)"/>
+                <stop offset="100%" stop-color="rgba(16, 185, 129, 0.5)"/>
               </linearGradient>
 
-              <linearGradient id="studentUniform" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#f8fafc"/>
-                <stop offset="100%" stop-color="#cbd5e1"/>
+              <linearGradient id="hingeMetalGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="35%" stop-color="#cbd5e1"/>
+                <stop offset="70%" stop-color="#94a3b8"/>
+                <stop offset="100%" stop-color="#475569"/>
               </linearGradient>
 
-              <linearGradient id="studentVest" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1e3a8a"/>
-                <stop offset="100%" stop-color="#172554"/>
+              <linearGradient id="cardGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0a1628"/>
+                <stop offset="45%" stop-color="#142c54"/>
+                <stop offset="85%" stop-color="#0c1a32"/>
+                <stop offset="100%" stop-color="#071020"/>
+              </linearGradient>
+
+              <linearGradient id="goldChipGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="30%" stop-color="#eab308"/>
+                <stop offset="70%" stop-color="#ca8a04"/>
+                <stop offset="100%" stop-color="#854d0e"/>
+              </linearGradient>
+
+              <linearGradient id="handSkinGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fde4cf"/>
+                <stop offset="35%" stop-color="#f8be98"/>
+                <stop offset="75%" stop-color="#dc875e"/>
+                <stop offset="100%" stop-color="#af5434"/>
+              </linearGradient>
+
+              <linearGradient id="suitSleeveGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e2d4d"/>
+                <stop offset="50%" stop-color="#111c33"/>
+                <stop offset="100%" stop-color="#080e1c"/>
+              </linearGradient>
+
+              <linearGradient id="scanBeamGrad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="rgba(16, 185, 129, 0.75)"/>
+                <stop offset="45%" stop-color="rgba(56, 189, 248, 0.3)"/>
+                <stop offset="100%" stop-color="transparent"/>
+              </linearGradient>
+
+              <linearGradient id="cardGlossGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/>
+                <stop offset="40%" stop-color="rgba(56, 189, 248, 0.2)"/>
+                <stop offset="100%" stop-color="transparent"/>
               </linearGradient>
             </defs>
 
-            <!-- Latar Belakang: Langit Fajar & Arsitektur Sekolah SMKN 1 Sumedang -->
-            <rect x="10" y="10" width="580" height="340" rx="16" fill="url(#skyGrad)" opacity="0.85"/>
-            
-            <!-- Siluet Gedung Sekolah & Jendela -->
-            <path d="M40 240 V100 H180 V80 H260 V100 H360 V120 H560 V240 Z" fill="url(#buildingGrad)" opacity="0.6"/>
-            <!-- Atap Limas Khas Kampus -->
-            <polygon points="170,80 220,50 270,80" fill="#0f172a" opacity="0.8"/>
-            <polygon points="30,100 110,70 190,100" fill="#0f172a" opacity="0.7"/>
+            <!-- Lantai Panggung & Perspektif Entrance Hall -->
+            <polygon points="40,240 600,240 640,360 0,360" fill="#060b16"/>
+            <line x1="80" y1="240" x2="50" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="160" y1="240" x2="140" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="240" y1="240" x2="230" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="320" y1="240" x2="320" y2="360" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.25" stroke-dasharray="6 4"/>
+            <line x1="400" y1="240" x2="410" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="480" y1="240" x2="500" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="560" y1="240" x2="590" y2="360" stroke="#1e293b" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="20" y1="280" x2="620" y2="280" stroke="#1e293b" stroke-width="1" stroke-opacity="0.25"/>
+            <line x1="0" y1="320" x2="640" y2="320" stroke="#1e293b" stroke-width="1" stroke-opacity="0.25"/>
 
-            <!-- Jendela Bercahaya Pagi Gedung Sekolah -->
-            <g fill="#38bdf8" opacity="0.25">
-              <rect x="70" y="125" width="22" height="34" rx="2"/>
-              <rect x="115" y="125" width="22" height="34" rx="2"/>
-              <rect x="200" y="115" width="26" height="38" rx="2"/>
-              <rect x="290" y="135" width="24" height="32" rx="2"/>
-              <rect x="390" y="145" width="24" height="30" rx="2"/>
-              <rect x="440" y="145" width="24" height="30" rx="2"/>
-              <rect x="490" y="145" width="24" height="30" rx="2"/>
+            <!-- Indikator Jalur Masuk di Lantai -->
+            <g opacity="0.7">
+              <polygon points="320,290 312,305 317,305 317,316 323,316 323,305 328,305" fill="#10b981"/>
+              <polygon points="320,260 314,272 318,272 318,280 322,280 322,272 326,272" fill="#10b981" opacity="0.5"/>
             </g>
 
-            <!-- Pohon Rindang Kampus -->
-            <circle cx="530" cy="210" r="45" fill="#064e3b" opacity="0.7"/>
-            <circle cx="490" cy="225" r="32" fill="#047857" opacity="0.65"/>
-            <circle cx="55" cy="220" r="38" fill="#064e3b" opacity="0.7"/>
-
-            <!-- Lantai Entrance Gerbang (Tiles) -->
-            <path d="M10 240 H590 V340 H10 Z" fill="#090f1d"/>
-            <line x1="10" y1="280" x2="590" y2="280" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="8 6"/>
-            <line x1="10" y1="315" x2="590" y2="315" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="10 8"/>
-
-            <!-- Plang Gerbang Sekolah -->
-            <rect x="150" y="90" width="300" height="24" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.4"/>
-            <text x="300" y="106" fill="#f8fafc" font-size="11" font-family="'Space Grotesk', sans-serif" font-weight="700" letter-spacing="1.5" text-anchor="middle">GERBANG UTAMA • SMKN 1 SUMEDANG</text>
+            <!-- ════════════════════════════════════════════════
+                 PEDESTAL TURNSTILE KIRI
+                 ════════════════════════════════════════════════ -->
+            <g id="leftPedestal">
+              <!-- Bayangan Bawah Tanah -->
+              <ellipse cx="192" cy="316" rx="42" ry="10" fill="rgba(0,0,0,0.65)" filter="url(#groundShadow)"/>
+              <!-- Sisi Samping Kiri (Bayangan Kedalaman) -->
+              <polygon points="160,170 176,148 176,295 160,316" fill="url(#pedestalSide)"/>
+              <!-- Permukaan Atas (Polished Glass Lid) -->
+              <polygon points="160,170 176,148 240,148 224,170" fill="url(#pedestalTop)" stroke="#475569" stroke-width="0.8"/>
+              <!-- Bevel Cahaya Tepi Atas -->
+              <line x1="160" y1="170" x2="224" y2="170" stroke="#64748b" stroke-width="1" opacity="0.8"/>
+              <!-- Bodi Depan (Brushed Titanium Obsidian) -->
+              <rect x="160" y="170" width="64" height="146" rx="4" fill="url(#pedestalBody)" stroke="#334155" stroke-width="0.8"/>
+              <!-- Strip Lampu LED Aksen Cyan -->
+              <line x1="162" y1="172" x2="162" y2="310" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" filter="url(#softGlow)"/>
+            </g>
 
             <!-- ════════════════════════════════════════════════
-                 SMART TURNSTILE BARRIER GATE (PINTU PUTAR IOT)
+                 SAYAP KACA FLAP BARRIER (TENGAH) & HINGE BRACKETS
                  ════════════════════════════════════════════════ -->
-            <!-- Pedestal Kiri -->
-            <rect x="240" y="210" width="45" height="100" rx="6" fill="url(#turnstileMetal)" stroke="#475569" stroke-width="1"/>
-            <rect x="248" y="215" width="29" height="12" rx="3" fill="#0f172a"/>
-            <!-- Pedestal Kanan (Dengan RFID Terminal) -->
-            <rect x="335" y="210" width="45" height="100" rx="6" fill="url(#turnstileMetal)" stroke="#475569" stroke-width="1"/>
-            
-            <!-- Terminal Reader RFID di Atas Pedestal Kanan -->
-            <rect x="340" y="200" width="35" height="24" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5"/>
-            <circle cx="357" cy="212" r="5" fill="#38bdf8" class="reader-led-light" id="readerLed"/>
-            <path d="M352 208 Q357 205 362 208" stroke="#ffffff" stroke-width="1.2" fill="none" opacity="0.8"/>
-            <path d="M350 205 Q357 201 364 205" stroke="#ffffff" stroke-width="1.2" fill="none" opacity="0.6"/>
-
-            <!-- Gelombang Emisi RFID Pulse (Animasi saat Tap) -->
-            <circle cx="357" cy="212" r="10" stroke="#10b981" fill="none" class="rfid-scan-ring" id="rfidRing1"/>
-            <circle cx="357" cy="212" r="10" stroke="#38bdf8" fill="none" class="rfid-scan-ring" id="rfidRing2" style="animation-delay: 0.35s;"/>
-
-            <!-- Sayap Kaca Turnstile Gate (Flap Barrier) -->
             <g id="turnstileWings">
-              <polygon points="275,225 310,245 310,285 275,275" fill="url(#glassWingGrad)" stroke="#38bdf8" stroke-width="1.5" class="turnstile-gate-wing-left" id="wingLeft"/>
-              <polygon points="345,225 310,245 310,285 345,275" fill="url(#glassWingGrad)" stroke="#38bdf8" stroke-width="1.5" class="turnstile-gate-wing-right" id="wingRight"/>
+              <!-- Sayap Kaca Kiri -->
+              <g class="turnstile-gate-wing-left" id="wingLeft">
+                <!-- Engsel Logam Stainless -->
+                <rect x="220" y="218" width="8" height="18" rx="2" fill="url(#hingeMetalGrad)" stroke="#334155" stroke-width="0.6"/>
+                <!-- Daun Pintu Kaca Tempered -->
+                <polygon points="224,200 310,215 310,265 224,250" fill="url(#glassFlapGrad)" stroke="#38bdf8" stroke-width="1.6"/>
+                <!-- Bevel Refleksi Kaca -->
+                <line x1="228" y1="205" x2="306" y2="218" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+              </g>
+
+              <!-- Sayap Kaca Kanan -->
+              <g class="turnstile-gate-wing-right" id="wingRight">
+                <!-- Engsel Logam Stainless -->
+                <rect x="412" y="218" width="8" height="18" rx="2" fill="url(#hingeMetalGrad)" stroke="#334155" stroke-width="0.6"/>
+                <!-- Daun Pintu Kaca Tempered -->
+                <polygon points="416,200 330,215 330,265 416,250" fill="url(#glassFlapGrad)" stroke="#38bdf8" stroke-width="1.6"/>
+                <!-- Bevel Refleksi Kaca -->
+                <line x1="412" y1="205" x2="334" y2="218" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+              </g>
             </g>
 
-            <!-- Indikator Panah Jalur Hijau di Lantai -->
-            <polygon points="310,305 302,320 307,320 307,330 313,330 313,320 318,320" fill="#10b981" opacity="0.75"/>
+            <!-- ════════════════════════════════════════════════
+                 PEDESTAL TURNSTILE KANAN (DENGAN SENSOR OPTIK RFID)
+                 ════════════════════════════════════════════════ -->
+            <g id="rightPedestal">
+              <!-- Bayangan Bawah Tanah -->
+              <ellipse cx="448" cy="316" rx="42" ry="10" fill="rgba(0,0,0,0.65)" filter="url(#groundShadow)"/>
+              <!-- Sisi Samping Kanan (Bayangan Kedalaman) -->
+              <polygon points="480,170 496,148 496,295 480,316" fill="url(#pedestalSide)"/>
+              <!-- Permukaan Atas (Polished Glass Lid) -->
+              <polygon points="416,170 432,148 496,148 480,170" fill="url(#pedestalTop)" stroke="#475569" stroke-width="0.8"/>
+              <!-- Bevel Cahaya Tepi Atas -->
+              <line x1="416" y1="170" x2="480" y2="170" stroke="#64748b" stroke-width="1" opacity="0.8"/>
+              <!-- Bodi Depan (Brushed Titanium Obsidian) -->
+              <rect x="416" y="170" width="64" height="146" rx="4" fill="url(#pedestalBody)" stroke="#334155" stroke-width="0.8"/>
+              <!-- Strip Lampu LED Aksen Cyan -->
+              <line x1="478" y1="172" x2="478" y2="310" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" filter="url(#softGlow)"/>
+
+              <!-- Optical RFID Reader Unit di Atas Pedestal -->
+              <ellipse cx="452" cy="159" rx="28" ry="10" fill="#090f1a" stroke="#334155" stroke-width="1.2"/>
+              <ellipse cx="452" cy="159" rx="22" ry="7.5" fill="#0284c7" fill-opacity="0.15" stroke="#38bdf8" stroke-width="1"/>
+              
+              <!-- Core Laser Emitter LED -->
+              <circle cx="452" cy="159" r="5" fill="#38bdf8" class="reader-led-light" id="readerLed" filter="url(#softGlow)"/>
+
+              <!-- Volumetric Laser Scan Cone Flare -->
+              <polygon id="scanBeam" class="scan-beam-cone" points="452,159 402,75 502,75" fill="url(#scanBeamGrad)" opacity="0"/>
+
+              <!-- Gelombang Pulse RFID Elektromagnetik -->
+              <circle cx="452" cy="159" r="8" stroke="#10b981" stroke-width="2" fill="none" class="rfid-scan-ring" id="rfidRing1"/>
+              <circle cx="452" cy="159" r="8" stroke="#38bdf8" stroke-width="1.5" fill="none" class="rfid-scan-ring" id="rfidRing2" style="animation-delay: 0.35s;"/>
+            </g>
 
             <!-- ════════════════════════════════════════════════
-                 KARAKTER SISWA BERSERAGAM & MEN-TAP KARTU
+                 TANGAN SISWA & KARTU PELAJAR RFID REALISTIS
                  ════════════════════════════════════════════════ -->
-            <!-- Tubuh Siswa -->
-            <g id="studentCharacter" transform="translate(45, 0)">
-              <!-- Bayangan di Lantai -->
-              <ellipse cx="225" cy="328" rx="28" ry="8" fill="rgba(0,0,0,0.5)"/>
+            <g id="studentHandCard" class="student-hand-card">
+              <!-- Bayangan Dinamis Kartu & Tangan di Permukaan Reader -->
+              <ellipse id="cardShadow" cx="452" cy="172" rx="46" ry="12" fill="rgba(0,0,0,0.58)" filter="url(#shadowBlur)"/>
 
-              <!-- Kaki & Sepatu Sekolah -->
-              <rect x="215" y="275" width="9" height="48" rx="4" fill="#1e293b"/>
-              <rect x="228" y="275" width="9" height="48" rx="4" fill="#0f172a"/>
-              <ellipse cx="218" cy="324" rx="8" ry="4" fill="#020617"/>
-              <ellipse cx="233" cy="324" rx="8" ry="4" fill="#020617"/>
+              <!-- Lengan & Manset Jas Seragam Siswa -->
+              <path d="M575 60 Q520 88 482 122 L500 137 Q538 105 605 75 Z" fill="url(#suitSleeveGrad)" stroke="#334155" stroke-width="0.8"/>
+              <path d="M482 122 L500 137 L497 142 L479 127 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.5"/>
+              <circle cx="512" cy="112" r="2.5" fill="#94a3b8" stroke="#475569" stroke-width="0.5"/>
 
-              <!-- Celana Seragam Sekolah Abu-abu -->
-              <path d="M211 250 H240 L239 280 H213 Z" fill="#64748b"/>
+              <!-- Tangan Manusia Anatomis Realistis -->
+              <path d="M479 127 C468 133 456 139 448 147 C442 153 446 160 454 162 C466 163 480 152 493 142 C495 139 487 131 479 127 Z" fill="url(#handSkinGrad)"/>
+              <path d="M464 138 C456 142 450 148 448 153 C452 155 458 154 466 147 Z" fill="url(#handSkinGrad)" stroke="#b87250" stroke-width="0.5"/>
+              <path d="M440 155 C438 160 442 165 448 164 C454 163 457 158 454 153 C448 152 443 153 440 155 Z" fill="#e2a17b"/>
+              <ellipse cx="444" cy="159" rx="2.8" ry="3.8" fill="#fbd0b4" stroke="#c25e36" stroke-width="0.4"/>
+              <ellipse cx="443" cy="158" rx="1.2" ry="1.8" fill="#ffffff" opacity="0.6"/>
 
-              <!-- Tas Ransel Sekolah (Backpack) -->
-              <path d="M192 190 Q188 230 198 252 Q208 255 212 245 Q212 195 198 190 Z" fill="#0369a1" stroke="#0284c7" stroke-width="1"/>
+              <!-- KARTU PELAJAR RFID SMKN 1 SUMEDANG (3D ISOMETRIC HIGH-TECH SMART PASS) -->
+              <g id="rfidStudentCard" class="rfid-student-card" transform="translate(452, 138) rotate(-6)">
+                <!-- Badan Kartu: Rounded Box Matte Obsidian -->
+                <rect x="-58" y="-36" width="116" height="72" rx="6" fill="url(#cardGrad)" stroke="rgba(56,189,248,0.55)" stroke-width="1.2"/>
+                
+                <!-- Bevel Highlight Dalam -->
+                <rect x="-56" y="-34" width="112" height="68" rx="5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>
 
-              <!-- Kemeja Putih Seragam Sekolah & Rompi Jurusan RPL -->
-              <path d="M204 185 L240 185 L242 250 L204 250 Z" fill="url(#studentVest)"/>
-              <polygon points="214,185 222,205 230,185" fill="url(#studentUniform)"/>
-              <!-- Dasi Biru -->
-              <polygon points="220,195 224,195 226,225 222,232 218,225" fill="#1d4ed8"/>
-              <!-- Badge Logo SMKN 1 Sumedang di Saku -->
-              <rect x="230" y="205" width="6" height="8" rx="1.5" fill="#f59e0b"/>
+                <!-- Pola Garis Sirkuit Presisi High-Tech -->
+                <path d="M-58 -12 H-22 L-12 -2 H58" stroke="rgba(56,189,248,0.25)" stroke-width="0.8" fill="none"/>
+                <path d="M-58 10 H-32 L-22 20 H58" stroke="rgba(56,189,248,0.18)" stroke-width="0.8" fill="none"/>
+                <circle cx="-12" cy="-2" r="1.5" fill="#38bdf8" opacity="0.6"/>
+                <circle cx="-22" cy="20" r="1.5" fill="#38bdf8" opacity="0.6"/>
 
-              <!-- Leher & Kepala Karakter Siswa -->
-              <rect x="218" y="172" width="8" height="14" fill="#fbcfe8"/>
-              <circle cx="222" cy="162" r="14" fill="#fcd34d" stroke="#f59e0b" stroke-width="0.5"/>
-              
-              <!-- Rambut Anime/Siswa Modern Rapi -->
-              <path d="M208 160 Q212 145 224 146 Q236 148 238 160 Q232 153 222 152 Q214 153 208 160 Z" fill="#1e1b4b"/>
-              <!-- Mata & Senyum Siswa -->
-              <circle cx="228" cy="162" r="1.8" fill="#0f172a"/>
-              <path d="M225 168 Q228 171 231 168" stroke="#0f172a" stroke-width="1" fill="none"/>
-
-              <!-- Lengan & Tangan Men-Tap Kartu Pelajar RFID -->
-              <g class="student-hand-card" id="studentHandCard">
-                <!-- Lengan Baju Seragam -->
-                <path d="M236 195 Q260 200 280 206 Q280 214 260 212 Q240 210 236 200 Z" fill="#172554"/>
-                <!-- Tangan Siswa -->
-                <ellipse cx="284" cy="207" rx="5" ry="4" fill="#fcd34d"/>
-
-                <!-- KARTU PELAJAR RFID SMKN 1 SUMEDANG -->
-                <g id="rfidStudentCard" transform="translate(284, 198) rotate(12)">
-                  <rect x="0" y="0" width="22" height="14" rx="2" fill="#0284c7" stroke="#ffffff" stroke-width="0.8"/>
-                  <!-- Strip Chip Emas & Foto Mini -->
-                  <rect x="2" y="3" width="5" height="5" rx="1" fill="#f59e0b"/>
-                  <rect x="9" y="3" width="11" height="2" fill="#ffffff" opacity="0.8"/>
-                  <rect x="9" y="7" width="8" height="1.5" fill="#93c5fd"/>
-                  <rect x="9" y="10" width="10" height="1.5" fill="#93c5fd"/>
+                <!-- Microchip EMV Emas Fotorealistik (6 Kontak Pad) -->
+                <g transform="translate(-48, -13)">
+                  <rect width="18" height="15" rx="2.5" fill="url(#goldChipGrad)" stroke="#78350f" stroke-width="0.6"/>
+                  <line x1="9" y1="0" x2="9" y2="15" stroke="#78350f" stroke-width="0.5"/>
+                  <line x1="0" y1="7.5" x2="6" y2="7.5" stroke="#78350f" stroke-width="0.5"/>
+                  <line x1="12" y1="7.5" x2="18" y2="7.5" stroke="#78350f" stroke-width="0.5"/>
+                  <rect x="6" y="5" width="6" height="5" rx="1" fill="#ca8a04" stroke="#78350f" stroke-width="0.5"/>
                 </g>
+
+                <!-- Simbol Gelombang Contactless NFC Resmi -->
+                <g transform="translate(-20, -5)">
+                  <path d="M0 0 A 6 6 0 0 1 0 10" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                  <path d="M4 -3 A 10 10 0 0 1 4 13" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                  <path d="M8 -6 A 14 14 0 0 1 8 16" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                </g>
+
+                <!-- Logo / Emblem Mini NESAS -->
+                <g transform="translate(-48, -29)">
+                  <rect width="16" height="11" rx="2.5" fill="#0284c7" stroke="#38bdf8" stroke-width="0.6"/>
+                  <text x="8" y="8" fill="#ffffff" font-size="5.5" font-family="'Space Grotesk', sans-serif" font-weight="700" text-anchor="middle">NESAS</text>
+                </g>
+
+                <!-- Tipografi Identitas Resmi Kartu (Bebas dari Nama Dummy Pribadi) -->
+                <text x="-26" y="-22" fill="#e0f2fe" font-size="5.5" font-family="'Space Grotesk', sans-serif" font-weight="700" letter-spacing="0.3">SMK NEGERI 1 SUMEDANG</text>
+                <text x="-26" y="-16" fill="#38bdf8" font-size="4" font-family="'JetBrains Mono', monospace" font-weight="600" letter-spacing="0.8">SMART ATTENDANCE PASS</text>
+                
+                <!-- Barcode / Digital Token Security Track -->
+                <g transform="translate(-48, 14)">
+                  <rect x="0" y="0" width="2" height="10" fill="#38bdf8" opacity="0.8"/>
+                  <rect x="3" y="0" width="1" height="10" fill="#38bdf8" opacity="0.5"/>
+                  <rect x="5" y="0" width="3" height="10" fill="#38bdf8" opacity="0.8"/>
+                  <rect x="9" y="0" width="1.5" height="10" fill="#38bdf8" opacity="0.6"/>
+                  <rect x="12" y="0" width="2.5" height="10" fill="#38bdf8" opacity="0.9"/>
+                  <rect x="16" y="0" width="1" height="10" fill="#38bdf8" opacity="0.5"/>
+                  <rect x="18" y="0" width="3" height="10" fill="#38bdf8" opacity="0.8"/>
+                  <rect x="23" y="0" width="1" height="10" fill="#38bdf8" opacity="0.5"/>
+                  <rect x="25" y="0" width="2" height="10" fill="#38bdf8" opacity="0.7"/>
+                  <text x="32" y="7" fill="#64748b" font-size="4" font-family="'JetBrains Mono', monospace" letter-spacing="0.6">RFID • 13.56MHz</text>
+                </g>
+
+                <!-- Dynamic Holographic Sheen Overlay -->
+                <polygon id="cardGloss" points="-58,-36 -22,-36 12,36 -24,36" fill="url(#cardGlossGrad)" opacity="0.3"/>
               </g>
             </g>
           </svg>
@@ -1160,20 +1169,10 @@
               <line x1="7" y1="15" x2="7.01" y2="15"></line>
               <line x1="11" y1="15" x2="13" y2="15"></line>
             </svg>
-            <span>Simulasikan Tap Kartu Siswa</span>
+            <span>Simulasikan Tap Kartu</span>
           </button>
-          <span class="simulasi-note" id="simulasiCounter">Uji Interaksi Gerbang • Real-time Hardware Sync</span>
         </div>
       </div>
-
-      <!-- Footer Sisi Kiri -->
-      <footer class="school-footer-meta">
-        <p class="footer-quote">"Disiplin hari ini, pemimpin di masa depan."</p>
-        <div class="footer-badges">
-          <span class="tag-iot-pill">ESP32 • RC522</span>
-          <span class="tag-iot-pill">FIREBASE RTDB</span>
-        </div>
-      </footer>
 
     </section>
 
@@ -1184,13 +1183,8 @@
       
       <div class="auth-form-card" id="cardAuthWrapper">
         
-        <div class="card-header-badge">
-          <span class="dot"></span>
-          <span>PORTAL AKADEMIK RESMI</span>
-        </div>
-
         <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
-        <p class="auth-card-subtitle" id="authPortalSubtitle">Silakan masuk menggunakan akun Google sekolah atau email terdaftar untuk mengakses rekapitulasi kehadiran.</p>
+        <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
 
         <!-- Switch Tab Masuk / Daftar -->
         <div class="auth-tab-switch">
@@ -1206,7 +1200,7 @@
             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
           </svg>
-          <span>Masuk dengan Akun Google</span>
+          <span>Masuk dengan Google</span>
         </button>
 
         <div class="auth-separator">
@@ -1214,7 +1208,7 @@
         </div>
 
         <!-- ──────────────────────────────────────────────
-             FORM 1: LOGIN RESMI SISWA & GURU
+             FORM 1: LOGIN SISWA & GURU
              ────────────────────────────────────────────── -->
         <form id="formLogin" onsubmit="handleLoginEmail(event)">
           
@@ -1332,7 +1326,7 @@
       <div class="modal-header">
         <div>
           <h3>Pemulihan Kata Sandi</h3>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">Link pemulihan resmi akan dikirim ke email Gmail Anda.</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">Link pemulihan akan dikirim ke email Gmail Anda.</p>
         </div>
         <button type="button" class="btn-close-x" onclick="tutupModalLupaPassword()">✕</button>
       </div>
@@ -1396,82 +1390,211 @@
     setInterval(updateSchoolClock, 1000);
     updateSchoolClock();
 
-    // ===== 2. TURNSTILE GATE & STUDENT CARD TAP SIMULATION =====
+    // ===== 2. AMBIENT BACKGROUND PARTICLES =====
+    (function initAmbientCanvas() {
+      const canvas = document.getElementById('ambientCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        if (!canvas) return;
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const particles = [];
+      for (let i = 0; i < 24; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.8 + 0.8,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35,
+          alpha: Math.random() * 0.35 + 0.1,
+          color: Math.random() > 0.5 ? '56, 189, 248' : '16, 185, 129'
+        });
+      }
+
+      function renderAmbient() {
+        ctx.clearRect(0, 0, width, height);
+        for (let p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.color}, ${p.alpha})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(renderAmbient);
+      }
+      requestAnimationFrame(renderAmbient);
+    })();
+
+    // ===== 3. GSAP REALISTIC SMART TURNSTILE & CARD TAP ENGINE =====
     let tapCooldown = false;
     let autoTapTimer = null;
+    let idleFloatTween = null;
+
+    function startIdleFloat() {
+      if (typeof gsap === 'undefined') return;
+      if (idleFloatTween) idleFloatTween.kill();
+
+      idleFloatTween = gsap.timeline({ repeat: -1, yoyo: true });
+      idleFloatTween.to('#studentHandCard', {
+        y: -8,
+        rotation: -1.2,
+        duration: 2.4,
+        ease: 'sine.inOut'
+      }, 0);
+      idleFloatTween.to('#cardShadow', {
+        scale: 0.88,
+        opacity: 0.38,
+        duration: 2.4,
+        ease: 'sine.inOut',
+        transformOrigin: 'center center'
+      }, 0);
+    }
+
+    // Mulai gerakan float santai setelah script dimuat
+    if (typeof gsap !== 'undefined') {
+      setTimeout(startIdleFloat, 400);
+    }
 
     function triggerTapSimulation() {
       if (tapCooldown) return;
       tapCooldown = true;
 
       const stage = document.getElementById('turnstileStage');
-      const hand = document.getElementById('studentHandCard');
       const ring1 = document.getElementById('rfidRing1');
       const ring2 = document.getElementById('rfidRing2');
       const gateLcd = document.getElementById('gateLcd');
       const lcdStatus = document.getElementById('lcdStatusText');
-      const lcdTag = document.getElementById('lcdTag');
       const readerLed = document.getElementById('readerLed');
-      const simulasiCounter = document.getElementById('simulasiCounter');
+      const terminalStatusDot = document.getElementById('terminalStatusDot');
+      const wingLeft = document.getElementById('wingLeft');
+      const wingRight = document.getElementById('wingRight');
+      const scanBeam = document.getElementById('scanBeam');
+      const cardGloss = document.getElementById('cardGloss');
 
-      // 1. Karakter Siswa Mengulurkan Kartu ke Reader
-      if (hand) hand.classList.add('tapping');
+      if (idleFloatTween) {
+        idleFloatTween.pause();
+      }
+
+      // 1. Gerakan Menghampiri Sensor dengan Fisika Halus (GSAP)
+      if (typeof gsap !== 'undefined') {
+        const tlTap = gsap.timeline();
+        tlTap.to('#studentHandCard', {
+          y: 22,
+          rotation: 3.5,
+          duration: 0.45,
+          ease: 'power2.out'
+        }, 0);
+        tlTap.to('#cardShadow', {
+          scale: 1.25,
+          opacity: 0.9,
+          duration: 0.45,
+          ease: 'power2.out',
+          transformOrigin: 'center center'
+        }, 0);
+        if (cardGloss) {
+          tlTap.fromTo(cardGloss, { x: -35, opacity: 0.1 }, { x: 35, opacity: 0.5, duration: 0.45, ease: 'power2.inOut' }, 0);
+        }
+      }
 
       setTimeout(() => {
-        // 2. Emisi Gelombang RFID & Verifikasi Berhasil
+        // 2. Kontak Sensor & Emisi Gelombang RFID
         if (ring1) ring1.classList.add('active-pulse');
         if (ring2) ring2.classList.add('active-pulse');
         if (stage) stage.classList.add('turnstile-open');
         if (gateLcd) gateLcd.classList.add('verified');
 
+        if (scanBeam && typeof gsap !== 'undefined') {
+          gsap.fromTo(scanBeam, { opacity: 0 }, { opacity: 0.75, duration: 0.28, yoyo: true, repeat: 1, ease: 'power1.inOut' });
+        }
+
+        if (readerLed) {
+          readerLed.style.fill = '#10b981';
+          readerLed.style.filter = 'drop-shadow(0 0 14px #10b981)';
+        }
+        if (terminalStatusDot) {
+          terminalStatusDot.style.background = '#10b981';
+          terminalStatusDot.style.boxShadow = '0 0 12px #10b981';
+        }
+
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
         
         if (lcdStatus) {
-          lcdStatus.innerHTML = `<span style="color:#34d399;">✓ Presensi Berhasil!</span> <span style="font-size:0.75rem;color:#94a3b8;font-weight:400;">(${timeStr})</span>`;
-        }
-        if (lcdTag) {
-          lcdTag.textContent = 'UID: 04A1B2C3 • HADIR TEPAT';
-          lcdTag.style.borderColor = 'rgba(16,185,129,0.5)';
-          lcdTag.style.color = '#34d399';
-        }
-        if (simulasiCounter) {
-          simulasiCounter.textContent = `Tap Sukses (${timeStr} WIB) • Gerbang Terbuka ✓`;
+          lcdStatus.innerHTML = `<span style="color:#10b981;font-weight:700;">✓ Akses Terbuka</span> <span style="font-size:0.75rem;color:#94a3b8;font-weight:400;">(${timeStr} WIB)</span>`;
         }
 
-        // 3. Reset Gerbang Kembali ke Status Siaga Setelah 3.2 Detik
+        // 3. Flap Barrier Sayap Kaca Membuka Mulus
+        if (typeof gsap !== 'undefined') {
+          if (wingLeft) gsap.to(wingLeft, { rotation: -72, transformOrigin: '224px 225px', duration: 0.65, ease: 'power3.out' });
+          if (wingRight) gsap.to(wingRight, { rotation: 72, transformOrigin: '416px 225px', duration: 0.65, ease: 'power3.out' });
+        }
+
+        // 4. Reset Gerbang Kembali ke Status Siaga Setelah 2.8 Detik
         setTimeout(() => {
-          if (hand) hand.classList.remove('tapping');
+          if (typeof gsap !== 'undefined') {
+            if (wingLeft) gsap.to(wingLeft, { rotation: 0, transformOrigin: '224px 225px', duration: 0.58, ease: 'power2.inOut' });
+            if (wingRight) gsap.to(wingRight, { rotation: 0, transformOrigin: '416px 225px', duration: 0.58, ease: 'power2.inOut' });
+            gsap.to('#studentHandCard', {
+              y: 0,
+              rotation: 0,
+              duration: 0.65,
+              ease: 'power2.out',
+              onComplete: startIdleFloat
+            });
+            gsap.to('#cardShadow', {
+              scale: 1,
+              opacity: 0.58,
+              duration: 0.65,
+              ease: 'power2.out',
+              transformOrigin: 'center center'
+            });
+          }
+
           if (ring1) ring1.classList.remove('active-pulse');
           if (ring2) ring2.classList.remove('active-pulse');
           if (stage) stage.classList.remove('turnstile-open');
           if (gateLcd) gateLcd.classList.remove('verified');
 
+          if (readerLed) {
+            readerLed.style.fill = '#38bdf8';
+            readerLed.style.filter = '';
+          }
+          if (terminalStatusDot) {
+            terminalStatusDot.style.background = '#38bdf8';
+            terminalStatusDot.style.boxShadow = '0 0 8px #38bdf8';
+          }
           if (lcdStatus) {
             lcdStatus.textContent = 'Menunggu Kartu Pelajar...';
           }
-          if (lcdTag) {
-            lcdTag.textContent = 'RFID 13.56MHz';
-            lcdTag.style.borderColor = 'rgba(56, 189, 248, 0.25)';
-            lcdTag.style.color = '#38bdf8';
-          }
           tapCooldown = false;
-        }, 3200);
+        }, 2800);
 
-      }, 400);
+      }, 450);
     }
 
-    // Loop Otomatis: Berikan animasi tap santai setiap 9 detik jika idle
+    // Siklus simulasi otomatis santai setiap 10 detik
     autoTapTimer = setInterval(() => {
       if (!tapCooldown && document.visibilityState === 'visible') {
         triggerTapSimulation();
       }
-    }, 9000);
+    }, 10000);
 
     // Initial tap animation on load
-    setTimeout(triggerTapSimulation, 1200);
+    setTimeout(triggerTapSimulation, 1000);
 
-    // ===== 3. SWITCH AUTH TAB (MASUK VS DAFTAR) =====
+    // ===== 4. SWITCH AUTH TAB (MASUK VS DAFTAR) =====
     function switchAuthTab(mode) {
       bersihkanNotif('notifBoxLogin');
       bersihkanNotif('notifBoxRegister');
@@ -1489,7 +1612,7 @@
         formLogin.style.display = 'none';
         formReg.style.display = 'block';
         heading.textContent = 'Pendaftaran Akun';
-        subtitle.textContent = 'Daftarkan akun siswa baru untuk integrasi kartu RFID dan rekap presensi digital.';
+        subtitle.textContent = 'Daftarkan akun baru untuk akses presensi digital.';
         footerSwitch.innerHTML = `Sudah punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('login')">Masuk ke akun</a>`;
       } else {
         tabReg.classList.remove('active');
@@ -1497,7 +1620,7 @@
         formReg.style.display = 'none';
         formLogin.style.display = 'block';
         heading.textContent = 'Presensi Siswa';
-        subtitle.textContent = 'Silakan masuk menggunakan akun Google sekolah atau email terdaftar untuk mengakses rekapitulasi kehadiran.';
+        subtitle.textContent = 'Masuk untuk mengakses portal presensi harian.';
         footerSwitch.innerHTML = `Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>`;
       }
     }
@@ -1634,7 +1757,7 @@
       }
     }
 
-    // ===== 4. STRICT ISOLATION & SESSION SANITATION =====
+    // ===== 5. STRICT ISOLATION & SESSION SANITATION =====
     // Fresh visitors, guests, and unauthenticated users STAY on index.html
     // ISOLASI KETAT ADMIN: index.html TIDAK PERNAH mengarahkan ke dashboard admin (admin.html)
     const userSession = getSessionUser();
@@ -1678,7 +1801,7 @@
       }
     }
 
-    // ===== 5. LOGIN DENGAN GOOGLE =====
+    // ===== 6. LOGIN DENGAN GOOGLE =====
     async function handleGoogleLogin() {
       bersihkanNotif('notifBoxLogin');
       bersihkanNotif('notifBoxRegister');
@@ -1764,7 +1887,7 @@
       }
     }
 
-    // ===== 6. LOGIN DENGAN EMAIL =====
+    // ===== 7. LOGIN DENGAN EMAIL =====
     async function handleLoginEmail(e) {
       e.preventDefault();
       bersihkanNotif('notifBoxLogin');
@@ -1819,7 +1942,7 @@
       }
     }
 
-    // ===== 7. REGISTER DENGAN EMAIL =====
+    // ===== 8. REGISTER DENGAN EMAIL =====
     async function handleRegisterEmail(e) {
       e.preventDefault();
       bersihkanNotif('notifBoxRegister');
