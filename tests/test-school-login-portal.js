@@ -50,6 +50,7 @@ assert.ok(!indexHtml.includes('pinkBlushGlow'), 'Filter rona pink (#pinkBlushGlo
 // Validasi Full Body Chassis Robot
 assert.ok(indexHtml.includes('id="neckJoint"'), 'Maskot harus memiliki leher mekanik / collar joint (#neckJoint)');
 assert.ok(indexHtml.includes('id="roboTorso"'), 'Maskot harus memiliki panel dada / torso chassis (#roboTorso)');
+assert.ok(indexHtml.includes('id="upperBodyChassis"'), 'Maskot harus memiliki container sasis tubuh atas (#upperBodyChassis)');
 assert.ok(indexHtml.includes('id="powerCore"'), 'Maskot harus memiliki glowing power core reactor (#powerCore)');
 assert.ok(indexHtml.includes('id="shoulderLeft"') && indexHtml.includes('id="shoulderRight"'), 'Maskot harus memiliki bahu mekanik (shoulder pads)');
 assert.ok(indexHtml.includes('id="roboWaist"'), 'Maskot harus memiliki pinggang mekanik (#roboWaist)');
@@ -69,6 +70,12 @@ assert.ok(indexHtml.includes('👀 Robo-NESAS Mengintip Sandi...'), 'Pesan statu
 // Deep Functional Simulation: DOM & Event Loop Validation
 const vm = require('vm');
 const elements = {
+  roboNesasMascot: {
+    getBoundingClientRect: () => ({ left: 100, top: 100, width: 280, height: 330 })
+  },
+  upperBodyChassis: { style: {} },
+  roboTorso: { style: {} },
+  neckJoint: { style: {} },
   mascotRoot: { style: {} },
   mascotStatusText: { textContent: '' },
   mascotStatusDot: { style: {} },
@@ -146,9 +153,15 @@ const mockClearTimeout = (id) => {
   clearTimeout(id);
 };
 
+const windowEventListeners = {};
 const sandbox = {
   document: mockDoc,
-  window: {},
+  window: {
+    innerWidth: 1200,
+    innerHeight: 800,
+    addEventListener: (evt, fn) => { windowEventListeners[evt] = fn; },
+    requestAnimationFrame: (fn) => setTimeout(fn, 0)
+  },
   gsap: mockGsap,
   setTimeout: mockSetTimeout,
   clearTimeout: mockClearTimeout,
@@ -175,6 +188,8 @@ assert.ok(elements.mascotStatusText.textContent.includes('🙈 Robo-NESAS Menutu
 assert.strictEqual(elements.mascotHead.style.rotation, -8, 'Kepala robot harus tilt -8deg');
 assert.strictEqual(elements.armLeft.style.x, 2, 'Lengan kiri merapat ke bodi');
 assert.strictEqual(elements.armRight.style.x, -2, 'Lengan kanan merapat ke bodi');
+assert.ok((elements.upperBodyChassis.style.x < 0) || (elements.roboTorso.style.x < 0), 'Badan robot condong santai/malu ke kiri saat password focus');
+assert.ok(elements.neckJoint.style.x < 0, 'Leher robot condong santai/malu ke kiri saat password focus');
 
 // 3.3 Toggle Password Visibility (password -> text) -> One-Eye Peek (o <) Clean
 sandbox.peekEyes(true);
@@ -202,6 +217,8 @@ assert.strictEqual(st.isPeeking, false, 'isPeeking harus false saat mata terbuka
 assert.strictEqual(elements.normalEyesGroup.style.opacity, '1', 'normalEyesGroup harus tampak (opacity 1)');
 assert.strictEqual(elements.closedEyesGroup.style.opacity, '0', 'closedEyesGroup harus redup (opacity 0)');
 assert.strictEqual(elements.mascotHead.style.rotation, 0, 'Kepala robot kembali tegak');
+assert.strictEqual(elements.upperBodyChassis.style.x ?? elements.roboTorso.style.x, 0, 'Badan robot kembali tegak');
+assert.strictEqual(elements.neckJoint.style.x, 0, 'Leher robot kembali tegak');
 assert.ok(elements.mascotStatusText.textContent.includes('Siap Mengawasi Presensi'), 'Status text harus kembali ke siap mengawasi');
 
 // 3.6 Focus Transition: Password -> Gmail Input (Validasi Fix Bug Mata Tertutup)
@@ -237,13 +254,29 @@ if (elements.regEmail.eventListeners['input']) {
   assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala tilt ke arah formulir saat regEmail input');
 }
 
-// 3.8 Dynamic Eye Tracking on Typing in Right Column
+// 3.8 Dynamic Eye Tracking & Body Leaning on Typing in Right Column
 if (elements.loginEmail.eventListeners['input']) {
   elements.loginEmail.eventListeners['input']({ target: { value: 'siswa@gmail.com' } });
-  assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri harus melirik ke kanan ke arah kartu formulir');
-  assert.ok(elements.pupilRight.style.x > 0, 'Pupil kanan harus melirik ke kanan ke arah kartu formulir');
-  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala robot harus tilt ke kanan menghadap formulir input');
+  assert.ok(elements.pupilLeft.style.x >= 7, 'Pupil kiri harus melirik ke kanan ke arah kartu formulir (x >= 7px)');
+  assert.ok(elements.pupilRight.style.x >= 7, 'Pupil kanan harus melirik ke kanan ke arah kartu formulir (x >= 7px)');
+  assert.ok(elements.mascotHead.style.rotation >= 5, 'Kepala robot harus tilt ke kanan menghadap formulir input (rotation >= 5deg)');
+  assert.ok((elements.upperBodyChassis.style.x >= 4) || (elements.roboTorso.style.x >= 4), 'Badan/torso robot harus condong ke kanan (x >= 4px) saat mengetik');
+  assert.ok((elements.upperBodyChassis.style.rotation >= 2.5) || (elements.roboTorso.style.rotation >= 2.5), 'Badan/torso robot harus rotasi ke kanan (rotation >= 2.5deg) saat mengetik');
+  assert.ok(elements.neckJoint.style.x >= 3, 'Leher robot harus condong ke kanan (x >= 3px) saat mengetik');
+  assert.ok(elements.neckJoint.style.rotation >= 2, 'Leher robot harus rotasi ke kanan (rotation >= 2deg) saat mengetik');
   assert.ok(elements.mascotStatusText.textContent.includes('Memperhatikan'), 'Status robot memperhatikan saat user mengetik');
+}
+
+// 3.8.1 Interactive Mouse Tracking (Opsi 2)
+if (typeof sandbox.window.updateMouseGaze === 'function') {
+  if (elements.loginEmail.eventListeners['blur']) {
+    elements.loginEmail.eventListeners['blur']();
+  }
+  sandbox.window.updateMouseGaze(900, 200);
+  assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri melacak kursor mouse ke arah kanan');
+  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala robot menoleh ke arah kursor mouse');
+  assert.ok((elements.upperBodyChassis.style.x > 0) || (elements.roboTorso.style.x > 0), 'Badan robot condong mikro mengikuti kursor mouse');
+  assert.ok(elements.neckJoint.style.x > 0, 'Leher robot condong mikro mengikuti kursor mouse');
 }
 
 // 3.9 Success Authentication -> Happy Arc Eyes (^ _ ^)
@@ -263,8 +296,14 @@ assert.strictEqual(st.isHappySuccess, false, 'isHappySuccess kembali false');
 assert.strictEqual(elements.antennaLight.style.fill, '#38bdf8', 'Antenna beacon kembali ke cyan saat openEyes');
 assert.strictEqual(elements.powerCoreCenter.style.fill, '#38bdf8', 'Power core reactor kembali ke cyan saat openEyes');
 
-// 3.9 Validation of Fallback Mode without GSAP
+// 3.10 Validation of Fallback Mode without GSAP
 const fallbackElements = {
+  roboNesasMascot: {
+    getBoundingClientRect: () => ({ left: 100, top: 100, width: 280, height: 330 })
+  },
+  upperBodyChassis: { style: {} },
+  roboTorso: { style: {} },
+  neckJoint: { style: {} },
   mascotRoot: { style: {} },
   mascotStatusText: { textContent: '' },
   mascotStatusDot: { style: {} },
@@ -284,7 +323,11 @@ const fallbackSandbox = {
     querySelector: () => fallbackElements.mascotStatusDot,
     addEventListener: () => {}
   },
-  window: {},
+  window: {
+    innerWidth: 1200,
+    innerHeight: 800,
+    addEventListener: () => {}
+  },
   setTimeout: () => {},
   clearTimeout: () => {}
 };
@@ -295,12 +338,25 @@ fallbackSandbox.closeEyes();
 assert.strictEqual(fallbackElements.closedEyesGroup.style.opacity, '1', 'Fallback closed eyes harus opacity 1');
 assert.ok(fallbackElements.mascotHead.style.transform.includes('-8deg'), 'Fallback mascotHead transform harus tilt -8deg');
 assert.ok(fallbackElements.armLeft.style.transform.includes('2px'), 'Fallback armLeft transform harus merapat');
+assert.ok(fallbackElements.upperBodyChassis.style.transform.includes('-1.5deg') || fallbackElements.roboTorso.style.transform.includes('-1.5deg'), 'Fallback upper body transform harus condong malu saat closedEyes');
+assert.ok(fallbackElements.neckJoint.style.transform.includes('-1.2deg'), 'Fallback neckJoint transform harus condong saat closedEyes');
 
 fallbackSandbox.openEyes();
 assert.strictEqual(fallbackElements.normalEyesGroup.style.opacity, '1', 'Fallback normal eyes harus opacity 1');
 assert.strictEqual(fallbackElements.mascotHead.style.transform, 'none', 'Fallback mascotHead transform harus none');
+assert.strictEqual(fallbackElements.upperBodyChassis.style.transform || fallbackElements.roboTorso.style.transform, 'none', 'Fallback upper body transform harus none');
+assert.strictEqual(fallbackElements.neckJoint.style.transform, 'none', 'Fallback neckJoint transform harus none');
 
-console.log('✓ Maskot Robo-NESAS: Full Body Chassis, Watch ke Kanan, Clean Closed Eyes (> <), One-Eye Peek (o <), dan Happy Eyes (^ _ ^) teruji secara fungsional 100%');
+// Fallback mouse tracking test
+if (typeof fallbackSandbox.window.updateMouseGaze === 'function') {
+  fallbackSandbox.window.updateMouseGaze(900, 200);
+  assert.ok(fallbackElements.pupilLeft.style.x > 0, 'Fallback pupilLeft melacak mouse');
+  assert.ok(fallbackElements.mascotHead.style.rotation > 0, 'Fallback mascotHead rotation melacak mouse');
+  assert.ok(fallbackElements.upperBodyChassis.style.rotation > 0 || fallbackElements.roboTorso.style.rotation > 0, 'Fallback upper body rotation melacak mouse');
+  assert.ok(fallbackElements.neckJoint.style.rotation > 0, 'Fallback neckJoint rotation melacak mouse');
+}
+
+console.log('✓ Maskot Robo-NESAS: Full Body Chassis, Watch ke Kanan, Condong Tubuh & Leher, Clean Closed Eyes (> <), One-Eye Peek (o <), dan Happy Eyes (^ _ ^) teruji secara fungsional 100%');
 
 // TEST 4: Keutuhan Seluruh ID DOM Form & Auth
 console.log('\n[Test 4] Validasi Keutuhan Seluruh 17 ID DOM Form Login, Register & Auth');

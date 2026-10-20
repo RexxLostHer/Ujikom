@@ -94,7 +94,6 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 480px;
   }
 
   .portal-left-content {
@@ -103,9 +102,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
-    gap: 0;
+    gap: 1.5rem;
   }
 
   .portal-right-slide {
@@ -228,17 +226,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     pointer-events: none;
     user-select: none;
-    padding: 0;
+    padding: 0.4rem 0 0.6rem;
   }
 
   .robo-mascot-svg {
-    width: 300px;
-    height: 355px;
-    filter: drop-shadow(0 20px 42px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 35px rgba(56, 189, 248, 0.22));
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 280px;
+    height: 330px;
+    filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.18));
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .signal-wave {
@@ -760,22 +757,19 @@
     border-radius: 99px;
   }
 
-  @media (max-width: 960px) {
+  @media (max-width: 768px) {
     .school-portal-split-container {
       grid-template-columns: 1fr;
-      gap: 1.8rem;
+      gap: 2.2rem;
       padding: 2rem 1.2rem;
-    }
-    .portal-left-slide {
-      min-height: auto;
     }
     .portal-left-content {
       max-width: 440px;
-      gap: 0;
+      gap: 1.2rem;
     }
     .robo-mascot-svg {
-      width: 250px;
-      height: 295px;
+      width: 240px;
+      height: 285px;
     }
   }
 
@@ -833,7 +827,7 @@
              ══════════════════════════════════════════════════════════ -->
         <div class="mascot-stage" id="mascotStage">
           
-          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="300" height="355" xmlns="http://www.w3.org/2000/svg">
+          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="280" height="330" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Metallic body gradient -->
               <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
@@ -927,85 +921,88 @@
                 <circle cx="138" cy="223.5" r="2" fill="#f59e0b"/>
               </g>
 
-              <!-- 4. Robotic Torso & Chest Chassis -->
-              <g id="roboTorso">
-                <!-- Titanium Chest Plate -->
-                <path d="M 66 158 L 174 158 Q 186 158 184 170 L 168 210 Q 166 216 158 216 L 82 216 Q 74 216 72 210 L 56 170 Q 54 158 66 158 Z" fill="url(#roboTorsoGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="2"/>
-                
-                <!-- Obsidian Bevel Inset & Accent Trim Lines -->
-                <path d="M 74 164 L 166 164 L 154 208 L 86 208 Z" fill="#0b1329" stroke="rgba(56, 189, 248, 0.22)" stroke-width="1.2"/>
-                <line x1="72" y1="174" x2="98" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-                <line x1="168" y1="174" x2="142" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-                
-                <!-- Glowing Reactor Power Core LED -->
-                <g id="powerCore">
-                  <!-- Reactor Outer Collar & Heat Vents -->
-                  <circle cx="120" cy="188" r="16" fill="#090f1d" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5"/>
-                  <line x1="120" y1="172" x2="120" y2="175" stroke="#38bdf8" stroke-width="1.5"/>
-                  <line x1="120" y1="201" x2="120" y2="204" stroke="#38bdf8" stroke-width="1.5"/>
-                  <line x1="104" y1="188" x2="107" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
-                  <line x1="133" y1="188" x2="136" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
-                  <!-- Reactor Pulse Glow -->
-                  <circle id="powerCoreCenter" cx="120" cy="188" r="9.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
-                  <circle cx="120" cy="188" r="4.5" fill="#ffffff"/>
+              <!-- 4. Robotic Upper Body Chassis (Chest, Shoulders & Arms) -->
+              <g id="upperBodyChassis" style="transform-origin: 120px 216px;">
+                <!-- Robotic Torso & Chest Chassis -->
+                <g id="roboTorso">
+                  <!-- Titanium Chest Plate -->
+                  <path d="M 66 158 L 174 158 Q 186 158 184 170 L 168 210 Q 166 216 158 216 L 82 216 Q 74 216 72 210 L 56 170 Q 54 158 66 158 Z" fill="url(#roboTorsoGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="2"/>
+                  
+                  <!-- Obsidian Bevel Inset & Accent Trim Lines -->
+                  <path d="M 74 164 L 166 164 L 154 208 L 86 208 Z" fill="#0b1329" stroke="rgba(56, 189, 248, 0.22)" stroke-width="1.2"/>
+                  <line x1="72" y1="174" x2="98" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                  <line x1="168" y1="174" x2="142" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                  
+                  <!-- Glowing Reactor Power Core LED -->
+                  <g id="powerCore">
+                    <!-- Reactor Outer Collar & Heat Vents -->
+                    <circle cx="120" cy="188" r="16" fill="#090f1d" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5"/>
+                    <line x1="120" y1="172" x2="120" y2="175" stroke="#38bdf8" stroke-width="1.5"/>
+                    <line x1="120" y1="201" x2="120" y2="204" stroke="#38bdf8" stroke-width="1.5"/>
+                    <line x1="104" y1="188" x2="107" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
+                    <line x1="133" y1="188" x2="136" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
+                    <!-- Reactor Pulse Glow -->
+                    <circle id="powerCoreCenter" cx="120" cy="188" r="9.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                    <circle cx="120" cy="188" r="4.5" fill="#ffffff"/>
+                  </g>
+
+                  <!-- NESAS School IoT Emblem / Badge -->
+                  <g id="schoolBadge" transform="translate(105, 160)">
+                    <rect x="0" y="0" width="30" height="11" rx="3" fill="#090f1d" stroke="#f59e0b" stroke-width="1.2"/>
+                    <text x="15" y="8.2" font-family="'JetBrains Mono', monospace" font-size="6.8" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
+                  </g>
                 </g>
 
-                <!-- NESAS School IoT Emblem / Badge -->
-                <g id="schoolBadge" transform="translate(105, 160)">
-                  <rect x="0" y="0" width="30" height="11" rx="3" fill="#090f1d" stroke="#f59e0b" stroke-width="1.2"/>
-                  <text x="15" y="8.2" font-family="'JetBrains Mono', monospace" font-size="6.8" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
+                <!-- 6. Mechanical Shoulder Pads -->
+                <!-- LEFT SHOULDER PAD -->
+                <g id="shoulderLeft">
+                  <path d="M 44 160 Q 58 154 68 160 L 66 176 Q 52 180 42 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                  <path d="M 46 163 Q 56 158 64 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
+
+                <!-- RIGHT SHOULDER PAD -->
+                <g id="shoulderRight">
+                  <path d="M 196 160 Q 182 154 172 160 L 174 176 Q 188 180 198 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                  <path d="M 194 163 Q 184 158 176 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
+
+                <!-- 7. Mechanical Arms & Hands -->
+                <!-- LEFT ARM & HAND -->
+                <g id="armLeft" class="robo-arm" style="transform-origin: 48px 170px;">
+                  <circle cx="48" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                  <path d="M 48 172 Q 36 188 52 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
+                  <g id="handLeft">
+                    <rect x="42" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                    <g id="fingersLeft" style="transform-origin: 52px 200px;">
+                      <rect x="40" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                      <rect x="46" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
+                      <rect x="52.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                      <rect x="59" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    </g>
+                  </g>
+                </g>
+
+                <!-- RIGHT ARM & HAND -->
+                <g id="armRight" class="robo-arm" style="transform-origin: 192px 170px;">
+                  <circle cx="192" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                  <path d="M 192 172 Q 204 188 188 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
+                  <g id="handRight">
+                    <rect x="178" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                    <g id="fingersRight" style="transform-origin: 188px 200px;">
+                      <rect x="176.5" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                      <rect x="182.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                      <rect x="189" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
+                      <rect x="195.5" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    </g>
+                  </g>
                 </g>
               </g>
 
               <!-- 5. Mechanical Neck / Collar Joint -->
-              <g id="neckJoint">
+              <g id="neckJoint" style="transform-origin: 120px 158px;">
                 <rect x="98" y="142" width="44" height="20" rx="5" fill="#0f172a" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
                 <line x1="104" y1="148" x2="136" y2="148" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
                 <line x1="104" y1="154" x2="136" y2="154" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
-              </g>
-
-              <!-- 6. Mechanical Shoulder Pads -->
-              <!-- LEFT SHOULDER PAD -->
-              <g id="shoulderLeft">
-                <path d="M 44 160 Q 58 154 68 160 L 66 176 Q 52 180 42 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-                <path d="M 46 163 Q 56 158 64 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
-              </g>
-
-              <!-- RIGHT SHOULDER PAD -->
-              <g id="shoulderRight">
-                <path d="M 196 160 Q 182 154 172 160 L 174 176 Q 188 180 198 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-                <path d="M 194 163 Q 184 158 176 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
-              </g>
-
-              <!-- 7. Mechanical Arms & Hands -->
-              <!-- LEFT ARM & HAND -->
-              <g id="armLeft" class="robo-arm" style="transform-origin: 48px 170px;">
-                <circle cx="48" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
-                <path d="M 48 172 Q 36 188 52 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
-                <g id="handLeft">
-                  <rect x="42" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-                  <g id="fingersLeft" style="transform-origin: 52px 200px;">
-                    <rect x="40" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                    <rect x="46" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
-                    <rect x="52.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                    <rect x="59" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                  </g>
-                </g>
-              </g>
-
-              <!-- RIGHT ARM & HAND -->
-              <g id="armRight" class="robo-arm" style="transform-origin: 192px 170px;">
-                <circle cx="192" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
-                <path d="M 192 172 Q 204 188 188 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
-                <g id="handRight">
-                  <rect x="178" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-                  <g id="fingersRight" style="transform-origin: 188px 200px;">
-                    <rect x="176.5" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                    <rect x="182.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                    <rect x="189" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
-                    <rect x="195.5" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                  </g>
-                </g>
               </g>
 
               <!-- 8. Head & Dome Body (with Integrated Antenna, Signal Waves & Ear Sensors) -->
@@ -1433,12 +1430,21 @@
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
     // Clean Closed Eyes (> <) on Password Focus & Clean One-Eye Peek (o <) on Password Visibility Toggle
+    // Option 2: Interactive Mouse Cursor Tracking + Dynamic Upper Body & Neck Leaning
     let isEyesClosed = false;
     let isCovering = false;
     let isPeeking = false;
     let isHappySuccess = false;
+    let isInputFocused = false;
     let isMascotInitialized = false;
     let mascotBlurTimer = null;
+    let mouseRafId = null;
+    let lastMouseX = null;
+    let lastMouseY = null;
+
+    function getUpperBodyTarget() {
+      return document.getElementById('upperBodyChassis') ? '#upperBodyChassis' : '#roboTorso';
+    }
 
     function setMascotStatus(text, dotColor = '#38bdf8') {
       const textEl = document.getElementById('mascotStatusText');
@@ -1462,11 +1468,32 @@
       if (head) {
         head.style.transform = isPivoted ? 'rotate(-8deg) translateY(4px)' : 'none';
         head.style.transformOrigin = '120px 96px';
+        head.style.rotation = isPivoted ? -8 : 0;
+        head.style.y = isPivoted ? 4 : 0;
       }
       const armL = document.getElementById('armLeft');
       const armR = document.getElementById('armRight');
-      if (armL) armL.style.transform = isPivoted ? 'translate(2px, -2px)' : 'none';
-      if (armR) armR.style.transform = isPivoted ? 'translate(-2px, -2px)' : 'none';
+      if (armL) {
+        armL.style.transform = isPivoted ? 'translate(2px, -2px)' : 'none';
+        armL.style.x = isPivoted ? 2 : 0;
+      }
+      if (armR) {
+        armR.style.transform = isPivoted ? 'translate(-2px, -2px)' : 'none';
+        armR.style.x = isPivoted ? -2 : 0;
+      }
+
+      const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
+      if (ub) {
+        ub.style.transform = isPivoted ? 'rotate(-1.5deg) translateX(-2px)' : 'none';
+        ub.style.rotation = isPivoted ? -1.5 : 0;
+        ub.style.x = isPivoted ? -2 : 0;
+      }
+      const nk = document.getElementById('neckJoint');
+      if (nk) {
+        nk.style.transform = isPivoted ? 'rotate(-1.2deg) translateX(-1.5px)' : 'none';
+        nk.style.rotation = isPivoted ? -1.2 : 0;
+        nk.style.x = isPivoted ? -1.5 : 0;
+      }
 
       if (activeGroup === 'normalEyesGroup') {
         const antLight = document.getElementById('antennaLight');
@@ -1483,10 +1510,13 @@
         clearTimeout(mascotBlurTimer);
         mascotBlurTimer = null;
       }
+      isInputFocused = false;
       isEyesClosed = true;
       isCovering = true;
       isPeeking = false;
       isHappySuccess = false;
+
+      const upperBodyTarget = getUpperBodyTarget();
 
       // Lengan/tangan santai sedikit merapat ke bodi
       if (typeof gsap !== 'undefined') {
@@ -1523,6 +1553,22 @@
           duration: 0.35,
           ease: 'power2.out'
         });
+
+        // Torso dada & leher condong santai / sedikit malu ke kiri
+        gsap.to(upperBodyTarget, {
+          x: -2,
+          rotation: -1.5,
+          transformOrigin: '120px 216px',
+          duration: 0.35,
+          ease: 'power2.out'
+        });
+        gsap.to('#neckJoint', {
+          x: -1.5,
+          rotation: -1.2,
+          transformOrigin: '120px 158px',
+          duration: 0.35,
+          ease: 'power2.out'
+        });
       } else {
         setMascotEyeFallback('closedEyesGroup', true);
       }
@@ -1538,10 +1584,13 @@
         clearTimeout(mascotBlurTimer);
         mascotBlurTimer = null;
       }
+      isInputFocused = false;
       isEyesClosed = false;
       isCovering = false;
       isPeeking = false;
       isHappySuccess = false;
+
+      const upperBodyTarget = getUpperBodyTarget();
 
       if (typeof gsap !== 'undefined') {
         // Tangan kembali normal di samping (idle)
@@ -1554,8 +1603,10 @@
         // Kembalikan glow cyan pada beacon dan power core jika sebelumnya happy state
         gsap.to(['#antennaLight', '#powerCoreCenter'], { fill: '#38bdf8', scale: 1, duration: 0.3 });
 
-        // Kepala kembali tegak
+        // Kepala, torso dan leher kembali tegak
         gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
+        gsap.to(upperBodyTarget, { x: 0, rotation: 0, transformOrigin: '120px 216px', duration: 0.35, ease: 'power2.out' });
+        gsap.to('#neckJoint', { x: 0, rotation: 0, transformOrigin: '120px 158px', duration: 0.35, ease: 'power2.out' });
 
         // Normal eyes open back with smooth pop
         gsap.fromTo('#normalEyesGroup',
@@ -1568,6 +1619,15 @@
       }
 
       setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
+
+      // Sambung kembali pelacakan kursor mouse jika kursor tersedia
+      if (lastMouseX !== null && lastMouseY !== null) {
+        setTimeout(() => {
+          if (!isInputFocused && !isEyesClosed && !isCovering && !isPeeking && !isHappySuccess) {
+            updateMouseGaze(lastMouseX, lastMouseY);
+          }
+        }, 150);
+      }
     }
     const uncoverEyes = openEyes;
 
@@ -1578,6 +1638,8 @@
         mascotBlurTimer = null;
       }
       isPeeking = !!shouldPeek;
+
+      const upperBodyTarget = getUpperBodyTarget();
 
       if (shouldPeek) {
         isEyesClosed = true;
@@ -1591,6 +1653,8 @@
             { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
           );
           gsap.to('#mascotHead', { rotation: -5, y: 2, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
+          gsap.to(upperBodyTarget, { x: 2, rotation: 1.2, transformOrigin: '120px 216px', duration: 0.3, ease: 'power2.out' });
+          gsap.to('#neckJoint', { x: 1.5, rotation: 1.0, transformOrigin: '120px 158px', duration: 0.3, ease: 'power2.out' });
           gsap.to(['#armLeft'], { x: 2, y: -2, rotation: 0, duration: 0.25 });
           gsap.to(['#armRight'], { x: -2, y: -2, rotation: 0, duration: 0.25 });
         } else {
@@ -1610,16 +1674,21 @@
         clearTimeout(mascotBlurTimer);
         mascotBlurTimer = null;
       }
+      isInputFocused = false;
       isEyesClosed = false;
       isCovering = false;
       isPeeking = false;
       isHappySuccess = true;
+
+      const upperBodyTarget = getUpperBodyTarget();
 
       if (typeof gsap !== 'undefined') {
         // Tangan santai di samping
         gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35 });
         gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
         gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.3 });
+        gsap.to(upperBodyTarget, { x: 0, rotation: 0, transformOrigin: '120px 216px', duration: 0.35 });
+        gsap.to('#neckJoint', { x: 0, rotation: 0, transformOrigin: '120px 158px', duration: 0.35 });
 
         // Fade out other eye groups, fade in happy arcs (^ _ ^)
         gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.2 });
@@ -1639,6 +1708,130 @@
     }
     const happyMascotEyes = triggerHappyEyes;
 
+    // 3.8 Option 2: Interactive Mouse Cursor Tracking (Mata, Kepala, Badan & Leher Melacak Kursor)
+    function updateMouseGaze(clientX, clientY) {
+      if (isInputFocused || isEyesClosed || isCovering || isPeeking || isHappySuccess) {
+        return;
+      }
+      const mascotSvg = document.getElementById('roboNesasMascot');
+      if (!mascotSvg) return;
+
+      const winW = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1200;
+      const winH = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 800;
+
+      let centerX = winW * 0.28;
+      let centerY = winH * 0.45;
+
+      if (typeof mascotSvg.getBoundingClientRect === 'function') {
+        const rect = mascotSvg.getBoundingClientRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+          centerX = rect.left + rect.width * (120 / 240);
+          centerY = rect.top + rect.height * (86 / 285);
+        }
+      }
+
+      const deltaX = clientX - centerX;
+      const deltaY = clientY - centerY;
+
+      const maxDistX = Math.max(winW * 0.65, 350);
+      const maxDistY = Math.max(winH * 0.65, 300);
+
+      const normX = Math.max(-1, Math.min(1, deltaX / maxDistX));
+      const normY = Math.max(-1, Math.min(1, deltaY / maxDistY));
+
+      // Range spesifikasi teknis Opsi 2:
+      // Bola mata: x: -7px s/d +7px, y: -5px s/d +5px
+      const targetPupilX = normX * 7.0;
+      const targetPupilY = normY * 5.0;
+
+      // Kepala robot: rotasi -4deg s/d +5deg
+      const targetHeadRot = normX >= 0 ? (normX * 5.0) : (normX * 4.0);
+      const targetHeadY = normY * 3.0;
+
+      // Leher dan sasis dada ikut condong mikro mengikuti kursor
+      const targetTorsoX = normX * 2.2;
+      const targetTorsoRot = normX * 1.8;
+      const targetNeckX = normX * 1.6;
+      const targetNeckRot = normX * 1.4;
+
+      const upperBodyTarget = getUpperBodyTarget();
+
+      if (typeof gsap !== 'undefined') {
+        gsap.to(['#pupilLeft', '#pupilRight'], {
+          x: targetPupilX,
+          y: targetPupilY,
+          duration: 0.38,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        });
+        gsap.to('#mascotHead', {
+          rotation: targetHeadRot,
+          y: targetHeadY,
+          transformOrigin: '120px 96px',
+          duration: 0.42,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        });
+        gsap.to(upperBodyTarget, {
+          x: targetTorsoX,
+          rotation: targetTorsoRot,
+          transformOrigin: '120px 216px',
+          duration: 0.45,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        });
+        gsap.to('#neckJoint', {
+          x: targetNeckX,
+          rotation: targetNeckRot,
+          transformOrigin: '120px 158px',
+          duration: 0.42,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        });
+      } else {
+        const pl = document.getElementById('pupilLeft');
+        const pr = document.getElementById('pupilRight');
+        const hd = document.getElementById('mascotHead');
+        const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
+        const nk = document.getElementById('neckJoint');
+        if (pl && pl.style) { pl.style.x = targetPupilX; pl.style.y = targetPupilY; }
+        if (pr && pr.style) { pr.style.x = targetPupilX; pr.style.y = targetPupilY; }
+        if (hd && hd.style) {
+          hd.style.rotation = targetHeadRot;
+          hd.style.y = targetHeadY;
+          hd.style.transform = `translate(0px, ${targetHeadY}px) rotate(${targetHeadRot}deg)`;
+        }
+        if (ub && ub.style) {
+          ub.style.rotation = targetTorsoRot;
+          ub.style.x = targetTorsoX;
+          ub.style.transform = `translate(${targetTorsoX}px, 0px) rotate(${targetTorsoRot}deg)`;
+        }
+        if (nk && nk.style) {
+          nk.style.rotation = targetNeckRot;
+          nk.style.x = targetNeckX;
+          nk.style.transform = `translate(${targetNeckX}px, 0px) rotate(${targetNeckRot}deg)`;
+        }
+      }
+    }
+
+    function handleMouseMove(e) {
+      if (!e) return;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      if (mouseRafId) return;
+
+      const raf = (typeof window !== 'undefined' && window.requestAnimationFrame)
+        ? window.requestAnimationFrame
+        : ((fn) => setTimeout(fn, 16));
+
+      mouseRafId = raf(() => {
+        mouseRafId = null;
+        if (lastMouseX !== null && lastMouseY !== null) {
+          updateMouseGaze(lastMouseX, lastMouseY);
+        }
+      });
+    }
+
     // Expose helpers globally
     window.closeEyes = closeEyes;
     window.coverEyes = closeEyes;
@@ -1649,13 +1842,22 @@
     window.peekMascotEyes = peekEyes;
     window.triggerHappyEyes = triggerHappyEyes;
     window.happyMascotEyes = triggerHappyEyes;
-    window.getMascotState = () => ({ isEyesClosed, isCovering, isPeeking, isHappySuccess });
+    window.updateMouseGaze = updateMouseGaze;
+    window.handleMouseMove = handleMouseMove;
+    window.getMascotState = () => ({
+      isEyesClosed,
+      isCovering,
+      isPeeking,
+      isHappySuccess,
+      isInputFocused
+    });
 
     function handlePasswordFocus(e) {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
         mascotBlurTimer = null;
       }
+      isInputFocused = false;
       const inp = e && e.target ? e.target : document.activeElement;
       if (inp && inp.type === 'text') {
         peekEyes(true);
@@ -1665,6 +1867,7 @@
     }
 
     function handlePasswordInput(e) {
+      isInputFocused = false;
       const inp = e && e.target ? e.target : document.activeElement;
       if (inp && inp.type === 'text') {
         if (!isPeeking) peekEyes(true);
@@ -1763,47 +1966,58 @@
         }
       }
 
-      // 3.3 Dynamic Humanized Eye Tracking on Email / Text Typing in the Right Column
-      // Robot di kolom kiri melirik dinamis, halus, dan hidup (humanized) ke arah formulir input tempat user mengetik
+      // 3.3 Dynamic Humanized Eye Tracking & Right Leaning on Email / Text Typing in the Right Column
+      // Robot di kolom kiri condong dan nongol nyata ke kanan menghadap kartu formulir saat user mengetik
       function handleEmailInput(val) {
         if (isHappySuccess) return;
+        isInputFocused = true;
         ensureEyesOpen();
 
         const len = (val || '').length;
         const maxLen = 30;
         const ratio = Math.max(0, Math.min(1, len / maxLen));
-        const isSplitDesktop = typeof window === 'undefined' || !window.innerWidth || window.innerWidth > 960;
+        const isSplitDesktop = typeof window === 'undefined' || !window.innerWidth || window.innerWidth > 768;
 
-        // Humanized Organic Gaze:
-        // Saat desktop: melirik lembut ke kartu formulir di kanan (x: 4.2px s/d 7.5px) dengan sudut pandang mata sedikit ke bawah (y: 2.2px s/d 3.4px)
-        // Disertai mikro-saccade halus saat mengetik setiap karakter
-        const microSaccadeX = Math.sin(len * 1.6) * 0.35;
-        const microSaccadeY = Math.cos(len * 2.1) * 0.25;
+        // Humanized Organic Gaze & Reading Micro-Saccade:
+        const microSaccadeX = Math.sin(len * 1.5) * 0.4;
+        const microSaccadeY = Math.cos(len * 2.0) * 0.3;
 
-        const targetX = isSplitDesktop 
-          ? (4.2 + (ratio * 3.3) + microSaccadeX) 
+        // Spesifikasi Teknis Leaning ke Kanan:
+        // Torso dada: x: 4px s/d 7px, rotation: 2.5deg s/d 4.5deg
+        // Leher: x: 3px s/d 5px, rotation: 2deg s/d 3.5deg
+        // Kepala: rotation: 5deg s/d 8deg, y: 2px s/d 4px
+        // Pupil mata: melirik tajam x: 7px s/d 11px, y: 2.5px s/d 4px
+        const targetPupilX = isSplitDesktop 
+          ? (7.0 + (ratio * 4.0) + microSaccadeX) 
           : (((ratio - 0.5) * 3.5) + microSaccadeX);
-        const targetY = isSplitDesktop 
-          ? (2.2 + (ratio * 1.2) + microSaccadeY) 
+        const targetPupilY = isSplitDesktop 
+          ? (2.5 + (ratio * 1.5) + microSaccadeY) 
           : (4.0 + (ratio * 1.5) + microSaccadeY);
 
-        // Kepala robot menoleh sangat lembut dan alami (1.8deg s/d 3.0deg) dengan sedikit lag di belakang pupil
-        const targetRot = isSplitDesktop ? (1.8 + (ratio * 1.2)) : 0;
-        const targetHeadY = isSplitDesktop ? 0.8 : 1.5;
+        const targetHeadRot = isSplitDesktop ? (5.0 + (ratio * 3.0)) : 0;
+        const targetHeadY = isSplitDesktop ? (2.0 + (ratio * 2.0)) : 1.5;
+
+        const targetTorsoX = isSplitDesktop ? (4.0 + (ratio * 3.0)) : 0;
+        const targetTorsoRot = isSplitDesktop ? (2.5 + (ratio * 2.0)) : 0;
+
+        const targetNeckX = isSplitDesktop ? (3.0 + (ratio * 2.0)) : 0;
+        const targetNeckRot = isSplitDesktop ? (2.0 + (ratio * 1.5)) : 0;
+
+        const upperBodyTarget = getUpperBodyTarget();
 
         if (typeof gsap !== 'undefined') {
-          // Pupil melirik terlebih dahulu dengan sine.out yang halus dan organik
+          // Pupil melirik tajam terlebih dahulu dengan sine.out yang halus
           gsap.to(['#pupilLeft', '#pupilRight'], {
-            x: targetX,
-            y: targetY,
+            x: targetPupilX,
+            y: targetPupilY,
             duration: 0.28,
             ease: 'sine.out',
             overwrite: 'auto'
           });
 
-          // Kepala robot mengikuti dengan jeda organik alami (power1.out)
+          // Kepala robot menoleh dan condong ke arah form
           gsap.to('#mascotHead', {
-            rotation: targetRot,
+            rotation: targetHeadRot,
             y: targetHeadY,
             transformOrigin: '120px 96px',
             duration: 0.36,
@@ -1811,8 +2025,28 @@
             overwrite: 'auto'
           });
 
-          // Mikro-kedip spontan manusiawi saat mengetik banyak karakter
-          if (len > 0 && len % 14 === 0) {
+          // Sasis dada / torso condong dan nongol nyata ke kanan
+          gsap.to(upperBodyTarget, {
+            x: targetTorsoX,
+            rotation: targetTorsoRot,
+            transformOrigin: '120px 216px',
+            duration: 0.42,
+            ease: 'power2.out',
+            overwrite: 'auto'
+          });
+
+          // Leher ikut condong fleksibel menyelaraskan torso dan kepala
+          gsap.to('#neckJoint', {
+            x: targetNeckX,
+            rotation: targetNeckRot,
+            transformOrigin: '120px 158px',
+            duration: 0.40,
+            ease: 'power2.out',
+            overwrite: 'auto'
+          });
+
+          // Mikro-kedip membaca pada interval pengetikan
+          if (len > 0 && len % 12 === 0) {
             gsap.timeline()
               .to(['#pupilLeft', '#pupilRight'], { scaleY: 0.15, transformOrigin: 'center center', duration: 0.08, ease: 'power1.in' })
               .to(['#pupilLeft', '#pupilRight'], { scaleY: 1, transformOrigin: 'center center', duration: 0.1, ease: 'power1.out' });
@@ -1822,11 +2056,24 @@
           const pl = document.getElementById('pupilLeft');
           const pr = document.getElementById('pupilRight');
           const hd = document.getElementById('mascotHead');
-          if (pl && pl.style) pl.style.x = targetX;
-          if (pr && pr.style) pr.style.x = targetX;
+          const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
+          const nk = document.getElementById('neckJoint');
+          if (pl && pl.style) { pl.style.x = targetPupilX; pl.style.y = targetPupilY; }
+          if (pr && pr.style) { pr.style.x = targetPupilX; pr.style.y = targetPupilY; }
           if (hd && hd.style) {
-            hd.style.rotation = targetRot;
-            hd.style.transform = `rotate(${targetRot}deg)`;
+            hd.style.rotation = targetHeadRot;
+            hd.style.y = targetHeadY;
+            hd.style.transform = `translate(0px, ${targetHeadY}px) rotate(${targetHeadRot}deg)`;
+          }
+          if (ub && ub.style) {
+            ub.style.rotation = targetTorsoRot;
+            ub.style.x = targetTorsoX;
+            ub.style.transform = `translate(${targetTorsoX}px, 0px) rotate(${targetTorsoRot}deg)`;
+          }
+          if (nk && nk.style) {
+            nk.style.rotation = targetNeckRot;
+            nk.style.x = targetNeckX;
+            nk.style.transform = `translate(${targetNeckX}px, 0px) rotate(${targetNeckRot}deg)`;
           }
         }
 
@@ -1835,17 +2082,49 @@
 
       function handleEmailFocus(e) {
         if (isHappySuccess) return;
+        isInputFocused = true;
         ensureEyesOpen();
         handleEmailInput((e && e.target ? e.target.value : '') || '');
       }
 
       function handleEmailBlur() {
+        isInputFocused = false;
         if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
+
+        const upperBodyTarget = getUpperBodyTarget();
+
         if (typeof gsap !== 'undefined') {
           gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.42, ease: 'power2.out', overwrite: 'auto' });
           gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+          gsap.to(upperBodyTarget, { x: 0, rotation: 0, transformOrigin: '120px 216px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+          gsap.to('#neckJoint', { x: 0, rotation: 0, transformOrigin: '120px 158px', duration: 0.42, ease: 'power2.out', overwrite: 'auto' });
+        } else {
+          const pl = document.getElementById('pupilLeft');
+          const pr = document.getElementById('pupilRight');
+          const hd = document.getElementById('mascotHead');
+          const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
+          const nk = document.getElementById('neckJoint');
+          if (pl && pl.style) { pl.style.x = 0; pl.style.y = 0; }
+          if (pr && pr.style) { pr.style.x = 0; pr.style.y = 0; }
+          if (hd && hd.style) { hd.style.rotation = 0; hd.style.y = 0; hd.style.transform = 'none'; }
+          if (ub && ub.style) { ub.style.rotation = 0; ub.style.x = 0; ub.style.transform = 'none'; }
+          if (nk && nk.style) { nk.style.rotation = 0; nk.style.x = 0; nk.style.transform = 'none'; }
         }
         setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
+
+        // Melanjutkan pelacakan kursor mouse jika ada
+        if (lastMouseX !== null && lastMouseY !== null) {
+          setTimeout(() => {
+            if (!isInputFocused && !isEyesClosed && !isCovering && !isPeeking && !isHappySuccess) {
+              updateMouseGaze(lastMouseX, lastMouseY);
+            }
+          }, 200);
+        }
+      }
+
+      // Pasang listener mouse move pada window (di-throttle 60fps via requestAnimationFrame)
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('mousemove', handleMouseMove, { passive: true });
       }
 
       if (loginEmail) {
