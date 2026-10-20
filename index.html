@@ -94,6 +94,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    min-height: 480px;
   }
 
   .portal-left-content {
@@ -102,8 +103,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    gap: 1.5rem;
+    gap: 0;
   }
 
   .portal-right-slide {
@@ -112,6 +114,20 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+  }
+
+  /* Screen-reader & telemetry hidden metadata container */
+  .sr-only,
+  .portal-system-metadata {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -212,16 +228,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     pointer-events: none;
     user-select: none;
-    padding: 0.4rem 0 0.6rem;
+    padding: 0;
   }
 
   .robo-mascot-svg {
-    width: 280px;
-    height: 330px;
-    filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.18));
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 300px;
+    height: 355px;
+    filter: drop-shadow(0 20px 42px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 35px rgba(56, 189, 248, 0.22));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .signal-wave {
@@ -746,16 +763,19 @@
   @media (max-width: 960px) {
     .school-portal-split-container {
       grid-template-columns: 1fr;
-      gap: 2.2rem;
+      gap: 1.8rem;
       padding: 2rem 1.2rem;
+    }
+    .portal-left-slide {
+      min-height: auto;
     }
     .portal-left-content {
       max-width: 440px;
-      gap: 1.2rem;
+      gap: 0;
     }
     .robo-mascot-svg {
-      width: 240px;
-      height: 285px;
+      width: 250px;
+      height: 295px;
     }
   }
 
@@ -802,35 +822,18 @@
   <main class="school-portal-split-container school-portal-centered-container">
 
     <!-- ══════════════════════════════════════════════════════════
-         SLIDE / KOLOM KIRI: PANGGUNG ROBOT MASKOT ROBO-NESAS & IDENTITAS
+         SLIDE / KOLOM KIRI: PANGGUNG ROBOT MASKOT ROBO-NESAS (MURNI VISUAL)
          ══════════════════════════════════════════════════════════ -->
     <div class="portal-left-slide">
       <div class="portal-left-content">
 
-        <!-- HEADER BRANDING SEKOLAH & LIVE SCHOOL CLOCK -->
-        <header class="school-portal-header">
-          <div class="school-brand-row">
-            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
-            <div class="school-brand-text">
-              <h1>SMK Negeri 1 Sumedang</h1>
-              <p>Rekayasa Perangkat Lunak (RPL IoT)</p>
-            </div>
-          </div>
-
-          <div class="header-clock-pill">
-            <span class="clock-icon-dot"></span>
-            <span class="live-clock-text" id="liveClock">06:45:00 WIB</span>
-            <span class="clock-session-tag">06.30 - 08.00 WIB</span>
-          </div>
-        </header>
-
         <!-- ══════════════════════════════════════════════════════════
-             KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
+             PANGGUNG MASKOT ROBOT INTERAKTIF: ROBO-NESAS
              FULL ROBOTIC BODY CHASSIS (CLEAN WATCH & COVER EYES)
              ══════════════════════════════════════════════════════════ -->
         <div class="mascot-stage" id="mascotStage">
           
-          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="280" height="330" xmlns="http://www.w3.org/2000/svg">
+          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="300" height="355" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Metallic body gradient -->
               <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1110,33 +1113,48 @@
 
             </g>
           </svg>
+        </div>
 
-      <div class="mascot-status-pill" id="mascotStatusPill">
-        <span class="mascot-status-dot"></span>
-        <span id="mascotStatusText">Robo-NESAS • Siap Mengawasi Presensi</span>
+        <!-- METADATA & TELEMETRI RESMI (TERSEMBUNYI UNTUK MENJAGA PANGGUNG MURNI ROBOT) -->
+        <div class="portal-system-metadata sr-only" aria-hidden="true">
+          <header class="school-portal-header">
+            <div class="school-brand-row">
+              <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
+              <div class="school-brand-text">
+                <h1>SMK Negeri 1 Sumedang</h1>
+                <p>Rekayasa Perangkat Lunak (RPL IoT)</p>
+              </div>
+            </div>
+
+            <div class="header-clock-pill">
+              <span class="clock-icon-dot"></span>
+              <span class="live-clock-text" id="liveClock">06:45:00 WIB</span>
+              <span class="clock-session-tag">06.30 - 08.00 WIB</span>
+            </div>
+          </header>
+
+          <div class="mascot-status-pill" id="mascotStatusPill">
+            <span class="mascot-status-dot"></span>
+            <span id="mascotStatusText">Robo-NESAS • Siap Mengawasi Presensi</span>
+          </div>
+
+          <footer class="portal-bottom-bar">
+            <div class="telemetry-item">
+              <span class="telemetry-dot"></span>
+              <span>ESP32 • RC522: <strong>READY</strong></span>
+            </div>
+            <div class="telemetry-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+              </svg>
+              <span>Firebase Realtime Database Connected</span>
+            </div>
+            <div class="telemetry-item telemetry-latency-tag" id="telemetryLatency">42ms</div>
+          </footer>
+        </div>
+
       </div>
-
     </div>
-
-    <!-- ══════════════════════════════════════════════════════════
-         BOTTOM TELEMETRY & HARDWARE GATEWAY BAR (KOLOM KIRI)
-         ══════════════════════════════════════════════════════════ -->
-    <footer class="portal-bottom-bar">
-      <div class="telemetry-item">
-        <span class="telemetry-dot"></span>
-        <span>ESP32 • RC522: <strong>READY</strong></span>
-      </div>
-      <div class="telemetry-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
-          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-        </svg>
-        <span>Firebase Realtime Database Connected</span>
-      </div>
-      <div class="telemetry-item telemetry-latency-tag" id="telemetryLatency">42ms</div>
-    </footer>
-
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════
      SLIDE / KOLOM KANAN: KARTU FORMULIR AUTENTIKASI SISWA & GURU
@@ -1664,12 +1682,13 @@
         const loginPassword = document.getElementById('loginPassword');
         const regPassword = document.getElementById('regPassword');
         if (activeEl === loginPassword || activeEl === regPassword) return;
-        if (activeEl && ((activeEl.classList && activeEl.classList.contains('btn-eye-toggle')) || (activeEl.closest && activeEl.closest('.auth-input-field')))) {
+        // Tetap tutup/intip HANYA jika yang aktif adalah tombol toggle lihat password itu sendiri
+        if (activeEl && ((activeEl.classList && activeEl.classList.contains('btn-eye-toggle')) || (activeEl.closest && activeEl.closest('.btn-eye-toggle')))) {
           return;
         }
         if (isHappySuccess) return;
         openEyes();
-      }, 100);
+      }, 60);
     }
 
     function initRoboNesasMascot() {
@@ -1733,51 +1752,98 @@
       }
       setTimeout(blinkEyes, 2500);
 
-      // 3.3 Dynamic Eye Tracking on Email / Text Typing in the Right Column
-      // Robot di kolom kiri melirik dinamis ke arah kanan (ke arah formulir input tempat user mengetik)
+      // Helper untuk membangunkan robot & membuka mata seketika jika sebelumnya tertutup dari password
+      function ensureEyesOpen() {
+        if (mascotBlurTimer) {
+          clearTimeout(mascotBlurTimer);
+          mascotBlurTimer = null;
+        }
+        if (isEyesClosed || isCovering || isPeeking) {
+          openEyes();
+        }
+      }
+
+      // 3.3 Dynamic Humanized Eye Tracking on Email / Text Typing in the Right Column
+      // Robot di kolom kiri melirik dinamis, halus, dan hidup (humanized) ke arah formulir input tempat user mengetik
       function handleEmailInput(val) {
-        if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
+        if (isHappySuccess) return;
+        ensureEyesOpen();
+
         const len = (val || '').length;
         const maxLen = 30;
         const ratio = Math.max(0, Math.min(1, len / maxLen));
         const isSplitDesktop = typeof window === 'undefined' || !window.innerWidth || window.innerWidth > 960;
 
-        // Melirik ke arah kanan jika split 2 slide (desktop), atau ke arah kartu formulir di bawah jika mobile
-        const targetX = isSplitDesktop ? (8 + (ratio * 6)) : ((ratio - 0.5) * 6);
-        const targetY = isSplitDesktop ? (3 + (ratio * 3)) : 7;
-        const targetRot = isSplitDesktop ? 4.5 : 0;
+        // Humanized Organic Gaze:
+        // Saat desktop: melirik lembut ke kartu formulir di kanan (x: 4.2px s/d 7.5px) dengan sudut pandang mata sedikit ke bawah (y: 2.2px s/d 3.4px)
+        // Disertai mikro-saccade halus saat mengetik setiap karakter
+        const microSaccadeX = Math.sin(len * 1.6) * 0.35;
+        const microSaccadeY = Math.cos(len * 2.1) * 0.25;
+
+        const targetX = isSplitDesktop 
+          ? (4.2 + (ratio * 3.3) + microSaccadeX) 
+          : (((ratio - 0.5) * 3.5) + microSaccadeX);
+        const targetY = isSplitDesktop 
+          ? (2.2 + (ratio * 1.2) + microSaccadeY) 
+          : (4.0 + (ratio * 1.5) + microSaccadeY);
+
+        // Kepala robot menoleh sangat lembut dan alami (1.8deg s/d 3.0deg) dengan sedikit lag di belakang pupil
+        const targetRot = isSplitDesktop ? (1.8 + (ratio * 1.2)) : 0;
+        const targetHeadY = isSplitDesktop ? 0.8 : 1.5;
 
         if (typeof gsap !== 'undefined') {
+          // Pupil melirik terlebih dahulu dengan sine.out yang halus dan organik
           gsap.to(['#pupilLeft', '#pupilRight'], {
             x: targetX,
             y: targetY,
-            duration: 0.18,
-            ease: 'power2.out'
+            duration: 0.28,
+            ease: 'sine.out',
+            overwrite: 'auto'
           });
 
-          // Head tilt sedikit menghadap formulir
+          // Kepala robot mengikuti dengan jeda organik alami (power1.out)
           gsap.to('#mascotHead', {
             rotation: targetRot,
-            y: 1,
+            y: targetHeadY,
             transformOrigin: '120px 96px',
-            duration: 0.22,
-            ease: 'power2.out'
+            duration: 0.36,
+            ease: 'power1.out',
+            overwrite: 'auto'
           });
+
+          // Mikro-kedip spontan manusiawi saat mengetik banyak karakter
+          if (len > 0 && len % 14 === 0) {
+            gsap.timeline()
+              .to(['#pupilLeft', '#pupilRight'], { scaleY: 0.15, transformOrigin: 'center center', duration: 0.08, ease: 'power1.in' })
+              .to(['#pupilLeft', '#pupilRight'], { scaleY: 1, transformOrigin: 'center center', duration: 0.1, ease: 'power1.out' });
+          }
+        } else {
+          // Fallback tanpa GSAP (misal pada unit test mock)
+          const pl = document.getElementById('pupilLeft');
+          const pr = document.getElementById('pupilRight');
+          const hd = document.getElementById('mascotHead');
+          if (pl && pl.style) pl.style.x = targetX;
+          if (pr && pr.style) pr.style.x = targetX;
+          if (hd && hd.style) {
+            hd.style.rotation = targetRot;
+            hd.style.transform = `rotate(${targetRot}deg)`;
+          }
         }
 
         setMascotStatus('Robo-NESAS Memperhatikan...', '#38bdf8');
       }
 
       function handleEmailFocus(e) {
-        if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
+        if (isHappySuccess) return;
+        ensureEyesOpen();
         handleEmailInput((e && e.target ? e.target.value : '') || '');
       }
 
       function handleEmailBlur() {
         if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
         if (typeof gsap !== 'undefined') {
-          gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.35, ease: 'power2.out' });
-          gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
+          gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.42, ease: 'power2.out', overwrite: 'auto' });
+          gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
         }
         setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
       }

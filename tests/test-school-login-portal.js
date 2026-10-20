@@ -204,7 +204,21 @@ assert.strictEqual(elements.closedEyesGroup.style.opacity, '0', 'closedEyesGroup
 assert.strictEqual(elements.mascotHead.style.rotation, 0, 'Kepala robot kembali tegak');
 assert.ok(elements.mascotStatusText.textContent.includes('Siap Mengawasi Presensi'), 'Status text harus kembali ke siap mengawasi');
 
-// 3.6 Focus & Input on Register Form Fields (regPassword, regNama, regEmail)
+// 3.6 Focus Transition: Password -> Gmail Input (Validasi Fix Bug Mata Tertutup)
+sandbox.handlePasswordFocus({ target: elements.loginPassword });
+assert.strictEqual(sandbox.window.getMascotState().isEyesClosed, true, 'Mata robot harus tertutup saat di password field');
+
+// User kemudian klik field email Gmail (loginEmail)
+mockDoc.activeElement = elements.loginEmail;
+if (elements.loginEmail.eventListeners['focus']) {
+  elements.loginEmail.eventListeners['focus']({ target: elements.loginEmail });
+}
+st = sandbox.window.getMascotState();
+assert.strictEqual(st.isEyesClosed, false, 'Mata robot HARUS otomatis terbuka saat pindah dari password ke email');
+assert.strictEqual(elements.normalEyesGroup.style.opacity, '1', 'normalEyesGroup harus kembali tampak (opacity 1)');
+assert.ok(elements.pupilLeft.style.x > 0, 'Pupil melirik memperhatikan email');
+
+// 3.7 Focus & Input on Register Form Fields (regPassword, regNama, regEmail)
 sandbox.handlePasswordFocus({ target: elements.regPassword });
 st = sandbox.window.getMascotState();
 assert.strictEqual(st.isEyesClosed, true, 'isEyesClosed harus true saat regPassword focus');
@@ -223,7 +237,7 @@ if (elements.regEmail.eventListeners['input']) {
   assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala tilt ke arah formulir saat regEmail input');
 }
 
-// 3.7 Dynamic Eye Tracking on Typing in Right Column
+// 3.8 Dynamic Eye Tracking on Typing in Right Column
 if (elements.loginEmail.eventListeners['input']) {
   elements.loginEmail.eventListeners['input']({ target: { value: 'siswa@gmail.com' } });
   assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri harus melirik ke kanan ke arah kartu formulir');
@@ -232,7 +246,7 @@ if (elements.loginEmail.eventListeners['input']) {
   assert.ok(elements.mascotStatusText.textContent.includes('Memperhatikan'), 'Status robot memperhatikan saat user mengetik');
 }
 
-// 3.8 Success Authentication -> Happy Arc Eyes (^ _ ^)
+// 3.9 Success Authentication -> Happy Arc Eyes (^ _ ^)
 sandbox.triggerHappyEyes();
 st = sandbox.window.getMascotState();
 assert.strictEqual(st.isHappySuccess, true, 'isHappySuccess harus true saat autentikasi sukses');
