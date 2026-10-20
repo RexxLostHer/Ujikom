@@ -26,7 +26,10 @@ assert.ok(indexHtml.includes('#080e1a'), 'index.html harus menggunakan palet Obs
 assert.ok(indexHtml.includes('#0f172a'), 'index.html harus menggunakan palet Obsidian surface #0f172a');
 assert.ok(indexHtml.includes('school-portal-split-container') || indexHtml.includes('portal-left-slide'), 'index.html harus memuat class split layout 2 slide / 2 kolom');
 assert.ok(indexHtml.includes('portal-right-slide'), 'index.html harus memiliki wadah kolom kanan portal-right-slide');
-console.log('✓ Branding SMKN 1 Sumedang dan Split 2-Slide Portal Layout terverifikasi aktif');
+assert.ok(indexHtml.includes('max-width: 500px'), 'Kartu auth-form-card harus berukuran lapang max-width 500px');
+assert.ok(indexHtml.includes('padding: 2.5rem 2.4rem'), 'Kartu auth-form-card harus memiliki padding lapang 2.5rem 2.4rem');
+assert.ok(indexHtml.includes('grid-template-columns: 1fr 1.1fr'), 'Container harus menggunakan grid-template-columns 1fr 1.1fr yang seimbang dan lapang');
+console.log('✓ Branding SMKN 1 Sumedang, Split 2-Slide Portal Layout, dan Kartu Lapang terverifikasi aktif');
 
 // TEST 2: Jam Digital Live Sekolah, Sesi Presensi & Telemetri IoT
 console.log('\n[Test 2] Validasi Jam Digital Live Sekolah & Telemetri Realtime');
