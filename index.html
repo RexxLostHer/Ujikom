@@ -219,7 +219,7 @@
 
   .robo-mascot-svg {
     width: 280px;
-    height: 220px;
+    height: 330px;
     filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.18));
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -754,8 +754,8 @@
       gap: 1.2rem;
     }
     .robo-mascot-svg {
-      width: 220px;
-      height: 175px;
+      width: 240px;
+      height: 285px;
     }
   }
 
@@ -776,8 +776,8 @@
       border-radius: 20px;
     }
     .robo-mascot-svg {
-      width: 195px;
-      height: 155px;
+      width: 210px;
+      height: 250px;
     }
     .school-brand-text h1 {
       font-size: 1.2rem;
@@ -813,7 +813,7 @@
             <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
             <div class="school-brand-text">
               <h1>SMK Negeri 1 Sumedang</h1>
-              <p>Sistem Presensi RFID Terintegrasi • Rekayasa Perangkat Lunak (RPL IoT)</p>
+              <p>Rekayasa Perangkat Lunak (RPL IoT)</p>
             </div>
           </div>
 
@@ -826,17 +826,24 @@
 
         <!-- ══════════════════════════════════════════════════════════
              KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
-             "WATCH & COVER EYES WITH BLUSHING CHEEKS"
+             FULL ROBOTIC BODY CHASSIS (CLEAN WATCH & COVER EYES)
              ══════════════════════════════════════════════════════════ -->
         <div class="mascot-stage" id="mascotStage">
           
-          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 190" width="280" height="220" xmlns="http://www.w3.org/2000/svg">
+          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="280" height="330" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Metallic body gradient -->
               <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#1e293b"/>
                 <stop offset="50%" stop-color="#0f172a"/>
                 <stop offset="100%" stop-color="#090f1d"/>
+              </linearGradient>
+
+              <!-- Torso titanium chassis gradient -->
+              <linearGradient id="roboTorsoGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="55%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#070c17"/>
               </linearGradient>
               
               <!-- Visor screen gradient -->
@@ -868,197 +875,241 @@
                   <feMergeNode in="SourceGraphic"/>
                 </feMerge>
               </filter>
-
-              <!-- Pink Blush Glow Filter for Malu-Malu / Blushing Pose -->
-              <filter id="pinkBlushGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
             </defs>
 
-        <!-- Mascott Root Floating Group -->
-        <g id="mascotRoot">
-          
-          <!-- 1. Antenna & Signal Waves -->
-          <g id="mascotAntenna">
-            <path class="signal-wave wave-1" d="M 106 14 A 16 16 0 0 1 134 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-            <path class="signal-wave wave-2" d="M 98 8 A 25 25 0 0 1 142 8" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
-            <!-- Rod -->
-            <line x1="120" y1="20" x2="120" y2="38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="120" cy="38" r="4.5" fill="#334155"/>
-            <!-- Glowing Beacon Tip -->
-            <circle id="antennaLight" cx="120" cy="18" r="5.5" fill="#38bdf8" filter="url(#beaconGlow)"/>
-            <circle cx="120" cy="18" r="2.5" fill="#ffffff"/>
-          </g>
+            <!-- Mascot Root Floating Group -->
+            <g id="mascotRoot">
+              
+              <!-- 1. Ground Hover Shadow & Field -->
+              <g id="hoverShadowGroup">
+                <ellipse cx="120" cy="274" rx="55" ry="5" fill="rgba(56, 189, 248, 0.22)" filter="url(#neonCyanGlow)"/>
+                <ellipse cx="120" cy="274" rx="28" ry="3" fill="#38bdf8" opacity="0.35"/>
+              </g>
 
-          <!-- 2. Robot Ears / Audio Sensors -->
-          <rect x="26" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
-          <line x1="33" y1="76" x2="33" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
-          
-          <rect x="200" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
-          <line x1="207" y1="76" x2="207" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
-
-          <!-- 3. Head & Dome Body -->
-          <g id="mascotHead">
-            <!-- Main Dome -->
-            <rect x="36" y="36" width="168" height="120" rx="44" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.38)" stroke-width="2"/>
-            
-            <!-- Subtle Dome Highlight / Glass sheen arc -->
-            <path d="M 58 44 Q 120 38 182 44" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="2" stroke-linecap="round"/>
-
-            <!-- 4. Visor Screen -->
-            <rect id="visorScreen" x="52" y="52" width="136" height="74" rx="22" fill="url(#roboVisorGrad)" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.5"/>
-            
-            <!-- Visor Scanlines -->
-            <line x1="58" y1="68" x2="182" y2="68" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
-            <line x1="58" y1="84" x2="182" y2="84" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
-            <line x1="58" y1="100" x2="182" y2="100" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
-            <line x1="58" y1="114" x2="182" y2="114" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
-
-            <!-- 5. Eyes Subsystem (Normal, Closed > <, One-Eye Peek o <, & Happy ^ ^) -->
-            <g id="eyesContainer">
-              <!-- 5.1 Normal Eyes & Dynamic Movable Pupils -->
-              <g id="normalEyesGroup">
-                <!-- Left Eye Sockets -->
-                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
-                <!-- Right Eye Sockets -->
-                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
-
-                <!-- Dynamic Movable Pupil Group -->
-                <g id="pupilsMovable">
-                  <!-- Left Pupil -->
-                  <g id="pupilLeft">
-                    <ellipse cx="86" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
-                    <ellipse cx="86" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
-                    <circle cx="83.5" cy="82.5" r="3.2" fill="#ffffff"/>
-                    <circle cx="88.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+              <!-- 2. Robotic Base: Hover Pod Chassis & Mechanical Leg Struts -->
+              <g id="hoverPodBase">
+                <!-- Dual Robotic Leg Struts / Pylons -->
+                <g id="robotLegs">
+                  <!-- Left Leg Strut -->
+                  <g id="legLeft">
+                    <path d="M 88 226 L 68 252" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M 88 226 L 68 252" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                    <rect x="58" y="248" width="20" height="7" rx="3.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.2"/>
+                    <circle cx="68" cy="251.5" r="2" fill="#38bdf8"/>
                   </g>
+                  <!-- Right Leg Strut -->
+                  <g id="legRight">
+                    <path d="M 152 226 L 172 252" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M 152 226 L 172 252" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                    <rect x="162" y="248" width="20" height="7" rx="3.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.2"/>
+                    <circle cx="172" cy="251.5" r="2" fill="#38bdf8"/>
+                  </g>
+                </g>
 
-                  <!-- Right Pupil -->
-                  <g id="pupilRight">
-                    <ellipse cx="154" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
-                    <ellipse cx="154" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
-                    <circle cx="151.5" cy="82.5" r="3.2" fill="#ffffff"/>
-                    <circle cx="156.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+                <!-- Central Hover Engine Thruster Housing -->
+                <path d="M 82 234 L 158 234 Q 166 234 162 244 L 150 256 Q 146 260 136 260 L 104 260 Q 94 260 90 256 L 78 244 Q 74 234 82 234 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                <!-- Central Repulsor Ring & Ion Glow -->
+                <ellipse cx="120" cy="256" rx="28" ry="6" fill="#090f1d" stroke="#38bdf8" stroke-width="1.5"/>
+                <ellipse cx="120" cy="256" rx="20" ry="3.8" fill="#38bdf8" filter="url(#neonCyanGlow)" opacity="0.9"/>
+                <circle cx="120" cy="256" r="2.5" fill="#ffffff"/>
+              </g>
+
+              <!-- 3. Robotic Waist & Pelvic Articulation -->
+              <g id="roboWaist">
+                <rect x="92" y="216" width="56" height="18" rx="6" fill="#0f172a" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                <!-- Waist Power Conduits & Cable Segments -->
+                <line x1="98" y1="221" x2="142" y2="221" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="98" y1="226" x2="142" y2="226" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+                <circle cx="102" cy="223.5" r="2" fill="#f59e0b"/>
+                <circle cx="138" cy="223.5" r="2" fill="#f59e0b"/>
+              </g>
+
+              <!-- 4. Robotic Torso & Chest Chassis -->
+              <g id="roboTorso">
+                <!-- Titanium Chest Plate -->
+                <path d="M 66 158 L 174 158 Q 186 158 184 170 L 168 210 Q 166 216 158 216 L 82 216 Q 74 216 72 210 L 56 170 Q 54 158 66 158 Z" fill="url(#roboTorsoGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="2"/>
+                
+                <!-- Obsidian Bevel Inset & Accent Trim Lines -->
+                <path d="M 74 164 L 166 164 L 154 208 L 86 208 Z" fill="#0b1329" stroke="rgba(56, 189, 248, 0.22)" stroke-width="1.2"/>
+                <line x1="72" y1="174" x2="98" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                <line x1="168" y1="174" x2="142" y2="186" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                
+                <!-- Glowing Reactor Power Core LED -->
+                <g id="powerCore">
+                  <!-- Reactor Outer Collar & Heat Vents -->
+                  <circle cx="120" cy="188" r="16" fill="#090f1d" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5"/>
+                  <line x1="120" y1="172" x2="120" y2="175" stroke="#38bdf8" stroke-width="1.5"/>
+                  <line x1="120" y1="201" x2="120" y2="204" stroke="#38bdf8" stroke-width="1.5"/>
+                  <line x1="104" y1="188" x2="107" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
+                  <line x1="133" y1="188" x2="136" y2="188" stroke="#38bdf8" stroke-width="1.5"/>
+                  <!-- Reactor Pulse Glow -->
+                  <circle id="powerCoreCenter" cx="120" cy="188" r="9.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                  <circle cx="120" cy="188" r="4.5" fill="#ffffff"/>
+                </g>
+
+                <!-- NESAS School IoT Emblem / Badge -->
+                <g id="schoolBadge" transform="translate(104, 161)">
+                  <rect x="0" y="0" width="32" height="14" rx="4" fill="#090f1d" stroke="#f59e0b" stroke-width="1.2"/>
+                  <text x="16" y="10" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
+                </g>
+              </g>
+
+              <!-- 5. Mechanical Neck / Collar Joint -->
+              <g id="neckJoint">
+                <rect x="98" y="142" width="44" height="20" rx="5" fill="#0f172a" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                <line x1="104" y1="148" x2="136" y2="148" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                <line x1="104" y1="154" x2="136" y2="154" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+              </g>
+
+              <!-- 6. Mechanical Shoulder Pads -->
+              <!-- LEFT SHOULDER PAD -->
+              <g id="shoulderLeft">
+                <path d="M 44 160 Q 58 154 68 160 L 66 176 Q 52 180 42 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                <path d="M 46 163 Q 56 158 64 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+              </g>
+
+              <!-- RIGHT SHOULDER PAD -->
+              <g id="shoulderRight">
+                <path d="M 196 160 Q 182 154 172 160 L 174 176 Q 188 180 198 172 Z" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                <path d="M 194 163 Q 184 158 176 163" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+              </g>
+
+              <!-- 7. Mechanical Arms & Hands -->
+              <!-- LEFT ARM & HAND -->
+              <g id="armLeft" class="robo-arm" style="transform-origin: 48px 170px;">
+                <circle cx="48" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                <path d="M 48 172 Q 36 188 52 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
+                <g id="handLeft">
+                  <rect x="42" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                  <g id="fingersLeft" style="transform-origin: 52px 200px;">
+                    <rect x="40" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    <rect x="46" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
+                    <rect x="52.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    <rect x="59" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
                   </g>
                 </g>
               </g>
 
-              <!-- 5.2 Closed Eyes State (> < / Sensor Nonaktif on Password Focus) -->
-              <g id="closedEyesGroup" style="opacity: 0; pointer-events: none;">
-                <!-- Left Eye Socket -->
-                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
-                <!-- Right Eye Socket -->
-                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
-
-                <!-- Left Squeezed Closed Eye (>) -->
-                <path id="closedEyeLeft" d="M 77 78 L 94 86 L 77 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
-                <line x1="73" y1="86" x2="69" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-
-                <!-- Right Squeezed Closed Eye (<) -->
-                <path id="closedEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
-                <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              <!-- RIGHT ARM & HAND -->
+              <g id="armRight" class="robo-arm" style="transform-origin: 192px 170px;">
+                <circle cx="192" cy="170" r="7.5" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+                <path d="M 192 172 Q 204 188 188 200" fill="none" stroke="url(#roboArmGrad)" stroke-width="8" stroke-linecap="round"/>
+                <g id="handRight">
+                  <rect x="178" y="194" width="20" height="14" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+                  <g id="fingersRight" style="transform-origin: 188px 200px;">
+                    <rect x="176.5" y="190" width="4.5" height="9" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    <rect x="182.5" y="187" width="5" height="11" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                    <rect x="189" y="186" width="5" height="12" rx="2" fill="#38bdf8" opacity="0.9"/>
+                    <rect x="195.5" y="189" width="4.5" height="10" rx="2" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                  </g>
+                </g>
               </g>
 
-              <!-- 5.3 One-Eye Peek / Winking State (o < on Password Visibility Toggle) -->
-              <g id="peekEyesGroup" style="opacity: 0; pointer-events: none;">
-                <!-- Left Socket & Open Peeking Eye (o) -->
-                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
-                <g id="peekPupilLeft">
-                  <ellipse cx="86" cy="89" rx="10" ry="12" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
-                  <ellipse cx="86" cy="89" rx="6.5" ry="8" fill="#0284c7"/>
-                  <circle cx="83.5" cy="85.5" r="3" fill="#ffffff"/>
-                  <circle cx="88.5" cy="91" r="1.4" fill="#ffffff" opacity="0.8"/>
+              <!-- 8. Antenna & Signal Waves -->
+              <g id="mascotAntenna">
+                <path class="signal-wave wave-1" d="M 106 14 A 16 16 0 0 1 134 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+                <path class="signal-wave wave-2" d="M 98 8 A 25 25 0 0 1 142 8" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+                <!-- Rod -->
+                <line x1="120" y1="20" x2="120" y2="38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="120" cy="38" r="4.5" fill="#334155"/>
+                <!-- Glowing Beacon Tip -->
+                <circle id="antennaLight" cx="120" cy="18" r="5.5" fill="#38bdf8" filter="url(#beaconGlow)"/>
+                <circle cx="120" cy="18" r="2.5" fill="#ffffff"/>
+              </g>
+
+              <!-- 9. Robot Ears / Audio Sensors -->
+              <rect x="26" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+              <line x1="33" y1="76" x2="33" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+              
+              <rect x="200" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+              <line x1="207" y1="76" x2="207" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+
+              <!-- 10. Head & Dome Body -->
+              <g id="mascotHead">
+                <!-- Main Dome -->
+                <rect x="36" y="36" width="168" height="114" rx="42" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.38)" stroke-width="2"/>
+                
+                <!-- Subtle Dome Highlight / Glass sheen arc -->
+                <path d="M 58 44 Q 120 38 182 44" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="2" stroke-linecap="round"/>
+
+                <!-- Visor Screen -->
+                <rect id="visorScreen" x="52" y="52" width="136" height="74" rx="22" fill="url(#roboVisorGrad)" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.5"/>
+                
+                <!-- Visor Scanlines -->
+                <line x1="58" y1="68" x2="182" y2="68" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+                <line x1="58" y1="84" x2="182" y2="84" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+                <line x1="58" y1="100" x2="182" y2="100" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+                <line x1="58" y1="114" x2="182" y2="114" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+
+                <!-- Eyes Subsystem (Normal, Clean Closed > <, Clean Peek o <, & Happy ^ ^) -->
+                <g id="eyesContainer">
+                  <!-- Normal Eyes & Dynamic Movable Pupils -->
+                  <g id="normalEyesGroup">
+                    <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+                    <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+                    <g id="pupilsMovable">
+                      <!-- Left Pupil -->
+                      <g id="pupilLeft">
+                        <ellipse cx="86" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                        <ellipse cx="86" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
+                        <circle cx="83.5" cy="82.5" r="3.2" fill="#ffffff"/>
+                        <circle cx="88.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+                      </g>
+                      <!-- Right Pupil -->
+                      <g id="pupilRight">
+                        <ellipse cx="154" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                        <ellipse cx="154" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
+                        <circle cx="151.5" cy="82.5" r="3.2" fill="#ffffff"/>
+                        <circle cx="156.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+                      </g>
+                    </g>
+                  </g>
+
+                  <!-- Closed Eyes State (> < / Clean Sensor Nonaktif) -->
+                  <g id="closedEyesGroup" style="opacity: 0; pointer-events: none;">
+                    <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+                    <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+                    <!-- Left Squeezed Closed Eye (>) -->
+                    <path id="closedEyeLeft" d="M 77 78 L 94 86 L 77 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                    <line x1="73" y1="86" x2="69" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                    <!-- Right Squeezed Closed Eye (<) -->
+                    <path id="closedEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                    <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                  </g>
+
+                  <!-- One-Eye Peek State (o < on Password Visibility Toggle) -->
+                  <g id="peekEyesGroup" style="opacity: 0; pointer-events: none;">
+                    <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+                    <g id="peekPupilLeft">
+                      <ellipse cx="86" cy="89" rx="10" ry="12" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                      <ellipse cx="86" cy="89" rx="6.5" ry="8" fill="#0284c7"/>
+                      <circle cx="83.5" cy="85.5" r="3" fill="#ffffff"/>
+                      <circle cx="88.5" cy="91" r="1.4" fill="#ffffff" opacity="0.8"/>
+                    </g>
+                    <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+                    <path id="peekEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                    <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                  </g>
+
+                  <!-- Happy Arc Eyes (Shown on Success: ^ _ ^) -->
+                  <g id="happyEyesGroup" style="opacity: 0; pointer-events: none;">
+                    <path d="M 74 91 Q 86 72 98 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
+                    <path d="M 142 91 Q 154 72 166 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
+                    <ellipse cx="72" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
+                    <ellipse cx="168" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
+                  </g>
                 </g>
 
-                <!-- Right Socket & Winking Closed Eye (<) -->
-                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
-                <path id="peekEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
-                <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <!-- Mouth / Audio Waveform LEDs -->
+                <g id="mascotMouth">
+                  <line x1="108" y1="133" x2="114" y2="133" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                  <line x1="117" y1="133" x2="123" y2="133" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+                  <line x1="126" y1="133" x2="132" y2="133" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                </g>
               </g>
 
-              <!-- 5.4 Happy Arc Eyes (Shown on Success: ^ _ ^) -->
-              <g id="happyEyesGroup" style="opacity: 0; pointer-events: none;">
-                <!-- Left Happy Arc -->
-                <path d="M 74 91 Q 86 72 98 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
-                <!-- Right Happy Arc -->
-                <path d="M 142 91 Q 154 72 166 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
-                <!-- Glowing Happy Cheeks -->
-                <ellipse cx="72" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
-                <ellipse cx="168" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
-              </g>
             </g>
-
-            <!-- 5.5 Blushing Cheeks (Rona Pipi Merona Pink Malu-Malu) -->
-            <g id="blushCheeksGroup" style="opacity: 0; pointer-events: none;">
-              <!-- Left Cheek Blush -->
-              <g id="blushLeft">
-                <ellipse cx="72" cy="103" rx="10.5" ry="6" fill="#fb7185" filter="url(#pinkBlushGlow)" opacity="0.9"/>
-                <ellipse cx="72" cy="103" rx="6.5" ry="3.5" fill="#f43f5e" opacity="0.9"/>
-                <!-- Kawaii Blush Marks -->
-                <line x1="67" y1="101" x2="71" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
-                <line x1="73" y1="101" x2="77" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
-              </g>
-              <!-- Right Cheek Blush -->
-              <g id="blushRight">
-                <ellipse cx="168" cy="103" rx="10.5" ry="6" fill="#fb7185" filter="url(#pinkBlushGlow)" opacity="0.9"/>
-                <ellipse cx="168" cy="103" rx="6.5" ry="3.5" fill="#f43f5e" opacity="0.9"/>
-                <!-- Kawaii Blush Marks -->
-                <line x1="163" y1="101" x2="167" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
-                <line x1="169" y1="101" x2="173" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
-              </g>
-            </g>
-
-            <!-- 6. Mouth / Audio Waveform LEDs -->
-            <g id="mascotMouth">
-              <line x1="108" y1="135" x2="114" y2="135" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-              <line x1="117" y1="135" x2="123" y2="135" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
-              <line x1="126" y1="135" x2="132" y2="135" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-            </g>
-
-            <!-- 7. NESAS School IoT Badge / Emblem -->
-            <g id="schoolBadge" transform="translate(104, 142)">
-              <rect x="0" y="0" width="32" height="18" rx="5" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2"/>
-              <text x="16" y="12" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
-            </g>
-          </g>
-
-          <!-- 8. Mechanical Arms & Hands for Covering Eyes -->
-          <!-- LEFT ARM & HAND -->
-          <g id="armLeft" class="robo-arm" style="transform-origin: 48px 156px;">
-            <circle cx="48" cy="156" r="8" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
-            <path d="M 46 156 Q 36 170 54 176" fill="none" stroke="url(#roboArmGrad)" stroke-width="9" stroke-linecap="round"/>
-            <g id="handLeft">
-              <rect x="44" y="166" width="22" height="15" rx="7" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-              <g id="fingersLeft" style="transform-origin: 55px 172px;">
-                <rect x="42" y="160" width="5" height="11" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                <rect x="49" y="157" width="5.5" height="14" rx="2.5" fill="#38bdf8" opacity="0.9"/>
-                <rect x="56" y="158" width="5.5" height="13" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                <rect x="63" y="161" width="5" height="10" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-              </g>
-            </g>
-          </g>
-
-          <!-- RIGHT ARM & HAND -->
-          <g id="armRight" class="robo-arm" style="transform-origin: 192px 156px;">
-            <circle cx="192" cy="156" r="8" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
-            <path d="M 194 156 Q 204 170 186 176" fill="none" stroke="url(#roboArmGrad)" stroke-width="9" stroke-linecap="round"/>
-            <g id="handRight">
-              <rect x="174" y="166" width="22" height="15" rx="7" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
-              <g id="fingersRight" style="transform-origin: 185px 172px;">
-                <rect x="172" y="161" width="5" height="10" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                <rect x="179" y="158" width="5.5" height="13" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-                <rect x="185.5" y="157" width="5.5" height="14" rx="2.5" fill="#38bdf8" opacity="0.9"/>
-                <rect x="193" y="160" width="5" height="11" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
-              </g>
-            </g>
-          </g>
-
-        </g>
-      </svg>
+          </svg>
 
       <div class="mascot-status-pill" id="mascotStatusPill">
         <span class="mascot-status-dot"></span>
@@ -1363,13 +1414,11 @@
     })();
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
-    // Closed Eyes (> <) on Password Focus with Blushing Pose & One-Eye Peek (o <) with Blushing Cheeks
-    // Compatible with: Robo-NESAS Menutup Mata... (Sensor Nonaktif) & Robo-NESAS Malu-Malu Menutup Mata... (Blushing)
+    // Clean Closed Eyes (> <) on Password Focus & Clean One-Eye Peek (o <) on Password Visibility Toggle
     let isEyesClosed = false;
     let isCovering = false;
     let isPeeking = false;
     let isHappySuccess = false;
-    let isBlushing = false;
     let isMascotInitialized = false;
     let mascotBlurTimer = null;
 
@@ -1384,28 +1433,26 @@
     }
 
     // Direct helper to set visibility for fallbacks if GSAP CDN is blocked
-    function setMascotEyeFallback(activeGroup, blushActive = false) {
+    function setMascotEyeFallback(activeGroup, isPivoted = false) {
       const groups = ['normalEyesGroup', 'closedEyesGroup', 'peekEyesGroup', 'happyEyesGroup'];
       groups.forEach((g) => {
         const el = document.getElementById(g);
         if (el) el.style.opacity = (g === activeGroup) ? '1' : '0';
       });
-      const blushEl = document.getElementById('blushCheeksGroup');
-      if (blushEl) blushEl.style.opacity = blushActive ? '1' : '0';
 
       const head = document.getElementById('mascotHead');
       if (head) {
-        head.style.transform = blushActive ? 'rotate(-8deg) translateY(4px)' : 'none';
+        head.style.transform = isPivoted ? 'rotate(-8deg) translateY(4px)' : 'none';
         head.style.transformOrigin = '120px 96px';
       }
       const armL = document.getElementById('armLeft');
       const armR = document.getElementById('armRight');
-      if (armL) armL.style.transform = blushActive ? 'translate(2px, -2px)' : 'none';
-      if (armR) armR.style.transform = blushActive ? 'translate(-2px, -2px)' : 'none';
+      if (armL) armL.style.transform = isPivoted ? 'translate(2px, -2px)' : 'none';
+      if (armR) armR.style.transform = isPivoted ? 'translate(-2px, -2px)' : 'none';
     }
 
-    // 3.4 Password Focus -> Close Eyes & Malu-Malu / Blushing Pose
-    // Robot menutup mata (> <), pipi merona merah muda bercahaya, kepala tilt malu ke samping, lengan santai
+    // 3.4 Password Focus -> Clean Closed Eyes (> <)
+    // Robot menutup mata secara keren dan bersih (Sensor Nonaktif) tanpa rona pink
     function closeEyes() {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1415,9 +1462,8 @@
       isCovering = true;
       isPeeking = false;
       isHappySuccess = false;
-      isBlushing = true;
 
-      // Lengan/tangan santai sedikit merapat malu ke bodi
+      // Lengan/tangan santai sedikit merapat ke bodi
       if (typeof gsap !== 'undefined') {
         gsap.to(['#armLeft'], {
           x: 2,
@@ -1444,13 +1490,7 @@
           { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.4)' }
         );
 
-        // Blushing cheeks activate with soft glowing pink radiance
-        gsap.fromTo('#blushCheeksGroup',
-          { opacity: 0, scale: 0.85, transformOrigin: '120px 103px' },
-          { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.5)' }
-        );
-
-        // Kepala robot tilt malu-malu ke samping sedikit (-8deg, y: 4px)
+        // Kepala robot tilt mecha ke samping (-8deg, y: 4px)
         gsap.to('#mascotHead', {
           rotation: -8,
           y: 4,
@@ -1462,12 +1502,12 @@
         setMascotEyeFallback('closedEyesGroup', true);
       }
 
-      setMascotStatus('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)', '#fb7185');
+      setMascotStatus('🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)', '#38bdf8');
     }
     const coverEyes = closeEyes;
     const coverMascotEyes = closeEyes;
 
-    // 3.5 Password Blur -> Open Eyes Normal & Reset Blush
+    // 3.5 Password Blur -> Open Eyes Normal
     function openEyes() {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1477,15 +1517,14 @@
       isCovering = false;
       isPeeking = false;
       isHappySuccess = false;
-      isBlushing = false;
 
       if (typeof gsap !== 'undefined') {
         // Tangan kembali normal di samping (idle)
         gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35, ease: 'power2.out' });
         gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
 
-        // Fade out closed, peek, happy, and blushing states
-        gsap.to(['#closedEyesGroup', '#peekEyesGroup', '#happyEyesGroup', '#blushCheeksGroup'], { opacity: 0, duration: 0.2, ease: 'power2.out' });
+        // Fade out closed, peek, happy states
+        gsap.to(['#closedEyesGroup', '#peekEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.2, ease: 'power2.out' });
 
         // Kepala kembali tegak
         gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
@@ -1504,7 +1543,7 @@
     }
     const uncoverEyes = openEyes;
 
-    // 3.6 Password Visibility Toggle -> One-Eye Peek (o <) with Blushing Still Active
+    // 3.6 Password Visibility Toggle -> One-Eye Peek (o <) Clean
     function peekEyes(shouldPeek) {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1516,24 +1555,22 @@
         isEyesClosed = true;
         isCovering = true;
         isHappySuccess = false;
-        isBlushing = true;
         if (typeof gsap !== 'undefined') {
-          // Robot membuka satu mata mengintip lucu (o <) tapi tetap blushing
+          // Robot membuka satu mata mengintip bersih (o <)
           gsap.to(['#closedEyesGroup', '#normalEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.15 });
           gsap.fromTo('#peekEyesGroup',
             { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
             { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
           );
-          gsap.to('#blushCheeksGroup', { opacity: 1, duration: 0.2 });
           gsap.to('#mascotHead', { rotation: -5, y: 2, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
           gsap.to(['#armLeft'], { x: 2, y: -2, rotation: 0, duration: 0.25 });
           gsap.to(['#armRight'], { x: -2, y: -2, rotation: 0, duration: 0.25 });
         } else {
           setMascotEyeFallback('peekEyesGroup', true);
         }
-        setMascotStatus('👀 Robo-NESAS Mengintip Malu-Malu...', '#fb7185');
+        setMascotStatus('👀 Robo-NESAS Mengintip Sandi...', '#38bdf8');
       } else {
-        // Robot menutup kedua mata kembali (> <) & pose malu-malu penuh via closeEyes()
+        // Robot menutup kedua mata kembali (> <)
         closeEyes();
       }
     }
@@ -1549,7 +1586,6 @@
       isCovering = false;
       isPeeking = false;
       isHappySuccess = true;
-      isBlushing = false;
 
       if (typeof gsap !== 'undefined') {
         // Tangan santai di samping
@@ -1557,15 +1593,16 @@
         gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
         gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.3 });
 
-        // Fade out other eye groups and blush, fade in happy arcs (^ _ ^)
-        gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup', '#blushCheeksGroup'], { opacity: 0, duration: 0.2 });
+        // Fade out other eye groups, fade in happy arcs (^ _ ^)
+        gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.2 });
         gsap.fromTo('#happyEyesGroup',
           { opacity: 0, scale: 0.92, transformOrigin: '120px 86px' },
           { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.8)' }
         );
 
-        // Antenna beacon pulse
+        // Antenna beacon pulse & power core glow pulse
         gsap.to('#antennaLight', { scale: 1.4, fill: '#10b981', transformOrigin: 'center center', repeat: 4, yoyo: true, duration: 0.2 });
+        gsap.to('#powerCoreCenter', { scale: 1.3, fill: '#10b981', transformOrigin: '120px 188px', repeat: 4, yoyo: true, duration: 0.2 });
       } else {
         setMascotEyeFallback('happyEyesGroup', false);
       }
@@ -1584,7 +1621,7 @@
     window.peekMascotEyes = peekEyes;
     window.triggerHappyEyes = triggerHappyEyes;
     window.happyMascotEyes = triggerHappyEyes;
-    window.getMascotState = () => ({ isEyesClosed, isCovering, isPeeking, isHappySuccess, isBlushing });
+    window.getMascotState = () => ({ isEyesClosed, isCovering, isPeeking, isHappySuccess });
 
     function handlePasswordFocus(e) {
       if (mascotBlurTimer) {
@@ -1647,10 +1684,20 @@
       if (typeof gsap !== 'undefined') {
         gsap.set(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0 });
 
-        // 3.1 Idle Floating / Bobbing & Beacon Glow
+        // 3.1 Idle Floating / Bobbing & Power Core Glow
         gsap.to(mascotRoot, {
           y: -4,
           duration: 2.2,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true
+        });
+
+        gsap.to('#powerCoreCenter', {
+          scale: 1.15,
+          opacity: 0.85,
+          transformOrigin: '120px 188px',
+          duration: 1.8,
           ease: 'sine.inOut',
           repeat: -1,
           yoyo: true
