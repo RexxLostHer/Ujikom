@@ -386,6 +386,10 @@
     box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
   }
 
+  .btn-google-glow:active {
+    transform: translateY(0px) scale(0.99);
+  }
+
   /* Separator Garis Tipis */
   .auth-separator {
     display: flex;
@@ -510,6 +514,10 @@
   .btn-card-submit.emerald:hover {
     background: linear-gradient(135deg, #047857 0%, #059669 100%);
     box-shadow: 0 8px 26px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-card-submit:active {
+    transform: translateY(0px) scale(0.99);
   }
 
   /* Footer Teks Card */
@@ -757,6 +765,16 @@
     width: 0%;
     background: linear-gradient(90deg, #38bdf8, #10b981);
     border-radius: 99px;
+  }
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .school-portal-split-container {
+      gap: 2rem;
+      padding: 2rem 1.5rem;
+    }
+    .auth-form-card {
+      padding: 2.2rem 2rem;
+    }
   }
 
   @media (max-width: 768px) {

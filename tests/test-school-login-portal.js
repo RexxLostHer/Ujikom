@@ -29,7 +29,9 @@ assert.ok(indexHtml.includes('portal-right-slide'), 'index.html harus memiliki w
 assert.ok(indexHtml.includes('max-width: 500px'), 'Kartu auth-form-card harus berukuran lapang max-width 500px');
 assert.ok(indexHtml.includes('padding: 2.5rem 2.4rem'), 'Kartu auth-form-card harus memiliki padding lapang 2.5rem 2.4rem');
 assert.ok(indexHtml.includes('grid-template-columns: 1fr 1.1fr'), 'Container harus menggunakan grid-template-columns 1fr 1.1fr yang seimbang dan lapang');
-console.log('✓ Branding SMKN 1 Sumedang, Split 2-Slide Portal Layout, dan Kartu Lapang terverifikasi aktif');
+assert.ok(indexHtml.includes('@media (max-width: 1024px) and (min-width: 769px)'), 'Harus menyertakan breakpoint tablet 769px-1024px agar kartu tetap nyaman dan tidak terjepit');
+assert.ok(indexHtml.includes('.btn-google-glow:active') && indexHtml.includes('.btn-card-submit:active'), 'Harus menyertakan efek active micro-feedback pada tombol auth');
+console.log('✓ Branding SMKN 1 Sumedang, Split 2-Slide Portal Layout, Kartu Lapang, dan Responsif Tablet terverifikasi aktif');
 
 // TEST 2: Jam Digital Live Sekolah, Sesi Presensi & Telemetri IoT
 console.log('\n[Test 2] Validasi Jam Digital Live Sekolah & Telemetri Realtime');
