@@ -12,8 +12,7 @@
   :root {
     --bg-page: #080e1a;
     --bg-surface: #0f172a;
-    --bg-card: rgba(15, 23, 42, 0.78);
-    --bg-bento: rgba(15, 23, 42, 0.72);
+    --bg-card: rgba(15, 23, 42, 0.86);
     --border-glass: rgba(255, 255, 255, 0.08);
     --border-highlight: rgba(56, 189, 248, 0.28);
     --border-emerald: rgba(16, 185, 129, 0.35);
@@ -24,7 +23,6 @@
     --brand-sky: #0284c7;
     --brand-indigo: #6366f1;
     --brand-emerald: #10b981;
-    --brand-emerald-glow: rgba(16, 185, 129, 0.35);
     --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --heading: 'Space Grotesk', system-ui, sans-serif;
     --mono: 'JetBrains Mono', monospace;
@@ -56,8 +54,9 @@
     pointer-events: none;
     z-index: 1;
     background:
-      radial-gradient(circle at 18% 20%, rgba(2, 132, 199, 0.16) 0%, transparent 55%),
-      radial-gradient(circle at 82% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 50% 18%, rgba(2, 132, 199, 0.18) 0%, transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 20% 85%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
       linear-gradient(180deg, #080e1a 0%, #0c1427 100%);
   }
 
@@ -69,803 +68,246 @@
     pointer-events: none;
   }
 
-  /* Grid Layout 2 Kolom Responsif */
-  .school-portal-wrapper {
+  /* Centered Main Viewport Container */
+  .school-portal-centered-container {
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1.18fr 0.82fr;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: relative;
     z-index: 2;
+    padding: 2.5rem 1.2rem;
+    gap: 1rem;
   }
 
   /* ══════════════════════════════════════════════════════════
-     KOLOM KIRI: BENTO GRID SHOWCASE EDTECH (LINEAR/VERCEL STYLE)
+     HEADER BRANDING SEKOLAH & LIVE CLOCK
      ══════════════════════════════════════════════════════════ */
-  .school-stage-pane.bento-showcase-pane {
-    position: relative;
-    padding: 2.2rem 2.8rem;
+  .school-portal-header {
+    width: 100%;
+    max-width: 480px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 1.6rem;
-    border-right: 1px solid var(--border-glass);
-    overflow-y: auto;
-  }
-
-  /* Header Branding Sekolah */
-  .school-header-brand {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1.2rem;
-    position: relative;
-    z-index: 10;
+    text-align: center;
+    gap: 0.75rem;
+    margin-bottom: 0.2rem;
   }
 
-  .brand-identity {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .brand-logo-nesas {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    padding: 5px;
+  .school-brand-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    gap: 14px;
   }
 
-  .brand-logo-nesas img {
-    width: 100%;
-    height: 100%;
+  .school-header-logo {
+    width: 46px;
+    height: 46px;
     object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.35));
   }
 
-  .brand-title h1 {
+  .school-brand-text h1 {
     font-family: var(--heading);
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: -0.02em;
     color: #ffffff;
     line-height: 1.2;
-    margin: 0;
   }
 
-  .brand-subtitle {
+  .school-brand-text p {
     font-size: 0.76rem;
-    color: var(--text-muted);
-    margin: 3px 0 0 0;
+    color: var(--brand-blue);
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 
-  .school-badge-pill {
-    font-family: var(--sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.08);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    padding: 6px 14px;
-    border-radius: 999px;
+  /* Header Live Clock Pill */
+  .header-clock-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
-    white-space: nowrap;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   }
 
-  .badge-status-dot {
+  .clock-icon-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: #10b981;
-    box-shadow: 0 0 8px #10b981;
+    box-shadow: 0 0 10px #10b981;
     animation: pulseDot 2s infinite ease-in-out;
+  }
+
+  .live-clock-text {
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: 0.04em;
+  }
+
+  .clock-session-tag {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    padding-left: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
   }
 
   @keyframes pulseDot {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.75); }
+    50% { opacity: 0.4; transform: scale(0.85); }
   }
 
   /* ══════════════════════════════════════════════════════════
-     BENTO GRID CONTAINER & CARDS
+     KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
      ══════════════════════════════════════════════════════════ */
-  .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 16px;
-    width: 100%;
+  .mascot-stage {
     position: relative;
-  }
-
-  .bento-card {
-    background: var(--bg-bento);
-    border: 1px solid var(--border-glass);
-    border-radius: 20px;
-    padding: 1.4rem;
-    position: relative;
-    backdrop-filter: blur(16px);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
-    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  .bento-card:hover {
-    border-color: rgba(56, 189, 248, 0.35);
-    box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.65), 0 0 24px rgba(56, 189, 248, 0.12);
-    transform: translateY(-2px);
-  }
-
-  .bento-card-header {
+    z-index: 10;
+    margin-bottom: -22px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    gap: 10px;
-  }
-
-  .bento-card-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #38bdf8;
-    text-transform: uppercase;
-  }
-
-  .bento-card-label svg {
-    color: #38bdf8;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     BENTO 1: HERO CARD — KARTU PELAJAR 3D HOLOGRAFIK INTERAKTIF
-     ══════════════════════════════════════════════════════════ */
-  .bento-hero-card {
-    grid-column: span 12;
-    perspective: 1000px;
-    background: radial-gradient(ellipse at 50% 30%, rgba(14, 27, 54, 0.85), rgba(8, 14, 28, 0.95));
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    padding: 1.8rem 1.6rem 1.4rem;
-  }
-
-  .bento-hero-card.piket-tap-success {
-    border-color: rgba(16, 185, 129, 0.55);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 36px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(16, 185, 129, 0.3);
-  }
-
-  .card-3d-stage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.8rem 0;
-    position: relative;
-    perspective: 1000px;
-  }
-
-  /* 3D Smart Card Object */
-  .smart-card-3d {
-    width: 100%;
-    max-width: 400px;
-    height: 236px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #0a1324 0%, #11203b 50%, #070d18 100%);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    padding: 1.4rem;
-    position: relative;
-    transform-style: preserve-3d;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    transition: transform 0.15s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
-    cursor: pointer;
+    pointer-events: none;
     user-select: none;
-    overflow: hidden;
-    will-change: transform;
-    touch-action: pan-y;
   }
 
-  .smart-card-3d.tapping {
-    transform: perspective(1000px) rotateX(6deg) translateY(6px) scale(0.97) !important;
+  .robo-mascot-svg {
+    width: 220px;
+    height: 175px;
+    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.65));
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .smart-card-3d.card-tap-success {
-    border-color: rgba(16, 185, 129, 0.75);
-    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8), 0 0 32px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  .signal-wave {
+    transform-origin: 120px 20px;
+    animation: signalPulse 2.4s infinite ease-out;
+  }
+  .signal-wave.wave-2 {
+    animation-delay: 0.8s;
   }
 
-  /* Dynamic Holographic Sheen Layer */
-  .card-holo-sheen {
+  @keyframes signalPulse {
+    0% { opacity: 0.6; transform: scale(0.9); }
+    60% { opacity: 0.2; transform: scale(1.15); }
+    100% { opacity: 0; transform: scale(1.3); }
+  }
+
+  /* Mascot Status Pill */
+  .mascot-status-pill {
     position: absolute;
-    inset: 0;
-    border-radius: 18px;
-    background: linear-gradient(
-      var(--sheen-angle, 135deg),
-      transparent 0%,
-      rgba(56, 189, 248, 0.25) 25%,
-      rgba(168, 85, 247, 0.3) 50%,
-      rgba(16, 185, 129, 0.28) 75%,
-      transparent 100%
-    );
-    opacity: 0.45;
-    mix-blend-mode: screen;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  /* Micro-circuit Background Traces on Card */
-  .card-circuit-svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    opacity: 0.18;
-  }
-
-  /* Card Top Row */
-  .card-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-  }
-
-  .card-chip-nfc-wrap {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  /* Realistic Gold EMV Chip */
-  .emv-gold-chip {
-    width: 44px;
-    height: 34px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #fef08a 0%, #eab308 35%, #ca8a04 70%, #854d0e 100%);
-    border: 1px solid rgba(254, 240, 138, 0.6);
-    position: relative;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .chip-internal-grid {
-    width: 82%;
-    height: 82%;
-    border: 1px solid rgba(133, 77, 14, 0.7);
-    border-radius: 4px;
-    position: relative;
-  }
-
-  .chip-internal-grid::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(133, 77, 14, 0.7);
-  }
-
-  .chip-internal-grid::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: rgba(133, 77, 14, 0.7);
-  }
-
-  .chip-center-pin {
-    position: absolute;
-    top: 30%;
-    left: 30%;
-    right: 30%;
-    bottom: 30%;
-    border: 1px solid rgba(133, 77, 14, 0.7);
-    border-radius: 2px;
-  }
-
-  /* NFC Wave Icon */
-  .nfc-wave-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #38bdf8;
-    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
-  }
-
-  .card-school-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-align: right;
-  }
-
-  .card-nesas-logo {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-  }
-
-  .card-school-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-  }
-
-  .card-school-name {
-    font-family: var(--heading);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.04em;
-  }
-
-  .card-pass-label {
-    font-family: var(--mono);
-    font-size: 0.58rem;
-    color: #38bdf8;
-    letter-spacing: 0.08em;
-  }
-
-  /* Card Middle / Body Row */
-  .card-body-row {
-    margin-top: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    position: relative;
-    z-index: 2;
-  }
-
-  .student-avatar-frame {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    border: 1.5px solid rgba(56, 189, 248, 0.4);
-    overflow: hidden;
-    background: rgba(15, 23, 42, 0.8);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    flex-shrink: 0;
-  }
-
-  .student-avatar-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center top;
-  }
-
-  .student-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .student-name-text {
-    font-family: var(--heading);
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.02em;
-    line-height: 1.2;
-  }
-
-  .student-nisn-badge {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .student-nisn-badge span {
-    color: #38bdf8;
-    font-weight: 600;
-  }
-
-  /* Card Bottom Row */
-  .card-bottom-row {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    position: relative;
-    z-index: 2;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    padding-top: 8px;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .card-class-badge {
-    font-family: var(--sans);
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 3px 10px;
-    border-radius: 6px;
-    letter-spacing: 0.02em;
-  }
-
-  .card-rfid-uid {
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    color: #64748b;
-    letter-spacing: 0.04em;
-    word-break: break-all;
-  }
-
-  /* NFC Pulse Ring Wave */
-  .nfc-pulse-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 2.5px solid #10b981;
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  .nfc-pulse-ring.active-pulse {
-    animation: nfcRingEmit 1.3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
-  }
-
-  .nfc-pulse-ring.rfid-ring-2.active-pulse {
-    animation-delay: 0.38s;
-  }
-
-  @keyframes nfcRingEmit {
-    0% {
-      width: 50px;
-      height: 50px;
-      opacity: 0.95;
-      border-width: 3.5px;
-      box-shadow: 0 0 25px rgba(16, 185, 129, 0.85);
-    }
-    50% {
-      opacity: 0.7;
-    }
-    100% {
-      width: 500px;
-      height: 500px;
-      opacity: 0;
-      border-width: 1px;
-      box-shadow: 0 0 45px rgba(16, 185, 129, 0.1);
-    }
-  }
-
-  /* Hero Card Interactive Bar */
-  .hero-interactive-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 1.2rem;
-    padding-top: 0.9rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    flex-wrap: wrap;
-  }
-
-  .btn-simulasi-tap {
-    font-family: var(--sans);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #ffffff;
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.9), rgba(16, 185, 129, 0.9));
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 9px 20px;
+    bottom: 2px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    backdrop-filter: blur(10px);
+    padding: 3px 12px;
     border-radius: 999px;
-    cursor: pointer;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #e2e8f0;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
-  }
-
-  .btn-simulasi-tap:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.35);
-    border-color: rgba(16, 185, 129, 0.7);
-  }
-
-  .hero-tap-hint {
-    font-size: 0.74rem;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
     gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    transition: all 0.3s ease;
+  }
+
+  .mascot-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
   }
 
   /* ══════════════════════════════════════════════════════════
-     BENTO 2: WIDGET JAM LIVE SEKOLAH & SESI AKADEMIK
+     KARTU AUTENTIKASI SISWA & GURU (GLASSMORPHISM PREMIUM)
      ══════════════════════════════════════════════════════════ */
-  .bento-clock-card {
-    grid-column: span 6;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .bento-clock-display {
-    font-family: var(--mono);
-    font-size: 1.85rem;
-    font-weight: 700;
-    color: #38bdf8;
-    letter-spacing: 0.05em;
-    line-height: 1.2;
-    margin: 0.4rem 0 0.8rem;
-    text-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
-  }
-
-  .academic-session-box {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: rgba(3, 7, 18, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    padding: 10px 14px;
-  }
-
-  .session-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.72rem;
-  }
-
-  .session-title {
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-
-  .session-badge-active {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 2px 8px;
-    border-radius: 4px;
-    letter-spacing: 0.04em;
-  }
-
-  .session-hours {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #f8fafc;
-  }
-
-  .academic-date-text {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     BENTO 3: IOT HARDWARE GATEWAY & TELEMETRI REALTIME
-     ══════════════════════════════════════════════════════════ */
-  .bento-iot-card {
-    grid-column: span 6;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .iot-status-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 0.4rem;
-  }
-
-  .iot-status-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: rgba(3, 7, 18, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    font-size: 0.75rem;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .iot-status-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-
-  .iot-status-value {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: #10b981;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-align: right;
-    word-break: break-word;
-  }
-
-  .telemetry-latency-badge {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    padding: 2px 8px;
-    border-radius: 4px;
-    letter-spacing: 0.02em;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     BENTO 4: IDENTITAS KAMPUS SMKN 1 SUMEDANG (RPL IOT)
-     ══════════════════════════════════════════════════════════ */
-  .bento-identity-card {
-    grid-column: span 12;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 1.2rem 1.6rem;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(8, 14, 28, 0.9));
-  }
-
-  .bento-identity-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .bento-identity-logo {
-    width: 38px;
-    height: 38px;
-    object-fit: contain;
-  }
-
-  .bento-identity-info h4 {
-    font-family: var(--heading);
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: #ffffff;
-    line-height: 1.2;
-  }
-
-  .bento-identity-info p {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  .badge-rpl {
-    font-family: var(--sans);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    padding: 6px 14px;
-    border-radius: 999px;
-    letter-spacing: 0.03em;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
-    white-space: nowrap;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     KOLOM KANAN: KARTU AUTENTIKASI SISWA & GURU (MASUK / DAFTAR)
-     ══════════════════════════════════════════════════════════ */
-  .school-auth-pane {
-    position: relative;
-    padding: 2.4rem 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(8, 14, 28, 0.65);
-    backdrop-filter: blur(24px) saturate(180%);
-  }
-
   .auth-form-card {
     width: 100%;
-    max-width: 420px;
+    max-width: 440px;
     background: var(--bg-card);
-    border: 1px solid var(--border-glass);
-    border-radius: 24px;
-    padding: 2.2rem;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    border-radius: 26px;
+    padding: 2.2rem 2.2rem 1.8rem;
+    box-shadow: 
+      0 24px 60px rgba(0, 0, 0, 0.7),
+      0 0 45px rgba(56, 189, 248, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
     position: relative;
-    overflow: hidden;
+    z-index: 5;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .auth-form-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 15%;
-    right: 15%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--brand-blue), var(--brand-emerald), transparent);
+  .auth-form-card:hover {
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 
+      0 28px 70px rgba(0, 0, 0, 0.75),
+      0 0 50px rgba(56, 189, 248, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .auth-card-title {
     font-family: var(--heading);
-    font-size: 1.6rem;
+    font-size: 1.38rem;
     font-weight: 700;
     color: #ffffff;
-    line-height: 1.2;
-    margin-bottom: 0.35rem;
-    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
   }
 
   .auth-card-subtitle {
-    font-size: 0.83rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    line-height: 1.45;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.4rem;
   }
 
-  /* Switcher Tab Masuk / Daftar */
+  /* Switch Tab Masuk / Daftar */
   .auth-tab-switch {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     background: rgba(3, 7, 18, 0.6);
-    border: 1px solid var(--border-glass);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 1.4rem;
-    gap: 4px;
+    padding: 3px;
+    margin-bottom: 1.3rem;
   }
 
   .auth-tab-btn {
-    flex: 1;
     font-family: var(--sans);
     font-size: 0.82rem;
     font-weight: 600;
-    padding: 8px 12px;
-    border: none;
-    background: transparent;
     color: var(--text-muted);
-    border-radius: 8px;
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 9px;
     cursor: pointer;
-    transition: all 0.25s ease;
-    text-align: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .auth-tab-btn.active {
     background: rgba(56, 189, 248, 0.16);
     color: #ffffff;
     border: 1px solid rgba(56, 189, 248, 0.35);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   }
 
-  /* Tombol Google 1-Click */
+  /* 1-Click Google Sign-In Glow Button */
   .btn-google-glow {
     width: 100%;
     display: flex;
@@ -874,28 +316,22 @@
     gap: 12px;
     padding: 11px 16px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.7);
     color: #ffffff;
     font-family: var(--sans);
-    font-size: 0.85rem;
+    font-size: 0.86rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
 
   .btn-google-glow:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.85);
     border-color: rgba(56, 189, 248, 0.45);
-    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
     transform: translateY(-1px);
-  }
-
-  .btn-google-glow:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
   }
 
   /* Separator Garis Tipis */
@@ -903,7 +339,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 1.3rem 0;
+    margin: 1.25rem 0;
   }
 
   .auth-separator::before,
@@ -916,7 +352,7 @@
 
   .auth-separator span {
     font-family: var(--mono);
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     letter-spacing: 0.12em;
     color: var(--text-dim);
     text-transform: uppercase;
@@ -924,7 +360,7 @@
 
   /* Formulir Input */
   .auth-input-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0.95rem;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -958,7 +394,7 @@
   .auth-input-field input:focus {
     border-color: var(--brand-blue);
     background: rgba(3, 7, 18, 0.9);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
   }
 
   .auth-input-icon {
@@ -981,11 +417,12 @@
     display: flex;
     align-items: center;
     padding: 4px;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.2s;
   }
 
   .btn-eye-toggle:hover {
     color: #ffffff;
+    transform: scale(1.1);
   }
 
   /* Tombol Submit Utama */
@@ -1068,6 +505,43 @@
     background: rgba(6, 78, 59, 0.35);
     border-color: rgba(16, 185, 129, 0.5);
     color: #6ee7b7;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     BOTTOM TELEMETRY & HARDWARE GATEWAY BAR
+     ══════════════════════════════════════════════════════════ */
+  .portal-bottom-bar {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+    padding: 0 4px;
+    flex-wrap: wrap;
+  }
+
+  .telemetry-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .telemetry-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+  }
+
+  .telemetry-latency-tag {
+    font-family: var(--mono);
+    color: var(--brand-blue);
+    font-size: 0.68rem;
   }
 
   /* Loading Spinner Modal Box */
@@ -1233,44 +707,17 @@
     border-radius: 99px;
   }
 
-  /* ══════════════════════════════════════════════════════════
-     RESPONSIVE BREAKPOINTS
-     ══════════════════════════════════════════════════════════ */
-  @media (max-width: 1024px) {
-    .school-portal-wrapper {
-      grid-template-columns: 1fr;
+  @media (max-width: 480px) {
+    .school-portal-centered-container {
+      padding: 1.5rem 0.85rem;
     }
-    .school-stage-pane.bento-showcase-pane {
-      border-right: none;
-      border-bottom: 1px solid var(--border-glass);
+    .auth-form-card {
       padding: 1.8rem 1.4rem;
+      border-radius: 20px;
     }
-    .school-auth-pane {
-      padding: 2.2rem 1.4rem;
-    }
-    .bento-clock-card,
-    .bento-iot-card {
-      grid-column: span 12;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .school-header-brand {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .bento-identity-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .hero-interactive-bar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .btn-simulasi-tap {
-      justify-content: center;
+    .robo-mascot-svg {
+      width: 190px;
+      height: 150px;
     }
   }
 </style>
@@ -1288,381 +735,366 @@
     <span id="loadingCaption" style="font-size: 0.85rem; color: #f8fafc; font-family: var(--sans);">Memproses...</span>
   </div>
 
-  <!-- MAIN 2-COLUMN VIEWPORT WRAPPER -->
-  <main class="school-portal-wrapper">
+  <!-- MAIN CENTERED VIEWPORT CONTAINER -->
+  <main class="school-portal-centered-container">
+
+    <!-- HEADER BRANDING SEKOLAH & LIVE SCHOOL CLOCK -->
+    <header class="school-portal-header">
+      <div class="school-brand-row">
+        <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
+        <div class="school-brand-text">
+          <h1>SMK Negeri 1 Sumedang</h1>
+          <p>Sistem Presensi RFID Terintegrasi • Rekayasa Perangkat Lunak (RPL IoT)</p>
+        </div>
+      </div>
+
+      <div class="header-clock-pill">
+        <span class="clock-icon-dot"></span>
+        <span class="live-clock-text" id="liveClock">06:45:00 WIB</span>
+        <span class="clock-session-tag">06.30 - 08.00 WIB</span>
+      </div>
+    </header>
 
     <!-- ══════════════════════════════════════════════════════════
-         KOLOM KIRI: BENTO GRID SHOWCASE EDTECH (LINEAR/VERCEL STYLE)
+         KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
+         "WATCH & COVER EYES" (CODEPEN #1 ALL-TIME FAVORITE)
          ══════════════════════════════════════════════════════════ -->
-    <section class="school-stage-pane bento-showcase-pane" aria-label="Bento Grid Showcase EdTech SMKN 1 Sumedang">
+    <div class="mascot-stage" id="mascotStage">
       
-      <!-- Header Branding Sekolah -->
-      <header class="school-header-brand">
-        <div class="brand-identity">
-          <div class="brand-logo-nesas">
-            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang">
-          </div>
-          <div class="brand-title">
-            <h1>SMK Negeri 1 Sumedang</h1>
-            <p class="brand-subtitle">Bento Grid Showcase EdTech • Sistem Presensi RFID Terintegrasi</p>
-          </div>
-        </div>
-
-        <div class="school-badge-pill">
-          <span class="badge-status-dot"></span>
-          <span>Portal Akademik Siswa</span>
-        </div>
-      </header>
-
-      <!-- Bento Grid Modular Showcase -->
-      <div class="bento-grid" id="schoolPiketStage">
-        
-        <!-- ──────────────────────────────────────────────
-             BENTO 1: HERO CARD — KARTU PELAJAR 3D HOLOGRAFIK
-             ────────────────────────────────────────────── -->
-        <div class="bento-card bento-hero-card" id="bentoHeroCard">
+      <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 190" width="220" height="175" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Metallic body gradient -->
+          <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1e293b"/>
+            <stop offset="50%" stop-color="#0f172a"/>
+            <stop offset="100%" stop-color="#090f1d"/>
+          </linearGradient>
           
-          <div class="bento-card-header">
-            <div class="bento-card-label">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="2" y1="10" x2="22" y2="10"></line>
-              </svg>
-              <span>Smart Attendance Pass 3D</span>
-            </div>
-            <div class="school-badge-pill" id="cardTapStatus" style="font-size:0.68rem;padding:4px 10px;">
-              <span class="badge-status-dot"></span>
-              <span>SIAP TAP • WAITING RFID</span>
-            </div>
-          </div>
+          <!-- Visor screen gradient -->
+          <linearGradient id="roboVisorGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#030712"/>
+            <stop offset="100%" stop-color="#0b1329"/>
+          </linearGradient>
 
-          <!-- 3D Perspective Canvas Container -->
-          <div class="card-3d-stage">
+          <!-- Arm / hand gradient -->
+          <linearGradient id="roboArmGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#334155"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+
+          <!-- Neon Cyan Glow Filter -->
+          <filter id="neonCyanGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+
+          <!-- Beacon Glow Filter -->
+          <filter id="beaconGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4.5" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Mascott Root Floating Group -->
+        <g id="mascotRoot">
+          
+          <!-- 1. Antenna & Signal Waves -->
+          <g id="mascotAntenna">
+            <path class="signal-wave wave-1" d="M 106 14 A 16 16 0 0 1 134 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+            <path class="signal-wave wave-2" d="M 98 8 A 25 25 0 0 1 142 8" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+            <!-- Rod -->
+            <line x1="120" y1="20" x2="120" y2="38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="120" cy="38" r="4.5" fill="#334155"/>
+            <!-- Glowing Beacon Tip -->
+            <circle id="antennaLight" cx="120" cy="18" r="5.5" fill="#38bdf8" filter="url(#beaconGlow)"/>
+            <circle cx="120" cy="18" r="2.5" fill="#ffffff"/>
+          </g>
+
+          <!-- 2. Robot Ears / Audio Sensors -->
+          <rect x="26" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+          <line x1="33" y1="76" x2="33" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+          
+          <rect x="200" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+          <line x1="207" y1="76" x2="207" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+
+          <!-- 3. Head & Dome Body -->
+          <g id="mascotHead">
+            <!-- Main Dome -->
+            <rect x="36" y="36" width="168" height="120" rx="44" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.38)" stroke-width="2"/>
             
-            <!-- Dynamic NFC Pulse Rings -->
-            <div class="nfc-pulse-ring rfid-ring-1" id="rfidRing1"></div>
-            <div class="nfc-pulse-ring rfid-ring-2" id="rfidRing2"></div>
+            <!-- Subtle Dome Highlight / Glass sheen arc -->
+            <path d="M 58 44 Q 120 38 182 44" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="2" stroke-linecap="round"/>
 
-            <!-- Smart Attendance Pass 3D Object -->
-            <div class="smart-card-3d" id="smartCard3D" onclick="triggerTapSimulation(true)">
-              
-              <!-- Dynamic Holographic Sheen Layer -->
-              <div class="card-holo-sheen" id="cardHoloSheen"></div>
+            <!-- 4. Visor Screen -->
+            <rect id="visorScreen" x="52" y="52" width="136" height="74" rx="22" fill="url(#roboVisorGrad)" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.5"/>
+            
+            <!-- Visor Scanlines -->
+            <line x1="58" y1="68" x2="182" y2="68" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+            <line x1="58" y1="84" x2="182" y2="84" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+            <line x1="58" y1="100" x2="182" y2="100" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
+            <line x1="58" y1="114" x2="182" y2="114" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
 
-              <!-- Micro-circuit Background Pattern -->
-              <svg class="card-circuit-svg" viewBox="0 0 400 236" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 40 40 H 120 V 70 H 220" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 3"/>
-                <path d="M 320 20 V 60 H 260 V 90" stroke="#10b981" stroke-width="1.2" stroke-dasharray="4 4"/>
-                <path d="M 60 190 H 140 V 160 H 250" stroke="#38bdf8" stroke-width="1.2"/>
-                <circle cx="220" cy="70" r="3" fill="#38bdf8"/>
-                <circle cx="260" cy="90" r="3" fill="#10b981"/>
-                <circle cx="250" cy="160" r="3" fill="#38bdf8"/>
+            <!-- 5. Eyes Subsystem -->
+            <g id="eyesContainer">
+              <!-- Normal Eyes & Dynamic Pupils -->
+              <g id="normalEyesGroup">
+                <!-- Left Eye Sockets -->
+                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+                <!-- Right Eye Sockets -->
+                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+
+                <!-- Dynamic Movable Pupil Group -->
+                <g id="pupilsMovable">
+                  <!-- Left Pupil -->
+                  <g id="pupilLeft">
+                    <ellipse cx="86" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                    <ellipse cx="86" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
+                    <circle cx="83.5" cy="82.5" r="3.2" fill="#ffffff"/>
+                    <circle cx="88.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+                  </g>
+
+                  <!-- Right Pupil -->
+                  <g id="pupilRight">
+                    <ellipse cx="154" cy="86" rx="10.5" ry="12.5" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                    <ellipse cx="154" cy="86" rx="7" ry="8.5" fill="#0284c7"/>
+                    <circle cx="151.5" cy="82.5" r="3.2" fill="#ffffff"/>
+                    <circle cx="156.5" cy="88.5" r="1.5" fill="#ffffff" opacity="0.8"/>
+                  </g>
+                </g>
+              </g>
+
+              <!-- Happy Arc Eyes (Shown on Success: ^ _ ^) -->
+              <g id="happyEyesGroup" style="opacity: 0; pointer-events: none;">
+                <!-- Left Happy Arc -->
+                <path d="M 74 91 Q 86 72 98 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
+                <!-- Right Happy Arc -->
+                <path d="M 142 91 Q 154 72 166 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
+                <!-- Glowing Happy Cheeks -->
+                <ellipse cx="72" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
+                <ellipse cx="168" cy="102" rx="7" ry="4" fill="rgba(16, 185, 129, 0.35)"/>
+              </g>
+            </g>
+
+            <!-- 6. Mouth / Audio Waveform LEDs -->
+            <g id="mascotMouth">
+              <line x1="108" y1="135" x2="114" y2="135" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              <line x1="117" y1="135" x2="123" y2="135" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+              <line x1="126" y1="135" x2="132" y2="135" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            </g>
+
+            <!-- 7. NESAS School IoT Badge / Emblem -->
+            <g id="schoolBadge" transform="translate(104, 142)">
+              <rect x="0" y="0" width="32" height="18" rx="5" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2"/>
+              <text x="16" y="12" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
+            </g>
+          </g>
+
+          <!-- 8. Mechanical Arms & Hands for Covering Eyes -->
+          <!-- LEFT ARM & HAND -->
+          <g id="armLeft" class="robo-arm" style="transform-origin: 48px 156px;">
+            <circle cx="48" cy="156" r="8" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+            <path d="M 46 156 Q 36 170 54 176" fill="none" stroke="url(#roboArmGrad)" stroke-width="9" stroke-linecap="round"/>
+            <g id="handLeft">
+              <rect x="44" y="166" width="22" height="15" rx="7" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+              <g id="fingersLeft" style="transform-origin: 55px 172px;">
+                <rect x="42" y="160" width="5" height="11" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                <rect x="49" y="157" width="5.5" height="14" rx="2.5" fill="#38bdf8" opacity="0.9"/>
+                <rect x="56" y="158" width="5.5" height="13" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                <rect x="63" y="161" width="5" height="10" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+              </g>
+            </g>
+          </g>
+
+          <!-- RIGHT ARM & HAND -->
+          <g id="armRight" class="robo-arm" style="transform-origin: 192px 156px;">
+            <circle cx="192" cy="156" r="8" fill="#1e293b" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+            <path d="M 194 156 Q 204 170 186 176" fill="none" stroke="url(#roboArmGrad)" stroke-width="9" stroke-linecap="round"/>
+            <g id="handRight">
+              <rect x="174" y="166" width="22" height="15" rx="7" fill="#1e293b" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5"/>
+              <g id="fingersRight" style="transform-origin: 185px 172px;">
+                <rect x="172" y="161" width="5" height="10" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                <rect x="179" y="158" width="5.5" height="13" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+                <rect x="185.5" y="157" width="5.5" height="14" rx="2.5" fill="#38bdf8" opacity="0.9"/>
+                <rect x="193" y="160" width="5" height="11" rx="2.5" fill="#334155" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+              </g>
+            </g>
+          </g>
+
+        </g>
+      </svg>
+
+      <div class="mascot-status-pill" id="mascotStatusPill">
+        <span class="mascot-status-dot"></span>
+        <span id="mascotStatusText">Robo-NESAS • Siap Mengawasi Presensi</span>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         KARTU FORMULIR AUTENTIKASI SISWA & GURU
+         ══════════════════════════════════════════════════════════ -->
+    <section class="auth-form-card" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
+      
+      <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
+      <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
+
+      <!-- Switch Tab Masuk / Daftar -->
+      <div class="auth-tab-switch">
+        <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Masuk</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Daftar</button>
+      </div>
+
+      <!-- 1-Click Google Sign-In (Firebase Auth) -->
+      <button type="button" class="btn-google-glow" id="btnGoogleLogin" onclick="handleGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Masuk dengan Google</span>
+      </button>
+
+      <button type="button" class="btn-google-glow" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Daftar dengan Google</span>
+      </button>
+
+      <div class="auth-separator">
+        <span>ATAU DENGAN EMAIL</span>
+      </div>
+
+      <!-- ──────────────────────────────────────────────
+           FORM 1: LOGIN SISWA & GURU
+           ────────────────────────────────────────────── -->
+      <form id="formLogin" onsubmit="handleLoginEmail(event)">
+        
+        <div class="auth-input-group">
+          <label for="loginEmail">Email Gmail</label>
+          <div class="auth-input-field">
+            <span class="auth-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
-
-              <!-- Top Row: EMV Chip, NFC Wave, NESAS Crest -->
-              <div class="card-top-row">
-                <div class="card-chip-nfc-wrap">
-                  <!-- EMV Gold Microchip -->
-                  <div class="emv-gold-chip" title="EMV Smart Contactless Microchip">
-                    <div class="chip-internal-grid">
-                      <div class="chip-center-pin"></div>
-                    </div>
-                  </div>
-                  <!-- Official Contactless Wave Symbol -->
-                  <div class="nfc-wave-icon" title="NFC 13.56 MHz Contactless">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                      <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                      <line x1="12" y1="20" x2="12.01" y2="20"></line>
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="card-school-brand">
-                  <div class="card-school-text">
-                    <span class="card-school-name">SMKN 1 SUMEDANG</span>
-                    <span class="card-pass-label">SMART PASS DIGITAL</span>
-                  </div>
-                  <img src="assets/logo-nesas.png" alt="NESAS" class="card-nesas-logo">
-                </div>
-              </div>
-
-              <!-- Middle Row: Student Photo & Meta -->
-              <div class="card-body-row">
-                <div class="student-avatar-frame">
-                  <img src="assets/foto/0098263610.jpg" alt="Foto Siswa" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 24 24\' fill=\'%2338bdf8\'><path d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/></svg>'">
-                </div>
-                <div class="student-meta">
-                  <span class="student-name-text">M. IHSAN ATHALLAH</span>
-                  <div class="student-nisn-badge">
-                    <span>NISN</span> 0098263610 • SISWA AKTIF
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bottom Row: Class & RFID Protocol Info -->
-              <div class="card-bottom-row">
-                <span class="card-class-badge">XII RPL 2</span>
-                <span class="card-rfid-uid">UID: 04:A1:B2:C3:D4 • 13.56 MHz ISO/IEC 14443A</span>
-              </div>
-
-            </div>
-
-          </div>
-
-          <!-- Hero Action & Hint Bar -->
-          <div class="hero-interactive-bar">
-            <button type="button" class="btn-simulasi-tap" id="btnSimulasiTap" onclick="triggerTapSimulation(true)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                <line x1="7" y1="15" x2="7.01" y2="15"></line>
-                <line x1="11" y1="15" x2="13" y2="15"></line>
-              </svg>
-              <span>Simulasikan Tap Kartu Siswa</span>
-            </button>
-            <span class="hero-tap-hint">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-              Gerakkan mouse untuk tilt 3D atau klik kartu untuk tap
             </span>
-          </div>
-
-        </div>
-
-        <!-- ──────────────────────────────────────────────
-             BENTO 2: WIDGET JAM LIVE SEKOLAH & SESI AKADEMIK
-             ────────────────────────────────────────────── -->
-        <div class="bento-card bento-clock-card">
-          <div>
-            <div class="bento-card-header">
-              <div class="bento-card-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <span>Waktu Real-Time Sekolah</span>
-              </div>
-              <span class="session-badge-active">NTP SYNC</span>
-            </div>
-
-            <!-- Jam Digital Live Sekolah (JetBrains Mono) -->
-            <div class="bento-clock-display" id="liveClock">06:45:00 WIB</div>
-          </div>
-
-          <div class="academic-session-box">
-            <div class="session-header">
-              <span class="session-title">Sesi Presensi Pagi</span>
-              <span class="session-badge-active">06.30 - 08.00 WIB</span>
-            </div>
-            <span class="academic-date-text" id="academicDate">Memuat tanggal akademik...</span>
+            <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
           </div>
         </div>
 
-        <!-- ──────────────────────────────────────────────
-             BENTO 3: IOT HARDWARE GATEWAY & TELEMETRI REALTIME
-             ────────────────────────────────────────────── -->
-        <div class="bento-card bento-iot-card">
-          <div class="bento-card-header">
-            <div class="bento-card-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 11a9 9 0 0 1 9 9"></path>
-                <path d="M4 4a16 16 0 0 1 16 16"></path>
-                <circle cx="5" cy="19" r="1"></circle>
+        <div class="auth-input-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label for="loginPassword">Kata Sandi</label>
+            <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" style="font-size:11.5px;color:var(--brand-blue);text-decoration:none;">Lupa sandi?</a>
+          </div>
+          <div class="auth-input-field">
+            <span class="auth-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
-              <span>IoT Hardware & Telemetri</span>
-            </div>
-            <span class="telemetry-latency-badge" id="telemetryLatency">42ms (Latency &lt; 320ms)</span>
-          </div>
-
-          <div class="iot-status-list">
-            <div class="iot-status-row">
-              <span class="iot-status-left">
-                <span class="badge-status-dot"></span>
-                Node ESP32 • RC522
-              </span>
-              <span class="iot-status-value">ONLINE • READY TO TAP</span>
-            </div>
-
-            <div class="iot-status-row">
-              <span class="iot-status-left">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
-                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-                </svg>
-                Cloud Database
-              </span>
-              <span class="iot-status-value" style="color:#38bdf8;">Firebase Realtime Database Connected</span>
-            </div>
+            </span>
+            <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
+            <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
 
-        <!-- ──────────────────────────────────────────────
-             BENTO 4: IDENTITAS KAMPUS SMKN 1 SUMEDANG (RPL IOT)
-             ────────────────────────────────────────────── -->
-        <div class="bento-card bento-identity-card">
-          <div class="bento-identity-left">
-            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="bento-identity-logo">
-            <div class="bento-identity-info">
-              <h4>SMK Negeri 1 Sumedang</h4>
-              <p>Sistem Presensi RFID Terintegrasi v2.6 • UJIKOM 2026</p>
-            </div>
+        <button type="submit" class="btn-card-submit" id="btnActionLogin">Masuk Sekarang</button>
+        <div id="notifBoxLogin" class="toast-alert"></div>
+      </form>
+
+      <!-- ──────────────────────────────────────────────
+           FORM 2: REGISTRASI AKUN BARU
+           ────────────────────────────────────────────── -->
+      <form id="formRegister" onsubmit="handleRegisterEmail(event)" style="display:none;">
+        
+        <div class="auth-input-group">
+          <label for="regNama">Nama Lengkap</label>
+          <div class="auth-input-field">
+            <span class="auth-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <input type="text" id="regNama" placeholder="Nama lengkap siswa" required autocomplete="name">
           </div>
-          <span class="badge-rpl">Rekayasa Perangkat Lunak (RPL IoT)</span>
         </div>
 
+        <div class="auth-input-group">
+          <label for="regEmail">Email Gmail</label>
+          <div class="auth-input-field">
+            <span class="auth-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </span>
+            <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="auth-input-group">
+          <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
+          <div class="auth-input-field">
+            <span class="auth-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
+            <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
+            <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun</button>
+        <div id="notifBoxRegister" class="toast-alert"></div>
+      </form>
+
+      <div class="card-footer-caption" id="authFooterSwitch">
+        Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>
       </div>
 
     </section>
 
     <!-- ══════════════════════════════════════════════════════════
-         KOLOM KANAN: FORMULIR AUTENTIKASI SISWA & GURU
+         BOTTOM TELEMETRY & HARDWARE GATEWAY BAR
          ══════════════════════════════════════════════════════════ -->
-    <section class="school-auth-pane" aria-label="Formulir Masuk Portal Presensi">
-      
-      <div class="auth-form-card" id="cardAuthWrapper">
-        
-        <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
-        <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
-
-        <!-- Switch Tab Masuk / Daftar -->
-        <div class="auth-tab-switch">
-          <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Masuk</button>
-          <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Daftar</button>
-        </div>
-
-        <!-- 1-Click Google Sign-In (Firebase Auth) -->
-        <button type="button" class="btn-google-glow" id="btnGoogleLogin" onclick="handleGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span>Masuk dengan Google</span>
-        </button>
-
-        <button type="button" class="btn-google-glow" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;">
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span>Daftar dengan Google</span>
-        </button>
-
-        <div class="auth-separator">
-          <span>ATAU DENGAN EMAIL</span>
-        </div>
-
-        <!-- ──────────────────────────────────────────────
-             FORM 1: LOGIN SISWA & GURU
-             ────────────────────────────────────────────── -->
-        <form id="formLogin" onsubmit="handleLoginEmail(event)">
-          
-          <div class="auth-input-group">
-            <label for="loginEmail">Email Gmail</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-              </span>
-              <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <label for="loginPassword">Kata Sandi</label>
-              <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" style="font-size:11.5px;color:var(--brand-blue);text-decoration:none;">Lupa sandi?</a>
-            </div>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </span>
-              <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-card-submit" id="btnActionLogin">Masuk Sekarang</button>
-          <div id="notifBoxLogin" class="toast-alert"></div>
-        </form>
-
-        <!-- ──────────────────────────────────────────────
-             FORM 2: REGISTRASI AKUN BARU
-             ────────────────────────────────────────────── -->
-        <form id="formRegister" onsubmit="handleRegisterEmail(event)" style="display:none;">
-          
-          <div class="auth-input-group">
-            <label for="regNama">Nama Lengkap</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </span>
-              <input type="text" id="regNama" placeholder="Nama lengkap siswa" required autocomplete="name">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <label for="regEmail">Email Gmail</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-              </span>
-              <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </span>
-              <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun</button>
-          <div id="notifBoxRegister" class="toast-alert"></div>
-        </form>
-
-        <div class="card-footer-caption" id="authFooterSwitch">
-          Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>
-        </div>
-
+    <footer class="portal-bottom-bar">
+      <div class="telemetry-item">
+        <span class="telemetry-dot"></span>
+        <span>ESP32 • RC522: <strong>READY</strong></span>
       </div>
-
-    </section>
+      <div class="telemetry-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </svg>
+        <span>Firebase Realtime Database Connected</span>
+      </div>
+      <div class="telemetry-item telemetry-latency-tag" id="telemetryLatency">42ms</div>
+    </footer>
 
   </main>
 
@@ -1734,33 +1166,16 @@
       if (clockEl) {
         clockEl.textContent = `${h}:${m}:${s} WIB`;
       }
-      if (s === '00' || s === '01') {
-        updateAcademicDate();
-      }
     }
     setInterval(updateSchoolClock, 1000);
     updateSchoolClock();
 
-    // ===== 1.1 ACADEMIC DATE FORMATTER =====
-    function updateAcademicDate() {
-      const dateEl = document.getElementById('academicDate');
-      if (!dateEl) return;
-      const now = new Date();
-      try {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        dateEl.textContent = now.toLocaleDateString('id-ID', options);
-      } catch (e) {
-        dateEl.textContent = 'Senin, 20 Oktober 2026';
-      }
-    }
-    updateAcademicDate();
-
-    // ===== 1.2 TELEMETRY PING JITTER =====
+    // Telemetry Jitter
     function updateTelemetryPing() {
       const pingEl = document.getElementById('telemetryLatency');
       if (!pingEl) return;
-      const ping = Math.floor(Math.random() * 45) + 38; // 38ms - 83ms
-      pingEl.textContent = `${ping}ms (Latency < 320ms)`;
+      const ping = Math.floor(Math.random() * 35) + 38;
+      pingEl.textContent = `${ping}ms`;
     }
     setInterval(updateTelemetryPing, 4000);
 
@@ -1779,7 +1194,7 @@
       });
 
       const particles = [];
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i < 28; i++) {
         particles.push({
           x: Math.random() * width,
           y: Math.random() * height,
@@ -1811,143 +1226,218 @@
       requestAnimationFrame(renderAmbient);
     })();
 
-    // ===== 3. BENTO SMART CARD 3D TILT PHYSICS & TAP ENGINE =====
-    (function initSmartCard3DTilt() {
-      const bentoHero = document.getElementById('bentoHeroCard');
-      const card = document.getElementById('smartCard3D');
-      const holoSheen = document.getElementById('cardHoloSheen');
-      if (!bentoHero || !card) return;
+    // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
+    // CodePen #1 all-time favorite "Watch & Cover Eyes" logic
+    let isCovering = false;
+    let isPeeking = false;
 
-      function handleMove(clientX, clientY) {
-        const rect = card.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const normX = Math.max(-1.3, Math.min(1.3, (clientX - centerX) / (rect.width / 2)));
-        const normY = Math.max(-1.3, Math.min(1.3, (clientY - centerY) / (rect.height / 2)));
-
-        const rotateX = (-normY * 12).toFixed(2);
-        const rotateY = (normX * 12).toFixed(2);
-
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
-
-        if (holoSheen) {
-          const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI) + 90;
-          holoSheen.style.setProperty('--sheen-angle', `${angle.toFixed(1)}deg`);
-          holoSheen.style.opacity = '0.55';
-        }
+    function setMascotStatus(text, dotColor = '#38bdf8') {
+      const textEl = document.getElementById('mascotStatusText');
+      const dotEl = document.querySelector('.mascot-status-dot');
+      if (textEl) textEl.textContent = text;
+      if (dotEl) {
+        dotEl.style.backgroundColor = dotColor;
+        dotEl.style.boxShadow = `0 0 8px ${dotColor}`;
       }
+    }
 
-      function handleReset() {
-        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)';
-        if (holoSheen) {
-          holoSheen.style.opacity = '0.45';
-        }
-      }
+    function initRoboNesasMascot() {
+      const mascotRoot = document.getElementById('mascotRoot');
+      const pupilLeft = document.getElementById('pupilLeft');
+      const pupilRight = document.getElementById('pupilRight');
+      const armLeft = document.getElementById('armLeft');
+      const armRight = document.getElementById('armRight');
+      const fingersLeft = document.getElementById('fingersLeft');
+      const fingersRight = document.getElementById('fingersRight');
+      const loginEmail = document.getElementById('loginEmail');
+      const loginPassword = document.getElementById('loginPassword');
+      const regEmail = document.getElementById('regEmail');
+      const regPassword = document.getElementById('regPassword');
 
-      // Mouse tracking
-      bentoHero.addEventListener('mousemove', (e) => {
-        handleMove(e.clientX, e.clientY);
+      if (!mascotRoot || typeof gsap === 'undefined') return;
+
+      // 3.1 Idle Floating / Bobbing & Beacon Glow
+      gsap.to(mascotRoot, {
+        y: -4,
+        duration: 2.2,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true
       });
-      bentoHero.addEventListener('mouseleave', handleReset);
 
-      // Mobile Touch Tracking (passive for smooth scrolling)
-      card.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) {
-          handleMove(e.touches[0].clientX, e.touches[0].clientY);
-        }
-      }, { passive: true });
+      // 3.2 Idle Blinking Routine
+      function blinkEyes() {
+        if (isCovering) return;
+        const normalEyes = document.getElementById('normalEyesGroup');
+        if (!normalEyes) return;
+        gsap.timeline()
+          .to(['#pupilLeft', '#pupilRight'], { scaleY: 0.12, transformOrigin: 'center center', duration: 0.1, ease: 'power1.in' })
+          .to(['#pupilLeft', '#pupilRight'], { scaleY: 1, transformOrigin: 'center center', duration: 0.12, ease: 'power1.out' });
+        
+        const nextBlink = Math.random() * 4000 + 3000;
+        setTimeout(blinkEyes, nextBlink);
+      }
+      setTimeout(blinkEyes, 2500);
 
-      card.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches[0]) {
-          handleMove(e.touches[0].clientX, e.touches[0].clientY);
-        }
-      }, { passive: true });
+      // 3.3 Dynamic Eye Tracking on Email Typing
+      function handleEmailInput(val) {
+        if (isCovering) return;
+        const len = val.length;
+        const maxLen = 30;
+        const ratio = Math.max(0, Math.min(1, len / maxLen));
+        const targetX = (ratio - 0.5) * 22; // -11px to +11px
+        const targetY = 6; // look down towards the input card
 
-      card.addEventListener('touchend', handleReset);
-      card.addEventListener('touchcancel', handleReset);
-    })();
+        gsap.to(['#pupilLeft', '#pupilRight'], {
+          x: targetX,
+          y: targetY,
+          duration: 0.18,
+          ease: 'power2.out'
+        });
 
-    // Audio Chime Synthesis for Tap Feedback
-    function playAttendanceChime() {
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.18); // A6
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {}
+        // Subtle head tilt
+        gsap.to('#mascotHead', {
+          rotation: targetX * 0.25,
+          transformOrigin: '120px 96px',
+          duration: 0.22,
+          ease: 'power2.out'
+        });
+
+        setMascotStatus('Robo-NESAS Memperhatikan...');
+      }
+
+      function handleEmailFocus(e) {
+        if (isCovering) return;
+        handleEmailInput(e.target.value || '');
+      }
+
+      function handleEmailBlur() {
+        if (isCovering) return;
+        gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.35, ease: 'power2.out' });
+        gsap.to('#mascotHead', { rotation: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
+        setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi');
+      }
+
+      if (loginEmail) {
+        loginEmail.addEventListener('input', (e) => handleEmailInput(e.target.value));
+        loginEmail.addEventListener('focus', handleEmailFocus);
+        loginEmail.addEventListener('blur', handleEmailBlur);
+      }
+      if (regEmail) {
+        regEmail.addEventListener('input', (e) => handleEmailInput(e.target.value));
+        regEmail.addEventListener('focus', handleEmailFocus);
+        regEmail.addEventListener('blur', handleEmailBlur);
+      }
+
+      // 3.4 Password Focus -> Cover Eyes ("No Peeking")
+      function coverEyes() {
+        isCovering = true;
+        isPeeking = false;
+
+        // Pupils look up sheepishly towards hands
+        gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: -4, duration: 0.25 });
+
+        // Hands raise to cover the eyes
+        gsap.to(armLeft, {
+          x: 34,
+          y: -78,
+          rotation: 24,
+          duration: 0.42,
+          ease: 'back.out(1.4)'
+        });
+        gsap.to(armRight, {
+          x: -34,
+          y: -78,
+          rotation: -24,
+          duration: 0.42,
+          ease: 'back.out(1.4)'
+        });
+
+        // Ensure fingers are closed
+        gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.2 });
+
+        setMascotStatus('🙈 Jangan Mengintip! (Sensor Tertutup)', '#f59e0b');
+      }
+
+      function uncoverEyes() {
+        // Small delay to allow click on eye-toggle button without premature uncover
+        setTimeout(() => {
+          const activeEl = document.activeElement;
+          if (activeEl === loginPassword || activeEl === regPassword) return;
+
+          isCovering = false;
+          isPeeking = false;
+
+          gsap.to([armLeft, armRight], {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            duration: 0.4,
+            ease: 'power2.out'
+          });
+          gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.2 });
+          gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.3 });
+
+          setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
+        }, 80);
+      }
+
+      if (loginPassword) {
+        loginPassword.addEventListener('focus', coverEyes);
+        loginPassword.addEventListener('blur', uncoverEyes);
+      }
+      if (regPassword) {
+        regPassword.addEventListener('focus', coverEyes);
+        regPassword.addEventListener('blur', uncoverEyes);
+      }
     }
 
-    let tapCooldown = false;
-    function triggerTapSimulation(isUserGesture = false) {
-      if (tapCooldown) return;
-      tapCooldown = true;
+    // 3.5 Password Visibility Toggle -> Peek Through Fingers
+    function peekEyes(shouldPeek) {
+      if (!isCovering) return;
+      isPeeking = shouldPeek;
 
-      const card = document.getElementById('smartCard3D');
-      const ring1 = document.getElementById('rfidRing1');
-      const ring2 = document.getElementById('rfidRing2');
-      const bentoHero = document.getElementById('bentoHeroCard');
-      const stage = document.getElementById('schoolPiketStage');
-      const statusBadge = document.getElementById('cardTapStatus');
+      const fingersLeft = document.getElementById('fingersLeft');
+      const fingersRight = document.getElementById('fingersRight');
+      const pupilLeft = document.getElementById('pupilLeft');
+      const pupilRight = document.getElementById('pupilRight');
 
-      // 1. Micro-tap physics response & active success glow
-      if (card) {
-        card.classList.add('tapping');
-        card.classList.add('card-tap-success');
-        setTimeout(() => card.classList.remove('tapping'), 280);
+      if (shouldPeek) {
+        // Fingers part outward so eyes can peek
+        gsap.to(fingersLeft, { rotation: -18, duration: 0.3, ease: 'back.out(1.5)' });
+        gsap.to(fingersRight, { rotation: 18, duration: 0.3, ease: 'back.out(1.5)' });
+        // Pupils peek slightly down through gap
+        gsap.to([pupilLeft, pupilRight], { x: 0, y: 4, duration: 0.25 });
+        setMascotStatus('👀 Robo-NESAS Mengintip Sandi...', '#38bdf8');
+      } else {
+        // Close fingers tightly
+        gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.25, ease: 'power2.inOut' });
+        gsap.to([pupilLeft, pupilRight], { x: 0, y: -4, duration: 0.25 });
+        setMascotStatus('🙈 Jangan Mengintip! (Sensor Tertutup)', '#f59e0b');
       }
-
-      // 2. Audio Chime (only on explicit user gesture to respect browser autoplay policy)
-      if (isUserGesture) {
-        playAttendanceChime();
-      }
-
-      // 3. Sensor wave pulse emission
-      if (ring1) ring1.classList.add('active-pulse');
-      if (ring2) ring2.classList.add('active-pulse');
-      if (bentoHero) bentoHero.classList.add('piket-tap-success');
-      if (stage) stage.classList.add('piket-tap-success');
-
-      // 4. Update status display with timestamp
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-      if (statusBadge) {
-        statusBadge.innerHTML = `<span style="color:#10b981;font-weight:700;">✓ Presensi Berhasil!</span> <span style="font-size:0.68rem;color:#94a3b8;font-weight:400;">(${timeStr} WIB)</span>`;
-      }
-
-      // 5. Reset after 2.8s
-      setTimeout(() => {
-        if (card) card.classList.remove('card-tap-success');
-        if (ring1) ring1.classList.remove('active-pulse');
-        if (ring2) ring2.classList.remove('active-pulse');
-        if (bentoHero) bentoHero.classList.remove('piket-tap-success');
-        if (stage) stage.classList.remove('piket-tap-success');
-        if (statusBadge) {
-          statusBadge.innerHTML = `<span class="badge-status-dot"></span> <span>SIAP TAP • WAITING RFID</span>`;
-        }
-        tapCooldown = false;
-      }, 2800);
     }
 
-    // Auto tap simulation demo every 12s when visible (silent ambient demo)
-    setInterval(() => {
-      if (!tapCooldown && document.visibilityState === 'visible') {
-        triggerTapSimulation(false);
-      }
-    }, 12000);
+    // 3.6 Happy Arc Eyes on Success (^ _ ^)
+    function triggerHappyEyes() {
+      isCovering = false;
+      isPeeking = false;
 
-    // Initial demo tap on page load (silent ambient demo)
-    setTimeout(() => triggerTapSimulation(false), 1200);
+      // Lower hands with cheerful bounce
+      gsap.to(['#armLeft', '#armRight'], { x: 0, y: 4, rotation: 0, duration: 0.35, ease: 'back.out(1.5)' });
+      gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
+
+      // Fade out normal eyes and fade in happy arcs
+      gsap.to('#normalEyesGroup', { opacity: 0, duration: 0.2 });
+      gsap.to('#happyEyesGroup', { opacity: 1, duration: 0.25 });
+
+      // Antenna beacon pulse
+      gsap.to('#antennaLight', { scale: 1.4, fill: '#10b981', transformOrigin: 'center center', repeat: 4, yoyo: true, duration: 0.2 });
+
+      setMascotStatus('🎉 Presensi Berhasil! Selamat Datang!', '#10b981');
+    }
+
+    document.addEventListener('DOMContentLoaded', initRoboNesasMascot);
+    setTimeout(initRoboNesasMascot, 200);
 
     // ===== 4. SWITCH AUTH TAB (MASUK VS DAFTAR) =====
     function switchAuthTab(mode) {
@@ -1986,12 +1476,16 @@
       }
     }
 
-    // Toggle Password Visibility Helper
+    // Toggle Password Visibility Helper with Peeking Integration
     function togglePassword(inputId, btn) {
       const inp = document.getElementById(inputId);
       if (!inp) return;
       const isPass = inp.type === 'password';
       inp.type = isPass ? 'text' : 'password';
+
+      // Trigger mascot peeking through fingers!
+      peekEyes(isPass);
+
       if (isPass) {
         btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
@@ -2080,8 +1574,9 @@
       if (show) l.classList.add('show'); else l.classList.remove('show');
     }
 
-    // Auth Success Modal with GSAP Animation
+    // Auth Success Modal with GSAP Animation & Happy Mascot Eyes
     function showAuthSuccessModal(title, message, onDone) {
+      triggerHappyEyes();
       const overlay = document.getElementById('authSuccessOverlay');
       const titleEl = document.getElementById('authSuccessTitle');
       const descEl = document.getElementById('authSuccessDesc');
