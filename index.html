@@ -10,10 +10,10 @@
 <link rel="stylesheet" href="assets/style.css?v=20261001_10">
 <style>
   :root {
-    --bg-page: #040814;
-    --bg-surface: #0a1020;
-    --bg-card: rgba(13, 22, 40, 0.72);
-    --bg-bento: rgba(15, 23, 42, 0.65);
+    --bg-page: #080e1a;
+    --bg-surface: #0f172a;
+    --bg-card: rgba(15, 23, 42, 0.78);
+    --bg-bento: rgba(15, 23, 42, 0.72);
     --border-glass: rgba(255, 255, 255, 0.08);
     --border-highlight: rgba(56, 189, 248, 0.28);
     --border-emerald: rgba(16, 185, 129, 0.35);
@@ -58,7 +58,7 @@
     background:
       radial-gradient(circle at 18% 20%, rgba(2, 132, 199, 0.16) 0%, transparent 55%),
       radial-gradient(circle at 82% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-      linear-gradient(180deg, #040814 0%, #060d1b 100%);
+      linear-gradient(180deg, #080e1a 0%, #0c1427 100%);
   }
 
   #ambientCanvas {
@@ -248,6 +248,7 @@
     align-items: center;
     padding: 0.8rem 0;
     position: relative;
+    perspective: 1000px;
   }
 
   /* 3D Smart Card Object */
@@ -262,14 +263,21 @@
     position: relative;
     transform-style: preserve-3d;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    transition: transform 0.15s ease-out, box-shadow 0.25s ease;
+    transition: transform 0.15s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
     cursor: pointer;
     user-select: none;
     overflow: hidden;
+    will-change: transform;
+    touch-action: pan-y;
   }
 
   .smart-card-3d.tapping {
     transform: perspective(1000px) rotateX(6deg) translateY(6px) scale(0.97) !important;
+  }
+
+  .smart-card-3d.card-tap-success {
+    border-color: rgba(16, 185, 129, 0.75);
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8), 0 0 32px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   /* Dynamic Holographic Sheen Layer */
@@ -280,13 +288,13 @@
     background: linear-gradient(
       var(--sheen-angle, 135deg),
       transparent 0%,
-      rgba(56, 189, 248, 0.18) 25%,
-      rgba(168, 85, 247, 0.22) 50%,
-      rgba(16, 185, 129, 0.2) 75%,
+      rgba(56, 189, 248, 0.25) 25%,
+      rgba(168, 85, 247, 0.3) 50%,
+      rgba(16, 185, 129, 0.28) 75%,
       transparent 100%
     );
-    opacity: 0.35;
-    mix-blend-mode: overlay;
+    opacity: 0.45;
+    mix-blend-mode: screen;
     pointer-events: none;
     transition: opacity 0.3s ease;
   }
@@ -479,6 +487,8 @@
     z-index: 2;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
     padding-top: 8px;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .card-class-badge {
@@ -498,6 +508,7 @@
     font-size: 0.62rem;
     color: #64748b;
     letter-spacing: 0.04em;
+    word-break: break-all;
   }
 
   /* NFC Pulse Ring Wave */
@@ -506,35 +517,41 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    border: 2px solid #10b981;
+    border: 2.5px solid #10b981;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
     opacity: 0;
     pointer-events: none;
-    z-index: 1;
+    z-index: 5;
   }
 
   .nfc-pulse-ring.active-pulse {
-    animation: nfcRingEmit 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    animation: nfcRingEmit 1.3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
   }
 
   .nfc-pulse-ring.rfid-ring-2.active-pulse {
-    animation-delay: 0.35s;
+    animation-delay: 0.38s;
   }
 
   @keyframes nfcRingEmit {
     0% {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       opacity: 0.95;
-      border-width: 3px;
+      border-width: 3.5px;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.85);
+    }
+    50% {
+      opacity: 0.7;
     }
     100% {
-      width: 360px;
-      height: 360px;
+      width: 500px;
+      height: 500px;
       opacity: 0;
       border-width: 1px;
+      box-shadow: 0 0 45px rgba(16, 185, 129, 0.1);
     }
   }
 
@@ -675,6 +692,8 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
     font-size: 0.75rem;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .iot-status-left {
@@ -682,6 +701,7 @@
     align-items: center;
     gap: 8px;
     color: var(--text-muted);
+    flex-shrink: 0;
   }
 
   .iot-status-value {
@@ -692,6 +712,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    text-align: right;
+    word-break: break-word;
   }
 
   .telemetry-latency-badge {
@@ -1322,7 +1344,7 @@
             <div class="nfc-pulse-ring rfid-ring-2" id="rfidRing2"></div>
 
             <!-- Smart Attendance Pass 3D Object -->
-            <div class="smart-card-3d" id="smartCard3D" onclick="triggerTapSimulation()">
+            <div class="smart-card-3d" id="smartCard3D" onclick="triggerTapSimulation(true)">
               
               <!-- Dynamic Holographic Sheen Layer -->
               <div class="card-holo-sheen" id="cardHoloSheen"></div>
@@ -1391,7 +1413,7 @@
 
           <!-- Hero Action & Hint Bar -->
           <div class="hero-interactive-bar">
-            <button type="button" class="btn-simulasi-tap" id="btnSimulasiTap" onclick="triggerTapSimulation()">
+            <button type="button" class="btn-simulasi-tap" id="btnSimulasiTap" onclick="triggerTapSimulation(true)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="5" width="18" height="14" rx="2"></rect>
                 <line x1="7" y1="15" x2="7.01" y2="15"></line>
@@ -1522,6 +1544,16 @@
           <span>Masuk dengan Google</span>
         </button>
 
+        <button type="button" class="btn-google-glow" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Daftar dengan Google</span>
+        </button>
+
         <div class="auth-separator">
           <span>ATAU DENGAN EMAIL</span>
         </div>
@@ -1624,9 +1656,6 @@
           <div id="notifBoxRegister" class="toast-alert"></div>
         </form>
 
-        <!-- Hidden Fallback Button for Test Suite Compatibility -->
-        <button type="button" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;"></button>
-
         <div class="card-footer-caption" id="authFooterSwitch">
           Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>
         </div>
@@ -1704,6 +1733,9 @@
       const clockEl = document.getElementById('liveClock');
       if (clockEl) {
         clockEl.textContent = `${h}:${m}:${s} WIB`;
+      }
+      if (s === '00' || s === '01') {
+        updateAcademicDate();
       }
     }
     setInterval(updateSchoolClock, 1000);
@@ -1786,31 +1818,53 @@
       const holoSheen = document.getElementById('cardHoloSheen');
       if (!bentoHero || !card) return;
 
-      bentoHero.addEventListener('mousemove', (e) => {
+      function handleMove(clientX, clientY) {
         const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const normX = Math.max(-1.3, Math.min(1.3, (clientX - centerX) / (rect.width / 2)));
+        const normY = Math.max(-1.3, Math.min(1.3, (clientY - centerY) / (rect.height / 2)));
 
-        const rotateX = Math.max(-14, Math.min(14, ((y - centerY) / centerY) * -12));
-        const rotateY = Math.max(-14, Math.min(14, ((x - centerX) / centerX) * 12));
+        const rotateX = (-normY * 12).toFixed(2);
+        const rotateY = (normX * 12).toFixed(2);
 
-        card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(8px)`;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
 
         if (holoSheen) {
-          const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI) + 90;
+          const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI) + 90;
           holoSheen.style.setProperty('--sheen-angle', `${angle.toFixed(1)}deg`);
           holoSheen.style.opacity = '0.55';
         }
-      });
+      }
 
-      bentoHero.addEventListener('mouseleave', () => {
+      function handleReset() {
         card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)';
         if (holoSheen) {
-          holoSheen.style.opacity = '0.35';
+          holoSheen.style.opacity = '0.45';
         }
+      }
+
+      // Mouse tracking
+      bentoHero.addEventListener('mousemove', (e) => {
+        handleMove(e.clientX, e.clientY);
       });
+      bentoHero.addEventListener('mouseleave', handleReset);
+
+      // Mobile Touch Tracking (passive for smooth scrolling)
+      card.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) {
+          handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches[0]) {
+          handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      card.addEventListener('touchend', handleReset);
+      card.addEventListener('touchcancel', handleReset);
     })();
 
     // Audio Chime Synthesis for Tap Feedback
@@ -1834,7 +1888,7 @@
     }
 
     let tapCooldown = false;
-    function triggerTapSimulation() {
+    function triggerTapSimulation(isUserGesture = false) {
       if (tapCooldown) return;
       tapCooldown = true;
 
@@ -1845,14 +1899,17 @@
       const stage = document.getElementById('schoolPiketStage');
       const statusBadge = document.getElementById('cardTapStatus');
 
-      // 1. Micro-tap physics response
+      // 1. Micro-tap physics response & active success glow
       if (card) {
         card.classList.add('tapping');
+        card.classList.add('card-tap-success');
         setTimeout(() => card.classList.remove('tapping'), 280);
       }
 
-      // 2. Audio Chime
-      playAttendanceChime();
+      // 2. Audio Chime (only on explicit user gesture to respect browser autoplay policy)
+      if (isUserGesture) {
+        playAttendanceChime();
+      }
 
       // 3. Sensor wave pulse emission
       if (ring1) ring1.classList.add('active-pulse');
@@ -1870,6 +1927,7 @@
 
       // 5. Reset after 2.8s
       setTimeout(() => {
+        if (card) card.classList.remove('card-tap-success');
         if (ring1) ring1.classList.remove('active-pulse');
         if (ring2) ring2.classList.remove('active-pulse');
         if (bentoHero) bentoHero.classList.remove('piket-tap-success');
@@ -1881,15 +1939,15 @@
       }, 2800);
     }
 
-    // Auto tap simulation demo every 12s when visible
+    // Auto tap simulation demo every 12s when visible (silent ambient demo)
     setInterval(() => {
       if (!tapCooldown && document.visibilityState === 'visible') {
-        triggerTapSimulation();
+        triggerTapSimulation(false);
       }
     }, 12000);
 
-    // Initial demo tap on page load
-    setTimeout(triggerTapSimulation, 1200);
+    // Initial demo tap on page load (silent ambient demo)
+    setTimeout(() => triggerTapSimulation(false), 1200);
 
     // ===== 4. SWITCH AUTH TAB (MASUK VS DAFTAR) =====
     function switchAuthTab(mode) {
@@ -1899,26 +1957,32 @@
       const tabReg = document.getElementById('tabBtnRegister');
       const formLogin = document.getElementById('formLogin');
       const formReg = document.getElementById('formRegister');
+      const btnGoogleLogin = document.getElementById('btnGoogleLogin');
+      const btnGoogleRegister = document.getElementById('btnGoogleRegister');
       const heading = document.getElementById('authPortalHeading');
       const subtitle = document.getElementById('authPortalSubtitle');
       const footerSwitch = document.getElementById('authFooterSwitch');
 
       if (mode === 'register') {
-        tabLogin.classList.remove('active');
-        tabReg.classList.add('active');
-        formLogin.style.display = 'none';
-        formReg.style.display = 'block';
-        heading.textContent = 'Pendaftaran Akun';
-        subtitle.textContent = 'Daftarkan akun baru untuk akses presensi digital.';
-        footerSwitch.innerHTML = `Sudah punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('login')">Masuk ke akun</a>`;
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (tabReg) tabReg.classList.add('active');
+        if (formLogin) formLogin.style.display = 'none';
+        if (formReg) formReg.style.display = 'block';
+        if (btnGoogleLogin) btnGoogleLogin.style.display = 'none';
+        if (btnGoogleRegister) btnGoogleRegister.style.display = 'flex';
+        if (heading) heading.textContent = 'Pendaftaran Akun';
+        if (subtitle) subtitle.textContent = 'Daftarkan akun baru untuk akses presensi digital.';
+        if (footerSwitch) footerSwitch.innerHTML = `Sudah punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('login')">Masuk ke akun</a>`;
       } else {
-        tabReg.classList.remove('active');
-        tabLogin.classList.add('active');
-        formReg.style.display = 'none';
-        formLogin.style.display = 'block';
-        heading.textContent = 'Presensi Siswa';
-        subtitle.textContent = 'Masuk untuk mengakses portal presensi harian.';
-        footerSwitch.innerHTML = `Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>`;
+        if (tabReg) tabReg.classList.remove('active');
+        if (tabLogin) tabLogin.classList.add('active');
+        if (formReg) formReg.style.display = 'none';
+        if (formLogin) formLogin.style.display = 'block';
+        if (btnGoogleRegister) btnGoogleRegister.style.display = 'none';
+        if (btnGoogleLogin) btnGoogleLogin.style.display = 'flex';
+        if (heading) heading.textContent = 'Presensi Siswa';
+        if (subtitle) subtitle.textContent = 'Masuk untuk mengakses portal presensi harian.';
+        if (footerSwitch) footerSwitch.innerHTML = `Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>`;
       }
     }
 
@@ -2105,11 +2169,20 @@
       const isReg = document.getElementById('formRegister') && document.getElementById('formRegister').style.display !== 'none';
       const notifTarget = isReg ? 'notifBoxRegister' : 'notifBoxLogin';
 
-      const btnGoogle = document.getElementById('btnGoogleLogin');
-      const origBtnContent = btnGoogle ? btnGoogle.innerHTML : '';
-      if (btnGoogle) {
-        btnGoogle.disabled = true;
-        btnGoogle.innerHTML = '<span>⏳ Menghubungkan akun Google...</span>';
+      const btnGoogleLogin = document.getElementById('btnGoogleLogin');
+      const btnGoogleRegister = document.getElementById('btnGoogleRegister');
+      const activeBtnGoogle = isReg ? (btnGoogleRegister || btnGoogleLogin) : btnGoogleLogin;
+      const origBtnContent = activeBtnGoogle ? activeBtnGoogle.innerHTML : '';
+      if (activeBtnGoogle) {
+        activeBtnGoogle.disabled = true;
+        activeBtnGoogle.innerHTML = '<span>⏳ Menghubungkan akun Google...</span>';
+      }
+
+      function restoreGoogleBtn() {
+        if (activeBtnGoogle) {
+          activeBtnGoogle.disabled = false;
+          activeBtnGoogle.innerHTML = origBtnContent;
+        }
       }
 
       try {
@@ -2122,7 +2195,7 @@
           await firebase.auth().signOut().catch(() => null);
           clearSession();
           loading(false);
-          if (btnGoogle) { btnGoogle.disabled = false; btnGoogle.innerHTML = origBtnContent; }
+          restoreGoogleBtn();
           tampilNotif(notifTarget, 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html. Anda tidak dapat masuk ke dashboard admin melalui portal siswa ini.', 'error');
           return;
         }
@@ -2135,7 +2208,7 @@
           await firebase.auth().signOut().catch(() => null);
           clearSession();
           loading(false);
-          if (btnGoogle) { btnGoogle.disabled = false; btnGoogle.innerHTML = origBtnContent; }
+          restoreGoogleBtn();
           tampilNotif(notifTarget, 'Akses Ditolak: Akun Administrator memiliki portal login khusus di admin-login.html. Anda tidak dapat masuk ke dashboard admin melalui portal siswa ini.', 'error');
           return;
         }
@@ -2146,10 +2219,7 @@
         });
       } catch (e) {
         loading(false);
-        if (btnGoogle) {
-          btnGoogle.disabled = false;
-          btnGoogle.innerHTML = origBtnContent;
-        }
+        restoreGoogleBtn();
 
         if (e.code === 'auth/unauthorized-domain') {
           tampilNotif(notifTarget, 'Harap tambahkan domain lokal ke Firebase Console -> Auth -> Authorized domains.', 'error');

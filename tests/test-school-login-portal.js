@@ -24,6 +24,8 @@ assert.ok(indexHtml.includes('assets/logo-nesas.png'), 'index.html harus memuat 
 assert.ok(indexHtml.includes('bento-grid') || indexHtml.includes('bentoGrid'), 'index.html harus memuat arsitektur bento grid showcase');
 assert.ok(indexHtml.includes('bento-card') || indexHtml.includes('bentoCard'), 'index.html harus memuat modular bento card');
 assert.ok(indexHtml.includes('Rekayasa Perangkat Lunak (RPL IoT)') || indexHtml.includes('RPL IoT'), 'index.html harus memuat badge kejuruan RPL IoT');
+assert.ok(indexHtml.includes('#080e1a'), 'index.html harus menggunakan palet Obsidian Dark base #080e1a');
+assert.ok(indexHtml.includes('#0f172a'), 'index.html harus menggunakan palet Obsidian surface #0f172a');
 console.log('✓ Branding SMKN 1 Sumedang dan arsitektur Bento Grid Showcase terverifikasi aktif');
 
 // TEST 2: Jam Digital Live Sekolah, Sesi Presensi & Telemetri IoT
@@ -39,9 +41,15 @@ console.log('✓ Live school clock (#liveClock), sesi presensi, dan telemetri Io
 console.log('\n[Test 3] Validasi Smart Card 3D Holografik & Simulasi Tap Interaktif');
 assert.ok(indexHtml.includes('smartCard') || indexHtml.includes('smart-card-3d'), 'index.html harus memuat Smart Attendance Card 3D');
 assert.ok(indexHtml.includes('perspective: 1000px') || indexHtml.includes('perspective:1000px') || indexHtml.includes('perspective'), '3D perspective transform harus aktif untuk tilt physics');
+assert.ok(indexHtml.includes('emv-gold-chip'), 'Kartu 3D harus memiliki microchip EMV emas realistis');
+assert.ok(indexHtml.includes('nfc-wave-icon'), 'Kartu 3D harus memiliki simbol NFC contactless wave');
+assert.ok(indexHtml.includes('card-holo-sheen'), 'Kartu 3D harus memiliki dynamic holographic sheen layer');
+assert.ok(indexHtml.includes('card-circuit-svg'), 'Kartu 3D harus memiliki micro-circuit background traces');
 assert.ok(indexHtml.includes('triggerTapSimulation'), 'Fungsi triggerTapSimulation harus ada untuk simulasi tap kartu');
 assert.ok(indexHtml.includes('rfidRing1'), 'Sensor gelombang RFID (rfidRing1) harus ada untuk visual pulse');
 assert.ok(indexHtml.includes('Presensi Berhasil'), 'Status verifikasi presensi berhasil harus ada');
+assert.ok(indexHtml.includes('card-tap-success'), 'Kartu 3D harus memiliki state class card-tap-success saat presensi berhasil');
+assert.ok(indexHtml.includes('touchstart') && indexHtml.includes('touchmove'), 'Kartu 3D harus mendukung event touchstart & touchmove pada mobile');
 console.log('✓ Smart card 3D tilt interaktif dan simulasi tap RFID terverifikasi');
 
 // TEST 4: Keutuhan Seluruh ID DOM Form & Auth
