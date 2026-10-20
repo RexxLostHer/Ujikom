@@ -68,17 +68,50 @@
     pointer-events: none;
   }
 
-  /* Centered Main Viewport Container */
-  .school-portal-centered-container {
+  /* Split Screen Viewport Container (2 Slide / 2 Kolom Modern) */
+  .school-portal-split-container {
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
     align-items: center;
     justify-content: center;
     position: relative;
     z-index: 2;
-    padding: 2.5rem 1.2rem;
-    gap: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    gap: 3.5rem;
+  }
+
+  /* Compatibility alias for existing centered container */
+  .school-portal-centered-container {
+    box-sizing: border-box;
+  }
+
+  .portal-left-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .portal-left-content {
+    width: 100%;
+    max-width: 490px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
+  }
+
+  .portal-right-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -175,18 +208,19 @@
   .mascot-stage {
     position: relative;
     z-index: 10;
-    margin-bottom: -22px;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     pointer-events: none;
     user-select: none;
+    padding: 0.4rem 0 0.6rem;
   }
 
   .robo-mascot-svg {
-    width: 220px;
-    height: 175px;
-    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.65));
+    width: 280px;
+    height: 220px;
+    filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.18));
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -206,30 +240,32 @@
 
   /* Mascot Status Pill */
   .mascot-status-pill {
-    position: absolute;
-    bottom: 2px;
-    background: rgba(15, 23, 42, 0.88);
-    border: 1px solid rgba(56, 189, 248, 0.32);
-    backdrop-filter: blur(10px);
-    padding: 3px 12px;
+    position: relative;
+    margin-top: 12px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 6px 16px;
     border-radius: 999px;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #e2e8f0;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    gap: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     pointer-events: auto;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .mascot-status-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #38bdf8;
-    box-shadow: 0 0 8px #38bdf8;
+    box-shadow: 0 0 10px #38bdf8;
+    transition: all 0.3s ease;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -512,15 +548,15 @@
      ══════════════════════════════════════════════════════════ */
   .portal-bottom-bar {
     width: 100%;
-    max-width: 440px;
+    max-width: 480px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     font-size: 0.7rem;
     color: var(--text-dim);
-    margin-top: 0.4rem;
-    padding: 0 4px;
+    margin-top: 0.5rem;
+    padding: 0 6px;
     flex-wrap: wrap;
   }
 
@@ -707,7 +743,27 @@
     border-radius: 99px;
   }
 
+  @media (max-width: 960px) {
+    .school-portal-split-container {
+      grid-template-columns: 1fr;
+      gap: 2.2rem;
+      padding: 2rem 1.2rem;
+    }
+    .portal-left-content {
+      max-width: 440px;
+      gap: 1.2rem;
+    }
+    .robo-mascot-svg {
+      width: 220px;
+      height: 175px;
+    }
+  }
+
   @media (max-width: 480px) {
+    .school-portal-split-container {
+      padding: 1.5rem 0.85rem;
+      gap: 1.4rem;
+    }
     .school-portal-centered-container {
       padding: 1.5rem 0.85rem;
     }
@@ -716,8 +772,11 @@
       border-radius: 20px;
     }
     .robo-mascot-svg {
-      width: 190px;
-      height: 150px;
+      width: 195px;
+      height: 155px;
+    }
+    .school-brand-text h1 {
+      font-size: 1.2rem;
     }
   }
 </style>
@@ -735,71 +794,86 @@
     <span id="loadingCaption" style="font-size: 0.85rem; color: #f8fafc; font-family: var(--sans);">Memproses...</span>
   </div>
 
-  <!-- MAIN CENTERED VIEWPORT CONTAINER -->
-  <main class="school-portal-centered-container">
-
-    <!-- HEADER BRANDING SEKOLAH & LIVE SCHOOL CLOCK -->
-    <header class="school-portal-header">
-      <div class="school-brand-row">
-        <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
-        <div class="school-brand-text">
-          <h1>SMK Negeri 1 Sumedang</h1>
-          <p>Sistem Presensi RFID Terintegrasi • Rekayasa Perangkat Lunak (RPL IoT)</p>
-        </div>
-      </div>
-
-      <div class="header-clock-pill">
-        <span class="clock-icon-dot"></span>
-        <span class="live-clock-text" id="liveClock">06:45:00 WIB</span>
-        <span class="clock-session-tag">06.30 - 08.00 WIB</span>
-      </div>
-    </header>
+  <!-- MAIN SPLIT SCREEN VIEWPORT CONTAINER (2 SLIDE / 2 KOLOM) -->
+  <main class="school-portal-split-container school-portal-centered-container">
 
     <!-- ══════════════════════════════════════════════════════════
-         KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
-         "WATCH & COVER EYES" (CODEPEN #1 ALL-TIME FAVORITE)
+         SLIDE / KOLOM KIRI: PANGGUNG ROBOT MASKOT ROBO-NESAS & IDENTITAS
          ══════════════════════════════════════════════════════════ -->
-    <div class="mascot-stage" id="mascotStage">
-      
-      <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 190" width="220" height="175" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- Metallic body gradient -->
-          <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#1e293b"/>
-            <stop offset="50%" stop-color="#0f172a"/>
-            <stop offset="100%" stop-color="#090f1d"/>
-          </linearGradient>
+    <div class="portal-left-slide">
+      <div class="portal-left-content">
+
+        <!-- HEADER BRANDING SEKOLAH & LIVE SCHOOL CLOCK -->
+        <header class="school-portal-header">
+          <div class="school-brand-row">
+            <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
+            <div class="school-brand-text">
+              <h1>SMK Negeri 1 Sumedang</h1>
+              <p>Sistem Presensi RFID Terintegrasi • Rekayasa Perangkat Lunak (RPL IoT)</p>
+            </div>
+          </div>
+
+          <div class="header-clock-pill">
+            <span class="clock-icon-dot"></span>
+            <span class="live-clock-text" id="liveClock">06:45:00 WIB</span>
+            <span class="clock-session-tag">06.30 - 08.00 WIB</span>
+          </div>
+        </header>
+
+        <!-- ══════════════════════════════════════════════════════════
+             KOMPONEN MASKOT ROBOT INTERAKTIF: ROBO-NESAS
+             "WATCH & COVER EYES WITH BLUSHING CHEEKS"
+             ══════════════════════════════════════════════════════════ -->
+        <div class="mascot-stage" id="mascotStage">
           
-          <!-- Visor screen gradient -->
-          <linearGradient id="roboVisorGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#030712"/>
-            <stop offset="100%" stop-color="#0b1329"/>
-          </linearGradient>
+          <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 190" width="280" height="220" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Metallic body gradient -->
+              <linearGradient id="roboBodyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="50%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#090f1d"/>
+              </linearGradient>
+              
+              <!-- Visor screen gradient -->
+              <linearGradient id="roboVisorGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#030712"/>
+                <stop offset="100%" stop-color="#0b1329"/>
+              </linearGradient>
 
-          <!-- Arm / hand gradient -->
-          <linearGradient id="roboArmGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#334155"/>
-            <stop offset="100%" stop-color="#0f172a"/>
-          </linearGradient>
+              <!-- Arm / hand gradient -->
+              <linearGradient id="roboArmGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
 
-          <!-- Neon Cyan Glow Filter -->
-          <filter id="neonCyanGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
+              <!-- Neon Cyan Glow Filter -->
+              <filter id="neonCyanGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
 
-          <!-- Beacon Glow Filter -->
-          <filter id="beaconGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4.5" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
+              <!-- Beacon Glow Filter -->
+              <filter id="beaconGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+
+              <!-- Pink Blush Glow Filter for Malu-Malu / Blushing Pose -->
+              <filter id="pinkBlushGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
 
         <!-- Mascott Root Floating Group -->
         <g id="mascotRoot">
@@ -914,6 +988,26 @@
               </g>
             </g>
 
+            <!-- 5.5 Blushing Cheeks (Rona Pipi Merona Pink Malu-Malu) -->
+            <g id="blushCheeksGroup" style="opacity: 0; pointer-events: none;">
+              <!-- Left Cheek Blush -->
+              <g id="blushLeft">
+                <ellipse cx="72" cy="103" rx="10.5" ry="6" fill="#fb7185" filter="url(#pinkBlushGlow)" opacity="0.9"/>
+                <ellipse cx="72" cy="103" rx="6.5" ry="3.5" fill="#f43f5e" opacity="0.9"/>
+                <!-- Kawaii Blush Marks -->
+                <line x1="67" y1="101" x2="71" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="73" y1="101" x2="77" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
+              </g>
+              <!-- Right Cheek Blush -->
+              <g id="blushRight">
+                <ellipse cx="168" cy="103" rx="10.5" ry="6" fill="#fb7185" filter="url(#pinkBlushGlow)" opacity="0.9"/>
+                <ellipse cx="168" cy="103" rx="6.5" ry="3.5" fill="#f43f5e" opacity="0.9"/>
+                <!-- Kawaii Blush Marks -->
+                <line x1="163" y1="101" x2="167" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="169" y1="101" x2="173" y2="105" stroke="#ffe4e6" stroke-width="1.2" stroke-linecap="round"/>
+              </g>
+            </g>
+
             <!-- 6. Mouth / Audio Waveform LEDs -->
             <g id="mascotMouth">
               <line x1="108" y1="135" x2="114" y2="135" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
@@ -970,9 +1064,30 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════
-         KARTU FORMULIR AUTENTIKASI SISWA & GURU
+         BOTTOM TELEMETRY & HARDWARE GATEWAY BAR (KOLOM KIRI)
          ══════════════════════════════════════════════════════════ -->
-    <section class="auth-form-card" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
+    <footer class="portal-bottom-bar">
+      <div class="telemetry-item">
+        <span class="telemetry-dot"></span>
+        <span>ESP32 • RC522: <strong>READY</strong></span>
+      </div>
+      <div class="telemetry-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </svg>
+        <span>Firebase Realtime Database Connected</span>
+      </div>
+      <div class="telemetry-item telemetry-latency-tag" id="telemetryLatency">42ms</div>
+    </footer>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE / KOLOM KANAN: KARTU FORMULIR AUTENTIKASI SISWA & GURU
+     ══════════════════════════════════════════════════════════ -->
+<div class="portal-right-slide">
+  <section class="auth-form-card" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
       
       <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
       <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
@@ -1111,25 +1226,9 @@
       </div>
 
     </section>
+  </div>
 
-    <!-- ══════════════════════════════════════════════════════════
-         BOTTOM TELEMETRY & HARDWARE GATEWAY BAR
-         ══════════════════════════════════════════════════════════ -->
-    <footer class="portal-bottom-bar">
-      <div class="telemetry-item">
-        <span class="telemetry-dot"></span>
-        <span>ESP32 • RC522: <strong>READY</strong></span>
-      </div>
-      <div class="telemetry-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
-          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-        </svg>
-        <span>Firebase Realtime Database Connected</span>
-      </div>
-      <div class="telemetry-item telemetry-latency-tag" id="telemetryLatency">42ms</div>
-    </footer>
-
-  </main>
+</main>
 
   <!-- ══════════════════════════════════════════════════════════
        MODAL PEMULIHAN KATA SANDI (FORGOT PASSWORD)
@@ -1260,11 +1359,13 @@
     })();
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
-    // Closed Eyes (> <) on Password Focus & One-Eye Peek (o <) on Password Toggle
+    // Closed Eyes (> <) on Password Focus with Blushing Pose & One-Eye Peek (o <) with Blushing Cheeks
+    // Compatible with: Robo-NESAS Menutup Mata... (Sensor Nonaktif) & Robo-NESAS Malu-Malu Menutup Mata... (Blushing)
     let isEyesClosed = false;
     let isCovering = false;
     let isPeeking = false;
     let isHappySuccess = false;
+    let isBlushing = false;
     let isMascotInitialized = false;
     let mascotBlurTimer = null;
 
@@ -1274,21 +1375,23 @@
       if (textEl) textEl.textContent = text;
       if (dotEl) {
         dotEl.style.backgroundColor = dotColor;
-        dotEl.style.boxShadow = `0 0 8px ${dotColor}`;
+        dotEl.style.boxShadow = `0 0 10px ${dotColor}`;
       }
     }
 
     // Direct helper to set visibility for fallbacks if GSAP CDN is blocked
-    function setMascotEyeFallback(activeGroup) {
+    function setMascotEyeFallback(activeGroup, blushActive = false) {
       const groups = ['normalEyesGroup', 'closedEyesGroup', 'peekEyesGroup', 'happyEyesGroup'];
       groups.forEach((g) => {
         const el = document.getElementById(g);
         if (el) el.style.opacity = (g === activeGroup) ? '1' : '0';
       });
+      const blushEl = document.getElementById('blushCheeksGroup');
+      if (blushEl) blushEl.style.opacity = blushActive ? '1' : '0';
     }
 
-    // 3.4 Password Focus -> Close Eyes ("🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)")
-    // Tangan robot tetap berada di posisi santai di samping bodi (idle) tanpa terangkat menutupi wajah
+    // 3.4 Password Focus -> Close Eyes & Malu-Malu / Blushing Pose
+    // Robot menutup mata (> <), pipi merona merah muda bercahaya, kepala tilt malu ke samping, lengan santai
     function closeEyes() {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1298,12 +1401,20 @@
       isCovering = true;
       isPeeking = false;
       isHappySuccess = false;
+      isBlushing = true;
 
-      // Tangan robot tetap santai di posisi samping (idle)
+      // Lengan/tangan santai sedikit merapat malu ke bodi
       if (typeof gsap !== 'undefined') {
-        gsap.to(['#armLeft', '#armRight'], {
-          x: 0,
-          y: 0,
+        gsap.to(['#armLeft'], {
+          x: 2,
+          y: -2,
+          rotation: 0,
+          duration: 0.35,
+          ease: 'power2.out'
+        });
+        gsap.to(['#armRight'], {
+          x: -2,
+          y: -2,
           rotation: 0,
           duration: 0.35,
           ease: 'power2.out'
@@ -1318,16 +1429,31 @@
           { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
           { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.4)' }
         );
+
+        // Blushing cheeks activate with soft glowing pink radiance
+        gsap.fromTo('#blushCheeksGroup',
+          { opacity: 0, scale: 0.85, transformOrigin: '120px 103px' },
+          { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.5)' }
+        );
+
+        // Kepala robot tilt malu-malu ke samping sedikit
+        gsap.to('#mascotHead', {
+          rotation: -7,
+          y: 4,
+          transformOrigin: '120px 96px',
+          duration: 0.35,
+          ease: 'power2.out'
+        });
       } else {
-        setMascotEyeFallback('closedEyesGroup');
+        setMascotEyeFallback('closedEyesGroup', true);
       }
 
-      setMascotStatus('🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)', '#f59e0b');
+      setMascotStatus('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)', '#fb7185');
     }
     const coverEyes = closeEyes;
     const coverMascotEyes = closeEyes;
 
-    // 3.5 Password Blur -> Open Eyes Normal
+    // 3.5 Password Blur -> Open Eyes Normal & Reset Blush
     function openEyes() {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1337,13 +1463,18 @@
       isCovering = false;
       isPeeking = false;
       isHappySuccess = false;
+      isBlushing = false;
 
       if (typeof gsap !== 'undefined') {
-        // Tangan tetap santai di samping
+        // Tangan kembali normal di samping (idle)
         gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35, ease: 'power2.out' });
+        gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
 
-        // Fade out closed, peek, and happy states
-        gsap.to(['#closedEyesGroup', '#peekEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.18 });
+        // Fade out closed, peek, happy, and blushing states
+        gsap.to(['#closedEyesGroup', '#peekEyesGroup', '#happyEyesGroup', '#blushCheeksGroup'], { opacity: 0, duration: 0.2, ease: 'power2.out' });
+
+        // Kepala kembali tegak
+        gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
 
         // Normal eyes open back with smooth pop
         gsap.fromTo('#normalEyesGroup',
@@ -1352,14 +1483,14 @@
         );
         gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, scaleY: 1, duration: 0.25 });
       } else {
-        setMascotEyeFallback('normalEyesGroup');
+        setMascotEyeFallback('normalEyesGroup', false);
       }
 
       setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
     }
     const uncoverEyes = openEyes;
 
-    // 3.6 Password Visibility Toggle -> One-Eye Peek (o <)
+    // 3.6 Password Visibility Toggle -> One-Eye Peek (o <) with Blushing Still Active
     function peekEyes(shouldPeek) {
       if (mascotBlurTimer) {
         clearTimeout(mascotBlurTimer);
@@ -1371,34 +1502,40 @@
         isEyesClosed = true;
         isCovering = true;
         isHappySuccess = false;
+        isBlushing = true;
         if (typeof gsap !== 'undefined') {
-          // Robot membuka satu mata mengintip lucu (o <)
+          // Robot membuka satu mata mengintip lucu (o <) tapi tetap blushing
           gsap.to(['#closedEyesGroup', '#normalEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.15 });
           gsap.fromTo('#peekEyesGroup',
             { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
             { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
           );
+          gsap.to('#blushCheeksGroup', { opacity: 1, duration: 0.2 });
+          gsap.to('#mascotHead', { rotation: -4, y: 2, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
           gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
         } else {
-          setMascotEyeFallback('peekEyesGroup');
+          setMascotEyeFallback('peekEyesGroup', true);
         }
-        setMascotStatus('👀 Robo-NESAS Mengintip Sandi...', '#38bdf8');
+        setMascotStatus('👀 Robo-NESAS Mengintip Malu-Malu...', '#fb7185');
       } else {
-        // Robot menutup kedua mata kembali (> <)
+        // Robot menutup kedua mata kembali (> <) & pose malu-malu penuh
         isEyesClosed = true;
         isCovering = true;
         isHappySuccess = false;
+        isBlushing = true;
         if (typeof gsap !== 'undefined') {
           gsap.to(['#peekEyesGroup', '#normalEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.15 });
           gsap.fromTo('#closedEyesGroup',
             { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
             { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
           );
+          gsap.to('#blushCheeksGroup', { opacity: 1, duration: 0.2 });
+          gsap.to('#mascotHead', { rotation: -7, y: 4, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
           gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
         } else {
-          setMascotEyeFallback('closedEyesGroup');
+          setMascotEyeFallback('closedEyesGroup', true);
         }
-        setMascotStatus('🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)', '#f59e0b');
+        setMascotStatus('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)', '#fb7185');
       }
     }
     const peekMascotEyes = peekEyes;
@@ -1413,14 +1550,16 @@
       isCovering = false;
       isPeeking = false;
       isHappySuccess = true;
+      isBlushing = false;
 
       if (typeof gsap !== 'undefined') {
         // Tangan santai di samping
         gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35 });
         gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
+        gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.3 });
 
-        // Fade out other eye groups and fade in happy arcs (^ _ ^)
-        gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.2 });
+        // Fade out other eye groups and blush, fade in happy arcs (^ _ ^)
+        gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup', '#blushCheeksGroup'], { opacity: 0, duration: 0.2 });
         gsap.fromTo('#happyEyesGroup',
           { opacity: 0, scale: 0.92, transformOrigin: '120px 86px' },
           { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.8)' }
@@ -1429,7 +1568,7 @@
         // Antenna beacon pulse
         gsap.to('#antennaLight', { scale: 1.4, fill: '#10b981', transformOrigin: 'center center', repeat: 4, yoyo: true, duration: 0.2 });
       } else {
-        setMascotEyeFallback('happyEyesGroup');
+        setMascotEyeFallback('happyEyesGroup', false);
       }
 
       setMascotStatus('🎉 Presensi Berhasil! Selamat Datang!', '#10b981');
@@ -1446,7 +1585,7 @@
     window.peekMascotEyes = peekEyes;
     window.triggerHappyEyes = triggerHappyEyes;
     window.happyMascotEyes = triggerHappyEyes;
-    window.getMascotState = () => ({ isEyesClosed, isCovering, isPeeking, isHappySuccess });
+    window.getMascotState = () => ({ isEyesClosed, isCovering, isPeeking, isHappySuccess, isBlushing });
 
     function handlePasswordFocus(e) {
       if (mascotBlurTimer) {
@@ -1538,14 +1677,16 @@
       }
       setTimeout(blinkEyes, 2500);
 
-      // 3.3 Dynamic Eye Tracking on Email / Text Typing
+      // 3.3 Dynamic Eye Tracking on Email / Text Typing in the Right Column
+      // Robot di kolom kiri melirik dinamis ke arah kanan (ke arah formulir input tempat user mengetik)
       function handleEmailInput(val) {
         if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
         const len = (val || '').length;
         const maxLen = 30;
         const ratio = Math.max(0, Math.min(1, len / maxLen));
-        const targetX = (ratio - 0.5) * 22; // -11px to +11px
-        const targetY = 6; // look down towards the input card
+        // Melirik ke arah kanan (card auth di kolom kanan)
+        const targetX = 8 + (ratio * 6); // +8px s/d +14px ke arah kanan
+        const targetY = 3 + (ratio * 3); // sedikit ke bawah menuju formulir
 
         if (typeof gsap !== 'undefined') {
           gsap.to(['#pupilLeft', '#pupilRight'], {
@@ -1555,16 +1696,17 @@
             ease: 'power2.out'
           });
 
-          // Subtle head tilt
+          // Head tilt sedikit menghadap formulir di kolom kanan
           gsap.to('#mascotHead', {
-            rotation: targetX * 0.25,
+            rotation: 4.5,
+            y: 1,
             transformOrigin: '120px 96px',
             duration: 0.22,
             ease: 'power2.out'
           });
         }
 
-        setMascotStatus('Robo-NESAS Memperhatikan...');
+        setMascotStatus('Robo-NESAS Memperhatikan...', '#38bdf8');
       }
 
       function handleEmailFocus(e) {
@@ -1576,9 +1718,9 @@
         if (isEyesClosed || isCovering || isPeeking || isHappySuccess) return;
         if (typeof gsap !== 'undefined') {
           gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.35, ease: 'power2.out' });
-          gsap.to('#mascotHead', { rotation: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
+          gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
         }
-        setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi');
+        setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
       }
 
       if (loginEmail) {
