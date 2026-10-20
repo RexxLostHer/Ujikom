@@ -57,6 +57,8 @@ assert.ok(indexHtml.includes('id="hoverPodBase"') && indexHtml.includes('id="rob
 
 assert.ok(indexHtml.includes('id="armLeft"') && indexHtml.includes('id="armRight"'), 'Maskot harus memiliki lengan mekanik kiri dan kanan di posisi santai');
 assert.ok(indexHtml.includes('id="fingersLeft"') && indexHtml.includes('id="fingersRight"'), 'Maskot harus memiliki jari robotik kiri dan kanan');
+assert.ok(indexHtml.includes('id="mascotAntenna"') && indexHtml.includes('id="antennaLight"'), 'Maskot harus memiliki antena dan lampu beacon (#mascotAntenna, #antennaLight)');
+assert.ok(/<g id="mascotHead">[\s\S]*?id="mascotAntenna"/.test(indexHtml), 'Antena harus terintegrasi di dalam #mascotHead agar bergerak selaras saat kepala tilt');
 assert.ok(indexHtml.includes('id="happyEyesGroup"'), 'Maskot harus memiliki happy arc eyes untuk selebrasi sukses');
 assert.ok(indexHtml.includes('closeEyes') || indexHtml.includes('coverEyes'), 'Logika menutup mata (closeEyes/coverEyes) saat password focused harus ada');
 assert.ok(indexHtml.includes('peekEyes') || indexHtml.includes('peekMascotEyes'), 'Logika mengintip (peekEyes) saat toggle password diklik harus ada');
@@ -107,6 +109,8 @@ const mockGsap = {
         if (props.x !== undefined) elements[id].style.x = props.x;
         if (props.y !== undefined) elements[id].style.y = props.y;
         if (props.rotation !== undefined) elements[id].style.rotation = props.rotation;
+        if (props.fill !== undefined) elements[id].style.fill = props.fill;
+        if (props.scale !== undefined) elements[id].style.scale = props.scale;
       }
     });
   },
@@ -234,7 +238,16 @@ st = sandbox.window.getMascotState();
 assert.strictEqual(st.isHappySuccess, true, 'isHappySuccess harus true saat autentikasi sukses');
 assert.strictEqual(elements.happyEyesGroup.style.opacity, '1', 'happyEyesGroup harus tampak (opacity 1)');
 assert.strictEqual(elements.normalEyesGroup.style.opacity, '0', 'normalEyesGroup harus redup saat happy eyes');
+assert.strictEqual(elements.antennaLight.style.fill, '#10b981', 'Beacon antenna harus pulse hijau saat selebrasi sukses');
+assert.strictEqual(elements.powerCoreCenter.style.fill, '#10b981', 'Power core reactor harus pulse hijau saat selebrasi sukses');
 assert.ok(elements.mascotStatusText.textContent.includes('Presensi Berhasil'), 'Status text harus selebrasi presensi berhasil');
+
+// Reset to openEyes -> Antenna beacon & power core glow return to cyan #38bdf8
+sandbox.openEyes();
+st = sandbox.window.getMascotState();
+assert.strictEqual(st.isHappySuccess, false, 'isHappySuccess kembali false');
+assert.strictEqual(elements.antennaLight.style.fill, '#38bdf8', 'Antenna beacon kembali ke cyan saat openEyes');
+assert.strictEqual(elements.powerCoreCenter.style.fill, '#38bdf8', 'Power core reactor kembali ke cyan saat openEyes');
 
 // 3.9 Validation of Fallback Mode without GSAP
 const fallbackElements = {

@@ -948,9 +948,9 @@
                 </g>
 
                 <!-- NESAS School IoT Emblem / Badge -->
-                <g id="schoolBadge" transform="translate(104, 161)">
-                  <rect x="0" y="0" width="32" height="14" rx="4" fill="#090f1d" stroke="#f59e0b" stroke-width="1.2"/>
-                  <text x="16" y="10" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
+                <g id="schoolBadge" transform="translate(105, 160)">
+                  <rect x="0" y="0" width="30" height="11" rx="3" fill="#090f1d" stroke="#f59e0b" stroke-width="1.2"/>
+                  <text x="15" y="8.2" font-family="'JetBrains Mono', monospace" font-size="6.8" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="0.5">NESAS</text>
                 </g>
               </g>
 
@@ -1005,27 +1005,27 @@
                 </g>
               </g>
 
-              <!-- 8. Antenna & Signal Waves -->
-              <g id="mascotAntenna">
-                <path class="signal-wave wave-1" d="M 106 14 A 16 16 0 0 1 134 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-                <path class="signal-wave wave-2" d="M 98 8 A 25 25 0 0 1 142 8" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
-                <!-- Rod -->
-                <line x1="120" y1="20" x2="120" y2="38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="120" cy="38" r="4.5" fill="#334155"/>
-                <!-- Glowing Beacon Tip -->
-                <circle id="antennaLight" cx="120" cy="18" r="5.5" fill="#38bdf8" filter="url(#beaconGlow)"/>
-                <circle cx="120" cy="18" r="2.5" fill="#ffffff"/>
-              </g>
-
-              <!-- 9. Robot Ears / Audio Sensors -->
-              <rect x="26" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
-              <line x1="33" y1="76" x2="33" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
-              
-              <rect x="200" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
-              <line x1="207" y1="76" x2="207" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
-
-              <!-- 10. Head & Dome Body -->
+              <!-- 8. Head & Dome Body (with Integrated Antenna, Signal Waves & Ear Sensors) -->
               <g id="mascotHead">
+                <!-- Antenna & Signal Waves -->
+                <g id="mascotAntenna">
+                  <path class="signal-wave wave-1" d="M 106 14 A 16 16 0 0 1 134 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+                  <path class="signal-wave wave-2" d="M 98 8 A 25 25 0 0 1 142 8" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+                  <!-- Rod -->
+                  <line x1="120" y1="20" x2="120" y2="38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+                  <circle cx="120" cy="38" r="4.5" fill="#334155"/>
+                  <!-- Glowing Beacon Tip -->
+                  <circle id="antennaLight" cx="120" cy="18" r="5.5" fill="#38bdf8" filter="url(#beaconGlow)"/>
+                  <circle cx="120" cy="18" r="2.5" fill="#ffffff"/>
+                </g>
+
+                <!-- Robot Ears / Audio Sensors -->
+                <rect x="26" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+                <line x1="33" y1="76" x2="33" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+                
+                <rect x="200" y="68" width="14" height="38" rx="6" fill="#1e293b" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+                <line x1="207" y1="76" x2="207" y2="98" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3"/>
+
                 <!-- Main Dome -->
                 <rect x="36" y="36" width="168" height="114" rx="42" fill="url(#roboBodyGrad)" stroke="rgba(56, 189, 248, 0.38)" stroke-width="2"/>
                 
@@ -1449,6 +1449,13 @@
       const armR = document.getElementById('armRight');
       if (armL) armL.style.transform = isPivoted ? 'translate(2px, -2px)' : 'none';
       if (armR) armR.style.transform = isPivoted ? 'translate(-2px, -2px)' : 'none';
+
+      if (activeGroup === 'normalEyesGroup') {
+        const antLight = document.getElementById('antennaLight');
+        if (antLight) antLight.setAttribute('fill', '#38bdf8');
+        const pCore = document.getElementById('powerCoreCenter');
+        if (pCore) pCore.setAttribute('fill', '#38bdf8');
+      }
     }
 
     // 3.4 Password Focus -> Clean Closed Eyes (> <)
@@ -1525,6 +1532,9 @@
 
         // Fade out closed, peek, happy states
         gsap.to(['#closedEyesGroup', '#peekEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.2, ease: 'power2.out' });
+
+        // Kembalikan glow cyan pada beacon dan power core jika sebelumnya happy state
+        gsap.to(['#antennaLight', '#powerCoreCenter'], { fill: '#38bdf8', scale: 1, duration: 0.3 });
 
         // Kepala kembali tegak
         gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
@@ -1879,6 +1889,7 @@
 
     // Modal Pemulihan Kata Sandi
     function bukaModalLupaPassword() {
+      if (typeof openEyes === 'function') openEyes();
       const emailField = document.getElementById('loginEmail');
       const resetEmailField = document.getElementById('resetEmail');
       if (emailField && resetEmailField && emailField.value.trim()) {
