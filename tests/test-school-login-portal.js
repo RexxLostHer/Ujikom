@@ -35,18 +35,21 @@ assert.ok(indexHtml.includes('ESP32'), 'Telemetri hardware gateway ESP32 harus t
 assert.ok(indexHtml.includes('Firebase Realtime Database Connected'), 'Status cloud sync Firebase harus tertera');
 console.log('✓ Live school clock (#liveClock), sesi presensi, dan telemetri IoT terverifikasi lengkap');
 
-// TEST 3: Maskot Robot Presensi Cerdas "Robo-NESAS" (Watch & Cover Eyes)
-console.log('\n[Test 3] Validasi Maskot Robot Robo-NESAS: Eye Tracking, Cover Eyes, Peeking & Happy Eyes');
+// TEST 3: Maskot Robot Presensi Cerdas "Robo-NESAS" (Watch, Closed Eyes & One-Eye Peek)
+console.log('\n[Test 3] Validasi Maskot Robot Robo-NESAS: Eye Tracking, Closed Eyes, Peeking & Happy Eyes');
 assert.ok(indexHtml.includes('id="roboNesasMascot"'), 'index.html harus memuat elemen SVG maskot #roboNesasMascot');
 assert.ok(indexHtml.includes('id="mascotStage"'), 'index.html harus memuat panggung maskot #mascotStage');
 assert.ok(indexHtml.includes('id="pupilLeft"') && indexHtml.includes('id="pupilRight"'), 'Maskot harus memiliki pupil kiri dan kanan');
-assert.ok(indexHtml.includes('id="armLeft"') && indexHtml.includes('id="armRight"'), 'Maskot harus memiliki lengan mekanik kiri dan kanan');
-assert.ok(indexHtml.includes('id="fingersLeft"') && indexHtml.includes('id="fingersRight"'), 'Maskot harus memiliki jari robotik kiri dan kanan untuk efek intip');
+assert.ok(indexHtml.includes('id="closedEyesGroup"'), 'Maskot harus memiliki elemen/state mata tertutup (#closedEyesGroup)');
+assert.ok(indexHtml.includes('id="peekEyesGroup"'), 'Maskot harus memiliki elemen/state satu mata mengintip (#peekEyesGroup)');
+assert.ok(indexHtml.includes('id="armLeft"') && indexHtml.includes('id="armRight"'), 'Maskot harus memiliki lengan mekanik kiri dan kanan di posisi santai');
+assert.ok(indexHtml.includes('id="fingersLeft"') && indexHtml.includes('id="fingersRight"'), 'Maskot harus memiliki jari robotik kiri dan kanan');
 assert.ok(indexHtml.includes('id="happyEyesGroup"'), 'Maskot harus memiliki happy arc eyes untuk selebrasi sukses');
-assert.ok(indexHtml.includes('coverEyes') || indexHtml.includes('coverMascotEyes'), 'Logika menutup mata (coverEyes) saat password focused harus ada');
+assert.ok(indexHtml.includes('closeEyes') || indexHtml.includes('coverEyes'), 'Logika menutup mata (closeEyes/coverEyes) saat password focused harus ada');
 assert.ok(indexHtml.includes('peekEyes') || indexHtml.includes('peekMascotEyes'), 'Logika mengintip (peekEyes) saat toggle password diklik harus ada');
 assert.ok(indexHtml.includes('triggerHappyEyes') || indexHtml.includes('happyMascotEyes'), 'Logika happy eyes saat sukses presensi harus ada');
-console.log('✓ Maskot Robo-NESAS dengan animasi Watch & Cover Eyes, Peeking, dan Happy Eyes terverifikasi');
+assert.ok(indexHtml.includes('Robo-NESAS Menutup Mata... (Sensor Nonaktif)'), 'Pesan status tutup mata sensor nonaktif harus ada');
+console.log('✓ Maskot Robo-NESAS dengan animasi Watch, Closed Eyes, One-Eye Peek, dan Happy Eyes terverifikasi');
 
 // TEST 4: Keutuhan Seluruh ID DOM Form & Auth
 console.log('\n[Test 4] Validasi Keutuhan Seluruh 17 ID DOM Form Login, Register & Auth');

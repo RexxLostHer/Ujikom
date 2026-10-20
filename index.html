@@ -840,9 +840,9 @@
             <line x1="58" y1="100" x2="182" y2="100" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
             <line x1="58" y1="114" x2="182" y2="114" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1"/>
 
-            <!-- 5. Eyes Subsystem -->
+            <!-- 5. Eyes Subsystem (Normal, Closed > <, One-Eye Peek o <, & Happy ^ ^) -->
             <g id="eyesContainer">
-              <!-- Normal Eyes & Dynamic Pupils -->
+              <!-- 5.1 Normal Eyes & Dynamic Movable Pupils -->
               <g id="normalEyesGroup">
                 <!-- Left Eye Sockets -->
                 <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
@@ -869,7 +869,40 @@
                 </g>
               </g>
 
-              <!-- Happy Arc Eyes (Shown on Success: ^ _ ^) -->
+              <!-- 5.2 Closed Eyes State (> < / Sensor Nonaktif on Password Focus) -->
+              <g id="closedEyesGroup" style="opacity: 0; pointer-events: none;">
+                <!-- Left Eye Socket -->
+                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+                <!-- Right Eye Socket -->
+                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+
+                <!-- Left Squeezed Closed Eye (>) -->
+                <path id="closedEyeLeft" d="M 77 78 L 94 86 L 77 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                <line x1="73" y1="86" x2="69" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+
+                <!-- Right Squeezed Closed Eye (<) -->
+                <path id="closedEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              </g>
+
+              <!-- 5.3 One-Eye Peek / Winking State (o < on Password Visibility Toggle) -->
+              <g id="peekEyesGroup" style="opacity: 0; pointer-events: none;">
+                <!-- Left Socket & Open Peeking Eye (o) -->
+                <ellipse cx="86" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.15)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2"/>
+                <g id="peekPupilLeft">
+                  <ellipse cx="86" cy="89" rx="10" ry="12" fill="#38bdf8" filter="url(#neonCyanGlow)"/>
+                  <ellipse cx="86" cy="89" rx="6.5" ry="8" fill="#0284c7"/>
+                  <circle cx="83.5" cy="85.5" r="3" fill="#ffffff"/>
+                  <circle cx="88.5" cy="91" r="1.4" fill="#ffffff" opacity="0.8"/>
+                </g>
+
+                <!-- Right Socket & Winking Closed Eye (<) -->
+                <ellipse cx="154" cy="86" rx="17" ry="20" fill="rgba(2, 132, 199, 0.08)" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1.2"/>
+                <path id="peekEyeRight" d="M 163 78 L 146 86 L 163 94" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonCyanGlow)"/>
+                <line x1="167" y1="86" x2="171" y2="86" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              </g>
+
+              <!-- 5.4 Happy Arc Eyes (Shown on Success: ^ _ ^) -->
               <g id="happyEyesGroup" style="opacity: 0; pointer-events: none;">
                 <!-- Left Happy Arc -->
                 <path d="M 74 91 Q 86 72 98 91" fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" filter="url(#neonCyanGlow)"/>
@@ -1227,7 +1260,8 @@
     })();
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
-    // CodePen #1 all-time favorite "Watch & Cover Eyes" logic
+    // Closed Eyes (> <) on Password Focus & One-Eye Peek (o <) on Password Toggle
+    let isEyesClosed = false;
     let isCovering = false;
     let isPeeking = false;
 
@@ -1240,6 +1274,157 @@
         dotEl.style.boxShadow = `0 0 8px ${dotColor}`;
       }
     }
+
+    // 3.4 Password Focus -> Close Eyes ("🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)")
+    // Tangan robot tetap berada di posisi santai di samping bodi (idle) tanpa terangkat menutupi wajah
+    function closeEyes() {
+      isEyesClosed = true;
+      isCovering = true;
+      isPeeking = false;
+
+      // Tangan robot tetap santai di posisi samping (idle)
+      if (typeof gsap !== 'undefined') {
+        gsap.to(['#armLeft', '#armRight'], {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          duration: 0.35,
+          ease: 'power2.out'
+        });
+        gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
+
+        // Normal eyes fade out & close
+        gsap.to('#normalEyesGroup', { opacity: 0, duration: 0.18, ease: 'power2.out' });
+        gsap.to('#peekEyesGroup', { opacity: 0, duration: 0.15 });
+
+        // Closed eyes (> <) activate with aesthetic cyan glow
+        gsap.fromTo('#closedEyesGroup',
+          { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
+          { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.4)' }
+        );
+      }
+
+      setMascotStatus('🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)', '#f59e0b');
+    }
+    const coverEyes = closeEyes;
+    const coverMascotEyes = closeEyes;
+
+    // 3.5 Password Blur -> Open Eyes Normal
+    function openEyes() {
+      setTimeout(() => {
+        const activeEl = document.activeElement;
+        const loginPassword = document.getElementById('loginPassword');
+        const regPassword = document.getElementById('regPassword');
+        if (activeEl === loginPassword || activeEl === regPassword) return;
+
+        isEyesClosed = false;
+        isCovering = false;
+        isPeeking = false;
+
+        if (typeof gsap !== 'undefined') {
+          // Tangan tetap santai di samping
+          gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35, ease: 'power2.out' });
+
+          // Fade out closed and peek states
+          gsap.to(['#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.18 });
+
+          // Normal eyes open back with smooth pop
+          gsap.fromTo('#normalEyesGroup',
+            { opacity: 0, scale: 0.95, transformOrigin: '120px 86px' },
+            { opacity: 1, scale: 1, duration: 0.25, ease: 'power2.out' }
+          );
+          gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, scaleY: 1, duration: 0.25 });
+        }
+
+        setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
+      }, 80);
+    }
+    const uncoverEyes = openEyes;
+
+    // 3.6 Password Visibility Toggle -> One-Eye Peek (o <)
+    function peekEyes(shouldPeek) {
+      isPeeking = shouldPeek;
+
+      const activeEl = document.activeElement;
+      const loginPassword = document.getElementById('loginPassword');
+      const regPassword = document.getElementById('regPassword');
+      const isPassInputActive = (activeEl === loginPassword || activeEl === regPassword);
+
+      if (typeof gsap !== 'undefined') {
+        if (shouldPeek) {
+          isEyesClosed = true;
+          isCovering = true;
+          // Robot membuka satu mata mengintip lucu (o <)
+          gsap.to('#closedEyesGroup', { opacity: 0, duration: 0.15 });
+          gsap.to('#normalEyesGroup', { opacity: 0, duration: 0.15 });
+          gsap.fromTo('#peekEyesGroup',
+            { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
+            { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
+          );
+          gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
+          setMascotStatus('👀 Robo-NESAS Mengintip Sandi...', '#38bdf8');
+        } else {
+          if (isPassInputActive || isEyesClosed || isCovering) {
+            // Robot menutup kedua mata kembali (> <)
+            isEyesClosed = true;
+            isCovering = true;
+            gsap.to('#peekEyesGroup', { opacity: 0, duration: 0.15 });
+            gsap.to('#normalEyesGroup', { opacity: 0, duration: 0.15 });
+            gsap.fromTo('#closedEyesGroup',
+              { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
+              { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
+            );
+            gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
+            setMascotStatus('🙈 Robo-NESAS Menutup Mata... (Sensor Nonaktif)', '#f59e0b');
+          } else {
+            // Re-open normal eyes
+            isEyesClosed = false;
+            isCovering = false;
+            gsap.to(['#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.18 });
+            gsap.to('#normalEyesGroup', { opacity: 1, duration: 0.25, ease: 'power2.out' });
+            setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
+          }
+        }
+      }
+    }
+    const peekMascotEyes = peekEyes;
+
+    // 3.7 Happy Arc Eyes on Success (^ _ ^)
+    function triggerHappyEyes() {
+      isEyesClosed = false;
+      isCovering = false;
+      isPeeking = false;
+
+      if (typeof gsap !== 'undefined') {
+        // Tangan santai di samping
+        gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.35 });
+        gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
+
+        // Fade out other eye groups and fade in happy arcs (^ _ ^)
+        gsap.to(['#normalEyesGroup', '#closedEyesGroup', '#peekEyesGroup'], { opacity: 0, duration: 0.2 });
+        gsap.fromTo('#happyEyesGroup',
+          { opacity: 0, scale: 0.92, transformOrigin: '120px 86px' },
+          { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.8)' }
+        );
+
+        // Antenna beacon pulse
+        gsap.to('#antennaLight', { scale: 1.4, fill: '#10b981', transformOrigin: 'center center', repeat: 4, yoyo: true, duration: 0.2 });
+      }
+
+      setMascotStatus('🎉 Presensi Berhasil! Selamat Datang!', '#10b981');
+    }
+    const happyMascotEyes = triggerHappyEyes;
+
+    // Expose helpers globally
+    window.closeEyes = closeEyes;
+    window.coverEyes = closeEyes;
+    window.coverMascotEyes = closeEyes;
+    window.openEyes = openEyes;
+    window.uncoverEyes = openEyes;
+    window.peekEyes = peekEyes;
+    window.peekMascotEyes = peekEyes;
+    window.triggerHappyEyes = triggerHappyEyes;
+    window.happyMascotEyes = triggerHappyEyes;
 
     function initRoboNesasMascot() {
       const mascotRoot = document.getElementById('mascotRoot');
@@ -1256,6 +1441,9 @@
 
       if (!mascotRoot || typeof gsap === 'undefined') return;
 
+      // Pastikan posisi tangan santai di samping bodi (idle)
+      gsap.set(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0 });
+
       // 3.1 Idle Floating / Bobbing & Beacon Glow
       gsap.to(mascotRoot, {
         y: -4,
@@ -1267,7 +1455,7 @@
 
       // 3.2 Idle Blinking Routine
       function blinkEyes() {
-        if (isCovering) return;
+        if (isEyesClosed || isCovering) return;
         const normalEyes = document.getElementById('normalEyesGroup');
         if (!normalEyes) return;
         gsap.timeline()
@@ -1281,7 +1469,7 @@
 
       // 3.3 Dynamic Eye Tracking on Email Typing
       function handleEmailInput(val) {
-        if (isCovering) return;
+        if (isEyesClosed || isCovering) return;
         const len = val.length;
         const maxLen = 30;
         const ratio = Math.max(0, Math.min(1, len / maxLen));
@@ -1307,12 +1495,12 @@
       }
 
       function handleEmailFocus(e) {
-        if (isCovering) return;
+        if (isEyesClosed || isCovering) return;
         handleEmailInput(e.target.value || '');
       }
 
       function handleEmailBlur() {
-        if (isCovering) return;
+        if (isEyesClosed || isCovering) return;
         gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.35, ease: 'power2.out' });
         gsap.to('#mascotHead', { rotation: 0, transformOrigin: '120px 96px', duration: 0.35, ease: 'power2.out' });
         setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi');
@@ -1329,111 +1517,14 @@
         regEmail.addEventListener('blur', handleEmailBlur);
       }
 
-      // 3.4 Password Focus -> Cover Eyes ("No Peeking")
-      function coverEyes() {
-        isCovering = true;
-        isPeeking = false;
-
-        // Pupils look up sheepishly towards hands
-        gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: -4, duration: 0.25 });
-
-        // Hands raise to cover the eyes
-        gsap.to(armLeft, {
-          x: 34,
-          y: -78,
-          rotation: 24,
-          duration: 0.42,
-          ease: 'back.out(1.4)'
-        });
-        gsap.to(armRight, {
-          x: -34,
-          y: -78,
-          rotation: -24,
-          duration: 0.42,
-          ease: 'back.out(1.4)'
-        });
-
-        // Ensure fingers are closed
-        gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.2 });
-
-        setMascotStatus('🙈 Jangan Mengintip! (Sensor Tertutup)', '#f59e0b');
-      }
-
-      function uncoverEyes() {
-        // Small delay to allow click on eye-toggle button without premature uncover
-        setTimeout(() => {
-          const activeEl = document.activeElement;
-          if (activeEl === loginPassword || activeEl === regPassword) return;
-
-          isCovering = false;
-          isPeeking = false;
-
-          gsap.to([armLeft, armRight], {
-            x: 0,
-            y: 0,
-            rotation: 0,
-            duration: 0.4,
-            ease: 'power2.out'
-          });
-          gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.2 });
-          gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.3 });
-
-          setMascotStatus('Robo-NESAS • Siap Mengawasi Presensi', '#38bdf8');
-        }, 80);
-      }
-
       if (loginPassword) {
-        loginPassword.addEventListener('focus', coverEyes);
-        loginPassword.addEventListener('blur', uncoverEyes);
+        loginPassword.addEventListener('focus', closeEyes);
+        loginPassword.addEventListener('blur', openEyes);
       }
       if (regPassword) {
-        regPassword.addEventListener('focus', coverEyes);
-        regPassword.addEventListener('blur', uncoverEyes);
+        regPassword.addEventListener('focus', closeEyes);
+        regPassword.addEventListener('blur', openEyes);
       }
-    }
-
-    // 3.5 Password Visibility Toggle -> Peek Through Fingers
-    function peekEyes(shouldPeek) {
-      if (!isCovering) return;
-      isPeeking = shouldPeek;
-
-      const fingersLeft = document.getElementById('fingersLeft');
-      const fingersRight = document.getElementById('fingersRight');
-      const pupilLeft = document.getElementById('pupilLeft');
-      const pupilRight = document.getElementById('pupilRight');
-
-      if (shouldPeek) {
-        // Fingers part outward so eyes can peek
-        gsap.to(fingersLeft, { rotation: -18, duration: 0.3, ease: 'back.out(1.5)' });
-        gsap.to(fingersRight, { rotation: 18, duration: 0.3, ease: 'back.out(1.5)' });
-        // Pupils peek slightly down through gap
-        gsap.to([pupilLeft, pupilRight], { x: 0, y: 4, duration: 0.25 });
-        setMascotStatus('👀 Robo-NESAS Mengintip Sandi...', '#38bdf8');
-      } else {
-        // Close fingers tightly
-        gsap.to([fingersLeft, fingersRight], { rotation: 0, duration: 0.25, ease: 'power2.inOut' });
-        gsap.to([pupilLeft, pupilRight], { x: 0, y: -4, duration: 0.25 });
-        setMascotStatus('🙈 Jangan Mengintip! (Sensor Tertutup)', '#f59e0b');
-      }
-    }
-
-    // 3.6 Happy Arc Eyes on Success (^ _ ^)
-    function triggerHappyEyes() {
-      isCovering = false;
-      isPeeking = false;
-
-      // Lower hands with cheerful bounce
-      gsap.to(['#armLeft', '#armRight'], { x: 0, y: 4, rotation: 0, duration: 0.35, ease: 'back.out(1.5)' });
-      gsap.to(['#fingersLeft', '#fingersRight'], { rotation: 0, duration: 0.2 });
-
-      // Fade out normal eyes and fade in happy arcs
-      gsap.to('#normalEyesGroup', { opacity: 0, duration: 0.2 });
-      gsap.to('#happyEyesGroup', { opacity: 1, duration: 0.25 });
-
-      // Antenna beacon pulse
-      gsap.to('#antennaLight', { scale: 1.4, fill: '#10b981', transformOrigin: 'center center', repeat: 4, yoyo: true, duration: 0.2 });
-
-      setMascotStatus('🎉 Presensi Berhasil! Selamat Datang!', '#10b981');
     }
 
     document.addEventListener('DOMContentLoaded', initRoboNesasMascot);
