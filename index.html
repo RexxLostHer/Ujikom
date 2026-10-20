@@ -767,6 +767,10 @@
     .school-portal-centered-container {
       padding: 1.5rem 0.85rem;
     }
+    .portal-bottom-bar {
+      justify-content: center;
+      gap: 8px 14px;
+    }
     .auth-form-card {
       padding: 1.8rem 1.4rem;
       border-radius: 20px;
@@ -1388,6 +1392,16 @@
       });
       const blushEl = document.getElementById('blushCheeksGroup');
       if (blushEl) blushEl.style.opacity = blushActive ? '1' : '0';
+
+      const head = document.getElementById('mascotHead');
+      if (head) {
+        head.style.transform = blushActive ? 'rotate(-8deg) translateY(4px)' : 'none';
+        head.style.transformOrigin = '120px 96px';
+      }
+      const armL = document.getElementById('armLeft');
+      const armR = document.getElementById('armRight');
+      if (armL) armL.style.transform = blushActive ? 'translate(2px, -2px)' : 'none';
+      if (armR) armR.style.transform = blushActive ? 'translate(-2px, -2px)' : 'none';
     }
 
     // 3.4 Password Focus -> Close Eyes & Malu-Malu / Blushing Pose
@@ -1436,9 +1450,9 @@
           { opacity: 1, scale: 1, duration: 0.28, ease: 'back.out(1.5)' }
         );
 
-        // Kepala robot tilt malu-malu ke samping sedikit
+        // Kepala robot tilt malu-malu ke samping sedikit (-8deg, y: 4px)
         gsap.to('#mascotHead', {
-          rotation: -7,
+          rotation: -8,
           y: 4,
           transformOrigin: '120px 96px',
           duration: 0.35,
@@ -1511,31 +1525,16 @@
             { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
           );
           gsap.to('#blushCheeksGroup', { opacity: 1, duration: 0.2 });
-          gsap.to('#mascotHead', { rotation: -4, y: 2, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
-          gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
+          gsap.to('#mascotHead', { rotation: -5, y: 2, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
+          gsap.to(['#armLeft'], { x: 2, y: -2, rotation: 0, duration: 0.25 });
+          gsap.to(['#armRight'], { x: -2, y: -2, rotation: 0, duration: 0.25 });
         } else {
           setMascotEyeFallback('peekEyesGroup', true);
         }
         setMascotStatus('👀 Robo-NESAS Mengintip Malu-Malu...', '#fb7185');
       } else {
-        // Robot menutup kedua mata kembali (> <) & pose malu-malu penuh
-        isEyesClosed = true;
-        isCovering = true;
-        isHappySuccess = false;
-        isBlushing = true;
-        if (typeof gsap !== 'undefined') {
-          gsap.to(['#peekEyesGroup', '#normalEyesGroup', '#happyEyesGroup'], { opacity: 0, duration: 0.15 });
-          gsap.fromTo('#closedEyesGroup',
-            { opacity: 0, scale: 0.94, transformOrigin: '120px 86px' },
-            { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.4)' }
-          );
-          gsap.to('#blushCheeksGroup', { opacity: 1, duration: 0.2 });
-          gsap.to('#mascotHead', { rotation: -7, y: 4, transformOrigin: '120px 96px', duration: 0.3, ease: 'power2.out' });
-          gsap.to(['#armLeft', '#armRight'], { x: 0, y: 0, rotation: 0, duration: 0.25 });
-        } else {
-          setMascotEyeFallback('closedEyesGroup', true);
-        }
-        setMascotStatus('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)', '#fb7185');
+        // Robot menutup kedua mata kembali (> <) & pose malu-malu penuh via closeEyes()
+        closeEyes();
       }
     }
     const peekMascotEyes = peekEyes;
@@ -1618,7 +1617,7 @@
         const loginPassword = document.getElementById('loginPassword');
         const regPassword = document.getElementById('regPassword');
         if (activeEl === loginPassword || activeEl === regPassword) return;
-        if (activeEl && (activeEl.classList.contains('btn-eye-toggle') || (activeEl.closest && activeEl.closest('.auth-input-field')))) {
+        if (activeEl && ((activeEl.classList && activeEl.classList.contains('btn-eye-toggle')) || (activeEl.closest && activeEl.closest('.auth-input-field')))) {
           return;
         }
         if (isHappySuccess) return;
@@ -1684,9 +1683,12 @@
         const len = (val || '').length;
         const maxLen = 30;
         const ratio = Math.max(0, Math.min(1, len / maxLen));
-        // Melirik ke arah kanan (card auth di kolom kanan)
-        const targetX = 8 + (ratio * 6); // +8px s/d +14px ke arah kanan
-        const targetY = 3 + (ratio * 3); // sedikit ke bawah menuju formulir
+        const isSplitDesktop = typeof window === 'undefined' || !window.innerWidth || window.innerWidth > 960;
+
+        // Melirik ke arah kanan jika split 2 slide (desktop), atau ke arah kartu formulir di bawah jika mobile
+        const targetX = isSplitDesktop ? (8 + (ratio * 6)) : ((ratio - 0.5) * 6);
+        const targetY = isSplitDesktop ? (3 + (ratio * 3)) : 7;
+        const targetRot = isSplitDesktop ? 4.5 : 0;
 
         if (typeof gsap !== 'undefined') {
           gsap.to(['#pupilLeft', '#pupilRight'], {
@@ -1696,9 +1698,9 @@
             ease: 'power2.out'
           });
 
-          // Head tilt sedikit menghadap formulir di kolom kanan
+          // Head tilt sedikit menghadap formulir
           gsap.to('#mascotHead', {
-            rotation: 4.5,
+            rotation: targetRot,
             y: 1,
             transformOrigin: '120px 96px',
             duration: 0.22,
@@ -1811,18 +1813,20 @@
         inp.focus();
       } catch (e) {}
 
-      if (isPass) {
-        btn.setAttribute('aria-label', 'Sembunyikan kata sandi');
-        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
-        </svg>`;
-      } else {
-        btn.setAttribute('aria-label', 'Lihat kata sandi');
-        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>`;
+      if (btn) {
+        if (isPass) {
+          btn.setAttribute('aria-label', 'Sembunyikan kata sandi');
+          btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>`;
+        } else {
+          btn.setAttribute('aria-label', 'Lihat kata sandi');
+          btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>`;
+        }
       }
     }
 
@@ -1841,6 +1845,15 @@
     function tutupModalLupaPassword() {
       document.getElementById('modalLupaPassword').style.display = 'none';
     }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const m = document.getElementById('modalLupaPassword');
+        if (m && m.style.display !== 'none') {
+          tutupModalLupaPassword();
+        }
+      }
+    });
 
     async function handleKirimResetPassword(e) {
       e.preventDefault();

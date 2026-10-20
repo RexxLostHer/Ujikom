@@ -51,8 +51,8 @@ assert.ok(indexHtml.includes('id="happyEyesGroup"'), 'Maskot harus memiliki happ
 assert.ok(indexHtml.includes('closeEyes') || indexHtml.includes('coverEyes'), 'Logika menutup mata (closeEyes/coverEyes) saat password focused harus ada');
 assert.ok(indexHtml.includes('peekEyes') || indexHtml.includes('peekMascotEyes'), 'Logika mengintip (peekEyes) saat toggle password diklik harus ada');
 assert.ok(indexHtml.includes('triggerHappyEyes') || indexHtml.includes('happyMascotEyes'), 'Logika happy eyes saat sukses presensi harus ada');
-assert.ok(indexHtml.includes('Robo-NESAS Malu-Malu Menutup Mata... (Blushing)') || indexHtml.includes('Robo-NESAS Menutup Mata...'), 'Pesan status tutup mata malu-malu blushing harus ada');
-assert.ok(indexHtml.includes('Robo-NESAS Mengintip Malu-Malu...') || indexHtml.includes('Robo-NESAS Mengintip'), 'Pesan status mengintip malu-malu harus ada');
+assert.ok(indexHtml.includes('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)'), 'Pesan status tutup mata malu-malu blushing harus ada');
+assert.ok(indexHtml.includes('👀 Robo-NESAS Mengintip Malu-Malu...'), 'Pesan status mengintip malu-malu harus ada');
 
 // Deep Functional Simulation: DOM & Event Loop Validation
 const vm = require('vm');
@@ -160,8 +160,10 @@ assert.strictEqual(st.isBlushing, true, 'isBlushing harus true saat password foc
 assert.strictEqual(elements.closedEyesGroup.style.opacity, '1', 'closedEyesGroup harus tampak (opacity 1)');
 assert.strictEqual(elements.blushCheeksGroup.style.opacity, '1', 'blushCheeksGroup harus tampak (opacity 1) saat pose malu-malu');
 assert.strictEqual(elements.normalEyesGroup.style.opacity, '0', 'normalEyesGroup harus redup (opacity 0)');
-assert.ok(elements.mascotStatusText.textContent.includes('Malu-Malu') || elements.mascotStatusText.textContent.includes('Menutup Mata'), 'Status text harus memuat pesan menutup mata / malu-malu');
-assert.ok(elements.mascotHead.style.rotation < 0, 'Kepala robot harus tilt malu-malu ke samping');
+assert.ok(elements.mascotStatusText.textContent.includes('🙈 Robo-NESAS Malu-Malu Menutup Mata... (Blushing)'), 'Status text harus memuat pesan menutup mata malu-malu');
+assert.strictEqual(elements.mascotHead.style.rotation, -8, 'Kepala robot harus tilt malu-malu -8deg');
+assert.strictEqual(elements.armLeft.style.x, 2, 'Lengan kiri merapat malu ke bodi');
+assert.strictEqual(elements.armRight.style.x, -2, 'Lengan kanan merapat malu ke bodi');
 
 // 3.3 Toggle Password Visibility (password -> text) -> One-Eye Peek (o <) with Blushing Still Active
 sandbox.peekEyes(true);
@@ -171,7 +173,7 @@ assert.strictEqual(st.isBlushing, true, 'isBlushing tetap true saat mengintip ma
 assert.strictEqual(elements.peekEyesGroup.style.opacity, '1', 'peekEyesGroup harus tampak (opacity 1)');
 assert.strictEqual(elements.blushCheeksGroup.style.opacity, '1', 'blushCheeksGroup tetap tampak saat mengintip malu-malu');
 assert.strictEqual(elements.closedEyesGroup.style.opacity, '0', 'closedEyesGroup harus redup saat mengintip');
-assert.ok(elements.mascotStatusText.textContent.includes('Mengintip'), 'Status text harus memuat pesan mengintip');
+assert.ok(elements.mascotStatusText.textContent.includes('👀 Robo-NESAS Mengintip Malu-Malu...'), 'Status text harus memuat pesan mengintip');
 
 // 3.4 Toggle Back (text -> password) -> Squeeze Eyes Closed Again (> <) & Blushing
 sandbox.peekEyes(false);
@@ -182,6 +184,7 @@ assert.strictEqual(st.isBlushing, true, 'isBlushing tetap true saat kembali ke m
 assert.strictEqual(elements.closedEyesGroup.style.opacity, '1', 'closedEyesGroup harus kembali tampak (opacity 1)');
 assert.strictEqual(elements.blushCheeksGroup.style.opacity, '1', 'blushCheeksGroup tetap tampak saat kembali ke masked');
 assert.strictEqual(elements.peekEyesGroup.style.opacity, '0', 'peekEyesGroup harus redup');
+assert.strictEqual(elements.mascotHead.style.rotation, -8, 'Kepala robot tetap tilt -8deg saat kembali masked');
 
 // 3.5 Blur from Password to Outside -> Open Eyes Normal & Reset Blush
 mockDoc.activeElement = elements.loginEmail;
@@ -196,7 +199,27 @@ assert.strictEqual(elements.closedEyesGroup.style.opacity, '0', 'closedEyesGroup
 assert.strictEqual(elements.mascotHead.style.rotation, 0, 'Kepala robot kembali tegak');
 assert.ok(elements.mascotStatusText.textContent.includes('Siap Mengawasi Presensi'), 'Status text harus kembali ke siap mengawasi');
 
-// 3.6 Dynamic Eye Tracking on Typing in Right Column
+// 3.6 Focus & Input on Register Form Fields (regPassword, regNama, regEmail)
+sandbox.handlePasswordFocus({ target: elements.regPassword });
+st = sandbox.window.getMascotState();
+assert.strictEqual(st.isEyesClosed, true, 'isEyesClosed harus true saat regPassword focus');
+assert.strictEqual(st.isBlushing, true, 'isBlushing harus true saat regPassword focus');
+
+sandbox.openEyes();
+
+if (elements.regNama.eventListeners['input']) {
+  elements.regNama.eventListeners['input']({ target: { value: 'Asep Saepuloh' } });
+  assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri harus melirik ke arah formulir');
+  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala tilt ke arah formulir saat regNama input');
+}
+
+if (elements.regEmail.eventListeners['input']) {
+  elements.regEmail.eventListeners['input']({ target: { value: 'asep@gmail.com' } });
+  assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri harus melirik ke arah formulir');
+  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala tilt ke arah formulir saat regEmail input');
+}
+
+// 3.7 Dynamic Eye Tracking on Typing in Right Column
 if (elements.loginEmail.eventListeners['input']) {
   elements.loginEmail.eventListeners['input']({ target: { value: 'siswa@gmail.com' } });
   assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri harus melirik ke kanan ke arah kartu formulir');
@@ -205,7 +228,7 @@ if (elements.loginEmail.eventListeners['input']) {
   assert.ok(elements.mascotStatusText.textContent.includes('Memperhatikan'), 'Status robot memperhatikan saat user mengetik');
 }
 
-// 3.7 Success Authentication -> Happy Arc Eyes (^ _ ^)
+// 3.8 Success Authentication -> Happy Arc Eyes (^ _ ^)
 sandbox.triggerHappyEyes();
 st = sandbox.window.getMascotState();
 assert.strictEqual(st.isHappySuccess, true, 'isHappySuccess harus true saat autentikasi sukses');
@@ -214,6 +237,46 @@ assert.strictEqual(elements.happyEyesGroup.style.opacity, '1', 'happyEyesGroup h
 assert.strictEqual(elements.blushCheeksGroup.style.opacity, '0', 'blushCheeksGroup harus redup saat happy eyes');
 assert.strictEqual(elements.normalEyesGroup.style.opacity, '0', 'normalEyesGroup harus redup saat happy eyes');
 assert.ok(elements.mascotStatusText.textContent.includes('Presensi Berhasil'), 'Status text harus selebrasi presensi berhasil');
+
+// 3.9 Validation of Fallback Mode without GSAP
+const fallbackElements = {
+  mascotRoot: { style: {} },
+  mascotStatusText: { textContent: '' },
+  mascotStatusDot: { style: {} },
+  normalEyesGroup: { style: { opacity: '1' } },
+  closedEyesGroup: { style: { opacity: '0' } },
+  peekEyesGroup: { style: { opacity: '0' } },
+  happyEyesGroup: { style: { opacity: '0' } },
+  blushCheeksGroup: { style: { opacity: '0' } },
+  mascotHead: { style: {} },
+  armLeft: { style: {} },
+  armRight: { style: {} },
+  pupilLeft: { style: {} },
+  pupilRight: { style: {} }
+};
+const fallbackSandbox = {
+  document: {
+    getElementById: (id) => fallbackElements[id] || null,
+    querySelector: () => fallbackElements.mascotStatusDot,
+    addEventListener: () => {}
+  },
+  window: {},
+  setTimeout: () => {},
+  clearTimeout: () => {}
+};
+vm.createContext(fallbackSandbox);
+vm.runInContext(mascotScriptMatch[1], fallbackSandbox);
+
+fallbackSandbox.closeEyes();
+assert.strictEqual(fallbackElements.closedEyesGroup.style.opacity, '1', 'Fallback closed eyes harus opacity 1');
+assert.strictEqual(fallbackElements.blushCheeksGroup.style.opacity, '1', 'Fallback blush cheeks harus opacity 1');
+assert.ok(fallbackElements.mascotHead.style.transform.includes('-8deg'), 'Fallback mascotHead transform harus tilt -8deg');
+assert.ok(fallbackElements.armLeft.style.transform.includes('2px'), 'Fallback armLeft transform harus merapat');
+
+fallbackSandbox.openEyes();
+assert.strictEqual(fallbackElements.normalEyesGroup.style.opacity, '1', 'Fallback normal eyes harus opacity 1');
+assert.strictEqual(fallbackElements.blushCheeksGroup.style.opacity, '0', 'Fallback blush cheeks harus opacity 0');
+assert.strictEqual(fallbackElements.mascotHead.style.transform, 'none', 'Fallback mascotHead transform harus none');
 
 console.log('✓ Maskot Robo-NESAS: Watch ke Kanan, Closed Eyes Blushing (> <), One-Eye Peek (o <), dan Happy Eyes (^ _ ^) teruji secara fungsional 100%');
 
