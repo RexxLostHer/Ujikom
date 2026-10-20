@@ -1,7 +1,7 @@
 // ===================================================================
 // TEST SUITE: test-school-login-portal.js
-// Verifikasi Implementasi Portal Presensi Gerbang Sekolah & Turnstile RFID
-// 1. Validasi Suasana Gerbang Sekolah & Turnstile IoT (SMKN 1 Sumedang)
+// Verifikasi Implementasi Portal Presensi Gerbang Depan & Pos Piket Sekolah RFID
+// 1. Validasi Suasana Gerbang Sekolah & Pos Piket Scanner RFID (SMKN 1 Sumedang)
 // 2. Validasi Jam Digital Live Sekolah (#liveClock & Sesi Pagi 06.30 - 08.00)
 // 3. Validasi Animasi Karakter Siswa Tap Kartu Pelajar & RFID Wave Pulse
 // 4. Validasi Keutuhan Seluruh ID DOM Form Login, Register & Auth Buttons
@@ -17,13 +17,14 @@ console.log('--- MEMULAI PENGUJIAN PORTAL PRESENSI GERBANG SEKOLAH (INDEX.HTML) 
 const indexHtmlPath = path.join(__dirname, '../index.html');
 const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
 
-// TEST 1: Identitas Resmi Sekolah SMKN 1 Sumedang & Panggung Gerbang Turnstile
-console.log('\n[Test 1] Validasi Suasana Gerbang Sekolah SMKN 1 Sumedang & Turnstile IoT');
+// TEST 1: Identitas Resmi Sekolah SMKN 1 Sumedang & Panggung Pos Piket Presensi RFID
+console.log('\n[Test 1] Validasi Suasana Gerbang Sekolah SMKN 1 Sumedang & Pos Piket Scanner RFID');
 assert.ok(indexHtml.includes('SMK Negeri 1 Sumedang'), 'index.html harus memuat nama resmi SMK Negeri 1 Sumedang');
-assert.ok(indexHtml.includes('Smart Turnstile Gate'), 'index.html harus memuat komponen Smart Turnstile Gate');
-assert.ok(indexHtml.includes('turnstileStage'), 'index.html harus memiliki container turnstileStage');
+assert.ok(indexHtml.includes('Pos Piket Presensi RFID'), 'index.html harus memuat komponen Pos Piket Presensi RFID');
+assert.ok(indexHtml.includes('schoolPiketStage'), 'index.html harus memiliki container schoolPiketStage');
+assert.ok(indexHtml.includes('schoolMainGate'), 'index.html harus memuat arsitektur gerbang depan sekolah (schoolMainGate)');
 assert.ok(indexHtml.includes('assets/logo-nesas.png'), 'index.html harus memuat logo NESAS resmi');
-console.log('✓ Branding SMKN 1 Sumedang dan komponen gerbang masuk sekolah terverifikasi aktif');
+console.log('✓ Branding SMKN 1 Sumedang dan komponen pos piket gerbang masuk terverifikasi aktif');
 
 // TEST 2: Jam Digital Live Sekolah & Sesi Presensi
 console.log('\n[Test 2] Validasi Jam Digital Live Sekolah & Sesi Presensi');
@@ -38,8 +39,8 @@ assert.ok(indexHtml.includes('studentHandCard'), 'Karakter siswa harus memiliki 
 assert.ok(indexHtml.includes('rfidStudentCard'), 'Kartu pelajar siswa harus digambarkan (rfidStudentCard)');
 assert.ok(indexHtml.includes('triggerTapSimulation'), 'Fungsi triggerTapSimulation harus ada untuk simulasi tap kartu');
 assert.ok(indexHtml.includes('rfidRing1'), 'Sensor gelombang RFID (rfidRing1) harus ada untuk efek visual pulse');
-assert.ok(indexHtml.includes('turnstile-open'), 'Gate harus memiliki kelas status terbuka (turnstile-open) saat presensi');
-console.log('✓ Animasi siswa tap kartu di pintu putar dan gelombang sensor terverifikasi');
+assert.ok(indexHtml.includes('piket-tap-success'), 'Panggung pos piket harus memiliki kelas status berhasil (piket-tap-success) saat presensi');
+console.log('✓ Animasi siswa tap kartu di meja pos piket dan gelombang sensor terverifikasi');
 
 // TEST 4: Keutuhan Seluruh ID DOM Form & Auth
 console.log('\n[Test 4] Validasi Keutuhan Form Login, Register & Auth Buttons');
@@ -54,7 +55,13 @@ const requiredIds = [
   'regEmail',
   'regPassword',
   'btnActionRegister',
-  'authSuccessOverlay'
+  'authSuccessOverlay',
+  'liveClock',
+  'notifBoxLogin',
+  'notifBoxRegister',
+  'modalLupaPassword',
+  'resetEmail',
+  'btnKirimReset'
 ];
 
 requiredIds.forEach(id => {
