@@ -272,11 +272,34 @@ if (typeof sandbox.window.updateMouseGaze === 'function') {
   if (elements.loginEmail.eventListeners['blur']) {
     elements.loginEmail.eventListeners['blur']();
   }
+  // Gaze to right
   sandbox.window.updateMouseGaze(900, 200);
   assert.ok(elements.pupilLeft.style.x > 0, 'Pupil kiri melacak kursor mouse ke arah kanan');
-  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala robot menoleh ke arah kursor mouse');
+  assert.ok(elements.mascotHead.style.rotation > 0, 'Kepala robot menoleh ke arah kursor mouse (kanan)');
   assert.ok((elements.upperBodyChassis.style.x > 0) || (elements.roboTorso.style.x > 0), 'Badan robot condong mikro mengikuti kursor mouse');
   assert.ok(elements.neckJoint.style.x > 0, 'Leher robot condong mikro mengikuti kursor mouse');
+
+  // Gaze to left
+  sandbox.window.updateMouseGaze(50, 200);
+  assert.ok(elements.pupilLeft.style.x < 0, 'Pupil kiri melacak kursor mouse ke arah kiri');
+  assert.ok(elements.mascotHead.style.rotation < 0, 'Kepala robot menoleh ke arah kursor mouse (kiri)');
+  assert.ok((elements.upperBodyChassis.style.x < 0) || (elements.roboTorso.style.x < 0), 'Badan robot condong mikro ke kiri');
+  assert.ok(elements.neckJoint.style.x < 0, 'Leher robot condong mikro ke kiri');
+
+  // Focus immunity: input focus overrides mouse tracking
+  mockDoc.activeElement = elements.loginEmail;
+  elements.loginEmail.eventListeners['focus']({ target: elements.loginEmail });
+  elements.loginEmail.eventListeners['input']({ target: { value: 'test@gmail.com' } });
+  const torsoLeaningX = elements.upperBodyChassis.style.x ?? elements.roboTorso.style.x;
+  assert.ok(torsoLeaningX >= 4, 'Badan harus condong ke kanan (x >= 4px) saat input fokus');
+  
+  // Try to move mouse to left while input is focused -> must be ignored!
+  sandbox.window.updateMouseGaze(50, 200);
+  assert.strictEqual(elements.upperBodyChassis.style.x ?? elements.roboTorso.style.x, torsoLeaningX, 'Mouse tracking tidak boleh menginterupsi mode fokus input formulir');
+  
+  // Blur resets back
+  elements.loginEmail.eventListeners['blur']();
+  mockDoc.activeElement = null;
 }
 
 // 3.9 Success Authentication -> Happy Arc Eyes (^ _ ^)
@@ -341,19 +364,31 @@ assert.ok(fallbackElements.armLeft.style.transform.includes('2px'), 'Fallback ar
 assert.ok(fallbackElements.upperBodyChassis.style.transform.includes('-1.5deg') || fallbackElements.roboTorso.style.transform.includes('-1.5deg'), 'Fallback upper body transform harus condong malu saat closedEyes');
 assert.ok(fallbackElements.neckJoint.style.transform.includes('-1.2deg'), 'Fallback neckJoint transform harus condong saat closedEyes');
 
+// Fallback Peek mode
+fallbackSandbox.peekEyes(true);
+assert.strictEqual(fallbackElements.peekEyesGroup.style.opacity, '1', 'Fallback peek eyes harus opacity 1');
+assert.ok(fallbackElements.upperBodyChassis.style.transform.includes('1.2deg') || fallbackElements.roboTorso.style.transform.includes('1.2deg'), 'Fallback upper body transform harus nongol mengintip (1.2deg) saat peekEyes');
+assert.ok(fallbackElements.neckJoint.style.transform.includes('1.0deg'), 'Fallback neckJoint transform harus condong mengintip (1.0deg) saat peekEyes');
+
 fallbackSandbox.openEyes();
 assert.strictEqual(fallbackElements.normalEyesGroup.style.opacity, '1', 'Fallback normal eyes harus opacity 1');
 assert.strictEqual(fallbackElements.mascotHead.style.transform, 'none', 'Fallback mascotHead transform harus none');
 assert.strictEqual(fallbackElements.upperBodyChassis.style.transform || fallbackElements.roboTorso.style.transform, 'none', 'Fallback upper body transform harus none');
 assert.strictEqual(fallbackElements.neckJoint.style.transform, 'none', 'Fallback neckJoint transform harus none');
+assert.strictEqual(fallbackElements.pupilLeft.style.transform, 'none', 'Fallback pupilLeft transform harus reset none saat openEyes');
 
 // Fallback mouse tracking test
 if (typeof fallbackSandbox.window.updateMouseGaze === 'function') {
   fallbackSandbox.window.updateMouseGaze(900, 200);
   assert.ok(fallbackElements.pupilLeft.style.x > 0, 'Fallback pupilLeft melacak mouse');
+  assert.ok(fallbackElements.pupilLeft.style.transform.includes('px'), 'Fallback pupilLeft style.transform harus translate px');
   assert.ok(fallbackElements.mascotHead.style.rotation > 0, 'Fallback mascotHead rotation melacak mouse');
   assert.ok(fallbackElements.upperBodyChassis.style.rotation > 0 || fallbackElements.roboTorso.style.rotation > 0, 'Fallback upper body rotation melacak mouse');
   assert.ok(fallbackElements.neckJoint.style.rotation > 0, 'Fallback neckJoint rotation melacak mouse');
+
+  fallbackSandbox.window.updateMouseGaze(50, 200);
+  assert.ok(fallbackElements.pupilLeft.style.x < 0, 'Fallback pupilLeft melacak mouse ke kiri');
+  assert.ok(fallbackElements.mascotHead.style.rotation < 0, 'Fallback mascotHead menoleh ke kiri');
 }
 
 console.log('✓ Maskot Robo-NESAS: Full Body Chassis, Watch ke Kanan, Condong Tubuh & Leher, Clean Closed Eyes (> <), One-Eye Peek (o <), dan Happy Eyes (^ _ ^) teruji secara fungsional 100%');

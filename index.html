@@ -1464,35 +1464,85 @@
         if (el) el.style.opacity = (g === activeGroup) ? '1' : '0';
       });
 
+      const isPeek = activeGroup === 'peekEyesGroup';
+      const isClosed = activeGroup === 'closedEyesGroup';
+
       const head = document.getElementById('mascotHead');
       if (head) {
-        head.style.transform = isPivoted ? 'rotate(-8deg) translateY(4px)' : 'none';
-        head.style.transformOrigin = '120px 96px';
-        head.style.rotation = isPivoted ? -8 : 0;
-        head.style.y = isPivoted ? 4 : 0;
+        if (isPeek) {
+          head.style.transform = 'rotate(-5deg) translateY(2px)';
+          head.style.transformOrigin = '120px 96px';
+          head.style.rotation = -5;
+          head.style.y = 2;
+        } else if (isClosed || isPivoted) {
+          head.style.transform = 'rotate(-8deg) translateY(4px)';
+          head.style.transformOrigin = '120px 96px';
+          head.style.rotation = -8;
+          head.style.y = 4;
+        } else {
+          head.style.transform = 'none';
+          head.style.transformOrigin = '120px 96px';
+          head.style.rotation = 0;
+          head.style.y = 0;
+        }
       }
+
       const armL = document.getElementById('armLeft');
       const armR = document.getElementById('armRight');
       if (armL) {
-        armL.style.transform = isPivoted ? 'translate(2px, -2px)' : 'none';
-        armL.style.x = isPivoted ? 2 : 0;
+        armL.style.transform = (isPeek || isClosed || isPivoted) ? 'translate(2px, -2px)' : 'none';
+        armL.style.x = (isPeek || isClosed || isPivoted) ? 2 : 0;
       }
       if (armR) {
-        armR.style.transform = isPivoted ? 'translate(-2px, -2px)' : 'none';
-        armR.style.x = isPivoted ? -2 : 0;
+        armR.style.transform = (isPeek || isClosed || isPivoted) ? 'translate(-2px, -2px)' : 'none';
+        armR.style.x = (isPeek || isClosed || isPivoted) ? -2 : 0;
       }
 
       const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
       if (ub) {
-        ub.style.transform = isPivoted ? 'rotate(-1.5deg) translateX(-2px)' : 'none';
-        ub.style.rotation = isPivoted ? -1.5 : 0;
-        ub.style.x = isPivoted ? -2 : 0;
+        if (isPeek) {
+          ub.style.transform = 'rotate(1.2deg) translateX(2px)';
+          ub.style.rotation = 1.2;
+          ub.style.x = 2;
+        } else if (isClosed || isPivoted) {
+          ub.style.transform = 'rotate(-1.5deg) translateX(-2px)';
+          ub.style.rotation = -1.5;
+          ub.style.x = -2;
+        } else {
+          ub.style.transform = 'none';
+          ub.style.rotation = 0;
+          ub.style.x = 0;
+        }
       }
+
       const nk = document.getElementById('neckJoint');
       if (nk) {
-        nk.style.transform = isPivoted ? 'rotate(-1.2deg) translateX(-1.5px)' : 'none';
-        nk.style.rotation = isPivoted ? -1.2 : 0;
-        nk.style.x = isPivoted ? -1.5 : 0;
+        if (isPeek) {
+          nk.style.transform = 'rotate(1.0deg) translateX(1.5px)';
+          nk.style.rotation = 1.0;
+          nk.style.x = 1.5;
+        } else if (isClosed || isPivoted) {
+          nk.style.transform = 'rotate(-1.2deg) translateX(-1.5px)';
+          nk.style.rotation = -1.2;
+          nk.style.x = -1.5;
+        } else {
+          nk.style.transform = 'none';
+          nk.style.rotation = 0;
+          nk.style.x = 0;
+        }
+      }
+
+      const pl = document.getElementById('pupilLeft');
+      const pr = document.getElementById('pupilRight');
+      if (pl && pl.style) {
+        pl.style.x = 0;
+        pl.style.y = 0;
+        pl.style.transform = 'none';
+      }
+      if (pr && pr.style) {
+        pr.style.x = 0;
+        pr.style.y = 0;
+        pr.style.transform = 'none';
       }
 
       if (activeGroup === 'normalEyesGroup') {
@@ -1584,7 +1634,11 @@
         clearTimeout(mascotBlurTimer);
         mascotBlurTimer = null;
       }
-      isInputFocused = false;
+      const activeEl = (typeof document !== 'undefined') ? document.activeElement : null;
+      const isInputCurrentlyActive = activeEl && (activeEl.id === 'loginEmail' || activeEl.id === 'regNama' || activeEl.id === 'regEmail');
+      if (!isInputCurrentlyActive) {
+        isInputFocused = false;
+      }
       isEyesClosed = false;
       isCovering = false;
       isPeeking = false;
@@ -1713,6 +1767,10 @@
       if (isInputFocused || isEyesClosed || isCovering || isPeeking || isHappySuccess) {
         return;
       }
+      const active = (typeof document !== 'undefined') ? document.activeElement : null;
+      if (active && (active.id === 'loginEmail' || active.id === 'regNama' || active.id === 'regEmail' || active.id === 'loginPassword' || active.id === 'regPassword')) {
+        return;
+      }
       const mascotSvg = document.getElementById('roboNesasMascot');
       if (!mascotSvg) return;
 
@@ -1794,8 +1852,16 @@
         const hd = document.getElementById('mascotHead');
         const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
         const nk = document.getElementById('neckJoint');
-        if (pl && pl.style) { pl.style.x = targetPupilX; pl.style.y = targetPupilY; }
-        if (pr && pr.style) { pr.style.x = targetPupilX; pr.style.y = targetPupilY; }
+        if (pl && pl.style) {
+          pl.style.x = targetPupilX;
+          pl.style.y = targetPupilY;
+          pl.style.transform = `translate(${targetPupilX}px, ${targetPupilY}px)`;
+        }
+        if (pr && pr.style) {
+          pr.style.x = targetPupilX;
+          pr.style.y = targetPupilY;
+          pr.style.transform = `translate(${targetPupilX}px, ${targetPupilY}px)`;
+        }
         if (hd && hd.style) {
           hd.style.rotation = targetHeadRot;
           hd.style.y = targetHeadY;
@@ -1970,8 +2036,8 @@
       // Robot di kolom kiri condong dan nongol nyata ke kanan menghadap kartu formulir saat user mengetik
       function handleEmailInput(val) {
         if (isHappySuccess) return;
-        isInputFocused = true;
         ensureEyesOpen();
+        isInputFocused = true;
 
         const len = (val || '').length;
         const maxLen = 30;
@@ -2058,8 +2124,16 @@
           const hd = document.getElementById('mascotHead');
           const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
           const nk = document.getElementById('neckJoint');
-          if (pl && pl.style) { pl.style.x = targetPupilX; pl.style.y = targetPupilY; }
-          if (pr && pr.style) { pr.style.x = targetPupilX; pr.style.y = targetPupilY; }
+          if (pl && pl.style) {
+            pl.style.x = targetPupilX;
+            pl.style.y = targetPupilY;
+            pl.style.transform = `translate(${targetPupilX}px, ${targetPupilY}px)`;
+          }
+          if (pr && pr.style) {
+            pr.style.x = targetPupilX;
+            pr.style.y = targetPupilY;
+            pr.style.transform = `translate(${targetPupilX}px, ${targetPupilY}px)`;
+          }
           if (hd && hd.style) {
             hd.style.rotation = targetHeadRot;
             hd.style.y = targetHeadY;
@@ -2082,8 +2156,8 @@
 
       function handleEmailFocus(e) {
         if (isHappySuccess) return;
-        isInputFocused = true;
         ensureEyesOpen();
+        isInputFocused = true;
         handleEmailInput((e && e.target ? e.target.value : '') || '');
       }
 
@@ -2104,8 +2178,8 @@
           const hd = document.getElementById('mascotHead');
           const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
           const nk = document.getElementById('neckJoint');
-          if (pl && pl.style) { pl.style.x = 0; pl.style.y = 0; }
-          if (pr && pr.style) { pr.style.x = 0; pr.style.y = 0; }
+          if (pl && pl.style) { pl.style.x = 0; pl.style.y = 0; pl.style.transform = 'none'; }
+          if (pr && pr.style) { pr.style.x = 0; pr.style.y = 0; pr.style.transform = 'none'; }
           if (hd && hd.style) { hd.style.rotation = 0; hd.style.y = 0; hd.style.transform = 'none'; }
           if (ub && ub.style) { ub.style.rotation = 0; ub.style.x = 0; ub.style.transform = 'none'; }
           if (nk && nk.style) { nk.style.rotation = 0; nk.style.x = 0; nk.style.transform = 'none'; }
@@ -2125,6 +2199,32 @@
       // Pasang listener mouse move pada window (di-throttle 60fps via requestAnimationFrame)
       if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
         window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      }
+
+      // Listener mouseleave agar robot rileks ke posisi tengah saat kursor keluar jendela
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('mouseleave', () => {
+          if (!isInputFocused && !isEyesClosed && !isCovering && !isPeeking && !isHappySuccess) {
+            const upperBodyTarget = getUpperBodyTarget();
+            if (typeof gsap !== 'undefined') {
+              gsap.to(['#pupilLeft', '#pupilRight'], { x: 0, y: 0, duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+              gsap.to('#mascotHead', { rotation: 0, y: 0, transformOrigin: '120px 96px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+              gsap.to(upperBodyTarget, { x: 0, rotation: 0, transformOrigin: '120px 216px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+              gsap.to('#neckJoint', { x: 0, rotation: 0, transformOrigin: '120px 158px', duration: 0.45, ease: 'power2.out', overwrite: 'auto' });
+            } else {
+              const pl = document.getElementById('pupilLeft');
+              const pr = document.getElementById('pupilRight');
+              const hd = document.getElementById('mascotHead');
+              const ub = document.getElementById('upperBodyChassis') || document.getElementById('roboTorso');
+              const nk = document.getElementById('neckJoint');
+              if (pl && pl.style) { pl.style.x = 0; pl.style.y = 0; pl.style.transform = 'none'; }
+              if (pr && pr.style) { pr.style.x = 0; pr.style.y = 0; pr.style.transform = 'none'; }
+              if (hd && hd.style) { hd.style.rotation = 0; hd.style.y = 0; hd.style.transform = 'none'; }
+              if (ub && ub.style) { ub.style.rotation = 0; ub.style.x = 0; ub.style.transform = 'none'; }
+              if (nk && nk.style) { nk.style.rotation = 0; nk.style.x = 0; nk.style.transform = 'none'; }
+            }
+          }
+        }, { passive: true });
       }
 
       if (loginEmail) {
