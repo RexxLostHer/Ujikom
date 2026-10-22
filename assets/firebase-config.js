@@ -925,6 +925,291 @@ async function bootstrapSistemUjikom() {
   }
 }
 
+
+// Helper untuk mendapatkan referensi database Firebase Realtime
+function getDbRef() {
+  if (typeof db !== 'undefined' && db && db.ref) return db;
+  if (typeof window !== 'undefined' && window.db && window.db.ref) return window.db;
+  if (typeof global !== 'undefined' && global.db && global.db.ref) return global.db;
+  return null;
+}
+
+// 1. Memulai permintaan penautan (pairing) kartu NFC/RFID di Firebase RTDB
+async function mulaiPairingNfc(userData) {
+  if (!userData) throw new Error('Data pengguna wajib diisi untuk pairing NFC');
+  const userId = String(userData.userId || userData.nisn || userData.nip || '').trim();
+  if (!userId) {
+    throw new Error('User ID (NISN/NIP) wajib diisi untuk penautan kartu NFC.');
+  }
+  const rawRole = String(userData.role || '').toLowerCase();
+  const isWalas = Boolean(userData.isWalas || rawRole === 'walas');
+  const role = isWalas ? 'walas' : (rawRole === 'guru' || userData.nip ? 'guru' : 'siswa');
+  const nama = String(userData.nama || userData.nama_lengkap || '').trim();
+  const kelas = userData.kelas || (isWalas ? (userData.walasKelasId || '') : '');
+  const mapel = userData.mapel || '';
+  const walasKelasId = userData.walasKelasId || (isWalas ? kelas : '');
+  const timestamp = Date.now();
+
+  const pairingData = {
+    active: true,
+    userId: userId,
+    role: role,
+    nama: nama,
+    kelas: kelas,
+    mapel: mapel,
+    isWalas: isWalas,
+    walasKelasId: walasKelasId,
+    timestamp: timestamp,
+    status: 'waiting'
+  };
+
+  if (typeof window !== 'undefined') {
+    window._lastPairingRequest = pairingData;
+  }
+  if (typeof global !== 'undefined') {
+    global._lastPairingRequest = pairingData;
+  }
+
+  const rtdb = getDbRef();
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      await rtdb.ref('pairing_request').set(pairingData);
+    } catch (e) {
+      console.warn('[Pairing] Gagal set pairing_request ke Firebase:', e.message);
+    }
+  }
+
+  return pairingData;
+}
+
+// 2. Membatalkan permintaan penautan kartu NFC/RFID
+async function batalkanPairingNfc() {
+  const rtdb = getDbRef();
+  let currentReq = null;
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      const snap = await rtdb.ref('pairing_request').once('value');
+      currentReq = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
+    } catch (e) {}
+  }
+  if (!currentReq) {
+    currentReq = (typeof window !== 'undefined' && window._lastPairingRequest) ||
+                 (typeof global !== 'undefined' && global._lastPairingRequest) || null;
+  }
+
+  // Jika pairing sudah sukses, jangan timpa status dengan 'cancelled'
+  if (currentReq && currentReq.status === 'success') {
+    return currentReq;
+  }
+
+  const cancelData = {
+    active: false,
+    status: 'cancelled',
+    cancelledAt: Date.now()
+  };
+
+  if (typeof window !== 'undefined' && window._lastPairingRequest) {
+    Object.assign(window._lastPairingRequest, cancelData);
+  }
+  if (typeof global !== 'undefined' && global._lastPairingRequest) {
+    Object.assign(global._lastPairingRequest, cancelData);
+  }
+
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      await rtdb.ref('pairing_request').update(cancelData);
+    } catch (e) {
+      console.warn('[Pairing] Gagal batalkan pairing_request:', e.message);
+    }
+  }
+
+  return cancelData;
+}
+
+// 3. Mendengarkan status atau hasil penautan NFC secara realtime
+function dengarkanHasilPairing(callback) {
+  if (typeof callback !== 'function') return () => {};
+  const rtdb = getDbRef();
+  if (rtdb && typeof rtdb.ref === 'function') {
+    const ref = rtdb.ref('pairing_request');
+    const onVal = (snap) => {
+      const val = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
+      callback(val);
+    };
+    ref.on('value', onVal);
+    return () => ref.off('value', onVal);
+  }
+
+  let prevValJson = '';
+  const interval = setInterval(() => {
+    const current = (typeof window !== 'undefined' && window._lastPairingRequest) ||
+                    (typeof global !== 'undefined' && global._lastPairingRequest) || null;
+    const curJson = JSON.stringify(current);
+    if (curJson !== prevValJson) {
+      prevValJson = curJson;
+      callback(current);
+    }
+  }, 200);
+  return () => clearInterval(interval);
+}
+
+// 4. Simulasi Tap Kartu Pairing (Web & Hardware simulation)
+async function simulasiTapPairing(uid) {
+  const now = Date.now();
+  let cleanUid = uid ? String(uid).trim().toUpperCase() : '';
+  if (!cleanUid) {
+    cleanUid = '04' + Math.random().toString(16).substring(2, 8).toUpperCase();
+  }
+
+  const rtdb = getDbRef();
+  let req = null;
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      const snap = await rtdb.ref('pairing_request').once('value');
+      req = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
+    } catch (e) {
+      console.warn('[Pairing] Gagal membaca pairing_request:', e.message);
+    }
+  }
+
+  if (!req) {
+    req = (typeof window !== 'undefined' && window._lastPairingRequest) ||
+          (typeof global !== 'undefined' && global._lastPairingRequest);
+  }
+
+  if (!req || req.active !== true || req.status !== 'waiting') {
+    return {
+      success: false,
+      reason: 'NO_ACTIVE_REQUEST',
+      message: 'Tidak ada permintaan penautan NFC yang sedang aktif.'
+    };
+  }
+
+  const elapsed = now - (req.timestamp || 0);
+  if (elapsed > 30000) {
+    const expiredData = { active: false, status: 'expired', expiredAt: now };
+    if (rtdb && typeof rtdb.ref === 'function') {
+      try { await rtdb.ref('pairing_request').update(expiredData); } catch (e) {}
+    }
+    if (typeof window !== 'undefined' && window._lastPairingRequest) {
+      Object.assign(window._lastPairingRequest, expiredData);
+    }
+    if (typeof global !== 'undefined' && global._lastPairingRequest) {
+      Object.assign(global._lastPairingRequest, expiredData);
+    }
+    return {
+      success: false,
+      reason: 'EXPIRED',
+      message: 'Permintaan penautan kartu telah kedaluwarsa (>30 detik).'
+    };
+  }
+
+  const role = String(req.role || '').toLowerCase();
+  const isGuru = role === 'guru' || role === 'walas' || Boolean(req.isWalas);
+  let cardData = {
+    uid: cleanUid,
+    tipe: isGuru ? 'guru' : 'siswa',
+    nama: req.nama,
+    linkedAt: now
+  };
+
+  if (isGuru) {
+    cardData.nip = req.userId || req.nip || '';
+    cardData.mapel = req.mapel || '-';
+    cardData.isWalas = Boolean(req.isWalas || role === 'walas');
+    cardData.walasKelasId = req.walasKelasId || (cardData.isWalas ? req.kelas : '');
+    if (req.kelas) cardData.kelas = req.kelas;
+  } else {
+    cardData.nisn = req.userId || req.nisn || '';
+    cardData.kelas = req.kelas || 'XII RPL 2';
+  }
+
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      // Bersihkan kartu lama pengguna jika ada (re-assignment / perbarui kartu)
+      const snapKartu = await rtdb.ref('kartu').once('value');
+      const allCards = snapKartu ? (typeof snapKartu.val === 'function' ? snapKartu.val() : snapKartu.val) : null;
+      const targetUserId = String(cardData.nip || cardData.nisn || req.userId || '').trim();
+      if (allCards && typeof allCards === 'object' && targetUserId) {
+        for (const [kUid, item] of Object.entries(allCards)) {
+          if (!item || kUid === cleanUid) continue;
+          const itemId = String(typeof item === 'string' ? item : (item.nisn || item.nip || item.userId || '')).trim();
+          if (itemId === targetUserId) {
+            const oldRef = rtdb.ref('kartu/' + kUid);
+            if (typeof oldRef.remove === 'function') {
+              await oldRef.remove();
+            } else {
+              await oldRef.set(null);
+            }
+          }
+        }
+      }
+
+      await rtdb.ref('kartu/' + cleanUid).set(cardData);
+    } catch (e) {
+      console.warn('[Pairing] Gagal simpan kartu ke Firebase:', e.message);
+    }
+  }
+
+  const successData = {
+    active: false,
+    status: 'success',
+    uid: cleanUid,
+    linkedCard: cardData,
+    completedAt: now
+  };
+
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      await rtdb.ref('pairing_request').update(successData);
+    } catch (e) {}
+  }
+  if (typeof window !== 'undefined' && window._lastPairingRequest) {
+    Object.assign(window._lastPairingRequest, successData);
+  }
+  if (typeof global !== 'undefined' && global._lastPairingRequest) {
+    Object.assign(global._lastPairingRequest, successData);
+  }
+
+  return {
+    success: true,
+    uid: cleanUid,
+    cardData: cardData
+  };
+}
+
+// 5. Cek apakah pengguna sudah memiliki kartu terdaftar di /kartu
+async function cekKartuUser(userId) {
+  if (!userId) return null;
+  const cleanId = String(userId).trim();
+  const rtdb = getDbRef();
+  if (rtdb && typeof rtdb.ref === 'function') {
+    try {
+      const snap = await rtdb.ref('kartu').once('value');
+      const val = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
+      if (val && typeof val === 'object') {
+        const matches = [];
+        for (const [uid, item] of Object.entries(val)) {
+          if (!item) continue;
+          if (typeof item === 'string' && item === cleanId) {
+            matches.push({ uid, nisn: item, tipe: 'siswa', linkedAt: 0 });
+          } else if (item.nisn === cleanId || item.nip === cleanId || item.userId === cleanId) {
+            matches.push({ uid, ...item, linkedAt: item.linkedAt || 0 });
+          }
+        }
+        if (matches.length > 0) {
+          // Pilih kartu dengan timestamp linkedAt paling baru
+          matches.sort((a, b) => (b.linkedAt || 0) - (a.linkedAt || 0));
+          return matches[0];
+        }
+      }
+    } catch (e) {
+      console.warn('[Pairing] Gagal cek kartu di Firebase:', e.message);
+    }
+  }
+  return null;
+}
+
 if (typeof window !== 'undefined') {
   window.DAFTAR_KELAS_RESMI = DAFTAR_KELAS_RESMI;
   window.MASTER_GURU_RESMI = MASTER_GURU_RESMI;
@@ -940,6 +1225,12 @@ if (typeof window !== 'undefined') {
   window.parseSiswaSnapshot = parseSiswaSnapshot;
   window.evaluasiAmbangBatasWaktu = evaluasiAmbangBatasWaktu;
   window.bootstrapSistemUjikom = bootstrapSistemUjikom;
+  window.mulaiPairingNfc = mulaiPairingNfc;
+  window.batalkanPairingNfc = batalkanPairingNfc;
+  window.dengarkanHasilPairing = dengarkanHasilPairing;
+  window.simulasiTapPairing = simulasiTapPairing;
+  window.cekKartuUser = cekKartuUser;
+
   bootstrapSistemUjikom();
 }
 
@@ -959,6 +1250,11 @@ if (typeof module !== 'undefined' && module.exports) {
     normalisasiKelas,
     parseSiswaSnapshot,
     evaluasiAmbangBatasWaktu,
-    bootstrapSistemUjikom
+    bootstrapSistemUjikom,
+    mulaiPairingNfc,
+    batalkanPairingNfc,
+    dengarkanHasilPairing,
+    simulasiTapPairing,
+    cekKartuUser
   };
 }

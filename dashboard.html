@@ -81,6 +81,103 @@
     background: #F0FDFA;
     border-color: #99F6E4;
   }
+
+  /* NFC Radar Pulse Wave Animations & Sleek Minimalist Modal */
+  @keyframes nfcPulseWave {
+    0% {
+      transform: scale(0.65);
+      opacity: 0.8;
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    50% {
+      opacity: 0.35;
+    }
+    100% {
+      transform: scale(2.05);
+      opacity: 0;
+      border-color: rgba(99, 102, 241, 0.05);
+    }
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  .nfc-radar-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nfc-radar-guide {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed rgba(203, 213, 225, 0.65);
+    pointer-events: none;
+  }
+  .nfc-radar-guide.guide-1 {
+    width: 110px;
+    height: 110px;
+  }
+  .nfc-radar-guide.guide-2 {
+    width: 146px;
+    height: 146px;
+  }
+  .nfc-wave {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1.5px solid rgba(99, 102, 241, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    animation: nfcPulseWave 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  }
+  .nfc-wave.wave-2 { animation-delay: 0.8s; }
+  .nfc-wave.wave-3 { animation-delay: 1.6s; }
+  .nfc-center-circle {
+    position: relative;
+    z-index: 2;
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 0 0 6px rgba(99, 102, 241, 0.08);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal-nfc-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-nfc-overlay.show {
+    display: flex !important;
+  }
+  .modal-nfc-card {
+    background: #ffffff;
+    border-radius: 24px;
+    max-width: 440px;
+    width: 100%;
+    padding: 28px 24px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
 </style>
 </head>
 <body>
@@ -112,6 +209,16 @@
     </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <!-- presensi-live.html dinonaktifkan dari header dashboard publik: portal admin eksklusif terpisah -->
+      <!-- Tombol Akses Cepat Verifikasi & Penautan NFC Smartphone Siswa -->
+      <button id="btnHeaderNfcSiswa" class="btn-profile-header" onclick="bukaModalPairingNfcSiswa()" style="display:inline-flex;align-items:center;gap:7px;background:#f8fafc;border:1px solid #cbd5e1;color:#0f172a;" title="Verifikasi & Tautkan NFC HP Siswa">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+          <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+          <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+          <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+        </svg>
+        <span style="font-weight:700;">Verifikasi NFC HP</span>
+      </button>
       <button class="btn-profile-header" onclick="bukaModalProfil()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         Profil Saya
@@ -157,15 +264,32 @@
     <!-- BANNER KHUSUS PENGUNJUNG / AKUN BELUM TERVERIFIKASI -->
     <div class="guest-verification-banner" id="bannerGuestVerifikasi" style="display:none;">
       <div class="guest-banner-left">
-        <div class="guest-banner-icon">ℹ️</div>
+        <div class="guest-banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
         <div class="guest-banner-text">
           <strong>Akun Pengunjung / Belum Terverifikasi</strong>
           <p>Akun ini belum ditautkan dengan data resmi. Tautkan <strong>NISN</strong> untuk Siswa atau <strong>NIP</strong> untuk Guru / Wali Kelas guna mengaktifkan hak akses resmi.</p>
         </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="color:#6C63FF;">🎓 Verifikasi NISN Siswa</button>
-        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="color:#38B2AC;">👨‍🏫 Verifikasi NIP Guru / Walas</button>
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Verifikasi NISN Siswa
+        </button>
+        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="color:#7C3AED;background:#F5F3FF;border:1px solid #DDD6FE;display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Verifikasi NIP Guru / Walas
+        </button>
+        <button type="button" class="btn-guest-verify" onclick="bukaModalPairingNfcSiswa()" style="color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+            <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+            <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+            <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+          </svg>
+          Verifikasi NFC HP / Kartu
+        </button>
       </div>
     </div>
     
@@ -173,22 +297,27 @@
     <div class="hero-welcome">
       <div class="hero-welcome-left">
         <div style="display:inline-flex;align-items:center;gap:8px;background:#EEF2FF;border:1px solid #C7D2FE;padding:6px 14px;border-radius:9999px;font-size:11.5px;font-weight:800;color:#4F46E5;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">
-          <span>🏫</span> SMK NEGERI 1 SUMEDANG • REKAYASA PERANGKAT LUNAK
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 6 8-4 8 4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 5v17"/><path d="M6 5v17"/></svg>
+          SMK NEGERI 1 SUMEDANG • REKAYASA PERANGKAT LUNAK
         </div>
-        <h2 id="greetingText">Selamat Datang! 👋</h2>
+        <h2 id="greetingText">Selamat Datang!</h2>
         <p id="greetingSubtext">Portal Terpadu Presensi Siswa & Informasi Akademik SMK.</p>
         <div class="hero-clock" id="liveClockWidget">
-          <span>🕒</span> <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="liveClockTime">00:00:00 WIB</span> • <span id="liveClockDate">Hari Ini</span>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
-          <span style="font-size:12px;font-weight:700;background:#F1F5F9;border:1px solid #CBD5E1;padding:5px 12px;border-radius:9999px;color:#334155;">
-            📡 Gateway RFID Siaga
+          <span style="font-size:12px;font-weight:700;background:#F1F5F9;border:1px solid #CBD5E1;padding:5px 12px;border-radius:9999px;color:#334155;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
+            Gateway RFID Siaga
           </span>
-          <span style="font-size:12px;font-weight:700;background:#EEF2FF;border:1px solid #C7D2FE;padding:5px 12px;border-radius:9999px;color:#4F46E5;">
-            🏫 Kelas XII RPL 2
+          <span style="font-size:12px;font-weight:700;background:#EEF2FF;border:1px solid #C7D2FE;padding:5px 12px;border-radius:9999px;color:#4F46E5;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 6 8-4 8 4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 5v17"/><path d="M6 5v17"/></svg>
+            Kelas XII RPL 2
           </span>
-          <span style="font-size:12px;font-weight:700;background:#ECFDF5;border:1px solid #A7F3D0;padding:5px 12px;border-radius:9999px;color:#059669;">
-            🛡️ Anti-Passback Aktif
+          <span style="font-size:12px;font-weight:700;background:#ECFDF5;border:1px solid #A7F3D0;padding:5px 12px;border-radius:9999px;color:#059669;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Anti-Passback Aktif
           </span>
         </div>
       </div>
@@ -203,9 +332,9 @@
                 <span style="opacity:0.75; font-size:9px;">KOMPETENSI KEAHLIAN RPL</span>
               </div>
             </div>
-            <div class="smart-card-nfc-indicator">
+            <div class="smart-card-nfc-indicator" onclick="bukaModalPairingNfcSiswa()" style="cursor:pointer;" title="Klik untuk Verifikasi & Penautan NFC Smartphone / Kartu Pelajar">
               <span class="pulsing-dot" style="width:6px;height:6px;"></span>
-              <span>RFID 13.56 MHz</span>
+              <span>NFC / RFID 13.56 MHz</span>
             </div>
           </div>
           
@@ -220,7 +349,7 @@
               <div class="smart-card-meta" id="smartCardMeta">NISN: 0098263610 • XII RPL 2</div>
               <div style="margin-top:8px;">
                 <div class="smart-card-status-badge belum" id="smartCardBadge">
-                  <span id="smartCardStatusIcon">⚡</span>
+                  <span id="smartCardStatusIcon" style="display:inline-flex;align-items:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
                   <span id="smartCardStatusText">Belum Scan Hari Ini</span>
                 </div>
               </div>
@@ -228,17 +357,52 @@
           </div>
 
           <div class="smart-card-barcode-row">
-            <span>UID: <strong id="smartCardUidTag">006787337</strong></span>
+            <span>UID: <strong id="smartCardUidTag">- (Belum Ada)</strong></span>
             <span>SMART CARD PRESENSI NESAS</span>
           </div>
         </div>
+
+        <!-- WIDGET STATUS KARTU / NFC SISWA MANDIRI -->
+        <div id="widgetNfcSiswa" class="nfc-widget-card" style="margin-top:14px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:12px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div id="iconNfcStatusSiswa" style="width:38px;height:38px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#0f172a;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+                <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+                <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+                <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Status Verifikasi NFC HP / Kartu</div>
+              <div id="badgeStatusNfcSiswa" style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;">
+                <span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  NFC HP / Kartu Belum Ditautkan
+                </span>
+              </div>
+            </div>
+          </div>
+          <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,0.12);transition:all 0.2s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+              <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+              <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+              <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+            </svg>
+            Verifikasi NFC HP / Kartu
+          </button>
+        </div>
+
       </div>
     </div>
 
     <!-- WIDGET STATUS OPERASIONAL KELAS TERKINI (PRD Bab 4.2 & Bab 7.1) -->
     <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none;margin-bottom:24px;padding:20px 24px;border-radius:24px;background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);border:1.5px solid #C7D2FE;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 8px 24px -4px rgba(99,102,241,0.15);">
       <div style="display:flex;align-items:center;gap:16px;">
-        <div id="iconStatusKelas" style="font-size:26px;width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(99,102,241,0.3);">🟢</div>
+        <div id="iconStatusKelas" style="font-size:16px;width:44px;height:44px;border-radius:14px;background:#4338CA;color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(99,102,241,0.25);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+        </div>
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#4F46E5;" id="tagStatusKelasOperasional">Status Kelas</span>
@@ -255,7 +419,8 @@
       </div>
       <div id="alertJamkosBox" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;box-shadow:0 4px 12px rgba(239,68,68,0.1);padding:14px 18px;border-radius:18px;max-width:440px;">
         <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#DC2626;">
-          <span>⚠️</span> JAM KOSONG (JAMKOS) DIKONFIRMASI
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          JAM KOSONG (JAMKOS) DIKONFIRMASI
         </div>
         <p id="alertJamkosDesc" style="font-size:12px;color:#991B1B;margin-top:4px;line-height:1.4;">Guru pengajar berhalangan hadir dan laporan kendala telah di-ACC Admin. Harap tetap tertib di dalam kelas atau mengerjakan tugas mandiri.</p>
       </div>
@@ -293,7 +458,7 @@
           <span class="academic-service-arrow">→</span>
         </div>
         <div class="academic-service-title">Pengajuan Izin</div>
-        <div class="academic-service-desc">Formulir izin sakit, dispensasi dinas, atau izin kegiatan sekolah.</div>
+        <div class="academic-service-desc">Formulir izin sakit, dispensasi, atau kegiatan sekolah.</div>
       </div>
 
       <div class="academic-service-card" onclick="document.getElementById('btnTabRiwayatIjin').click()">
@@ -337,7 +502,10 @@
           <div style="display:inline-flex; align-items:center; gap:6px; background:#ECFDF5; color:#059669; font-size:11.5px; font-weight:800; padding:5px 12px; border-radius:9999px; margin-bottom:8px; text-transform:uppercase; border:1px solid #A7F3D0;">
             <span class="pulsing-dot" style="background:#10B981; width:6px; height:6px;"></span> Akses Terbuka Real-Time
           </div>
-          <h3 style="margin:0;">👥 Monitoring Kehadiran Siswa Hari Ini</h3>
+          <h3 style="margin:0;display:flex;align-items:center;gap:8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Monitoring Kehadiran Siswa Hari Ini
+          </h3>
           <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0 0;">
             Data kehadiran siswa yang sudah tap kartu RFID dan yang belum scan. Terbuka transparan untuk Pengunjung, Siswa, Guru, dan Admin.
           </p>
@@ -348,8 +516,9 @@
             <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
             <option value="XII TKJ 1">Kelas XII TKJ 1</option>
           </select>
-          <button type="button" class="btn-guest-verify" onclick="switchTab('tabKelas', document.getElementById('btnTabKelas'))" style="margin:0; font-size:12px; padding:9px 14px;">
-            Layar Penuh ↗
+          <button type="button" class="btn-guest-verify" onclick="switchTab('tabKelas', document.getElementById('btnTabKelas'))" style="margin:0; font-size:12px; padding:9px 14px; display:inline-flex; align-items:center; gap:6px;">
+            <span>Layar Penuh</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </button>
         </div>
       </div>
@@ -357,14 +526,18 @@
       <!-- Live Counters -->
       <div class="ringkasan-grid" style="margin: 24px 0 28px 0;">
         <div class="stat-box sudah">
-          <div class="stat-icon">✓</div>
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
           <div>
             <div class="stat-number" id="homeCountSudah">32</div>
             <div class="stat-label">Siswa Sudah Hadir (Scan Masuk)</div>
           </div>
         </div>
         <div class="stat-box belum">
-          <div class="stat-icon">!</div>
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
           <div>
             <div class="stat-number" id="homeCountBelum">2</div>
             <div class="stat-label">Siswa Belum Scan Hari Ini</div>
@@ -390,7 +563,10 @@
     <!-- Section Eksplor Jadwal Pelajaran -->
     <div class="home-section-card" id="sectionJadwalHome">
       <div class="home-section-header">
-        <h3>📚 Jadwal Pelajaran & Monitoring Jam Aktif</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+          Jadwal Pelajaran & Monitoring Jam Aktif
+        </h3>
         <span id="homeJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:6px 14px; border-radius:9999px;">
           Pilih kelas untuk melihat jadwal
         </span>
@@ -405,7 +581,7 @@
 
       <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Pilih hari pembelajaran:</p>
       <div class="class-chip-container" id="dayChipsList" style="margin-bottom:18px;">
-        <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">✨ Senin</button>
+        <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">Senin</button>
         <button type="button" class="class-chip" data-hari="selasa" onclick="pilihHariJadwal('selasa')">Selasa</button>
         <button type="button" class="class-chip" data-hari="rabu" onclick="pilihHariJadwal('rabu')">Rabu</button>
         <button type="button" class="class-chip" data-hari="kamis" onclick="pilihHariJadwal('kamis')">Kamis</button>
@@ -422,7 +598,9 @@
 
     <!-- Info Kelas Mandiri (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
     <div class="guru-alert" id="bannerKelasMandiri" style="margin-bottom:24px; display:none;">
-      <div class="alert-icon">⚡</div>
+      <div class="alert-icon" style="display:flex;align-items:center;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
       <div>
         <strong id="bannerMandiriTitle">Pemberitahuan Kelas Mandiri:</strong>
         <span id="bannerMandiriText">Guru pengajar berhalangan hadir pada jam tertentu. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada scanner kelas agar kehadiran tetap terverifikasi sah.</span>
@@ -432,7 +610,10 @@
     <!-- Section Papan Pengumuman Sekolah -->
     <div class="home-section-card" style="margin-bottom:0;">
       <div class="home-section-header">
-        <h3>📢 Pengumuman & Agenda Akademik Sekolah</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          Pengumuman & Agenda Akademik Sekolah
+        </h3>
       </div>
       <div class="school-feed-grid">
         <div class="feed-card">
@@ -446,7 +627,7 @@
           <div>
             <span class="feed-badge info">Presensi</span>
             <div class="feed-title">Ketentuan Pengajuan Izin & Sakit Online</div>
-            <div class="feed-desc">Pengajuan izin sakit wajib melampirkan surat dokter. Dispensasi dinas divalidasi langsung oleh guru piket dan admin.</div>
+            <div class="feed-desc">Pengajuan izin sakit wajib melampirkan surat dokter. Dispensasi divalidasi langsung oleh guru piket dan admin.</div>
           </div>
         </div>
         <div class="feed-card">
@@ -466,7 +647,7 @@
             <div class="feed-desc">Pelaksanaan program sertifikasi Bahasa Inggris TOEIC Internasional bagi siswa SMK untuk standardisasi kecakapan kerja global. Cek jadwal sesi tes, ruang CBT, dan verifikasi status kelulusan berkala.</div>
           </div>
           <div style="margin-top:12px; padding-top:10px; font-size:11.5px; font-weight:700; color:#4F46E5; display:flex; align-items:center; gap:6px;">
-            <span>🌐</span> Batch Berjalan • CBT Center SMKN 1 Sumedang
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Batch Berjalan • CBT Center SMKN 1 Sumedang
           </div>
         </div>
         <div class="feed-card" id="cardInfoTka" onclick="bukaDetailInfoTka()" style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer;">
@@ -481,7 +662,7 @@
             <div class="feed-desc">Asesmen Tes Kemampuan Akademik (TKA) sedang berlangsung saat ini. Seluruh peserta sesi aktif wajib hadir tepat waktu di Laboratorium Komputer RPL dan membawa kartu RFID untuk verifikasi presensi.</div>
           </div>
           <div style="margin-top:12px; padding-top:10px; font-size:11.5px; font-weight:700; color:#0891B2; display:flex; align-items:center; gap:6px;">
-            <span>⚡</span> Laboratorium Komputer RPL • Sesi Aktif Berlangsung
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Laboratorium Komputer RPL • Sesi Aktif Berlangsung
           </div>
         </div>
       </div>
@@ -503,14 +684,18 @@
     <!-- Statistik Ringkasan -->
     <div class="ringkasan-grid">
       <div class="stat-box sudah">
-        <div class="stat-icon">✓</div>
+        <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
         <div>
           <div class="stat-number" id="countSudah">32</div>
           <div class="stat-label">Sudah Hadir di Kelas</div>
         </div>
       </div>
       <div class="stat-box belum">
-        <div class="stat-icon">!</div>
+        <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
         <div>
           <div class="stat-number" id="countBelum">2</div>
           <div class="stat-label">Belum Absen / Belum Scan</div>
@@ -534,7 +719,7 @@
     <div class="form-card">
       <h2>Pengajuan Perizinan Siswa</h2>
       <p style="color:#6B7280;font-size:14px;margin-bottom:24px;">
-        Pilih nama siswa yang ingin diizinkan (sakit, dispensasi kegiatan, atau dinas). Guru dan admin akan memverifikasi dan memberikan status persetujuan.
+        Pilih nama siswa yang mengajukan izin. Guru dan admin akan memeriksa dan menyetujui permohonan Anda.
       </p>
 
       <div class="form-group">
@@ -545,9 +730,9 @@
       <div class="form-group">
         <label for="perijinanJenis">Kategori Perizinan</label>
         <select id="perijinanJenis">
-          <option value="sakit">🤒 Izin Sakit (Surat Dokter / Keterangan)</option>
-          <option value="dispensasi">📄 Dispensasi Kegiatan / Dinas (Wajib Surat)</option>
-          <option value="ijin_kegiatan">🏆 Izin Lomba / Event Sekolah (Wajib Surat)</option>
+          <option value="sakit">Izin Sakit (Surat Dokter / Keterangan)</option>
+          <option value="dispensasi">Dispensasi Kegiatan (Wajib Surat)</option>
+          <option value="ijin_kegiatan">Izin Lomba / Event Sekolah (Wajib Surat)</option>
         </select>
       </div>
 
@@ -562,7 +747,10 @@
       </div>
 
       <div class="form-group" id="uploadDokumenWrap">
-        <label for="perijinanFile">📎 Lampirkan Bukti / Surat Izin (Foto / PDF)</label>
+        <label for="perijinanFile" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Lampirkan Bukti / Surat Izin (Foto / PDF)
+        </label>
         <input type="file" id="perijinanFile" accept=".pdf,.jpg,.jpeg,.png">
         <small style="color:#6B7280;font-size:12px;margin-top:6px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
       </div>
@@ -587,13 +775,17 @@
     <div class="home-section-card">
       <div class="home-section-header">
         <div>
-          <h3>📚 Jadwal Pelajaran & Monitoring Jam Sekolah</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+            Jadwal Pelajaran & Monitoring Jam Sekolah
+          </h3>
           <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
             Jadwal kegiatan belajar mengajar resmi Kompetensi Keahlian Rekayasa Perangkat Lunak SMKN 1 Sumedang.
           </p>
         </div>
-        <span id="tabJamPulangBadge" style="font-size:12.5px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:8px 16px; border-radius:9999px;">
-          ⏰ Jam Pulang: 15:30 WIB
+        <span id="tabJamPulangBadge" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#4F46E5;background:#EEF2FF;border:1px solid #C7D2FE;padding:8px 16px;border-radius:9999px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Jam Pulang: 15:30 WIB
         </span>
       </div>
 
@@ -611,7 +803,7 @@
       <div style="margin-bottom:16px;">
         <label style="font-size:12.5px; font-weight:700; color:#1E293B; display:block; margin-bottom:8px;">Pilih Hari Pembelajaran:</label>
         <div class="class-chip-container" id="dayChipsListTab">
-          <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">✨ Senin</button>
+          <button type="button" class="class-chip active" data-hari="senin" onclick="pilihHariJadwal('senin')">Senin</button>
           <button type="button" class="class-chip" data-hari="selasa" onclick="pilihHariJadwal('selasa')">Selasa</button>
           <button type="button" class="class-chip" data-hari="rabu" onclick="pilihHariJadwal('rabu')">Rabu</button>
           <button type="button" class="class-chip" data-hari="kamis" onclick="pilihHariJadwal('kamis')">Kamis</button>
@@ -621,7 +813,9 @@
 
       <!-- Info Kelas Mandiri di Tab Jadwal (HANYA MUNCUL JIKA ADA GURU YANG BERHALANGAN) -->
       <div class="guru-alert" id="bannerKelasMandiriTab" style="margin-bottom:16px; display:none;">
-        <div class="alert-icon">⚡</div>
+        <div class="alert-icon" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
         <div>
           <strong id="bannerMandiriTitleTab">Pemberitahuan Kelas Mandiri:</strong>
           <span id="bannerMandiriTextTab">Guru pengajar berhalangan hadir pada jam tertentu. Murid wajib tetap tertib di dalam kelas dan melakukan <b>scan kartu RFID</b> pada scanner kelas agar kehadiran tetap terverifikasi sah.</span>
@@ -638,7 +832,10 @@
     <!-- Tata Tertib & Ketentuan Presensi RFID -->
     <div class="home-section-card" style="margin-top:28px;">
       <div class="home-section-header">
-        <h3>📜 Tata Tertib & Pedoman Presensi RFID SMKN 1 Sumedang</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Tata Tertib & Pedoman Presensi RFID SMKN 1 Sumedang
+        </h3>
       </div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin-top:14px;">
         <div style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -660,7 +857,7 @@
           </p>
         </div>
         <div style="background:#ECFDF5; border:1.5px solid #A7F3D0; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(16,185,129,0.08);">
-          <div style="font-size:14.5px; font-weight:800; color:#059669; margin-bottom:6px;">4. Pengajuan Izin Sakit / Dinas</div>
+          <div style="font-size:14.5px; font-weight:800; color:#059669; margin-bottom:6px;">4. Pengajuan Izin & Dispensasi</div>
           <p style="font-size:13px; color:#047857; line-height:1.5;">
             Siswa yang berhalangan hadir wajib melampirkan surat dokter atau surat tugas resmi melalui menu <strong>Pengajuan Izin</strong> di portal ini paling lambat pukul 08.00 WIB.
           </p>
@@ -673,34 +870,46 @@
   <!-- ===== TAB 5: RIWAYAT KEHADIRAN PRIBADI (LOG RFID & AKUMULASI) ===== -->
   <div id="tabRekap" class="tab-content" style="display:none;">
     <div class="content-header" style="margin-bottom:20px;">
-      <h2>📋 Riwayat Kehadiran Pribadi</h2>
+      <h2 style="display:flex;align-items:center;gap:10px;margin:0 0 6px 0;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+        Riwayat Kehadiran Pribadi
+      </h2>
       <p style="color:#64748B;font-size:14px;">Tinjau akumulasi kehadiran, persentase kehadiran pribadi Anda, serta log presensi harian RFID.</p>
     </div>
 
     <!-- Info Mode Peninjau / Pengunjung -->
     <div id="rekapPengunjungAlert" class="guest-verification-banner" style="display:none;">
       <div class="guest-banner-left">
-        <div class="guest-banner-icon">👁️</div>
+        <div class="guest-banner-icon" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
         <div class="guest-banner-text">
           <strong>Mode Peninjau Presensi Terbuka</strong>
           <p>Anda dapat meninjau statistik dan riwayat presensi RFID seluruh siswa secara transparan. Tautkan NISN jika Anda adalah siswa.</p>
         </div>
       </div>
-      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()">⚡ Konfirmasi NISN Siswa</button>
+      <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="display:inline-flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Konfirmasi NISN Siswa
+      </button>
     </div>
 
     <div id="rekapContentSiswa">
       <!-- Selector Siswa untuk Rekap (Disembunyikan dari Siswa Sesuai PRD) -->
       <div id="wrapperSelectorRekapSiswa" style="display:none; background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:20px; padding:18px 22px; margin-bottom:24px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <span style="font-size:13.5px; font-weight:700; color:#1E293B;">👤 Pilih Siswa yang Ditinjau:</span>
+          <span style="font-size:13.5px; font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Pilih Siswa yang Ditinjau:
+          </span>
           <select id="pilihSiswaRekap" style="padding:10px 16px; border:1.5px solid #CBD5E1; border-radius:14px; font-size:13px; font-weight:700; color:#1E293B; background:#FFFFFF; outline:none; min-width:280px;">
             <option value="0098263610">M. Ihsan Athallah (XII RPL 2) — NISN: 0098263610</option>
             <option value="0082104129">Rizky Ramadhani (XII RPL 2) — NISN: 0082104129</option>
           </select>
         </div>
-        <div id="rekapModeBadge" style="font-size:12px; font-weight:700; color:#4F46E5; background:#EEF2FF; border:1px solid #C7D2FE; padding:6px 14px; border-radius:9999px;">
-          👁️ Peninjauan Presensi Terbuka
+        <div id="rekapModeBadge" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#4F46E5;background:#EEF2FF;border:1px solid #C7D2FE;padding:6px 14px;border-radius:9999px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Peninjauan Presensi Terbuka
         </div>
       </div>
       <!-- STATISTIK KEHADIRAN 1 TAHUN -->
@@ -766,7 +975,10 @@
   <div class="chat-modal-box">
     <div class="chat-modal-header">
       <span style="font-weight:800;font-size:15px;color:#0F172A;" id="modalChatJudul">Konfirmasi & Chat Perizinan</span>
-      <button onclick="tutupModalChat()" class="btn-chat-close" style="background:#F1F5F9;border:1px solid #CBD5E1;padding:8px 16px;border-radius:12px;font-weight:700;cursor:pointer;color:#334155;">✕ Tutup</button>
+      <button onclick="tutupModalChat()" class="btn-chat-close" style="display:inline-flex;align-items:center;gap:6px;background:#F1F5F9;border:1px solid #CBD5E1;padding:8px 16px;border-radius:12px;font-weight:700;cursor:pointer;color:#334155;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Tutup
+      </button>
     </div>
     <div id="chatBubbleContainer" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:#F8FAFC;"></div>
     <div style="padding:14px 18px;border-top:1px solid #E2E8F0;display:flex;gap:12px;background:#FFFFFF;">
@@ -856,5 +1068,78 @@
   // Fallback safety timeout
   setTimeout(dismissGlassLoader, 2500);
 </script>
+
+<!-- MODAL PENAUTAN (PAIRING) NFC SISWA -->
+<div id="modalPairingNfcSiswa" class="modal-nfc-overlay">
+  <div class="modal-nfc-card">
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;color:#475569;border:1px solid #e2e8f0;padding:5px 12px;border-radius:9999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/>
+        </svg>
+        Hubungkan Kartu / HP Siswa
+      </div>
+      <button type="button" onclick="tutupModalPairingNfcSiswa()" style="width:30px;height:30px;border-radius:50%;background:#f8fafc;border:1px solid #e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;cursor:pointer;padding:0;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='#f8fafc';this.style.color='#64748b'" title="Tutup">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 6px 0;letter-spacing:-0.02em;font-family:'Plus Jakarta Sans',sans-serif;">Hubungkan Kartu / NFC HP</h3>
+    <p id="teksPanduanNfcSiswa" style="font-size:13px;color:#64748b;margin:0 auto 22px auto;line-height:1.5;max-width:380px;">
+      Nyalakan sensor NFC di HP Anda atau gunakan kartu pelajar, lalu tempelkan ke scanner sekolah...
+    </p>
+
+    <!-- Sleek Minimalist NFC Radar Graphic -->
+    <div class="nfc-radar-container">
+      <div class="nfc-radar-guide guide-1"></div>
+      <div class="nfc-radar-guide guide-2"></div>
+      <div class="nfc-wave wave-1"></div>
+      <div class="nfc-wave wave-2"></div>
+      <div class="nfc-wave wave-3"></div>
+      <div class="nfc-center-circle">
+        <span id="nfcIconCenterSiswa" style="display:flex;align-items:center;justify-content:center;color:#ffffff;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+            <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+            <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+            <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Countdown & Status Card -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;">Waktu Tersisa</div>
+      <div id="countdownNfcSiswa" style="font-size:32px;font-weight:800;color:#0f172a;font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:-0.03em;line-height:1.1;margin-top:2px;">
+        <span id="nfcCountdownSiswa">30s</span>
+      </div>
+      <div id="statusPairingNfcSiswa" style="font-size:12.5px;font-weight:600;color:#059669;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite;"></span>
+        <span id="nfcStatusTextSiswa">Menunggu kartu atau HP ditempelkan...</span>
+      </div>
+    </div>
+
+    <div id="boxFeedbackNfcSiswa" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:700;border:1px solid transparent;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button id="btnSimulasiTapSiswa" type="button" onclick="lakukanSimulasiTapSiswa()" style="flex:1;min-width:180px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(15,23,42,0.12);transition:all 0.2s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+          <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+          <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+          <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+        </svg>
+        Coba Tap Kartu / HP
+      </button>
+      <button id="btnBatalPairingSiswa" type="button" onclick="tutupModalPairingNfcSiswa()" style="background:#ffffff;color:#475569;border:1px solid #cbd5e1;border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+        Batal
+      </button>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>

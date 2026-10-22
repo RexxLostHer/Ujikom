@@ -161,6 +161,16 @@ def post_firebase(path, data, fallback_queue=True):
             enqueue_offline(path, 'POST', data)
         return False
 
+def delete_firebase(path):
+    url = f"{DATABASE_URL}/{path}.json"
+    try:
+        req = urllib.request.Request(url, method='DELETE', headers={'User-Agent': 'Nesas-RFID-Gateway/2.0'})
+        with urllib.request.urlopen(req, timeout=4) as response:
+            return response.status in (200, 204)
+    except Exception as e:
+        print(f"[ERR DELETE] {path}: {e}")
+        return False
+
 # ===== EVALUASI ATURAN AMBANG BATAS WAKTU (PRD Bab 4.1) =====
 def evaluasi_waktu_absen(waktu_str):
     """
@@ -193,6 +203,71 @@ def proses_kartu(uid_kartu):
 
     tanggal = now.strftime("%Y-%m-%d")
     waktu = now.strftime("%H:%M:%S")
+
+    # 0. PERIKSA APAKAH ADA PERMINTAAN PAIRING NFC AKTIF
+    pairing_req = get_firebase("pairing_request")
+    if pairing_req and isinstance(pairing_req, dict) and pairing_req.get("active") is True and pairing_req.get("status") == "waiting":
+        req_ts = pairing_req.get("timestamp", 0)
+        req_ts_sec = (req_ts / 1000.0) if req_ts > 1e11 else req_ts
+        # Batas waktu timeout 30 detik
+        if (now_ts - req_ts_sec) <= 30.0:
+            user_id = str(pairing_req.get("userId") or pairing_req.get("nisn") or pairing_req.get("nip") or "").strip()
+            role = str(pairing_req.get("role", "siswa")).lower()
+            nama = pairing_req.get("nama", user_id)
+            kelas = pairing_req.get("kelas", DEFAULT_KELAS)
+            mapel = pairing_req.get("mapel", "")
+            is_walas = bool(pairing_req.get("isWalas") or role == "walas")
+            walas_kelas_id = pairing_req.get("walasKelasId", kelas if is_walas else "")
+
+            print(f"\n[PAIRING NFC AKTIF] 📳 Memproses penautan kartu {uid_kartu} untuk {nama} ({role.upper()})...")
+
+            card_data = {
+                "uid": uid_kartu,
+                "tipe": "guru" if role in ("guru", "walas") else "siswa",
+                "nama": nama,
+                "linkedAt": int(now_ts * 1000)
+            }
+            if role in ("guru", "walas"):
+                card_data["nip"] = user_id
+                card_data["mapel"] = mapel
+                card_data["isWalas"] = is_walas
+                card_data["walasKelasId"] = walas_kelas_id
+            else:
+                card_data["nisn"] = user_id
+                card_data["kelas"] = kelas
+
+            # Bersihkan kartu lama pengguna jika ada (re-assignment / perbarui kartu)
+            all_kartu = get_firebase("kartu")
+            if all_kartu and isinstance(all_kartu, dict):
+                for old_uid, k_val in all_kartu.items():
+                    if old_uid != uid_kartu:
+                        old_id = None
+                        if isinstance(k_val, dict):
+                            old_id = str(k_val.get("nisn") or k_val.get("nip") or k_val.get("userId") or "").strip()
+                        elif isinstance(k_val, str):
+                            old_id = k_val.strip()
+                        if old_id == user_id:
+                            delete_firebase(f"kartu/{old_uid}")
+                            print(f"[RE-ENROLLMENT] Kartu lama {old_uid} milik {user_id} telah dihapus/digantikan.")
+
+            # 1. Simpan ke /kartu/{uid_kartu}
+            put_firebase(f"kartu/{uid_kartu}", card_data)
+
+            # 2. Update /pairing_request
+            req_update = dict(pairing_req)
+            req_update["active"] = False
+            req_update["status"] = "success"
+            req_update["uid"] = uid_kartu
+            req_update["completedAt"] = int(now_ts * 1000)
+            put_firebase("pairing_request", req_update)
+
+            print(f"🎉 [PAIRING SUKSES] Kartu {uid_kartu} berhasil diikat ke {nama} ({user_id})!")
+            print("🔊 Nada konfirmasi pairing sukses: [BEEP] [BEEP] [BEEP]")
+            return
+        else:
+            put_firebase("pairing_request/active", False)
+            put_firebase("pairing_request/status", "expired")
+            print(f"[PAIRING TIMEOUT] ⏳ Permintaan penautan kartu telah kedaluwarsa (>30 detik).")
 
     # 1. Lookup ke Firebase atau Fallback Preset
     kartu_data = get_firebase(f"kartu/{uid_kartu}")

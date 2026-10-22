@@ -2,9 +2,9 @@
 // Submit ijin, upload surat, chat dengan admin
 
 const JENIS_PERIJINAN = {
-  sakit: { label: 'Sakit', icon: '🤒', dokumenWajib: false },
-  dispensasi: { label: 'Dispensasi', icon: '📄', dokumenWajib: true },
-  ijin_kegiatan: { label: 'Ijin Kegiatan', icon: '🏆', dokumenWajib: true }
+  sakit: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: false },
+  dispensasi: { label: 'Dispensasi', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
+  ijin_kegiatan: { label: 'Ijin Kegiatan', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true }
 };
 
 // ===================================================================
@@ -85,8 +85,8 @@ function renderDaftarPerijinanSaya(containerId, user) {
     }
 
     list.forEach(function (p) {
-      const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '📋' };
-      const statusLabel = p.status === 'disetujui' ? '✅ Disetujui' : p.status === 'ditolak' ? '❌ Ditolak' : '⏳ Menunggu';
+      const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>' };
+      const statusLabel = p.status === 'disetujui' ? 'Disetujui' : p.status === 'ditolak' ? 'Ditolak' : 'Menunggu';
       const el = document.createElement('div');
       el.className = 'perijinan-card status-' + (p.status || 'pending');
       el.innerHTML =
@@ -94,10 +94,10 @@ function renderDaftarPerijinanSaya(containerId, user) {
           '<span class="perijinan-jenis-badge">' + jn.icon + ' ' + jn.label + '</span>' +
           '<span class="status-pill ' + (p.status || 'pending') + '">' + statusLabel + '</span>' +
         '</div>' +
-        '<div class="perijinan-meta">📅 Tanggal: <strong>' + p.tanggal + '</strong></div>' +
+        '<div class="perijinan-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tanggal: <strong>' + p.tanggal + '</strong></div>' +
         '<div class="perijinan-alasan-box">' + p.alasan + '</div>' +
-        (p.dokumen_url ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank">📎 Lihat Dokumen</a>' : '') +
-        '<div class="action-row"><button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Chat Admin</button></div>';
+        (p.dokumen_url ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen</a>' : '') +
+        '<div class="action-row"><button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat Admin</button></div>';
       container.appendChild(el);
     });
   });
@@ -127,15 +127,15 @@ function renderDaftarPerijinanAdmin(containerId, filterStatus) {
     if (filtered.length === 0) {
       container.innerHTML =
         '<div class="empty-state">' +
-          '<div class="empty-icon">📋</div>' +
-          '<p>' + (filterStatus === 'pending' ? 'Tidak ada perijinan yang menunggu. 🎉' : 'Belum ada data perijinan.') + '</p>' +
+          '<div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>' +
+          '<p>' + (filterStatus === 'pending' ? 'Tidak ada perijinan yang menunggu.' : 'Belum ada data perijinan.') + '</p>' +
         '</div>';
       return;
     }
 
     filtered.forEach(function (p) {
-      const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '📋' };
-      const statusLabel = p.status === 'disetujui' ? '✅ Disetujui' : p.status === 'ditolak' ? '❌ Ditolak' : '⏳ Menunggu';
+      const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>' };
+      const statusLabel = p.status === 'disetujui' ? 'Disetujui' : p.status === 'ditolak' ? 'Ditolak' : 'Menunggu';
 
       const el = document.createElement('div');
       el.className = 'perijinan-card status-' + (p.status || 'pending');
@@ -148,17 +148,17 @@ function renderDaftarPerijinanAdmin(containerId, filterStatus) {
           '<span class="status-pill ' + (p.status || 'pending') + '">' + statusLabel + '</span>' +
         '</div>' +
         '<div class="perijinan-jenis-badge">' + jn.icon + ' ' + jn.label + '</div>' +
-        '<div class="perijinan-meta">📅 Tanggal: <strong>' + p.tanggal + '</strong></div>' +
+        '<div class="perijinan-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tanggal: <strong>' + p.tanggal + '</strong></div>' +
         '<div class="perijinan-alasan-box">' + p.alasan + '</div>' +
         (p.dokumen_url
-          ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank">📎 Lihat Dokumen/Surat</a>'
+          ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen/Surat</a>'
           : '') +
         '<div class="action-row">' +
           (p.status === 'pending'
-            ? '<button class="btn-approve" onclick="adminApprove(\'' + p.pid + '\', \'' + p.nisn + '\', \'' + p.tanggal + '\', \'' + p.jenis + '\')">✅ Setujui</button>' +
-              '<button class="btn-tolak" onclick="adminTolak(\'' + p.pid + '\')">❌ Tolak</button>'
+            ? '<button class="btn-approve" onclick="adminApprove(\'' + p.pid + '\', \'' + p.nisn + '\', \'' + p.tanggal + '\', \'' + p.jenis + '\')">Setujui</button>' +
+              '<button class="btn-tolak" onclick="adminTolak(\'' + p.pid + '\')">Tolak</button>'
             : '') +
-          '<button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')">💬 Chat</button>' +
+          '<button class="btn-chat" onclick="bukaModalChat(\'' + p.pid + '\', \'' + p.nama + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>' +
         '</div>';
       container.appendChild(el);
     });
@@ -177,7 +177,7 @@ async function adminApprove(pid, nisn, tanggal, jenis) {
     db.ref('perizinan/' + pid + '/status').set('disetujui').catch(() => null)
   ]);
   await kirimChatPerijinan(pid, adminUser,
-    'Perijinan Anda telah DISETUJUI ✅. Kehadiran tercatat sebagai ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + '.');
+    'Perijinan Anda telah DISETUJUI. Kehadiran tercatat sebagai ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + '.');
 
   if (nisn && tanggal) {
     const siswaSnap = await db.ref('siswa/' + nisn).once('value');
@@ -211,7 +211,7 @@ async function adminTolak(pid) {
     db.ref('perijinan/' + pid + '/status').set('ditolak'),
     db.ref('perizinan/' + pid + '/status').set('ditolak').catch(() => null)
   ]);
-  await kirimChatPerijinan(pid, adminUser, 'Maaf, perijinan Anda DITOLAK ❌. ' + alasan);
+  await kirimChatPerijinan(pid, adminUser, 'Maaf, perijinan Anda DITOLAK. ' + alasan);
 }
 
 // ===================================================================
@@ -223,7 +223,7 @@ let chatPidAktif = null;
 function bukaModalChat(pid, namaSiswa) {
   chatPidAktif = pid;
   const judul = document.getElementById('modalChatJudul');
-  if (judul) judul.textContent = '💬 Chat — ' + namaSiswa;
+  if (judul) judul.textContent = 'Chat — ' + namaSiswa;
   const overlay = document.getElementById('modalChat');
   if (overlay) overlay.classList.add('open');
   renderChat(pid);

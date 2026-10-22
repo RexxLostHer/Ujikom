@@ -360,7 +360,7 @@ function populateDropdownSiswa(user) {
   }
 
   // Akun pengunjung/tamu dilarang memilih siswa lain dari dropdown dan dilarang submit form perizinan
-  sel.innerHTML = `<option value="">🔒 Terkunci — Khusus Siswa Terverifikasi NISN</option>`;
+  sel.innerHTML = `<option value="">[Terkunci] Khusus Siswa Terverifikasi NISN</option>`;
   sel.value = '';
   sel.disabled = true;
   if (btnSubmit) {
@@ -371,7 +371,7 @@ function populateDropdownSiswa(user) {
   }
   if (msg) {
     msg.style.color = '#ef4444';
-    msg.innerHTML = '⚠️ <b>Khusus Siswa Terverifikasi:</b> Akun pengunjung / tamu dilarang mengajukan izin. Silakan hubungkan dan verifikasi NISN Anda terlebih dahulu melalui menu Profil.';
+    msg.innerHTML = '<b>Khusus Siswa Terverifikasi:</b> Akun pengunjung / tamu dilarang mengajukan izin. Silakan hubungkan dan verifikasi NISN Anda terlebih dahulu melalui menu Profil.';
   }
 }
 
@@ -385,7 +385,7 @@ async function handleSubmitPerijinan() {
   if (!user || user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa') {
     if (msg) {
       msg.style.color = '#ef4444';
-      msg.innerHTML = '⚠️ <b>Akses Ditolak:</b> Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.';
+      msg.innerHTML = '<b>Akses Ditolak:</b> Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.';
     }
     if (btn) btn.disabled = true;
     return;
@@ -432,7 +432,7 @@ async function handleSubmitPerijinan() {
     await submitPerijinan(userPayload, jenis, alasan + ' (Diajukan oleh: ' + user.nama + ')', tanggal, fileInput);
 
     msg.style.color = '#10b981';
-    msg.textContent = '✅ Pengajuan berhasil dikirim! Silakan buka tab Chat & Status Ijin untuk konfirmasi.';
+    msg.textContent = 'Pengajuan berhasil dikirim! Silakan buka tab Chat & Status Ijin untuk konfirmasi.';
     document.getElementById('perijinanAlasan').value = '';
     if (fileInput) fileInput.value = '';
   } catch(e) {
@@ -481,6 +481,209 @@ var sudahAbsenSet = new Set(
     return st !== 'alpa' && st !== 'alpha';
   })
 );
+
+// ===================================================================
+// SISTEM PENAUTAN MANDIRI NFC SISWA (SELF-ENROLLMENT)
+// ===================================================================
+let timerPairingSiswa = null;
+let unsubPairingSiswa = null;
+
+async function cekStatusKartuNfcSiswa(nisn) {
+  const badgeEl = document.getElementById('badgeStatusNfcSiswa');
+  const btnEl = document.getElementById('btnTautkanNfcSiswa');
+  const cardUidEl = document.getElementById('smartCardUidTag');
+  const headerBtn = document.getElementById('btnHeaderNfcSiswa');
+  if (!badgeEl || !btnEl) return;
+
+  const targetNisn = nisn || (typeof getSessionUser === 'function' && getSessionUser() ? getSessionUser().nisn : null);
+  if (!targetNisn) {
+    badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Akun Siswa Belum Terverifikasi NISN</span>';
+    btnEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
+    btnEl.style.background = '#0f172a';
+    if (headerBtn) {
+      headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Hubungkan Kartu / HP</span>';
+    }
+    return;
+  }
+
+  try {
+    let card = null;
+    if (typeof cekKartuUser === 'function') {
+      card = await cekKartuUser(targetNisn);
+    }
+    if (!card && typeof db !== 'undefined' && db && db.ref) {
+      const snap = await db.ref('kartu').once('value');
+      const val = snap.val() || {};
+      for (const [uid, item] of Object.entries(val)) {
+        if (item && (item.nisn === targetNisn || item === targetNisn)) {
+          card = { uid, ...(typeof item === 'object' ? item : { nisn: item }) };
+          break;
+        }
+      }
+    }
+
+    if (card && card.uid) {
+      badgeEl.innerHTML = `<span class="badge-nfc-linked" style="display:inline-flex;align-items:center;gap:5px;color:#15803d;background:#f0fdf4;border:1px solid #dcfce7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kartu / HP Terhubung (UID: ${card.uid})</span>`;
+      btnEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>Ganti Kartu / HP`;
+      btnEl.style.background = '#059669';
+      if (cardUidEl) cardUidEl.textContent = card.uid;
+      if (headerBtn) {
+        headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Kartu / HP Aktif (${card.uid})</span>`;
+        headerBtn.style.color = '#059669';
+        headerBtn.style.borderColor = '#a7f3d0';
+        headerBtn.style.background = '#ecfdf5';
+      }
+    } else {
+      badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Kartu / HP Belum Terhubung</span>';
+      btnEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
+      btnEl.style.background = '#0f172a';
+      if (cardUidEl) cardUidEl.textContent = '- (Belum Ada)';
+      if (headerBtn) {
+        headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Hubungkan Kartu / HP</span>';
+        headerBtn.style.color = '#0f172a';
+        headerBtn.style.borderColor = '#cbd5e1';
+        headerBtn.style.background = '#f8fafc';
+      }
+    }
+  } catch (e) {
+    console.warn('[NFC Siswa] Gagal cek status kartu:', e);
+  }
+}
+
+async function bukaModalPairingNfcSiswa() {
+  const modal = document.getElementById('modalPairingNfcSiswa');
+  if (!modal) return;
+
+  const user = (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+  if (!user.nisn) {
+    alert('Silakan masukkan NISN Anda di profil terlebih dahulu.');
+    if (typeof bukaModalProfilDenganTabNisn === 'function') bukaModalProfilDenganTabNisn();
+    return;
+  }
+
+  modal.style.display = 'flex';
+  modal.classList.add('show');
+
+  const cdEl = document.getElementById('nfcCountdownSiswa') || document.getElementById('countdownNfcSiswa');
+  const statusEl = document.getElementById('nfcStatusTextSiswa') || document.getElementById('statusPairingNfcSiswa');
+  const boxFb = document.getElementById('boxFeedbackNfcSiswa');
+  const iconCenter = document.getElementById('nfcIconCenterSiswa');
+  if (cdEl) cdEl.textContent = '30s';
+  if (statusEl) statusEl.textContent = 'Menunggu kartu atau HP ditempelkan...';
+  if (boxFb) { boxFb.style.display = 'none'; boxFb.textContent = ''; }
+  if (iconCenter) {
+    iconCenter.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>';
+  }
+
+  try {
+    if (typeof mulaiPairingNfc === 'function') {
+      await mulaiPairingNfc({
+        userId: user.nisn,
+        role: 'siswa',
+        nama: user.nama || 'Siswa',
+        kelas: user.kelas || 'XII RPL 2'
+      });
+    }
+  } catch (e) {
+    console.warn('[Pairing Siswa] Error start pairing:', e);
+  }
+
+  let sisaDetik = 30;
+  if (timerPairingSiswa) clearInterval(timerPairingSiswa);
+  timerPairingSiswa = setInterval(() => {
+    sisaDetik--;
+    if (cdEl) cdEl.textContent = sisaDetik + 's';
+    if (sisaDetik <= 0) {
+      clearInterval(timerPairingSiswa);
+      if (statusEl) statusEl.textContent = 'Waktu habis (>30 detik). Silakan coba lagi.';
+      if (boxFb) {
+        boxFb.style.display = 'block';
+        boxFb.style.background = '#fef2f2';
+        boxFb.style.color = '#991b1b';
+        boxFb.style.borderColor = '#fecaca';
+        boxFb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Waktu habis. Silakan coba lagi.</span></div>';
+      }
+      if (typeof batalkanPairingNfc === 'function') batalkanPairingNfc();
+    }
+  }, 1000);
+
+  if (unsubPairingSiswa) unsubPairingSiswa();
+  if (typeof dengarkanHasilPairing === 'function') {
+    unsubPairingSiswa = dengarkanHasilPairing((req) => {
+      if (req && req.status === 'success' && req.uid) {
+        if (timerPairingSiswa) clearInterval(timerPairingSiswa);
+        if (iconCenter) {
+          iconCenter.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        }
+        if (statusEl) statusEl.textContent = 'Kartu / HP Berhasil Terhubung!';
+        if (boxFb) {
+          boxFb.style.display = 'block';
+          boxFb.style.background = '#f0fdf4';
+          boxFb.style.color = '#15803d';
+          boxFb.style.borderColor = '#bbf7d0';
+          boxFb.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Kartu / HP Berhasil Terhubung!</span></div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#0f172a;margin-top:4px;">UID: ${req.uid}</div>`;
+        }
+
+        try {
+          const actx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.frequency.setValueAtTime(587.33, actx.currentTime);
+          osc.frequency.setValueAtTime(880, actx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.2, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.35);
+          osc.start();
+          osc.stop(actx.currentTime + 0.35);
+        } catch (e) {}
+
+        isPairingSiswaSucceeded = true;
+        cekStatusKartuNfcSiswa(user.nisn);
+
+        setTimeout(() => {
+          tutupModalPairingNfcSiswa(true);
+        }, 2200);
+      }
+    });
+  }
+}
+
+let isPairingSiswaSucceeded = false;
+
+function tutupModalPairingNfcSiswa(isSuccess) {
+  if (timerPairingSiswa) clearInterval(timerPairingSiswa);
+  if (unsubPairingSiswa) { unsubPairingSiswa(); unsubPairingSiswa = null; }
+  const modal = document.getElementById('modalPairingNfcSiswa');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+  }
+  if (!isSuccess && !isPairingSiswaSucceeded && typeof batalkanPairingNfc === 'function') {
+    batalkanPairingNfc();
+  }
+  isPairingSiswaSucceeded = false;
+}
+
+async function lakukanSimulasiTapSiswa(uidSimulasi) {
+  const uid = uidSimulasi || ('04' + Math.random().toString(16).substring(2, 8).toUpperCase());
+  if (typeof simulasiTapPairing === 'function') {
+    const res = await simulasiTapPairing(uid);
+    if (!res.success) {
+      const boxFb = document.getElementById('boxFeedbackNfcSiswa');
+      if (boxFb) {
+        boxFb.style.display = 'block';
+        boxFb.style.background = '#fef2f2';
+        boxFb.style.color = '#991b1b';
+        boxFb.style.borderColor = '#fecaca';
+        boxFb.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${res.message || 'Simulasi gagal.'}</span></div>`;
+      }
+    }
+    return res;
+  }
+  return { success: false, reason: 'FUNCTION_NOT_FOUND' };
+}
+
 if (typeof window !== 'undefined') {
   window.detailAbsensiSiswa = detailAbsensiSiswa;
   window.sudahAbsenSet = sudahAbsenSet;
@@ -611,7 +814,7 @@ function initPantauKelas(user) {
 
     const infoEl = document.getElementById('infoJamPelajaran');
     if (infoEl && !jamKeAktifSekarang) {
-      infoEl.innerHTML = `🔔 <b>Presensi Realtime Aktif:</b> Terhubung ke Firebase (${totalSiswa} Siswa Terdaftar).`;
+      infoEl.innerHTML = `<b>Presensi Realtime Aktif:</b> Terhubung ke Firebase (${totalSiswa} Siswa Terdaftar).`;
     }
 
     // Pastikan jika sudahAbsenSet kosong, langsung populate dari default presensi kelas aktif
@@ -748,10 +951,10 @@ function updateInfoJamEl() {
   const el = document.getElementById('infoJamPelajaran');
   if (!el) return;
   if (!jamKeAktifSekarang) {
-    el.innerHTML = '🕒 <b>Di Luar Jam Pelajaran / Istirahat.</b> Menampilkan status kehadiran siswa hari ini.';
+    el.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span><b>Di Luar Jam Pelajaran / Istirahat.</b> Menampilkan status kehadiran siswa hari ini.</span></span>';
     el.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;padding:14px 18px;border-radius:14px;font-size:13.5px;font-weight:600;margin-bottom:20px;';
   } else {
-    el.innerHTML = '🔔 <b>Jam Ke-' + jamKeAktifSekarang.jam_ke + ':</b> ' + jamKeAktifSekarang.mapel +
+    el.innerHTML = '<b>Jam Ke-' + jamKeAktifSekarang.jam_ke + ':</b> ' + jamKeAktifSekarang.mapel +
                    ' <span style=\"opacity:0.75;font-weight:400;\">(' + jamKeAktifSekarang.mulai + ' – ' + jamKeAktifSekarang.selesai + ')</span>';
     el.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:14px 18px;border-radius:14px;font-size:13.5px;font-weight:600;margin-bottom:20px;';
   }
@@ -989,15 +1192,15 @@ function renderPantauKelas() {
     if (isSudah) {
       let stLabel = '✓ Sudah Hadir';
       if (st === 'sakit') {
-        stLabel = '🤒 Sakit';
+        stLabel = 'Sakit';
         pill.className = 'status-pill izin';
         card.className = 'siswa-card status-sudah status-izin';
       } else if (st === 'izin' || st === 'ijin' || st === 'dispensasi' || st === 'ijin_kegiatan') {
-        stLabel = '📄 Izin';
+        stLabel = 'Izin';
         pill.className = 'status-pill izin';
         card.className = 'siswa-card status-sudah status-izin';
       } else if (st === 'terlambat' || (w && w > '06:30:00')) {
-        stLabel = '⚠️ Terlambat';
+        stLabel = 'Terlambat';
         pill.className = 'status-pill terlambat';
         card.className = 'siswa-card status-sudah status-terlambat';
       } else {
@@ -1023,7 +1226,7 @@ function renderPantauKelas() {
   });
 
   if (cs === 0) gridSudah.innerHTML = '<p style=\"color:#94a3b8;font-size:13.5px;grid-column:1/-1;\">Belum ada murid yang scan kartu pada sesi/jam ini.</p>';
-  if (cb === 0 && list.length > 0) gridBelum.innerHTML = '<p style=\"color:#10b981;font-weight:700;font-size:13.5px;grid-column:1/-1;\">Semua murid di kelas ini sudah hadir! 🎉</p>';
+  if (cb === 0 && list.length > 0) gridBelum.innerHTML = '<p style=\"color:#10b981;font-weight:700;font-size:13.5px;grid-column:1/-1;\">Semua murid di kelas ini sudah hadir!</p>';
   if (list.length === 0) gridBelum.innerHTML = '<p style=\"color:#94a3b8;font-size:13.5px;grid-column:1/-1;\">Belum ada data siswa untuk kelas ini.</p>';
 
   const cSudah = document.getElementById('countSudah');
@@ -1124,15 +1327,15 @@ function renderPantauBeranda() {
     if (isSudah) {
       let stLabel = '✓ Sudah Hadir';
       if (st === 'sakit') {
-        stLabel = '🤒 Sakit';
+        stLabel = 'Sakit';
         pill.className = 'status-pill izin';
         card.className = 'siswa-card status-sudah status-izin';
       } else if (st === 'izin' || st === 'ijin' || st === 'dispensasi' || st === 'ijin_kegiatan') {
-        stLabel = '📄 Izin';
+        stLabel = 'Izin';
         pill.className = 'status-pill izin';
         card.className = 'siswa-card status-sudah status-izin';
       } else if (st === 'terlambat' || (w && w > '06:30:00')) {
-        stLabel = '⚠️ Terlambat';
+        stLabel = 'Terlambat';
         pill.className = 'status-pill terlambat';
         card.className = 'siswa-card status-sudah status-terlambat';
       } else {
@@ -1244,7 +1447,7 @@ function updateWidgetStatusKelas(arg1, arg2) {
     badge.style.background = '#ef4444';
     badge.style.color = '#fff';
     if (icon) {
-      icon.textContent = '⚠️';
+      icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       icon.style.background = '#fee2e2';
     }
     if (judul) {
@@ -1263,7 +1466,7 @@ function updateWidgetStatusKelas(arg1, arg2) {
     badge.style.background = '#64748b';
     badge.style.color = '#fff';
     if (icon) {
-      icon.textContent = '🏠';
+      icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
       icon.style.background = '#f1f5f9';
     }
     if (judul) {
@@ -1278,7 +1481,7 @@ function updateWidgetStatusKelas(arg1, arg2) {
     badge.style.background = '#10b981';
     badge.style.color = '#fff';
     if (icon) {
-      icon.textContent = '🟢';
+      icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>';
       icon.style.background = '#dcfce7';
     }
     if (judul) {
@@ -1343,6 +1546,8 @@ if (typeof window !== 'undefined') {
 }
 
 function initBerandaOverview(user) {
+  if (user && user.nisn) { cekStatusKartuNfcSiswa(user.nisn); }
+
   const isPengunjung = user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa';
   const isAdminIdentity = (user && user.nama && /admin/i.test(user.nama)) || (user && user.role === 'admin');
 
@@ -1374,11 +1579,11 @@ function initBerandaOverview(user) {
 
   if (isPengunjung) {
     const sapaNama = isAdminIdentity ? 'Pengunjung' : (user.nama ? user.nama.split(' ')[0] : 'Pengunjung');
-    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${sapaNama}! 👋`;
+    if (greetingEl) greetingEl.textContent = `Selamat Datang, ${sapaNama}!`;
     if (subtextEl) subtextEl.textContent = `Status Akun: Pengunjung / Tamu Sekolah (Belum Terverifikasi)`;
   } else {
     const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
-    if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}! 👋`;
+    if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}!`;
     if (subtextEl) subtextEl.textContent = `Siswa Kelas ${user.kelas || 'XII RPL 2'} • NISN: ${user.nisn || '-'}`;
   }
 
@@ -1426,7 +1631,7 @@ function initBerandaOverview(user) {
     if (cardUid) cardUid.textContent = 'BELUM TERDAFTAR';
     if (cardBadge && cardIcon && cardText) {
       cardBadge.className = 'smart-card-status-badge belum';
-      cardIcon.textContent = '⚡';
+      cardIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
       cardText.textContent = 'Akun Pengunjung (Belum Terverifikasi)';
     }
     if (cardEl) {
@@ -1480,7 +1685,7 @@ function initBerandaOverview(user) {
       // Evaluasi status presensi berdasarkan ambang batas waktu (PRD Bab 4.1)
       let statusLabel = 'Belum Scan Hari Ini';
       let statusClass = 'belum';
-      let iconSimbol = '⚡';
+      let iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
       const jamSekarangStr = jamSekarang();
       if (statusDitemukan) {
@@ -1493,51 +1698,51 @@ function initBerandaOverview(user) {
           if (statusWaktu === 'terlambat' || (waktuHadir && waktuHadir > '06:30:00')) {
             statusLabel = `Terlambat (${waktuHadir.slice(0,5)} WIB)`;
             statusClass = 'peringatan';
-            iconSimbol = '⏰';
+            iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
           } else {
             statusLabel = `Hadir Tepat Waktu (${waktuHadir ? waktuHadir.slice(0,5) + ' WIB' : ''})`;
             statusClass = 'hadir';
-            iconSimbol = '✓';
+            iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
           }
         } else if (stLower === 'terlambat') {
           statusLabel = `Terlambat (${waktuHadir ? waktuHadir.slice(0,5) + ' WIB' : ''})`;
           statusClass = 'peringatan';
-          iconSimbol = '⏰';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
         } else if (stLower === 'alpa' || stLower === 'alpha') {
           statusLabel = 'Alpa (Tanpa Konfirmasi)';
           statusClass = 'belum';
-          iconSimbol = '✗';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
         } else if (stLower === 'sakit') {
           statusLabel = 'Sakit (Izin Terverifikasi Walas)';
           statusClass = 'peringatan';
-          iconSimbol = '🤒';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>';
         } else if (stLower === 'izin' || stLower === 'ijin' || stLower === 'dispensasi' || stLower === 'dispen') {
           statusLabel = 'Izin Resmi (ACC Walas)';
           statusClass = 'peringatan';
-          iconSimbol = '📄';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
         }
       } else {
         // Belum ada data scan
         if (jamSekarangStr >= '06:30:00' && jamSekarangStr <= '08:00:00') {
           statusLabel = 'Belum Absen (Live Alert Walas)';
           statusClass = 'peringatan';
-          iconSimbol = '⚠️';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
         } else if (jamSekarangStr > '08:00:00') {
           statusLabel = 'Belum Absen / Terlewat';
           statusClass = 'belum';
-          iconSimbol = '✗';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         }
       }
 
       if (cardBadge && cardIcon && cardText) {
         cardBadge.className = 'smart-card-status-badge ' + statusClass;
-        cardIcon.textContent = iconSimbol;
+        cardIcon.innerHTML = iconSvg;
         cardText.textContent = statusLabel;
       }
 
       if (pillEl && iconEl && textEl) {
         pillEl.className = 'personal-status-pill ' + statusClass;
-        iconEl.textContent = iconSimbol;
+        iconEl.innerHTML = iconSvg;
         textEl.textContent = statusLabel;
       }
     });
@@ -1725,7 +1930,7 @@ function renderRekapSiswaUI(range) {
 
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon">📅</div><p>Belum ada catatan presensi pada periode ini.</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>Belum ada catatan presensi pada periode ini.</p></td></tr>';
     return;
   }
 
@@ -1738,17 +1943,17 @@ function renderRekapSiswaUI(range) {
     const dt = new Date(tgl + 'T00:00:00');
     const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][dt.getDay()] || '-';
 
-    let statusPill = '<span class="status-pill sudah">✓ Hadir</span>';
+    let statusPill = '<span class="status-pill sudah">Hadir</span>';
     let ket = 'Hadir tepat waktu di kelas via kartu RFID';
 
     if (logMasuk.status === 'sakit') {
-      statusPill = '<span class="status-pill pending">🤒 Sakit</span>';
+      statusPill = '<span class="status-pill pending">Sakit</span>';
       ket = logMasuk.keterangan || 'Surat keterangan dokter terlampir';
     } else if (logMasuk.status === 'dispensasi' || logMasuk.status === 'ijin_kegiatan') {
-      statusPill = '<span class="status-pill pending">📄 Izin / Dispen</span>';
+      statusPill = '<span class="status-pill pending">Izin / Dispen</span>';
       ket = logMasuk.keterangan || 'Dispensasi kegiatan kejuaraan/sekolah';
     } else if (logMasuk.status === 'alpha') {
-      statusPill = '<span class="status-pill belum">✗ Alpha</span>';
+      statusPill = '<span class="status-pill belum">Alpha</span>';
       ket = 'Tanpa keterangan';
     }
 
@@ -1795,14 +2000,14 @@ function renderTampilanJadwal(resolved, targetKelas, targetHari) {
     const emptyHtml = `<div style="grid-column: 1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13.5px; background:#f8fafc; border-radius:16px;">Belum ada jadwal pelajaran untuk kelas ${targetKelas} pada hari ${namaHariCap}.</div>`;
     [gridEl, gridTabEl].forEach(g => { if (g) g.innerHTML = emptyHtml; });
     [bannerMandiri, bannerMandiriTab].forEach(b => { if (b) b.style.display = 'none'; });
-    if (badgePulang) badgePulang.textContent = `⏰ Jam Pulang: -`;
-    if (badgePulangTab) badgePulangTab.textContent = `⏰ Jam Pulang: -`;
+    if (badgePulang) badgePulang.textContent = `Jam Pulang: -`;
+    if (badgePulangTab) badgePulangTab.textContent = `Jam Pulang: -`;
     return;
   }
 
   // Ambil jam selesai dari mapel paling terakhir atau ketetapan jam pulang resmi
   const jamPulangResmi = resolved.jamPulang || (targetHari === 'jumat' ? '11:45' : '15:30');
-  const jamPulangStr = `⏰ Jam Pulang ${targetKelas} (${namaHariCap}): ${jamPulangResmi} WIB`;
+  const jamPulangStr = `Jam Pulang ${targetKelas} (${namaHariCap}): ${jamPulangResmi} WIB`;
   if (badgePulang) badgePulang.textContent = jamPulangStr;
   if (badgePulangTab) badgePulangTab.textContent = jamPulangStr;
 
@@ -1832,9 +2037,9 @@ function renderTampilanJadwal(resolved, targetKelas, targetHari) {
       ${isActive ? '<span class="live-pill">LIVE SEKARANG</span>' : ''}
       <div class="schedule-jam">Jam Ke-${jamKe}</div>
       <div class="schedule-mapel">${namaMapelBersih}</div>
-      <div class="schedule-waktu">⏰ ${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
-      ${p.guru ? `<div style="font-size:12px;color:#64748b;margin-top:4px;">👨‍🏫 ${p.guru}</div>` : ''}
-      ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;">⚡ Guru Berhalangan (Mandiri)</span></div>' : ''}
+      <div class="schedule-waktu" style="display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${p.mulai || '-'} — ${p.selesai || '-'} WIB</div>
+      ${p.guru ? `<div style="font-size:12px;color:#64748b;margin-top:4px;display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${p.guru}</div>` : ''}
+      ${isGuruBerhalangan ? '<div style="margin-top:8px;"><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:3px 8px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Guru Berhalangan (Mandiri)</span></div>' : ''}
     `;
 
     [gridEl, gridTabEl].forEach(g => {
@@ -1887,7 +2092,7 @@ function sinkronkanChipJadwal(kelas, hari) {
       c.setAttribute('data-hari', hk);
       if (hk === targetHari) {
         c.classList.add('active');
-        c.innerHTML = `✨ ${lbl}`;
+        c.innerHTML = lbl;
       } else {
         c.classList.remove('active');
         c.innerHTML = lbl;
@@ -2022,7 +2227,7 @@ function initClassChipsSelector(user) {
       dchip.type = 'button';
       dchip.className = 'class-chip' + (item.key === currentSelectedHariJadwal ? ' active' : '');
       dchip.setAttribute('data-hari', item.key);
-      dchip.innerHTML = item.key === currentSelectedHariJadwal ? `✨ ${item.label}` : item.label;
+      dchip.textContent = item.label;
       dchip.onclick = function() {
         pilihHariJadwal(item.key);
       };
@@ -2056,7 +2261,7 @@ function bukaModalJadwalPulang() {
 
 function bukaModalTataTertib() {
   alert(
-    "📜 TATA TERTIB PRESENSI KELAS MANDIRI:\n\n" +
+    "TATA TERTIB PRESENSI KELAS MANDIRI:\n\n" +
     "1. Siswa wajib hadir di dalam ruangan kelas sebelum jam pelajaran dimulai.\n" +
     "2. Jika guru berhalangan hadir, siswa melakukan tap kartu RFID pada scanner kelas.\n" +
     "3. Titip absen menggunakan kartu teman dinyatakan pelanggaran disiplin berat.\n" +
@@ -2127,6 +2332,11 @@ if (typeof window !== 'undefined') {
   window.renderPantauBeranda = renderPantauBeranda;
   window.initPantauKelas = initPantauKelas;
   window.initDashboard = initDashboard;
+  window.cekStatusKartuNfcSiswa = cekStatusKartuNfcSiswa;
+  window.bukaModalPairingNfcSiswa = bukaModalPairingNfcSiswa;
+  window.tutupModalPairingNfcSiswa = tutupModalPairingNfcSiswa;
+  window.lakukanSimulasiTapSiswa = lakukanSimulasiTapSiswa;
+
   window.getDefaultPresensiResmiHelper = getDefaultPresensiResmiHelper;
 }
 
@@ -2150,14 +2360,18 @@ if (typeof module !== 'undefined' && module.exports) {
     inisialisasiJadwalAwal,
     dengarkanPresensiKelas,
     initPantauKelas,
-    initDashboard
+    initDashboard,
+    cekStatusKartuNfcSiswa,
+    bukaModalPairingNfcSiswa,
+    tutupModalPairingNfcSiswa,
+    lakukanSimulasiTapSiswa,
   };
 }
 
 
 function bukaDetailInfoToeic() {
   alert(
-    "🌐 PROGRAM SERTIFIKASI BAHASA INGGRIS TOEIC INTERNASIONAL 2026\n" +
+    "PROGRAM SERTIFIKASI BAHASA INGGRIS TOEIC INTERNASIONAL 2026\n" +
     "SMK Negeri 1 Sumedang — CBT Center RPL\n\n" +
     "• Pelaksanaan: Batch Sertifikasi Bahasa Inggris TOEIC Internasional Siswa SMK\n" +
     "• Status: Batch Berjalan • Sesi Ujian Terjadwal di CBT Center\n" +
@@ -2168,7 +2382,7 @@ function bukaDetailInfoToeic() {
 
 function bukaDetailInfoTka() {
   alert(
-    "⚡ ASESMEN TES KEMAMPUAN AKADEMIK (TKA) 2026\n" +
+    "ASESMEN TES KEMAMPUAN AKADEMIK (TKA) 2026\n" +
     "SMK Negeri 1 Sumedang — Laboratorium Komputer RPL\n\n" +
     "• Asesmen: Tes Kemampuan Akademik (TKA) 2026\n" +
     "• Status: SEDANG BERLANGSUNG SAAT INI\n" +
