@@ -874,6 +874,10 @@ var DEFAULT_STATUS_KELAS = {
 };
 
 // Timezone Helper: Waktu Lokal Indonesia Barat (Asia/Jakarta / WIB)
+function getWIBTime(d) {
+  return getJamSekarangWIB(d);
+}
+
 function getJamSekarangWIB(d) {
   const dateObj = d || new Date();
   try {
@@ -981,11 +985,17 @@ async function sinkronisasiStatusAlpaFirebase(kelasInput, tanggalInput) {
   const msSiswa = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI) ? MASTER_DATA_SISWA_RESMI : {};
   let perizinanDisetujuiSet = new Set();
 
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
+    ? global.db
+    : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
+      ? window.db
+      : ((typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db : null));
+
+  if (activeDb) {
     try {
       const [snapJ, snapZ] = await Promise.all([
-        db.ref('perijinan').once('value').catch(() => null),
-        db.ref('perizinan').once('value').catch(() => null)
+        activeDb.ref('perijinan').once('value').catch(() => null),
+        activeDb.ref('perizinan').once('value').catch(() => null)
       ]);
       const processSnap = (snap) => {
         if (snap && snap.val()) {
@@ -1021,9 +1031,9 @@ async function sinkronisasiStatusAlpaFirebase(kelasInput, tanggalInput) {
     if (siswaKelas.length === 0) continue;
 
     let presensiSnapVal = null;
-    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (activeDb) {
       try {
-        const snapP = await db.ref('presensi_jam/' + normK + '/' + tanggal + '/1').once('value').catch(() => null);
+        const snapP = await activeDb.ref('presensi_jam/' + normK + '/' + tanggal + '/1').once('value').catch(() => null);
         presensiSnapVal = snapP ? (snapP.val() || {}) : {};
       } catch (e) {
         presensiSnapVal = {};
@@ -1054,19 +1064,35 @@ async function sinkronisasiStatusAlpaFirebase(kelasInput, tanggalInput) {
           updatedAt: new Date().toISOString()
         };
         updates['presensi_jam/' + normK + '/' + tanggal + '/1/' + nisn] = alpaRecord;
+        updates['absensi/' + nisn + '/' + tanggal] = {
+          status: 'alpa',
+          metode: 'auto_system',
+          keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)',
+          updated_at: Date.now()
+        };
+        if (typeof firestoreDb !== 'undefined' && firestoreDb && typeof firestoreDb.collection === 'function') {
+          try {
+            firestoreDb.collection('attendances').doc(nisn + '_' + tanggal).set({
+              status: 'alpa',
+              metode: 'auto_system',
+              keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)',
+              updated_at: Date.now()
+            }, { merge: true }).catch(() => null);
+          } catch (eFs) {}
+        }
         totalSynced++;
         alpaNisns.push(nisn);
       }
     }
 
-    if (Object.keys(updates).length > 0 && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (Object.keys(updates).length > 0 && activeDb) {
       try {
-        await db.ref().update(updates).catch(() => null);
+        await activeDb.ref().update(updates).catch(() => null);
       } catch (eUp) {}
     }
   }
 
-  return { success: true, synced: totalSynced, alpaNisns: alpaNisns, jamWIB: jamWIB };
+  return { success: true, synced: totalSynced, totalSynced: totalSynced, alpaNisns: alpaNisns, jamWIB: jamWIB };
 }
 
 // Evaluasi Ambang Batas Waktu Siswa (PRD Bab 4.1):
@@ -1224,6 +1250,7 @@ if (typeof window !== 'undefined') {
     window._lastPairingRequest = pairingData;
   }
   if (typeof global !== 'undefined') {
+    global.getWIBTime = getWIBTime;
     global._lastPairingRequest = pairingData;
   }
 
@@ -2024,6 +2051,7 @@ if (typeof window !== 'undefined') {
   window.normalisasiKelas = normalisasiKelas;
   window.parseSiswaSnapshot = parseSiswaSnapshot;
   window.evaluasiAmbangBatasWaktu = evaluasiAmbangBatasWaktu;
+  window.getWIBTime = getWIBTime;
   window.getJamSekarangWIB = getJamSekarangWIB;
   window.getTanggalHariIniWIB = getTanggalHariIniWIB;
   window.evaluasiStatusKehadiranRealtime = evaluasiStatusKehadiranRealtime;
@@ -2079,6 +2107,7 @@ if (typeof module !== 'undefined' && module.exports) {
     normalisasiKelas,
     parseSiswaSnapshot,
     evaluasiAmbangBatasWaktu,
+    getWIBTime,
     getJamSekarangWIB,
     getTanggalHariIniWIB,
     evaluasiStatusKehadiranRealtime,

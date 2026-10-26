@@ -3,10 +3,10 @@
 
 const JENIS_PERIJINAN = {
   izin: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: false },
-  dispen: { label: 'Dispensasi', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', dokumenWajib: true },
+  dispen: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', dokumenWajib: true },
   sakit: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: false },
-  dispensasi: { label: 'Dispensasi', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
-  ijin_kegiatan: { label: 'Ijin Kegiatan', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true },
+  dispensasi: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
+  ijin_kegiatan: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true },
   sakit_mendadak: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: false },
   penugasan_dinas: { label: 'Tugas Luar / Dinas', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>', dokumenWajib: false },
   keperluan_mendesak: { label: 'Keperluan Keluarga', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', dokumenWajib: false },
@@ -281,6 +281,7 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
     tanggal_norm: tanggalNorm,
     status: 'pending',
     dokumen_url: dokumen_url,
+    bukti_url: dokumen_url,
     lampiranUrl: dokumen_url,
     pengajuId: finalNisn,
     userId: (user && user.uid) || ('UID_' + (finalNisn || Date.now())),
@@ -333,6 +334,7 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
                 return {
                   ...item,
                   dokumen_url: '',
+                  bukti_url: '',
                   lampiranUrl: '',
                   foto_bukti: '',
                   buktiUrl: '',
@@ -350,6 +352,7 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
                   return {
                     ...item,
                     dokumen_url: '',
+                    bukti_url: '',
                   lampiranUrl: '',
                     foto_bukti: '',
                     buktiUrl: '',
@@ -413,7 +416,9 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
 
   // 4. Kirim chat perizinan secara aman
   try {
-    await kirimChatPerijinan(pid, user, 'Saya mengajukan ' + (JENIS_PERIJINAN[jenis]?.label || jenis) + ': ' + alasan).catch(() => null);
+    const labelJn = (JENIS_PERIJINAN[jenis]?.label || (jenis === 'dispensasi' ? 'Dispen' : (jenis === 'ijin_kegiatan' ? 'Izin' : jenis)));
+  const pesanPertama = 'Saya mengajukan ' + labelJn + ' untuk tanggal ' + (tanggal || '-') + ' dengan alasan: ' + alasan + (dokumen_url ? ' (Bukti dokumen asli terlampir)' : '');
+  await kirimChatPerijinan(pid, user, pesanPertama).catch(() => null);
   } catch (e) {}
 
   // 5. Trigger event lokal & storage ping untuk sinkronisasi seketika antar-komponen & lintas-tab
@@ -510,12 +515,16 @@ async function kirimChatPerijinan(pid, user, pesan) {
         if (refA && typeof refA.push === 'function') pushPromises.push(refA.push(chatMsg).catch(() => null));
       } catch (e) {}
       try {
-        const refB = db.ref('perizinan/' + pid + '/chats');
+        const refB = db.ref('perijinan/' + pid + '/chats');
         if (refB && typeof refB.push === 'function') pushPromises.push(refB.push(chatMsg).catch(() => null));
       } catch (e) {}
       try {
-        const refC = db.ref('perijinan_chats/' + pid);
+        const refC = db.ref('perizinan/' + pid + '/chats');
         if (refC && typeof refC.push === 'function') pushPromises.push(refC.push(chatMsg).catch(() => null));
+      } catch (e) {}
+      try {
+        const refD = db.ref('perijinan_chats/' + pid);
+        if (refD && typeof refD.push === 'function') pushPromises.push(refD.push(chatMsg).catch(() => null));
       } catch (e) {}
 
       await Promise.race([
@@ -1197,9 +1206,10 @@ async function adminTolakPerizinanItem(id, isGuru) {
 
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
     try {
+      const tolakPayload = { status: 'ditolak', status_code: 'rejected', approval_walas: 'rejected', updated_at: new Date().toISOString() };
       const updates = [
-        db.ref('perijinan/' + id + '/status').set('ditolak').catch(() => null),
-        db.ref('perizinan/' + id + '/status').set('ditolak').catch(() => null)
+        db.ref('perijinan/' + id).update(tolakPayload).catch(() => null),
+        db.ref('perizinan/' + id).update(tolakPayload).catch(() => null)
       ];
       await Promise.race([
         Promise.all(updates),
@@ -1525,6 +1535,7 @@ function renderChat(pid) {
     };
 
     attachListener('chat_perijinan/' + pid);
+    attachListener('perijinan/' + pid + '/chats');
     attachListener('perizinan/' + pid + '/chats');
   }
 }
@@ -1668,3 +1679,40 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
+
+
+function bukaModalBukti(fotoUrl, nama) {
+  if (typeof window !== 'undefined' && typeof window.bukaModalBukti === 'function' && window.bukaModalBukti !== bukaModalBukti) {
+    return window.bukaModalBukti(fotoUrl, nama);
+  }
+  const elTitle = document.getElementById('modalBuktiTitle');
+  if (elTitle) elTitle.textContent = 'Bukti Surat Izin — ' + (nama || 'Siswa');
+  const img = document.getElementById('modalBuktiImg');
+  const txt = document.getElementById('modalBuktiText');
+  if (img && txt) {
+    if (!fotoUrl || fotoUrl === '[Tersimpan di Penyimpanan Lokal]') {
+      img.style.display = 'none';
+      txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;text-align:center;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju.</div>';
+    } else {
+      const isPdf = typeof fotoUrl === 'string' && (fotoUrl.startsWith('data:application/pdf') || fotoUrl.toLowerCase().includes('.pdf'));
+      const isSample = typeof fotoUrl === 'string' && fotoUrl.includes('sample-surat-dokter');
+      if (isSample) {
+        img.onerror = null;
+        img.src = (typeof generateDigitalSuratDokterDataUrl === 'function') ? generateDigitalSuratDokterDataUrl(nama || 'M. IHSAN ATHALLAH', 'XII RPL 2') : fotoUrl;
+        img.style.display = 'block';
+        txt.innerHTML = '';
+      } else if (isPdf) {
+        img.style.display = 'none';
+        txt.innerHTML = '<iframe src="' + fotoUrl + '" style="width:100%;height:70vh;border:none;"></iframe><div style="margin-top:10px;"><a href="' + fotoUrl + '" target="_blank" style="color:#4f46e5;font-weight:700;">Buka / Unduh Dokumen Surat Izin (PDF)</a></div>';
+      } else {
+        img.src = fotoUrl;
+        img.style.display = 'block';
+        txt.innerHTML = '';
+      }
+    }
+  }
+  const modal = document.getElementById('modalBuktiIzin');
+  if (modal) modal.classList.add('show');
+}
+if (typeof window !== 'undefined') window.bukaModalBukti = bukaModalBukti;
+if (typeof global !== 'undefined') global.bukaModalBukti = bukaModalBukti;

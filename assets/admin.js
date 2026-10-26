@@ -1429,7 +1429,7 @@ function listenKendalaGuruAdmin() {
 function updateBadgeKendalaGuru() {
   const badge = document.getElementById('badgeKendalaGuru');
   if (!badge) return;
-  const countPending = Object.values(kendalaGuruCache).filter(k => k && k.status === 'pending').length;
+  const countPending = Object.values(kendalaGuruCache).filter(k => k && (k.status === 'pending' || k.status === 'dilaporkan' || !k.status)).length;
   if (countPending > 0) {
     badge.textContent = countPending;
     badge.style.display = 'inline-block';
@@ -1439,14 +1439,14 @@ function updateBadgeKendalaGuru() {
 }
 
 function renderKendalaGuruAdmin(filter) {
-  const container = document.getElementById('daftarKendalaAdmin');
+  const container = document.getElementById('daftarKendalaAdmin') || document.getElementById('kendalaGuruAdminContainer');
   if (!container) return;
 
   const entries = Object.entries(kendalaGuruCache).filter(([, k]) => {
     if (!k) return false;
     if (filter === 'semua') return true;
     if (filter === 'approved') return k.status === 'approved' || k.status === 'disetujui';
-    if (filter === 'pending') return k.status === 'pending' || !k.status;
+    if (filter === 'pending') return k.status === 'pending' || k.status === 'dilaporkan' || !k.status;
     if (filter === 'rejected') return k.status === 'rejected' || k.status === 'ditolak';
     return k.status === filter;
   }).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
@@ -1588,55 +1588,64 @@ async function adminApproveKendala(id) {
   }
 
   // 4. Update Firebase RTDB secara non-blocking dengan timeout safety
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
+    ? global.db
+    : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
+      ? window.db
+      : ((typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db : null));
+
+  if (activeDb) {
     try {
       const updates = [
-        db.ref('kendala_mengajar/' + id).update({
+        activeDb.ref('kendala_mengajar/' + id).update({
           status: 'approved',
           statusKonfirmasi: 'Disetujui',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('laporan_kendala/' + id).update({
+        activeDb.ref('laporan_kendala/' + id).update({
           status: 'approved',
           statusKonfirmasi: 'Disetujui',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('kendala_guru/' + id).update({
+        activeDb.ref('kendala_guru/' + id).update({
           status: 'approved',
+          status_code: 'approved',
+          status_approval: 'disetujui',
           statusKonfirmasi: 'Disetujui',
           approvedBy: adminNama,
+          approved_at: Date.now(),
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perizinan_guru/' + id).update({
+        activeDb.ref('perizinan_guru/' + id).update({
           status: 'approved',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perijinan/' + id).update({
+        activeDb.ref('perijinan/' + id).update({
           status: 'disetujui',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perizinan/' + id).update({
+        activeDb.ref('perizinan/' + id).update({
           status: 'disetujui',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('permits/' + id).update({
+        activeDb.ref('permits/' + id).update({
           status: 'approved',
           approvedBy: adminNama,
           approvedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('kelas/' + targetKelas).update({
+        activeDb.ref('kelas/' + targetKelas).update({
           status: 'jamkos',
           activeMapel: k.mapel || 'Jam Kosong',
           activeTeacherNama: k.guruNama || k.nama || '-',
           keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
           updatedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('classes/' + targetKelas).update({
+        activeDb.ref('classes/' + targetKelas).update({
           status: 'jamkos',
           statusKelas: 'jamkos',
           activeMapel: k.mapel || 'Jam Kosong',
@@ -1644,7 +1653,7 @@ async function adminApproveKendala(id) {
           keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
           updatedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('status_kelas/' + targetKelas).update({
+        activeDb.ref('status_kelas/' + targetKelas).update({
           status: 'jamkos',
           keterangan: k.alasan || 'Tugas Mandiri',
           mapel: k.mapel || 'Jam Kosong',
@@ -1710,43 +1719,49 @@ async function adminRejectKendala(id) {
   if (typeof alert === 'function') alert('Laporan kendala berhasil ditolak.');
 
   // 4. Update Firebase RTDB secara non-blocking
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
+    ? global.db
+    : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
+      ? window.db
+      : ((typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db : null));
+
+  if (activeDb) {
     try {
       const updates = [
-        db.ref('kendala_mengajar/' + id).update({
+        activeDb.ref('kendala_mengajar/' + id).update({
           status: 'rejected',
           statusKonfirmasi: 'Ditolak',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('laporan_kendala/' + id).update({
+        activeDb.ref('laporan_kendala/' + id).update({
           status: 'rejected',
           statusKonfirmasi: 'Ditolak',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('kendala_guru/' + id).update({
+        activeDb.ref('kendala_guru/' + id).update({
           status: 'rejected',
           statusKonfirmasi: 'Ditolak',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perizinan_guru/' + id).update({
+        activeDb.ref('perizinan_guru/' + id).update({
           status: 'rejected',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perijinan/' + id).update({
+        activeDb.ref('perijinan/' + id).update({
           status: 'ditolak',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('perizinan/' + id).update({
+        activeDb.ref('perizinan/' + id).update({
           status: 'ditolak',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()
         }).catch(() => null),
-        db.ref('permits/' + id).update({
+        activeDb.ref('permits/' + id).update({
           status: 'rejected',
           rejectedBy: adminNama,
           rejectedAt: new Date().toISOString()

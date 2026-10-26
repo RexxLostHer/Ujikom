@@ -1,3 +1,17 @@
+function getWIBTime(d) {
+  if (typeof getJamSekarangWIB === 'function') return getJamSekarangWIB(d);
+  const dateObj = d || new Date();
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(dateObj);
+  } catch (e) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return pad(dateObj.getHours()) + ':' + pad(dateObj.getMinutes()) + ':' + pad(dateObj.getSeconds());
+  }
+}
+
 // ===== DASHBOARD GURU JS =====
 let guruAktif = null;
 let currentKelas = '';
@@ -1975,10 +1989,16 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
   const catatan = prompt(`Masukkan catatan guru untuk verifikasi (${statusBaru}):`, statusBaru === 'disetujui' ? 'Disetujui. Cepat sembuh.' : 'Bukti kurang lengkap.');
   if (catatan === null) return;
 
+  const isApprovedStatus = (statusBaru === 'disetujui' || statusBaru === 'approved');
+  const codeVal = isApprovedStatus ? 'approved' : 'rejected';
   const updatePayload = {
-    status: statusBaru,
+    status: isApprovedStatus ? 'disetujui' : 'ditolak',
+    status_code: codeVal,
+    approval_walas: codeVal,
     diverifikasi_oleh: u ? (u.nama || (isWalas ? 'Wali Kelas ' + walasKelasNorm : 'Administrator')) : 'Wali Kelas',
     catatan_guru: catatan,
+    catatanReviewer: catatan,
+    alasanTolak: !isApprovedStatus ? catatan : '',
     updated_at: new Date().toISOString()
   };
 
@@ -2141,6 +2161,14 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
           };
         }
       });
+      if (iz.nisn && iz.tanggal) {
+        updates['absensi/' + iz.nisn + '/' + iz.tanggal] = {
+          status: iz.jenis || 'izin',
+          metode: 'perizinan_walas',
+          keterangan: 'Izin disetujui Walas (' + catatan + ')',
+          updated_at: Date.now()
+        };
+      }
       if (typeof db !== 'undefined' && db && typeof db.ref === 'function' && Object.keys(updates).length > 0) {
         await db.ref().update(updates).catch(() => null);
       }
@@ -2353,7 +2381,7 @@ function bukaModalBukti(fotoUrl, nama) {
         };
       } else if (isPdf) {
         img.style.display = 'none';
-        txt.innerHTML = `<a href="${fotoUrl}" target="_blank" download="surat-izin-${escapeHtmlGuru(nama || 'siswa')}.pdf" style="color:#4f46e5;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:12px 18px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;margin:12px auto;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Buka / Unduh Dokumen Surat Izin (PDF)</span></a>`;
+        txt.innerHTML = `<iframe src="${fotoUrl}" style="width:100%;height:70vh;border:none;border-radius:10px;margin-bottom:10px;"></iframe><div style="text-align:center;"><a href="${fotoUrl}" target="_blank" download="surat-izin-${escapeHtmlGuru(nama || 'siswa')}.pdf" style="color:#4f46e5;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Buka / Unduh Dokumen Surat Izin (PDF)</span></a></div>`;
       } else {
         img.style.display = 'none';
         txt.textContent = 'Tidak ada lampiran dokumen.';
@@ -2640,9 +2668,23 @@ async function submitKendalaGuru(e) {
     const id = 'KENDALA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
 
     const payload = {
+      kid: id,
       id: id,
       permitId: id,
       pid: id,
+      guru_uid: guru.uid || guruId,
+      guru_nip: nip,
+      nama_guru: namaGuru,
+      guru_nama: namaGuru,
+      peran: (guru.role === 'walas' || !!guru.isWalas) ? 'Wali Kelas & Guru' : 'Guru Pengajar',
+      kelas: kelas,
+      kelasId: kelas,
+      mapel: mapel,
+      jam_ke: '1-8',
+      keterangan: alasan,
+      deskripsi: alasan,
+      dokumen_url: buktiKendala || '',
+      bukti_url: buktiKendala || '',
       pengajuId: guruId,
       userId: guru.uid || guruId,
       namaPengaju: namaGuru,

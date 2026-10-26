@@ -1,3 +1,17 @@
+function getWIBTime(d) {
+  if (typeof getJamSekarangWIB === 'function') return getJamSekarangWIB(d);
+  const dateObj = d || new Date();
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(dateObj);
+  } catch (e) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return pad(dateObj.getHours()) + ':' + pad(dateObj.getMinutes()) + ':' + pad(dateObj.getSeconds());
+  }
+}
+
 // Monitoring Presensi RFID — Akses Terbuka (Siswa, Guru & Pengunjung)
 const adminUser = localStorage.getItem('admin_aktif') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('user_aktif'));
 
@@ -67,9 +81,13 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
   sub.className = 'siswa-card-sub';
   sub.textContent = 'NISN: ' + nisn;
 
+  const jamWIB = (typeof getWIBTime === 'function') ? getWIBTime() : ((typeof getJamSekarangWIB === 'function') ? getJamSekarangWIB() : '07:00:00');
+  const cleanJamWIB = (jamWIB && jamWIB.length === 5) ? jamWIB + ':00' : (jamWIB || '07:00:00');
+  const isLewat08 = cleanJamWIB >= '08:00:00';
+
   const pill = document.createElement('span');
-  pill.className = 'status-pill ' + (statusSudah ? 'sudah' : 'belum');
   if (statusSudah) {
+    pill.className = 'status-pill sudah';
     if (isDummy) {
       pill.textContent = '✓ Hadir (Otomatis)';
     } else {
@@ -77,7 +95,25 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
       pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
     }
   } else {
-    pill.textContent = '✗ Belum Scan Kartu';
+    if (isLewat08) {
+      pill.className = 'status-pill alpa danger';
+      pill.textContent = '❌ Alpa';
+      if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+        const todayTgl = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+        db.ref('absensi/' + nisn + '/' + todayTgl).transaction(cur => {
+          if (!cur || !cur.status || ['belum', 'belum absen', 'belum_absen'].includes(String(cur.status).toLowerCase())) {
+            return { status: 'alpa', metode: 'auto_system', keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)', updated_at: Date.now() };
+          }
+          return cur;
+        }).catch(() => null);
+      }
+    } else if (cleanJamWIB >= '06:30:00') {
+      pill.className = 'status-pill peringatan';
+      pill.textContent = 'Belum Absen (Pantauan Walas)';
+    } else {
+      pill.className = 'status-pill belum';
+      pill.textContent = '⏱ Belum Scan Kartu';
+    }
   }
 
   info.appendChild(nama);

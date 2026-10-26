@@ -1,3 +1,17 @@
+function getWIBTime(d) {
+  if (typeof getJamSekarangWIB === 'function') return getJamSekarangWIB(d);
+  const dateObj = d || new Date();
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(dateObj);
+  } catch (e) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return pad(dateObj.getHours()) + ':' + pad(dateObj.getMinutes()) + ':' + pad(dateObj.getSeconds());
+  }
+}
+
 // ===== DASHBOARD JS (UNIFIED 2026 EDITION) =====
 let currentUser = null;
 let shouldHaltDashboard = false;
@@ -389,7 +403,7 @@ async function initDashboard(user) {
 }
 
 // Helper: Cek apakah siswa memiliki izin yang masih berstatus 'pending' / 'menunggu' (Anti Double-Send)
-function ambilIzinPendingAktifSiswa(nisn) {
+function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   if (!nisn) return null;
   const targetNisn = String(nisn).trim();
 
@@ -462,7 +476,19 @@ function ambilIzinPendingAktifSiswa(nisn) {
   // 3. Cari pengajuan yang masih berstatus PENDING
   const pendingItems = studentItems.filter(it => {
     const st = String(it.status || 'pending').toLowerCase().trim();
-    return st === 'pending' || st === 'menunggu';
+    const isPending = (st === 'pending' || st === 'menunggu');
+    if (!isPending) return false;
+    if (jenis && it.jenis) {
+      const jA = String(jenis).toLowerCase();
+      const jB = String(it.jenis).toLowerCase();
+      const catA = (jA === 'dispensasi' || jA === 'dispen') ? 'dispen' : ((jA === 'izin' || jA === 'ijin_kegiatan' || jA === 'ijin') ? 'izin' : jA);
+      const catB = (jB === 'dispensasi' || jB === 'dispen') ? 'dispen' : ((jB === 'izin' || jB === 'ijin_kegiatan' || jB === 'ijin') ? 'izin' : jB);
+      if (catA !== catB) return false;
+    }
+    if (tanggal && it.tanggal && it.tanggal !== tanggal) {
+      return false;
+    }
+    return true;
   });
 
   if (pendingItems.length === 0) {
@@ -652,7 +678,9 @@ async function handleSubmitPerijinan() {
     if (fsEl && fsEl.files && fsEl.files.length > 0) return fsEl;
     const pfEl = document.getElementById('perijinanFile');
     if (pfEl && pfEl.files && pfEl.files.length > 0) return pfEl;
-    return fsEl || pfEl;
+    const biEl = document.getElementById('buktiIzin');
+    if (biEl && biEl.files && biEl.files.length > 0) return biEl;
+    return fsEl || pfEl || biEl;
   })();
 
   const pickedFile = (fileInput && fileInput.files && fileInput.files[0]) ||
@@ -668,7 +696,7 @@ async function handleSubmitPerijinan() {
 
   
   // Safeguard Anti Double-Send di handleSubmitPerijinan
-  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa) : null;
+  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa, jenis, tanggal) : null;
   if (activePending) {
     if (msg) {
       msg.style.display = 'block';
@@ -1597,10 +1625,29 @@ function renderPantauKelas() {
     } else {
       if (isAlpa) {
         pill.textContent = '✗ Alpa';
-        pill.className = 'status-pill alpa';
+        pill.className = 'status-pill alpa danger';
         card.className = 'siswa-card status-belum status-alpa';
+        if (cleanJamWIB >= '08:00:00' && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+          try {
+            const tglHariIni = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+            const rRef = db.ref('absensi/' + sNisn + '/' + tglHariIni);
+            if (rRef && typeof rRef.transaction === 'function') {
+              rRef.transaction(cur => {
+                if (!cur || !cur.status || ['belum', 'belum absen', 'belum_absen'].includes(String(cur.status).toLowerCase())) {
+                  return { status: 'alpa', metode: 'auto_system', keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)', updated_at: Date.now() };
+                }
+                return cur;
+              }).catch(() => null);
+            }
+          } catch(eTx) {}
+        }
+      } else if (cleanJamWIB >= '06:30:00') {
+        pill.textContent = 'Belum Absen (Pantauan Walas)';
+        pill.className = 'status-pill peringatan';
+        card.className = 'siswa-card status-belum';
       } else {
         pill.textContent = '✗ Belum Absen';
+        pill.className = 'status-pill belum';
       }
       cb++;
     }
@@ -1738,10 +1785,29 @@ function renderPantauBeranda() {
     } else {
       if (isAlpa) {
         pill.textContent = '✗ Alpa';
-        pill.className = 'status-pill alpa';
+        pill.className = 'status-pill alpa danger';
         card.className = 'siswa-card status-belum status-alpa';
+        if (cleanJamWIB >= '08:00:00' && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+          try {
+            const tglHariIni = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+            const rRef = db.ref('absensi/' + sNisn + '/' + tglHariIni);
+            if (rRef && typeof rRef.transaction === 'function') {
+              rRef.transaction(cur => {
+                if (!cur || !cur.status || ['belum', 'belum absen', 'belum_absen'].includes(String(cur.status).toLowerCase())) {
+                  return { status: 'alpa', metode: 'auto_system', keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)', updated_at: Date.now() };
+                }
+                return cur;
+              }).catch(() => null);
+            }
+          } catch(eTx) {}
+        }
+      } else if (cleanJamWIB >= '06:30:00') {
+        pill.textContent = 'Belum Absen (Pantauan Walas)';
+        pill.className = 'status-pill peringatan';
+        card.className = 'siswa-card status-belum';
       } else {
         pill.textContent = '✗ Belum Absen';
+        pill.className = 'status-pill belum';
       }
       cb++;
     }
@@ -2121,18 +2187,34 @@ function initBerandaOverview(user) {
         // Belum ada data kehadiran / belum scan
         const cleanJamSkrg = (jamSekarangStr && jamSekarangStr.length === 5) ? jamSekarangStr + ':00' : (jamSekarangStr || '07:00:00');
         if (cleanJamSkrg < '08:00:00') {
-          statusLabel = 'Belum Absen';
-          statusClass = 'belum';
-          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+          if (cleanJamSkrg >= '06:30:00') {
+            statusLabel = 'Belum Absen (Pantauan Walas)';
+            statusClass = 'peringatan';
+            iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+          } else {
+            statusLabel = 'Belum Absen';
+            statusClass = 'belum';
+            iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+          }
         } else {
           // cleanJamSkrg >= '08:00:00' -> Otomatis Alpa
-          statusLabel = 'Alpa (Otomatis Sistem 08:00 WIB)';
-          statusClass = 'belum status-alpa';
+          statusLabel = 'Alpa (Tanpa Keterangan)';
+          statusClass = 'alpa danger belum status-alpa';
           iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
 
           // Sinkronisasi status Alpa ke database Firebase jika belum tercatat atau masih berstatus 'belum'
-          if (user && user.nisn && user.kelas && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-            db.ref(`presensi_jam/${user.kelas}/${today}/1/${user.nisn}`).transaction(current => {
+          if (user && user.nisn && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+            const refAbsenPersonal = db.ref('absensi/' + user.nisn + '/' + today);
+            if (refAbsenPersonal && typeof refAbsenPersonal.transaction === 'function') {
+              refAbsenPersonal.transaction(current => {
+                if (!current || !current.status || ['belum', 'belum absen', 'belum_absen'].includes(String(current.status).toLowerCase().trim())) {
+                  return { status: 'alpa', metode: 'auto_system', keterangan: 'Otomatis Alpa (Melewati 08:00 WIB)', updated_at: Date.now() };
+                }
+                return current;
+              }).catch(() => null);
+            }
+            if (user.kelas) {
+              db.ref(`presensi_jam/${user.kelas}/${today}/1/${user.nisn}`).transaction(current => {
               if (!current || !current.status || ['belum', 'belum absen', 'belum_absen'].includes(String(current.status).toLowerCase().trim())) {
                 return {
                   ...(current || {}),
@@ -2145,6 +2227,7 @@ function initBerandaOverview(user) {
               }
               return current;
             }).catch(() => null);
+            }
           }
         }
       }
