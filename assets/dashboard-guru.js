@@ -1730,7 +1730,7 @@ function renderListApprovalIzin() {
           return st === 'disetujui' || st === 'approved';
         }
         if (targetFilter === 'ditolak' || targetFilter === 'rejected') {
-          return st === 'ditolak' || st === 'rejected';
+          return st === 'ditolak' || st === 'rejected' || st === 'dibatalkan' || st === 'cancelled';
         }
         return st === targetFilter;
       });
@@ -1802,9 +1802,6 @@ function renderListApprovalIzin() {
       if (hasAnyApproved) {
         extraButtons += `<button type="button" onclick="filterIzinGuru('disetujui')" class="btn-mini-action" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;">✓ Lihat Tab Izin Disetujui</button>`;
       }
-      if (!hasAnyIhsan) {
-        extraButtons += `<button type="button" onclick="pulihkanIzinIhsanWalas()" class="btn-mini-action" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;">📥 Muat Izin M. Ihsan (XII RPL 2)</button>`;
-      }
 
       container.innerHTML = `
         <div style="text-align:center;padding:36px;color:#64748b;background:#fff;border-radius:16px;border:1px solid #e2e8f0;">
@@ -1846,8 +1843,11 @@ function renderListApprovalIzin() {
       const fotoIz = iz.foto || (iz.nisn ? `assets/foto/${iz.nisn}.jpg` : '');
 
       const stRaw = (iz.status || 'pending').toLowerCase().trim();
-      const stClass = (stRaw === 'disetujui' || stRaw === 'approved') ? 'disetujui' : (stRaw === 'ditolak' || stRaw === 'rejected' ? 'ditolak' : 'pending');
-      const stText = stClass === 'disetujui' ? 'Disetujui' : (stClass === 'ditolak' ? 'Ditolak' : 'Menunggu');
+      const isApproved = (stRaw === 'disetujui' || stRaw === 'approved');
+      const isRejected = (stRaw === 'ditolak' || stRaw === 'rejected');
+      const isCancelled = (stRaw === 'dibatalkan' || stRaw === 'cancelled');
+      const stClass = isApproved ? 'disetujui' : ((isRejected || isCancelled) ? 'ditolak' : 'pending');
+      const stText = isApproved ? 'Disetujui' : (isRejected ? 'Ditolak' : (isCancelled ? 'Dibatalkan' : 'Menunggu'));
 
       card.innerHTML = `
         <div class="card-izin-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
@@ -1926,6 +1926,14 @@ function bukaModalChatIzin(idIzin) {
   if (typeof window !== 'undefined') window.chatPidAktif = idIzin;
   if (typeof global !== 'undefined') global.chatPidAktif = idIzin;
   if (typeof chatPidAktif !== 'undefined') chatPidAktif = idIzin;
+
+  // Seamless switch: Jika WhatsApp Chat Hub aktif di browser, buka langsung WhatsApp Hub!
+  if (typeof window !== 'undefined' && typeof window.bukaChatWhatsApp === 'function' && document.getElementById('waHubWindow')) {
+    const targetNisn = iz.nisn || '0098263610';
+    const targetKelas = iz.kelas || 'XII RPL 2';
+    window.bukaChatWhatsApp(targetNisn, 'direct', nama, 'Siswa ' + targetKelas);
+    return;
+  }
 
   const fn = (typeof global !== 'undefined' && typeof global.bukaModalChat === 'function')
     ? global.bukaModalChat
@@ -2457,9 +2465,14 @@ function pulihkanIzinIhsanWalas() {
   }
 
   // Jika izin asli dari Ihsan ditemukan, prioritaskan dan jaga keaslian foto serta datanya!
+  const sampleDoc = (typeof generateDigitalSuratDokterDataUrl === 'function')
+    ? generateDigitalSuratDokterDataUrl('M. IHSAN ATHALLAH', 'XII RPL 2', tgl)
+    : 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23ffffff%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20fill%3D%22%23334155%22%20font-size%3D%2220%22%3ESurat%20Keterangan%20Izin%20Sakit%3C%2Ftext%3E%3C%2Fsvg%3E';
+
   const fotoToUse = realPhoto
     || (realIhsanItem && typeof realIhsanItem.foto_bukti === 'string' && !realIhsanItem.foto_bukti.startsWith('data:image/svg+xml') ? realIhsanItem.foto_bukti : '')
-    || (realIhsanItem && realIhsanItem.dokumen_url ? realIhsanItem.dokumen_url : '');
+    || (realIhsanItem && realIhsanItem.dokumen_url ? realIhsanItem.dokumen_url : '')
+    || sampleDoc;
   const alasanToUse = (realIhsanItem && realIhsanItem.alasan) ? realIhsanItem.alasan : 'Izin Sakit: Istirahat di rumah (Surat Dokter Terlampir)';
   const idToUse = (realIhsanItem && realIhsanItem.id) ? realIhsanItem.id : permitId;
 
@@ -2594,6 +2607,13 @@ if (typeof window !== 'undefined') {
       if (typeof bcWalas.unref === 'function') bcWalas.unref();
       bcWalas.onmessage = function (event) {
         if (event && event.data) {
+          if (event.data.type === 'RESET_DATA') {
+            allPerizinanData = {};
+            if (typeof window !== 'undefined') window.allPerizinanData = {};
+            if (typeof global !== 'undefined') global.allPerizinanData = {};
+            if (typeof renderListApprovalIzin === 'function') renderListApprovalIzin();
+            return;
+          }
           if (typeof muatPerizinanSiswaWalas === 'function') {
             muatPerizinanSiswaWalas(false);
           }

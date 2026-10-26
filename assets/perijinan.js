@@ -2,12 +2,12 @@
 // Submit ijin, upload surat, chat dengan admin
 
 const JENIS_PERIJINAN = {
-  izin: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: false },
+  izin: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
   dispen: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', dokumenWajib: true },
-  sakit: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: false },
+  sakit: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: true },
   dispensasi: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
   ijin_kegiatan: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true },
-  sakit_mendadak: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: false },
+  sakit_mendadak: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: true },
   penugasan_dinas: { label: 'Tugas Luar / Dinas', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>', dokumenWajib: false },
   keperluan_mendesak: { label: 'Keperluan Keluarga', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', dokumenWajib: false },
   kendala_teknis: { label: 'Kendala Perjalanan', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>', dokumenWajib: false }
@@ -60,35 +60,105 @@ async function resetSemuaDataIzinDanChat() {
 
   if (activeDb) {
     try {
-      await Promise.all([
-        activeDb.ref('perijinan').remove().catch(() => null),
-        activeDb.ref('perizinan').remove().catch(() => null),
-        activeDb.ref('chat_perijinan').remove().catch(() => null),
-        activeDb.ref('perijinan_chats').remove().catch(() => null),
-        activeDb.ref('kendala_guru').remove().catch(() => null),
-        activeDb.ref('kendala_mengajar').remove().catch(() => null),
-        activeDb.ref('laporan_kendala').remove().catch(() => null)
-      ]);
+      const nodesToClear = [
+        'perijinan',
+        'perizinan',
+        'chat_perijinan',
+        'perijinan_chats',
+        'kendala_guru',
+        'kendala_mengajar',
+        'laporan_kendala',
+        'permits'
+      ];
+
+      for (const n of nodesToClear) {
+        try {
+          const ref = activeDb.ref(n);
+          // Ambil keys anak agar bisa dihapus satu per satu (bypass jika root .remove() dibatasi rules)
+          const snap = await ref.once('value').catch(() => null);
+          if (snap && typeof snap.forEach === 'function') {
+            const updates = {};
+            const childRemoves = [];
+            snap.forEach(child => {
+              if (child && child.key) {
+                updates[child.key] = null;
+                if (typeof child.ref === 'object' && typeof child.ref.remove === 'function') {
+                  childRemoves.push(child.ref.remove().catch(() => null));
+                }
+              }
+            });
+            if (Object.keys(updates).length > 0) {
+              await ref.update(updates).catch(() => null);
+              await Promise.all(childRemoves).catch(() => null);
+            }
+          }
+          await ref.set(null).catch(() => null);
+          await ref.remove().catch(() => null);
+        } catch (eNode) {}
+      }
     } catch (e) {
       console.warn('[Reset] Gagal membersihkan cloud:', e);
     }
   }
 
-  // 2. Bersihkan LocalStorage
+  // 2. Bersihkan LocalStorage & SessionStorage secara menyeluruh
   try {
     if (typeof localStorage !== 'undefined') {
-      ['local_perijinan', 'local_perizinan', 'daftar_perizinan_lokal', 'local_kendala_guru', 'local_izin_guru', 'chat_sync_ping', 'last_real_foto_ihsan', 'perizinan_sync_ping', 'local_perizinan_updated'].forEach(k => {
+      const explicitKeys = [
+        'local_perijinan', 'local_perizinan', 'daftar_perizinan_lokal',
+        'perizinan', 'perijinan', 'permits', 'local_permits',
+        'local_kendala_guru', 'local_izin_guru', 'kendala_guru', 'kendala_mengajar', 'laporan_kendala',
+        'chat_sync_ping', 'last_real_foto_ihsan', 'perizinan_sync_ping', 'local_perizinan_updated'
+      ];
+      explicitKeys.forEach(k => {
         try { localStorage.removeItem(k); } catch (e) {}
       });
+
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith('chat_') || k.startsWith('status_izin_') || k.startsWith('foto_izin_') || k.startsWith('lampiran_foto_') || k.startsWith('last_submission_'))) {
+        if (!k) continue;
+        const lk = k.toLowerCase();
+        if (
+          lk.startsWith('chat_') ||
+          lk.startsWith('status_izin_') ||
+          lk.startsWith('foto_izin_') ||
+          lk.startsWith('lampiran_foto_') ||
+          lk.startsWith('last_submission_') ||
+          lk.startsWith('permit') ||
+          lk.startsWith('perijinan') ||
+          lk.startsWith('perizinan') ||
+          lk.startsWith('kendala_')
+        ) {
           keysToRemove.push(k);
         }
       }
       keysToRemove.forEach(k => {
         try { localStorage.removeItem(k); } catch (e) {}
+      });
+    }
+
+    if (typeof sessionStorage !== 'undefined') {
+      const sessKeysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (!k) continue;
+        const lk = k.toLowerCase();
+        if (
+          lk.startsWith('chat_') ||
+          lk.startsWith('status_izin_') ||
+          lk.startsWith('foto_izin_') ||
+          lk.startsWith('lampiran_foto_') ||
+          lk.startsWith('last_submission_') ||
+          lk.startsWith('permit') ||
+          lk.startsWith('perijinan') ||
+          lk.startsWith('perizinan')
+        ) {
+          sessKeysToRemove.push(k);
+        }
+      }
+      sessKeysToRemove.forEach(k => {
+        try { sessionStorage.removeItem(k); } catch (e) {}
       });
     }
   } catch (e) {}
@@ -102,18 +172,39 @@ async function resetSemuaDataIzinDanChat() {
   if (typeof kendalaGuruCache !== 'undefined') kendalaGuruCache = {};
   if (typeof cachePerijinanJ !== 'undefined') cachePerijinanJ = {};
   if (typeof cachePerizinanZ !== 'undefined') cachePerizinanZ = {};
+  if (typeof window !== 'undefined') {
+    window.cachePerijinanJ = {};
+    window.cachePerizinanZ = {};
+  }
+  if (typeof global !== 'undefined') {
+    global.cachePerijinanJ = {};
+    global.cachePerizinanZ = {};
+  }
 
-  // 4. Update UI
+  // 4. Update UI seketika
   try {
     if (typeof renderListApprovalIzin === 'function') renderListApprovalIzin();
     if (typeof renderDaftarPerijinanSaya === 'function') {
       const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
       if (u) renderDaftarPerijinanSaya('daftarPerijinanSaya', u);
+      const containerSiswa = document.getElementById('daftarPerijinanSaya');
+      if (containerSiswa) {
+        containerSiswa.innerHTML = '<p style="color:#94a3b8;font-size:14px;text-align:center;padding:24px;">Belum ada pengajuan perijinan.</p>';
+      }
     }
     if (typeof renderDaftarPerijinanAdmin === 'function') renderDaftarPerijinanAdmin('daftarPerijinanAdmin', 'semua');
     if (typeof renderKendalaGuruAdmin === 'function') renderKendalaGuruAdmin('semua');
     if (typeof updateBadgeKendalaGuru === 'function') updateBadgeKendalaGuru();
   } catch (e) {}
+
+  // 5. Broadcast reset event ke tab lain
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('ujikom_perizinan_bus');
+      bc.postMessage({ type: 'RESET_DATA', timestamp: Date.now() });
+      setTimeout(() => { try { bc.close(); } catch (e) {} }, 500);
+    }
+  } catch (eBc) {}
 
   if (typeof alert === 'function') {
     alert('Semua data izin, chat, dan kendala guru berhasil di-reset bersih!');
@@ -638,8 +729,10 @@ function renderDaftarPerijinanSaya(containerId, user) {
       const jn = JENIS_PERIJINAN[p.jenis] || { label: p.jenis, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>' };
       const isApproved = p.status === 'disetujui' || p.status === 'approved';
       const isRejected = p.status === 'ditolak' || p.status === 'rejected';
-      const statusLabel = isApproved ? 'Disetujui' : (isRejected ? 'Ditolak' : 'Menunggu');
-      const statusClass = isApproved ? 'disetujui' : (isRejected ? 'ditolak' : 'pending');
+      const isCancelled = p.status === 'dibatalkan' || p.status === 'cancelled';
+      const isPending = !isApproved && !isRejected && !isCancelled;
+      const statusLabel = isApproved ? 'Disetujui' : (isRejected ? 'Ditolak' : (isCancelled ? 'Dibatalkan' : 'Menunggu'));
+      const statusClass = isApproved ? 'disetujui' : (isRejected ? 'ditolak' : (isCancelled ? 'ditolak' : 'pending'));
 
       const el = document.createElement('div');
       el.className = 'perijinan-card status-' + statusClass;
@@ -651,10 +744,11 @@ function renderDaftarPerijinanSaya(containerId, user) {
         '<div class="perijinan-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tanggal: <strong>' + (p.tanggal || '-') + '</strong></div>' +
         '<div class="perijinan-alasan-box">' + (p.alasan || p.keterangan || '-') + '</div>' +
         ((p.dokumen_url || p.bukti_url) ? '<button type="button" class="btn-lihat-dokumen" onclick="bukaModalBukti(\'' + (p.dokumen_url || p.bukti_url) + '\', \'' + (p.nama || 'Siswa').replace(/'/g, "\\'") + '\')" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:6px 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen</button>' : '') +
-        ((isRejected && (p.catatan_guru || p.catatanReviewer || p.alasanTolak)) ? '<div class="perijinan-alasan-box" style="background:#fee2e2;border-left:3px solid #ef4444;color:#991b1b;margin-top:6px;font-size:12.5px;"><strong>Catatan Guru:</strong> ' + (p.catatan_guru || p.catatanReviewer || p.alasanTolak) + '</div>' : '') +
+        (((isRejected || isCancelled) && (p.catatan_guru || p.catatanReviewer || p.alasanTolak)) ? '<div class="perijinan-alasan-box" style="background:#fee2e2;border-left:3px solid #ef4444;color:#991b1b;margin-top:6px;font-size:12.5px;"><strong>' + (isCancelled ? 'Keterangan:' : 'Catatan Guru:') + '</strong> ' + (p.catatan_guru || p.catatanReviewer || p.alasanTolak) + '</div>' : '') +
         '<div class="action-row">' +
           '<button class="btn-chat" title="Chat Wali Kelas" onclick="bukaModalChat(\'' + (p.pid || p.id) + '\', \'' + (p.nama || 'Siswa').replace(/'/g, "\\'") + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span style="display:none;">Chat Admin</span>Chat Wali Kelas</button>' +
-          (isRejected ? '<button class="btn-resubmit" onclick="const b=document.querySelector(\'[data-tab="ajukan-perijinan"]\')||document.getElementById(\'btnTabAjukanPerijinan\');if(b)b.click();" style="background:#2563eb;color:#ffffff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Ajukan Ulang</button>' : '') +
+          (isPending ? '<button type="button" class="btn-batalkan" onclick="batalkanPengajuanIzin(\'' + (p.pid || p.id) + '\')" title="Batalkan Pengajuan Izin" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Batalkan Kirim</button>' : '') +
+          ((isRejected || isCancelled) ? '<button class="btn-resubmit" onclick="const b=document.querySelector(\'[data-tab=&quot;ajukan-perijinan&quot;]\')||document.getElementById(\'btnTabAjukanPerijinan\');if(b)b.click();" style="background:#2563eb;color:#ffffff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Ajukan Ulang</button>' : '') +
         '</div>';
       container.appendChild(el);
     });
@@ -710,6 +804,141 @@ function renderDaftarPerijinanSaya(containerId, user) {
       }
     } catch (e) {}
   }
+}
+
+// ===================================================================
+// BATALKAN PENGAJUAN IZIN (SISWA)
+// ===================================================================
+async function batalkanPengajuanIzin(pid) {
+  if (!pid) return false;
+  if (typeof confirm === 'function') {
+    const ok = confirm('Apakah Anda yakin ingin membatalkan pengajuan izin ini? Anda dapat mengajukan permohonan baru setelah pembatalan.');
+    if (!ok) return false;
+  }
+
+  const cancelNote = 'Dibatalkan oleh siswa untuk mengajukan permohonan baru.';
+  const payload = {
+    status: 'dibatalkan',
+    catatan_guru: cancelNote,
+    catatanReviewer: cancelNote,
+    alasanTolak: cancelNote,
+    dibatalkan_pada: Date.now(),
+    updated_at: new Date().toISOString()
+  };
+
+  // 1. Update Firebase RTDB (/perijinan & /perizinan)
+  const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
+    ? global.db
+    : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
+      ? window.db
+      : ((typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db : null));
+
+  if (activeDb) {
+    try {
+      await Promise.all([
+        activeDb.ref('perijinan/' + pid).update(payload).catch(() => null),
+        activeDb.ref('perizinan/' + pid).update(payload).catch(() => null)
+      ]);
+    } catch (eCloud) {}
+  }
+
+  // 2. Update LocalStorage
+  let targetNisn = '';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      ['local_perijinan', 'local_perizinan', 'daftar_perizinan_lokal'].forEach(key => {
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+        if (Array.isArray(list)) {
+          let updated = false;
+          list = list.map(item => {
+            if (item && (item.id === pid || item.pid === pid)) {
+              if (item.nisn) targetNisn = item.nisn;
+              updated = true;
+              return { ...item, ...payload };
+            }
+            return item;
+          });
+          if (updated) {
+            localStorage.setItem(key, JSON.stringify(list));
+          }
+        }
+      });
+
+      // Lepaskan Anti Double-Send kunci status siswa
+      if (!targetNisn && typeof currentUser !== 'undefined' && currentUser && currentUser.nisn) {
+        targetNisn = currentUser.nisn;
+      }
+      if (targetNisn) {
+        localStorage.setItem('status_izin_' + targetNisn, 'dibatalkan');
+        const rawSub = localStorage.getItem('last_submission_' + targetNisn);
+        if (rawSub) {
+          try {
+            const parsedSub = JSON.parse(rawSub);
+            if (parsedSub && (parsedSub.id === pid || parsedSub.pid === pid)) {
+              parsedSub.status = 'dibatalkan';
+              parsedSub.catatan_guru = cancelNote;
+              localStorage.setItem('last_submission_' + targetNisn, JSON.stringify(parsedSub));
+            }
+          } catch (eSub) {}
+        }
+      }
+      localStorage.setItem('perizinan_sync_ping', String(Date.now()));
+      localStorage.setItem('local_perizinan_updated', String(Date.now()));
+    }
+  } catch (eLocal) {}
+
+  // 3. Update in-memory caches
+  if (typeof allPerizinanData !== 'undefined' && allPerizinanData && allPerizinanData[pid]) {
+    allPerizinanData[pid] = { ...allPerizinanData[pid], ...payload };
+  }
+  if (typeof window !== 'undefined' && window.allPerizinanData && window.allPerizinanData[pid]) {
+    window.allPerizinanData[pid] = { ...window.allPerizinanData[pid], ...payload };
+  }
+
+  // 4. Buka kembali form submit di dashboard siswa
+  try {
+    if (typeof populateDropdownSiswa === 'function') {
+      populateDropdownSiswa();
+    }
+    const msg = document.getElementById('perijinanMsg');
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#10b981';
+      msg.innerHTML = '<b>Izin Berhasil Dibatalkan.</b> Anda sekarang dapat mengirimkan pengajuan permohonan baru.';
+    }
+    const btn = document.getElementById('btnSubmitPerijinan');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.textContent = 'Kirim Pengajuan Izin';
+    }
+  } catch (eForm) {}
+
+  // 5. Broadcast dan Render Ulang
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('ujikom_perizinan_bus');
+      bc.postMessage({ type: 'PERMIT_CANCELLED', pid: pid, nisn: targetNisn, payload: payload });
+      setTimeout(() => { try { bc.close(); } catch (e) {} }, 500);
+    }
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('perizinan_updated', { detail: { pid, ...payload } }));
+    }
+  } catch (eBc) {}
+
+  try {
+    if (typeof renderDaftarPerijinanSaya === 'function') {
+      const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+      if (u) renderDaftarPerijinanSaya('daftarPerijinanSaya', u);
+    }
+    if (typeof renderListApprovalIzin === 'function') {
+      renderListApprovalIzin();
+    }
+  } catch (eRender) {}
+
+  return true;
 }
 
 // ===================================================================
@@ -1399,6 +1628,33 @@ function bukaModalChat(pid, namaSiswa) {
     || (typeof currentUser !== 'undefined' ? currentUser : null)
     || (typeof getSessionUser === 'function' ? getSessionUser() : null);
   const isStaff = Boolean(user && (user.role === 'admin' || user.role === 'guru' || user.role === 'walas' || user.nip || (user.prevRole === 'admin')));
+
+  // Seamless switch: Jika WhatsApp Chat Hub aktif di halaman, buka langsung WhatsApp Hub!
+  if (typeof window !== 'undefined' && typeof window.bukaChatWhatsApp === 'function' && document.getElementById('waHubWindow')) {
+    if (isStaff) {
+      let targetNisn = '0098263610';
+      let targetNama = namaSiswa || 'Siswa';
+      let targetKelas = 'XII RPL 2';
+      const allData = (typeof ambilDataPerizinanLokal === 'function' ? ambilDataPerizinanLokal() : {}) || {};
+      const item = allData[pid] || Object.values(allData).find(x => x && (x.pid === pid || x.id === pid));
+      if (item) {
+        if (item.nisn) targetNisn = item.nisn;
+        if (item.nama) targetNama = item.nama;
+        if (item.kelas) targetKelas = item.kelas;
+      }
+      window.bukaChatWhatsApp(targetNisn, 'direct', targetNama, 'Siswa ' + targetKelas);
+      return;
+    } else {
+      const userKelas = (user && user.kelas) ? user.kelas : 'XII RPL 2';
+      let targetWalas = { nip: '199209142022211007', nama: 'Muhammad Echa Putra, S.Kom.Gr' };
+      const masterGuru = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI) || (typeof window !== 'undefined' && window.MASTER_GURU_RESMI) || {};
+      const found = Object.values(masterGuru).find(g => g && (g.walasKelasId === userKelas || (g.isWalas && g.kelas === userKelas)));
+      if (found) targetWalas = found;
+      window.bukaChatWhatsApp(targetWalas.nip || '199209142022211007', 'direct', targetWalas.nama || 'Wali Kelas', 'Wali Kelas ' + userKelas);
+      return;
+    }
+  }
+
   const judul = document.getElementById('modalChatJudul');
   if (judul) {
     judul.textContent = isStaff
@@ -1718,6 +1974,7 @@ if (typeof window !== 'undefined') {
   window.ambilChatUser = ambilChatUser;
   window.ambilLinkedChatIds = ambilLinkedChatIds;
   window.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
+  window.batalkanPengajuanIzin = batalkanPengajuanIzin;
 }
 
 if (typeof global !== 'undefined') {
@@ -1729,6 +1986,7 @@ if (typeof global !== 'undefined') {
   global.ambilChatUser = ambilChatUser;
   global.ambilLinkedChatIds = ambilLinkedChatIds;
   global.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
+  global.batalkanPengajuanIzin = batalkanPengajuanIzin;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1750,6 +2008,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ambilChatUser,
     ambilLinkedChatIds,
     resetSemuaDataIzinDanChat,
+    batalkanPengajuanIzin,
     bukaModalBukti,
     tutupModalBukti
   };

@@ -14,6 +14,10 @@
       ".read": true,
       ".write": true
     },
+    "chat_rooms": {
+      ".read": true,
+      ".write": true
+    },
     "perijinan_chats": {
       ".read": true,
       ".write": true

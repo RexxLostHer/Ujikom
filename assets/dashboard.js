@@ -456,7 +456,7 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
 
   for (const it of studentItems) {
     const st = String(it.status || '').toLowerCase().trim();
-    if (st === 'ditolak' || st === 'rejected' || st === 'disetujui' || st === 'approved') {
+    if (st === 'ditolak' || st === 'rejected' || st === 'disetujui' || st === 'approved' || st === 'dibatalkan' || st === 'cancelled') {
       hasResolvedStatus = true;
       const t = ambilWaktuReview(it);
       if (t > latestResolvedTime) latestResolvedTime = t;
@@ -466,7 +466,7 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   try {
     if (typeof localStorage !== 'undefined') {
       const stFlag = localStorage.getItem('status_izin_' + targetNisn);
-      if (stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'disetujui' || stFlag === 'approved') {
+      if (stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'disetujui' || stFlag === 'approved' || stFlag === 'dibatalkan' || stFlag === 'cancelled') {
         hasResolvedStatus = true;
         if (!latestResolvedTime) latestResolvedTime = 1;
       }
@@ -2916,5 +2916,24 @@ try {
         }
       }
     });
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bcDash = new BroadcastChannel('ujikom_perizinan_bus');
+      if (typeof bcDash.unref === 'function') bcDash.unref();
+      bcDash.onmessage = function (event) {
+        if (event && event.data && event.data.type === 'RESET_DATA') {
+          if (typeof populateDropdownSiswa === 'function') {
+            populateDropdownSiswa();
+          }
+          const msg = document.getElementById('perijinanMsg');
+          if (msg) { msg.style.display = 'none'; msg.innerHTML = ''; }
+          const btn = document.getElementById('btnSubmitPerijinan');
+          if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; btn.textContent = 'Kirim Pengajuan Izin'; }
+          const elList = document.getElementById('daftarPerijinanSaya');
+          if (elList) {
+            elList.innerHTML = '<p style="color:#94a3b8;font-size:14px;text-align:center;padding:24px;">Belum ada pengajuan perijinan.</p>';
+          }
+        }
+      };
+    }
   }
 } catch (e) {}

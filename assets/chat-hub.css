@@ -1,0 +1,711 @@
+/* ===================================================================
+   WHATSAPP-STYLE CHAT HUB — PRESENSIA IoT (SMKN 1 SUMEDANG)
+   Fitur: Kontak Siswa & Guru, 3 Kategori Grup, Admin (Kick & Add), 
+          Mention/Tag @, Voice Note (VN) Audio Player
+   =================================================================== */
+
+/* 1. FLOATING BUTTON */
+.wa-floating-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 22px rgba(18, 140, 126, 0.42);
+  cursor: pointer;
+  z-index: 99990;
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2px solid #ffffff;
+}
+
+.wa-floating-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 10px 28px rgba(18, 140, 126, 0.55);
+}
+
+.wa-floating-btn:active {
+  transform: scale(0.96);
+}
+
+.wa-badge-counter {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #EF4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* 2. CHAT HUB MAIN WINDOW */
+.wa-hub-window {
+  position: fixed;
+  bottom: 92px;
+  right: 24px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  height: 620px;
+  max-height: calc(100vh - 120px);
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.24);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 99991;
+  border: 1px solid #E2E8F0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  animation: waSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes waSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 3. HEADER & TABS */
+.wa-header {
+  background: linear-gradient(135deg, #075E54 0%, #128C7E 100%);
+  color: #ffffff;
+  padding: 14px 16px 10px;
+  flex-shrink: 0;
+}
+
+.wa-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.wa-header-title {
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+}
+
+.wa-header-user {
+  font-size: 11.5px;
+  color: #D1FAE5;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.wa-btn-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.wa-btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.wa-nav-tabs {
+  display: flex;
+  margin-top: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  gap: 4px;
+}
+
+.wa-tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #D1FAE5;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.wa-tab-item.active {
+  color: #ffffff;
+}
+
+.wa-tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #25D366;
+  border-radius: 3px 3px 0 0;
+}
+
+/* 4. SEARCH BAR */
+.wa-search-box {
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  flex-shrink: 0;
+}
+
+.wa-search-input {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #CBD5E1;
+  background: #FFFFFF;
+  font-size: 13px;
+  color: #0F172A;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.wa-search-input:focus {
+  border-color: #128C7E;
+}
+
+/* 5. LIST PANELS */
+.wa-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  background: #FFFFFF;
+}
+
+.wa-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wa-list-item:hover {
+  background: #F8FAFC;
+}
+
+.wa-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #334155;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1.5px solid #CBD5E1;
+}
+
+.wa-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wa-avatar.group-avatar {
+  background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+  color: #ffffff;
+}
+
+.wa-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.wa-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-item-time {
+  font-size: 11px;
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.wa-item-sub {
+  font-size: 12.5px;
+  color: #64748B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wa-badge-role {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.wa-badge-admin {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.wa-badge-walas {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+}
+
+.wa-badge-siswa {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+/* 6. CONVERSATION VIEW */
+.wa-chat-view {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #EFEAE2;
+  position: relative;
+}
+
+.wa-chat-header {
+  background: #075E54;
+  color: #ffffff;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.wa-chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.wa-btn-back {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-chat-header-info {
+  min-width: 0;
+}
+
+.wa-chat-header-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.wa-chat-header-status {
+  font-size: 11.5px;
+  color: #D1FAE5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-btn-group-info {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.wa-btn-group-info:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* 7. MESSAGE BUBBLES */
+.wa-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-image: radial-gradient(#CBD5E1 0.75px, transparent 0.75px);
+  background-size: 14px 14px;
+}
+
+.wa-bubble {
+  max-width: 82%;
+  padding: 8px 12px 6px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  position: relative;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.wa-bubble.sent {
+  align-self: flex-end;
+  background: #DCF8C6;
+  color: #0F172A;
+  border-bottom-right-radius: 2px;
+}
+
+.wa-bubble.received {
+  align-self: flex-start;
+  background: #FFFFFF;
+  color: #0F172A;
+  border-bottom-left-radius: 2px;
+}
+
+.wa-bubble-sender {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #075E54;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wa-bubble-text {
+  color: #1E293B;
+}
+
+.wa-mention-tag {
+  background: #E0E7FF;
+  color: #3730A3;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  display: inline-block;
+  margin: 0 1px;
+}
+
+.wa-bubble-meta {
+  font-size: 10.5px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.wa-check-icon {
+  color: #3B82F6;
+  font-size: 11px;
+}
+
+/* 8. VOICE NOTE PLAYER BUBBLE */
+.wa-vn-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  min-width: 200px;
+}
+
+.wa-vn-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #128C7E;
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wa-vn-waveform {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+}
+
+.wa-vn-bar {
+  flex: 1;
+  background: #94A3B8;
+  border-radius: 2px;
+  transition: height 0.2s;
+}
+
+.wa-vn-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+/* 9. INPUT & RECORDING BAR */
+.wa-input-bar {
+  padding: 8px 12px;
+  background: #F0F2F5;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.wa-input-text {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 22px;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  font-size: 13.5px;
+  color: #0F172A;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.wa-input-text:focus {
+  border-color: #128C7E;
+}
+
+.wa-btn-action {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.wa-btn-send {
+  background: #128C7E;
+  color: #ffffff;
+}
+
+.wa-btn-send:hover {
+  background: #075E54;
+}
+
+.wa-btn-mic {
+  background: #E2E8F0;
+  color: #475569;
+}
+
+.wa-btn-mic:hover {
+  background: #CBD5E1;
+  color: #0F172A;
+}
+
+.wa-recording-active {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  animation: waPulseRec 1s infinite;
+}
+
+@keyframes waPulseRec {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* 10. MENTION AUTOCOMPLETE POPUP */
+.wa-mention-popup {
+  position: absolute;
+  bottom: 56px;
+  left: 12px;
+  right: 12px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-height: 180px;
+  overflow-y: auto;
+  display: none;
+  z-index: 10;
+}
+
+.wa-mention-item {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 13px;
+  color: #1E293B;
+}
+
+.wa-mention-item:hover {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+
+/* 11. GROUP INFO MODAL / DRAWER */
+.wa-group-info-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #FFFFFF;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  animation: waSlideLeft 0.22s ease-out forwards;
+}
+
+@keyframes waSlideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.wa-group-info-header {
+  background: #075E54;
+  color: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wa-group-info-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.wa-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.wa-member-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wa-btn-kick {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wa-btn-kick:hover {
+  background: #DC2626;
+  color: #ffffff;
+}
+
+.wa-btn-add-member {
+  background: #128C7E;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.wa-btn-add-member:hover {
+  background: #075E54;
+}
+
+/* Pinned Wali Kelas Contact in Siswa Contact List */
+.wa-pinned-item {
+  background: #F0FDF4 !important;
+  border-left: 4px solid #16A34A !important;
+}
+
+.wa-pinned-item:hover {
+  background: #DCFCE7 !important;
+}
+
+.wa-badge-pinned {
+  background: #DCFCE7 !important;
+  color: #15803D !important;
+  border: 1px solid #86EFAC !important;
+  font-weight: 800 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
