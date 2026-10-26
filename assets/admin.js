@@ -2329,6 +2329,7 @@ if (typeof window !== 'undefined') {
   window.adminApproveKendala = adminApproveKendala;
   window.adminRejectKendala = adminRejectKendala;
   window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
+  window.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof window !== 'undefined' ? window.resetSemuaDataIzinDanChat : null);
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -2336,6 +2337,7 @@ if (typeof module !== 'undefined' && module.exports) {
     renderKendalaGuruAdmin,
     adminApproveKendala,
     adminRejectKendala,
-    submitSimulasiTapLengkap
+    submitSimulasiTapLengkap,
+    resetSemuaDataIzinDanChat: (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : null
   };
 }

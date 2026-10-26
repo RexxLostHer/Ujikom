@@ -42,6 +42,87 @@ function normalisasiFormatTanggal(tgl) {
   return clean;
 }
 
+// ===================================================================
+// RESET BERSIH DATA IZIN, CHAT & KENDALA GURU (TESTING & ZERO BUG)
+// ===================================================================
+async function resetSemuaDataIzinDanChat() {
+  if (typeof confirm === 'function') {
+    const ok = confirm('Apakah Anda yakin ingin me-reset BERSIH semua data perizinan, chat, dan kendala guru? Tindakan ini akan mengosongkan node perijinan, perizinan, chat_perijinan, dan kendala_guru di Firebase RTDB serta memusnahkan cache lokal.');
+    if (!ok) return false;
+  }
+
+  // 1. Bersihkan Firebase RTDB
+  const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
+    ? global.db
+    : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
+      ? window.db
+      : ((typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db : null));
+
+  if (activeDb) {
+    try {
+      await Promise.all([
+        activeDb.ref('perijinan').remove().catch(() => null),
+        activeDb.ref('perizinan').remove().catch(() => null),
+        activeDb.ref('chat_perijinan').remove().catch(() => null),
+        activeDb.ref('perijinan_chats').remove().catch(() => null),
+        activeDb.ref('kendala_guru').remove().catch(() => null),
+        activeDb.ref('kendala_mengajar').remove().catch(() => null),
+        activeDb.ref('laporan_kendala').remove().catch(() => null)
+      ]);
+    } catch (e) {
+      console.warn('[Reset] Gagal membersihkan cloud:', e);
+    }
+  }
+
+  // 2. Bersihkan LocalStorage
+  try {
+    if (typeof localStorage !== 'undefined') {
+      ['local_perijinan', 'local_perizinan', 'daftar_perizinan_lokal', 'local_kendala_guru', 'local_izin_guru', 'chat_sync_ping', 'last_real_foto_ihsan', 'perizinan_sync_ping', 'local_perizinan_updated'].forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('chat_') || k.startsWith('status_izin_') || k.startsWith('foto_izin_') || k.startsWith('lampiran_foto_') || k.startsWith('last_submission_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+    }
+  } catch (e) {}
+
+  // 3. Reset in-memory caches
+  if (typeof allPerizinanData !== 'undefined') allPerizinanData = {};
+  if (typeof window !== 'undefined') window.allPerizinanData = {};
+  if (typeof global !== 'undefined') global.allPerizinanData = {};
+  if (typeof cacheSemuaPerizinanAdmin !== 'undefined') cacheSemuaPerizinanAdmin = {};
+  if (typeof window !== 'undefined') window.cacheSemuaPerizinanAdmin = {};
+  if (typeof kendalaGuruCache !== 'undefined') kendalaGuruCache = {};
+  if (typeof cachePerijinanJ !== 'undefined') cachePerijinanJ = {};
+  if (typeof cachePerizinanZ !== 'undefined') cachePerizinanZ = {};
+
+  // 4. Update UI
+  try {
+    if (typeof renderListApprovalIzin === 'function') renderListApprovalIzin();
+    if (typeof renderDaftarPerijinanSaya === 'function') {
+      const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+      if (u) renderDaftarPerijinanSaya('daftarPerijinanSaya', u);
+    }
+    if (typeof renderDaftarPerijinanAdmin === 'function') renderDaftarPerijinanAdmin('daftarPerijinanAdmin', 'semua');
+    if (typeof renderKendalaGuruAdmin === 'function') renderKendalaGuruAdmin('semua');
+    if (typeof updateBadgeKendalaGuru === 'function') updateBadgeKendalaGuru();
+  } catch (e) {}
+
+  if (typeof alert === 'function') {
+    alert('Semua data izin, chat, dan kendala guru berhasil di-reset bersih!');
+  }
+  return true;
+}
+if (typeof window !== 'undefined') window.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
+if (typeof global !== 'undefined') global.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
+
 // Kompresi gambar via HTML5 Canvas agar ringan dan tidak melebihi kuota 5MB localStorage
 function compressImageFile(file, maxDimension = 800, quality = 0.65) {
   return new Promise((resolve) => {
@@ -472,7 +553,9 @@ async function kirimChatPerijinan(pid, user, pesan) {
   const rolePengirim = isStaff ? (user.role || 'admin') : 'siswa';
   const namaSender = (user && user.nama) ? user.nama : (isStaff ? 'Wali Kelas / Guru' : 'Siswa');
   const chatMsg = {
-    pengirim: { role: rolePengirim, nama: namaSender },
+    pengirim: (isStaff ? 'walas' : 'siswa'),
+    role: rolePengirim,
+    nama: namaSender,
     nama_pengirim: namaSender,
     pesan: pesan,
     waktu: Date.now()
@@ -567,8 +650,8 @@ function renderDaftarPerijinanSaya(containerId, user) {
         '</div>' +
         '<div class="perijinan-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tanggal: <strong>' + (p.tanggal || '-') + '</strong></div>' +
         '<div class="perijinan-alasan-box">' + (p.alasan || p.keterangan || '-') + '</div>' +
-        (p.dokumen_url ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" onclick="if(typeof openDocumentModal===\'function\'){openDocumentModal(\'' + (p.pid || p.id) + '\');return false;}" target="_blank"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen</a>' : '') +
-        ((isRejected && (p.catatan_guru || p.catatanReviewer || p.alasanTolak)) ? '<div class="perijinan-alasan-box" style="background:#fee2e2;border-left:3px solid #ef4444;color:#991b1b;margin-top:6px;font-size:12.5px;"><strong>Catatan Wali Kelas:</strong> ' + (p.catatan_guru || p.catatanReviewer || p.alasanTolak) + '</div>' : '') +
+        ((p.dokumen_url || p.bukti_url) ? '<button type="button" class="btn-lihat-dokumen" onclick="bukaModalBukti(\'' + (p.dokumen_url || p.bukti_url) + '\', \'' + (p.nama || 'Siswa').replace(/'/g, "\\'") + '\')" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:6px 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen</button>' : '') +
+        ((isRejected && (p.catatan_guru || p.catatanReviewer || p.alasanTolak)) ? '<div class="perijinan-alasan-box" style="background:#fee2e2;border-left:3px solid #ef4444;color:#991b1b;margin-top:6px;font-size:12.5px;"><strong>Catatan Guru:</strong> ' + (p.catatan_guru || p.catatanReviewer || p.alasanTolak) + '</div>' : '') +
         '<div class="action-row">' +
           '<button class="btn-chat" title="Chat Wali Kelas" onclick="bukaModalChat(\'' + (p.pid || p.id) + '\', \'' + (p.nama || 'Siswa').replace(/'/g, "\\'") + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span style="display:none;">Chat Admin</span>Chat Wali Kelas</button>' +
           (isRejected ? '<button class="btn-resubmit" onclick="const b=document.querySelector(\'[data-tab="ajukan-perijinan"]\')||document.getElementById(\'btnTabAjukanPerijinan\');if(b)b.click();" style="background:#2563eb;color:#ffffff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Ajukan Ulang</button>' : '') +
@@ -594,66 +677,38 @@ function renderDaftarPerijinanSaya(containerId, user) {
 
   // 2. Sinkronkan dengan Firebase RTDB jika tersedia
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-      if (user.nisn) {
-        try {
-          db.ref('perijinan').orderByChild('nisn').equalTo(user.nisn).on('value', function (snapshot) {
-            const data = snapshot.val() || {};
-            Object.keys(data).forEach(k => {
-              const existing = perizinanSayaMap[k];
-              const cloudItem = data[k] || {};
-              const statusFinal = (existing && (existing.status === 'disetujui' || existing.status === 'ditolak') && cloudItem.status === 'pending')
-                ? existing.status
-                : (cloudItem.status || (existing && existing.status) || 'pending');
-              perizinanSayaMap[k] = { ...existing, ...cloudItem, status: statusFinal, pid: k, id: k };
-            });
-            renderList(perizinanSayaMap);
-          }, function () {});
-          db.ref('perizinan').orderByChild('nisn').equalTo(user.nisn).on('value', function (snapshot) {
-            const data = snapshot.val() || {};
-            Object.keys(data).forEach(k => {
-              const existing = perizinanSayaMap[k];
-              const cloudItem = data[k] || {};
-              const statusFinal = (existing && (existing.status === 'disetujui' || existing.status === 'ditolak') && cloudItem.status === 'pending')
-                ? existing.status
-                : (cloudItem.status || (existing && existing.status) || 'pending');
-              perizinanSayaMap[k] = Object.assign({}, existing || {}, cloudItem, { status: statusFinal, pid: k, id: k });
-            });
-            renderList(perizinanSayaMap);
-          }, function () {});
-        } catch (e) {}
+    const handleSnap = function (snapshot) {
+      const data = (snapshot && typeof snapshot.val === 'function' ? snapshot.val() : null) || {};
+      let hasChange = false;
+      Object.keys(data).forEach(k => {
+        const cloudItem = data[k] || {};
+        const isMine = (user.nisn && String(cloudItem.nisn || cloudItem.pengajuId || cloudItem.siswaId) === String(user.nisn)) ||
+                       (user.uid && (cloudItem.uid === user.uid || cloudItem.userId === user.uid)) ||
+                       (user.nama && cloudItem.nama && user.nama.trim().toLowerCase() === String(cloudItem.nama).trim().toLowerCase());
+        if (isMine) {
+          const existing = perizinanSayaMap[k];
+          const statusFinal = cloudItem.status || (existing && existing.status) || 'pending';
+          perizinanSayaMap[k] = { ...(existing || {}), ...cloudItem, status: statusFinal, pid: k, id: k };
+          hasChange = true;
+        }
+      });
+      if (hasChange) {
+        renderList(perizinanSayaMap);
       }
+    };
 
-    if (user.uid) {
-      try {
-        db.ref('perijinan').orderByChild('uid').equalTo(user.uid).on('value', function (snapshot) {
-          const data = snapshot.val() || {};
-          Object.keys(data).forEach(k => {
-            const existing = perizinanSayaMap[k];
-            const cloudItem = data[k] || {};
-            const statusFinal = (existing && (existing.status === 'disetujui' || existing.status === 'ditolak') && cloudItem.status === 'pending')
-              ? existing.status
-              : (cloudItem.status || (existing && existing.status) || 'pending');
-            perizinanSayaMap[k] = { ...existing, ...cloudItem, status: statusFinal, pid: k, id: k };
-          });
-          renderList(perizinanSayaMap);
-        }, function () {});
-      } catch (e) {}
-
-      try {
-        db.ref('perizinan').orderByChild('uid').equalTo(user.uid).on('value', function (snapshot) {
-          const data = snapshot.val() || {};
-          Object.keys(data).forEach(k => {
-            const existing = perizinanSayaMap[k];
-            const cloudItem = data[k] || {};
-            const statusFinal = (existing && (existing.status === 'disetujui' || existing.status === 'ditolak') && cloudItem.status === 'pending')
-              ? existing.status
-              : (cloudItem.status || (existing && existing.status) || 'pending');
-            perizinanSayaMap[k] = Object.assign({}, existing || {}, cloudItem, { status: statusFinal, pid: k, id: k });
-          });
-          renderList(perizinanSayaMap);
-        }, function () {});
-      } catch (e) {}
-    }
+    try {
+      db.ref('perijinan').on('value', handleSnap, function () {});
+      db.ref('perizinan').on('value', handleSnap, function () {});
+      if (user.nisn) {
+        db.ref('perijinan').orderByChild('nisn').equalTo(user.nisn).on('value', handleSnap, function () {});
+        db.ref('perizinan').orderByChild('nisn').equalTo(user.nisn).on('value', handleSnap, function () {});
+      }
+      if (user.uid) {
+        db.ref('perijinan').orderByChild('uid').equalTo(user.uid).on('value', handleSnap, function () {});
+        db.ref('perizinan').orderByChild('uid').equalTo(user.uid).on('value', handleSnap, function () {});
+      }
+    } catch (e) {}
   }
 }
 
@@ -1340,10 +1395,21 @@ function bukaModalChat(pid, namaSiswa) {
   chatPidAktif = pid;
   if (typeof window !== 'undefined') window.chatPidAktif = pid;
   if (typeof global !== 'undefined') global.chatPidAktif = pid;
+  const user = (typeof ambilChatUser === 'function' ? ambilChatUser() : null)
+    || (typeof currentUser !== 'undefined' ? currentUser : null)
+    || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  const isStaff = Boolean(user && (user.role === 'admin' || user.role === 'guru' || user.role === 'walas' || user.nip || (user.prevRole === 'admin')));
   const judul = document.getElementById('modalChatJudul');
-  if (judul) judul.textContent = 'Chat Wali Kelas — ' + (namaSiswa || 'Siswa');
+  if (judul) {
+    judul.textContent = isStaff
+      ? ('Chat Siswa — ' + (namaSiswa || 'Siswa'))
+      : ('Chat Wali Kelas — ' + (namaSiswa || 'Wali Kelas'));
+  }
   const overlay = document.getElementById('modalChat');
-  if (overlay) overlay.classList.add('open');
+  if (overlay) {
+    overlay.classList.add('open');
+    overlay.style.display = 'flex';
+  }
 
   const input = document.getElementById('chatInputPesan');
   if (input) {
@@ -1370,12 +1436,17 @@ function tutupModalChat() {
   const activePid = chatPidAktif || (typeof window !== 'undefined' && window.chatPidAktif) || (typeof global !== 'undefined' && global.chatPidAktif);
   if (activePid && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
     try { db.ref('chat_perijinan/' + activePid).off(); } catch (e) {}
+    try { db.ref('perijinan/' + activePid + '/chats').off(); } catch (e) {}
+    try { db.ref('perizinan/' + activePid + '/chats').off(); } catch (e) {}
   }
   chatPidAktif = null;
   if (typeof window !== 'undefined') window.chatPidAktif = null;
   if (typeof global !== 'undefined') global.chatPidAktif = null;
   const overlay = document.getElementById('modalChat');
-  if (overlay) overlay.classList.remove('open');
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.style.display = 'none';
+  }
 }
 
 function renderChat(pid) {
@@ -1646,6 +1717,7 @@ if (typeof window !== 'undefined') {
   window.kirimChatPerijinan = kirimChatPerijinan;
   window.ambilChatUser = ambilChatUser;
   window.ambilLinkedChatIds = ambilLinkedChatIds;
+  window.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
 }
 
 if (typeof global !== 'undefined') {
@@ -1656,6 +1728,7 @@ if (typeof global !== 'undefined') {
   global.kirimChatPerijinan = kirimChatPerijinan;
   global.ambilChatUser = ambilChatUser;
   global.ambilLinkedChatIds = ambilLinkedChatIds;
+  global.resetSemuaDataIzinDanChat = resetSemuaDataIzinDanChat;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1675,11 +1748,12 @@ if (typeof module !== 'undefined' && module.exports) {
     renderChat,
     kirimPesanChat,
     ambilChatUser,
-    ambilLinkedChatIds
+    ambilLinkedChatIds,
+    resetSemuaDataIzinDanChat,
+    bukaModalBukti,
+    tutupModalBukti
   };
 }
-
-
 
 function bukaModalBukti(fotoUrl, nama) {
   if (typeof window !== 'undefined' && typeof window.bukaModalBukti === 'function' && window.bukaModalBukti !== bukaModalBukti) {
@@ -1692,7 +1766,7 @@ function bukaModalBukti(fotoUrl, nama) {
   if (img && txt) {
     if (!fotoUrl || fotoUrl === '[Tersimpan di Penyimpanan Lokal]') {
       img.style.display = 'none';
-      txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;text-align:center;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju.</div>';
+      txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;text-align:center;">Tidak ada dokumen lampiran tersimpan.</div>';
     } else {
       const isPdf = typeof fotoUrl === 'string' && (fotoUrl.startsWith('data:application/pdf') || fotoUrl.toLowerCase().includes('.pdf'));
       const isSample = typeof fotoUrl === 'string' && fotoUrl.includes('sample-surat-dokter');
@@ -1711,8 +1785,27 @@ function bukaModalBukti(fotoUrl, nama) {
       }
     }
   }
-  const modal = document.getElementById('modalBuktiIzin');
-  if (modal) modal.classList.add('show');
+  const modal = document.getElementById('modalBuktiIzin') || document.getElementById('modalBukti');
+  if (modal) {
+    modal.classList.add('show');
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
-if (typeof window !== 'undefined') window.bukaModalBukti = bukaModalBukti;
-if (typeof global !== 'undefined') global.bukaModalBukti = bukaModalBukti;
+
+function tutupModalBukti() {
+  const modal = document.getElementById('modalBuktiIzin') || document.getElementById('modalBukti');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+}
+if (typeof window !== 'undefined') {
+  window.bukaModalBukti = bukaModalBukti;
+  window.tutupModalBukti = tutupModalBukti;
+}
+if (typeof global !== 'undefined') {
+  global.bukaModalBukti = bukaModalBukti;
+  global.tutupModalBukti = tutupModalBukti;
+}

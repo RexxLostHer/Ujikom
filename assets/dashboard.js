@@ -790,7 +790,7 @@ async function handleSubmitPerijinan() {
     };
 
     // 3. Simpan perizinan utama ke node perizinan dan antrean lokal localStorage
-    await submitPerijinan(userPayload, jenis, alasan + ' (Diajukan oleh: ' + (user.nama || s.nama || 'Siswa') + ')', tanggal, fileInput);
+    await submitPerijinan(userPayload, jenis, alasan, tanggal, fileInput);
 
     // 4. Sinkronisasi sekunder opsional ke node siswa (jika diizinkan oleh rules), dibungkus aman
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {

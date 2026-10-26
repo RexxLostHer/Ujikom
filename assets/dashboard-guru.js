@@ -2388,13 +2388,21 @@ function bukaModalBukti(fotoUrl, nama) {
       }
     }
   }
-  const modal = document.getElementById('modalBuktiIzin');
-  if (modal) modal.classList.add('show');
+  const modal = document.getElementById('modalBuktiIzin') || document.getElementById('modalBukti');
+  if (modal) {
+    modal.classList.add('show');
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
 
 function tutupModalBukti() {
-  const modal = document.getElementById('modalBuktiIzin');
-  if (modal) modal.classList.remove('show');
+  const modal = document.getElementById('modalBuktiIzin') || document.getElementById('modalBukti');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
 }
 
 function segarkanPerizinanWalasManual() {
@@ -2924,6 +2932,7 @@ if (typeof window !== 'undefined') {
   window.filterIzinGuru = filterIzinGuru;
   window.allPerizinanData = allPerizinanData;
   window.ambilUserAktifGuru = ambilUserAktifGuru;
+  window.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof window.resetSemuaDataIzinDanChat === 'function' ? window.resetSemuaDataIzinDanChat : null);
 }
 
 if (typeof global !== 'undefined') {
@@ -2949,6 +2958,7 @@ if (typeof global !== 'undefined') {
   global.filterIzinGuru = filterIzinGuru;
   global.allPerizinanData = allPerizinanData;
   global.ambilUserAktifGuru = ambilUserAktifGuru;
+  global.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof global.resetSemuaDataIzinDanChat === 'function' ? global.resetSemuaDataIzinDanChat : null);
 }
 
 // Inisialisasi awal saat dokumen siap & pasang listener tab validasi izin
