@@ -730,7 +730,9 @@
       <div class="form-group">
         <label for="perijinanJenis">Kategori Perizinan</label>
         <select id="perijinanJenis">
-          <option value="sakit">Izin Sakit (Surat Dokter / Keterangan)</option>
+          <option value="izin">Izin (Keperluan Pribadi / Keluarga)</option>
+          <option value="sakit">Sakit (Surat Dokter / Keterangan)</option>
+          <option value="dispen">Dispensasi (Wajib Surat)</option>
           <option value="dispensasi">Dispensasi Kegiatan (Wajib Surat)</option>
           <option value="ijin_kegiatan">Izin Lomba / Event Sekolah (Wajib Surat)</option>
         </select>
@@ -747,11 +749,11 @@
       </div>
 
       <div class="form-group" id="uploadDokumenWrap">
-        <label for="perijinanFile" style="display:inline-flex;align-items:center;gap:6px;">
+        <label for="fotoSurat" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           Lampirkan Bukti / Surat Izin (Foto / PDF)
         </label>
-        <input type="file" id="perijinanFile" accept=".pdf,.jpg,.jpeg,.png">
+        <input type="file" id="fotoSurat" name="fotoSurat" accept="image/*,application/pdf">
         <small style="color:#6B7280;font-size:12px;margin-top:6px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
       </div>
 
@@ -996,12 +998,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_10"></script>
-<script src="assets/jadwal-util.js?v=20261001_10"></script>
-<script src="assets/auth.js?v=20261001_10"></script>
-<script src="assets/perijinan.js?v=20261001_10"></script>
-<script src="assets/dashboard.js?v=20261001_10"></script>
-<script src="assets/profile-modal.js?v=20261001_10"></script>
+<script src="assets/firebase-config.js?v=20261024_02"></script>
+<script src="assets/jadwal-util.js?v=20261024_02"></script>
+<script src="assets/auth.js?v=20261024_02"></script>
+<script src="assets/perijinan.js?v=20261024_02"></script>
+<script src="assets/dashboard.js?v=20261024_02"></script>
+<script src="assets/profile-modal.js?v=20261024_02"></script>
 
 <script>
   // Lenis Smooth Scroll Synchronized with GSAP Ticker

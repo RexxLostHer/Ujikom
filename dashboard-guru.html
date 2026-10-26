@@ -385,7 +385,7 @@
       </div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-      <a href="admin.html" id="linkPanelAdminGuru" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('admin');return false;}" style="display:none;color:#6d28d9;background:#f5f3ff;border:1.5px solid #ddd6fe;font-weight:700;text-decoration:none;" class="btn-logout">
+      <a href="admin.html" id="linkPanelAdminGuru" style="display:none;color:#6d28d9;background:#f5f3ff;border:1.5px solid #ddd6fe;font-weight:700;text-decoration:none;" class="btn-logout">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Panel Admin
       </a>
@@ -414,6 +414,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
       Validasi Izin <span class="counter-badge" id="countPendingIzin" style="display:none;">0</span>
     </button>
+    <button class="view-tab-btn" id="btnTabValidasiIzin" onclick="switchGuruTab('tabApprovalIzin', this)" style="display:none;" aria-hidden="true"></button>
     <button class="view-tab-btn" id="btnTabAbsenGuru" onclick="switchGuruTab('tabAbsenGuru', this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
       Presensi Guru
@@ -872,6 +873,10 @@
             <option value="kendala_teknis">Kendala Perjalanan</option>
           </select>
         </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Lampiran Bukti Kendala (Opsional)</label>
+          <input type="file" id="kendalaBukti" accept="image/*,application/pdf" style="width:100%;padding:8px 12px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:12.5px;background:#fff;">
+        </div>
         <div style="grid-column:1/-1;">
           <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Keterangan & Tugas Siswa</label>
           <textarea id="kendalaAlasan" rows="3" required placeholder="Tulis alasan berhalangan serta tugas yang perlu dikerjakan siswa di kelas..." style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #cbd5e1;font-size:13.5px;font-family:inherit;"></textarea>
@@ -905,10 +910,15 @@
         <h2 style="font-size:18px;font-weight:800;color:#1e293b;">Pengajuan Izin & Sakit Siswa</h2>
         <p style="font-size:13px;color:#64748b;">Tinjau surat izin, bukti foto, dan beri persetujuan resmi.</p>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-mini-action" onclick="filterIzinGuru('semua')" id="btnFilterSemua" style="background:#e2e8f0;color:#334155;">Semua</button>
-        <button class="btn-mini-action" onclick="filterIzinGuru('pending')" id="btnFilterPending" style="background:#4f46e5;color:#fff;">Menunggu</button>
-        <button class="btn-mini-action" onclick="filterIzinGuru('disetujui')" id="btnFilterDisetujui" style="background:#e2e8f0;color:#334155;">Disetujui</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-mini-action" onclick="filterIzinGuru('semua')" id="btnFilterIzinSemua" style="background:#e2e8f0;color:#334155;">Semua</button>
+        <button class="btn-mini-action" onclick="filterIzinGuru('pending')" id="btnFilterIzinPending" style="background:#4f46e5;color:#fff;">Menunggu</button>
+        <button class="btn-mini-action" onclick="filterIzinGuru('disetujui')" id="btnFilterIzinDisetujui" style="background:#e2e8f0;color:#334155;">Disetujui</button>
+        <button class="btn-mini-action" onclick="filterIzinGuru('ditolak')" id="btnFilterIzinDitolak" style="background:#e2e8f0;color:#334155;">Ditolak</button>
+        <button class="btn-mini-action" onclick="segarkanPerizinanWalasManual()" id="btnSyncPerizinanWalas" style="background:#f1f5f9;color:#0f172a;display:inline-flex;align-items:center;gap:6px;font-weight:700;border:1px solid #cbd5e1;" title="Segarkan dan muat ulang izin siswa binaan">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Segarkan
+        </button>
       </div>
     </div>
 
@@ -916,6 +926,7 @@
       <div style="text-align:center;padding:30px;color:#64748b;">Memuat daftar perizinan siswa...</div>
     </div>
   </div>
+  <div id="tabValidasiIzin" style="display:none;" aria-hidden="true"></div>
 
   <!-- ===== TAB 3: REKAPITULASI PRESENSI (KHUSUS ADMIN - DISEMBUNYIKAN DI PORTAL GURU/WALAS) ===== -->
   <div id="tabRekapGuru" class="tab-content" style="display:none !important;" hidden>
@@ -1004,12 +1015,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_10"></script>
-<script src="assets/auth.js?v=20261001_10"></script>
-<script src="assets/jadwal-util.js?v=20261001_10"></script>
-<script src="assets/perijinan.js?v=20261001_10"></script>
-<script src="assets/dashboard-guru.js?v=20261001_10"></script>
-<script src="assets/profile-modal.js?v=20261001_10"></script>
+<script src="assets/firebase-config.js?v=20261024_02"></script>
+<script src="assets/auth.js?v=20261024_02"></script>
+<script src="assets/jadwal-util.js?v=20261024_02"></script>
+<script src="assets/perijinan.js?v=20261024_02"></script>
+<script src="assets/dashboard-guru.js?v=20261024_02"></script>
+<script src="assets/profile-modal.js?v=20261024_02"></script>
 
 <script>
   // Lenis Smooth Scroll Synchronized with GSAP Ticker

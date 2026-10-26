@@ -3265,10 +3265,15 @@
       btn.disabled = true;
       btn.textContent = 'Mengirim Tautan...';
       try {
-        await kirimResetPassword(email);
+        const res = await kirimResetPassword(email);
         notif.style.display = 'block';
         notif.className = 'toast-alert success';
-        notif.textContent = 'Link pemulihan kata sandi telah dikirim ke ' + email + '. Cek kotak masuk / spam di Gmail Anda.';
+        if (res && res.isOffline) {
+          const userNama = res.user && (res.user.nama || res.user.displayName) ? ' (' + (res.user.nama || res.user.displayName) + ')' : '';
+          notif.textContent = 'Permintaan pemulihan diproses untuk ' + email + userNama + '. Akun Anda terverifikasi di sistem sekolah. Periksa email atau hubungi admin jika butuh reset instan.';
+        } else {
+          notif.textContent = 'Link pemulihan kata sandi telah dikirim ke ' + email + '. Cek kotak masuk / spam di Gmail Anda.';
+        }
         btn.textContent = 'Terkirim ✓';
         setTimeout(() => {
           tutupModalLupaPassword();
@@ -3284,6 +3289,8 @@
           notif.textContent = 'Email belum terdaftar di sistem presensi.';
         } else if (err.code === 'auth/invalid-email') {
           notif.textContent = 'Format email tidak valid.';
+        } else if (err.code === 'auth/network-request-failed') {
+          notif.textContent = 'Koneksi jaringan terganggu. Silakan periksa koneksi internet Anda.';
         } else {
           notif.textContent = err.message || 'Gagal mengirim link pemulihan.';
         }

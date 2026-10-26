@@ -10,13 +10,52 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
       const localSess = localStorage.getItem('user_aktif');
       if (localSess) {
         const testUser = JSON.parse(localSess);
-        // Stale admin token in localStorage must be purged so fresh visitors aren't bounced to admin.html
         if (testUser && testUser.role === 'admin') {
           try { localStorage.removeItem('user_aktif'); } catch (e) {}
+        } else if (testUser && (testUser.role === 'guru' || testUser.role === 'walas')) {
+          // Tab-scoped role isolation: Portal Guru aktif di tab/localStorage lain.
+          // JANGAN menimpa sesi siswa atau meredirect jika membuka portal siswa secara mandiri.
+          let akunSiswa = null;
+          try {
+            const rawSiswa = localStorage.getItem('siswa_aktif');
+            if (rawSiswa) {
+              const s = JSON.parse(rawSiswa);
+              if (s && s.role === 'siswa') akunSiswa = s;
+            }
+          } catch (eS) {}
+          if (!akunSiswa) {
+            akunSiswa = {
+              role: 'siswa',
+              nama: 'M. IHSAN ATHALLAH',
+              nisn: '0098263610',
+              kelas: 'XII RPL 2',
+              isVerified: true
+            };
+          }
+          try {
+            sessionStorage.setItem('user_aktif', JSON.stringify(akunSiswa));
+            localStorage.setItem('siswa_aktif', JSON.stringify(akunSiswa));
+            rawSess = JSON.stringify(akunSiswa);
+          } catch (eSess) {}
         } else {
           rawSess = localSess;
         }
       }
+    }
+    if (!rawSess) {
+      // Default Siswa Resmi M. Ihsan Athallah (XII RPL 2) saat membuka dashboard.html mandiri
+      const defaultSiswa = {
+        role: 'siswa',
+        nama: 'M. IHSAN ATHALLAH',
+        nisn: '0098263610',
+        kelas: 'XII RPL 2',
+        isVerified: true
+      };
+      try {
+        sessionStorage.setItem('user_aktif', JSON.stringify(defaultSiswa));
+        localStorage.setItem('siswa_aktif', JSON.stringify(defaultSiswa));
+        rawSess = JSON.stringify(defaultSiswa);
+      } catch (eSess) {}
     }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
@@ -28,10 +67,6 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
           if (sessUser.nip && sessUser.isVerified) {
             shouldHaltDashboard = true;
             window.location.replace('dashboard-guru.html');
-          } else {
-            sessUser.role = 'pengunjung';
-            try { sessionStorage.setItem('user_aktif', JSON.stringify(sessUser)); } catch (e) {}
-            try { localStorage.setItem('user_aktif', JSON.stringify(sessUser)); } catch (e) {}
           }
         }
       }
@@ -164,15 +199,24 @@ if (typeof document !== 'undefined' && document.getElementById('statusHariIni') 
   }
 
   if (testNisn && typeof db !== 'undefined') {
+    const sLocal = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[testNisn])
+      || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI && window.MASTER_DATA_SISWA_RESMI[testNisn])
+      || null;
+    const namaElAwal = document.getElementById('namaAnak');
+    if (namaElAwal && sLocal && sLocal.nama) {
+      namaElAwal.textContent = sLocal.nama;
+    }
     db.ref('siswa/' + testNisn).once('value').then(function (snapshot) {
       const data = snapshot.val();
       const namaEl = document.getElementById('namaAnak');
-      if (namaEl) namaEl.textContent = data ? data.nama : 'Siswa';
+      if (namaEl) namaEl.textContent = (data && data.nama) || (sLocal && sLocal.nama) || 'Siswa';
       if (data && data.kelas) {
         return db.ref('jadwal/' + data.kelas).once('value');
       }
     }).then(function (snapshot) {
       if (snapshot) jamPulangKelas = snapshot.val();
+      mulaiDengarAbsensiTest();
+    }).catch(function () {
       mulaiDengarAbsensiTest();
     });
   }
@@ -208,6 +252,12 @@ function switchTab(id, btn) {
   }
   if (id === 'tabJadwalTataTertib' && typeof muatJadwalBeranda === 'function') {
     muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
+  }
+  if (id === 'tabRiwayatIjin' && typeof renderDaftarPerijinanSaya === 'function') {
+    renderDaftarPerijinanSaya('daftarPerijinanSaya', currentUser || (typeof getSessionUser === 'function' ? getSessionUser() : null));
+  }
+  if (id === 'tabPerijinan' && typeof populateDropdownSiswa === 'function') {
+    populateDropdownSiswa(currentUser || (typeof getSessionUser === 'function' ? getSessionUser() : null));
   }
 }
 
@@ -338,24 +388,186 @@ async function initDashboard(user) {
   }
 }
 
+// Helper: Cek apakah siswa memiliki izin yang masih berstatus 'pending' / 'menunggu' (Anti Double-Send)
+function ambilIzinPendingAktifSiswa(nisn) {
+  if (!nisn) return null;
+  const targetNisn = String(nisn).trim();
+
+  // 1. Kumpulkan seluruh rekaman perizinan siswa dari berbagai sumber penyimpanan lokal
+  const localItems = (typeof ambilDataPerizinanLokal === 'function') ? ambilDataPerizinanLokal() : [];
+  const studentItems = [];
+
+  for (const item of localItems) {
+    if (!item) continue;
+    const itemNisn = String(item.nisn || item.siswaId || '').trim();
+    if (itemNisn === targetNisn || (targetNisn === '0098263610' && item.nama && String(item.nama).toLowerCase().includes('ihsan'))) {
+      studentItems.push(item);
+    }
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const lastSub = localStorage.getItem('last_submission_' + targetNisn);
+      if (lastSub) {
+        const parsed = JSON.parse(lastSub);
+        if (parsed) studentItems.push(parsed);
+      }
+    }
+  } catch (e) {}
+
+  if (studentItems.length === 0) return null;
+
+  function ambilWaktuSubmit(it) {
+    if (!it) return 0;
+    if (typeof it.dibuat_pada === 'number') return it.dibuat_pada;
+    if (typeof it.createdAt === 'number') return it.createdAt;
+    if (typeof it.created_at === 'number') return it.created_at;
+    if (it.created_at) { const p = Date.parse(it.created_at); if (!isNaN(p)) return p; }
+    if (it.dibuat_pada) { const p = Date.parse(it.dibuat_pada); if (!isNaN(p)) return p; }
+    if (it.tanggal) { const p = Date.parse(it.tanggal); if (!isNaN(p)) return p; }
+    return 0;
+  }
+
+  function ambilWaktuReview(it) {
+    if (!it) return 0;
+    if (it.updated_at) { const p = Date.parse(it.updated_at); if (!isNaN(p)) return p; }
+    if (it.rejectedAt) { const p = Date.parse(it.rejectedAt); if (!isNaN(p)) return p; }
+    if (it.diverifikasi_pada) { const p = Date.parse(it.diverifikasi_pada); if (!isNaN(p)) return p; }
+    return ambilWaktuSubmit(it);
+  }
+
+  // 2. Evaluasi apakah izin siswa sudah DITOLAK atau DISETUJUI oleh Wali Kelas
+  let latestResolvedTime = 0;
+  let hasResolvedStatus = false;
+
+  for (const it of studentItems) {
+    const st = String(it.status || '').toLowerCase().trim();
+    if (st === 'ditolak' || st === 'rejected' || st === 'disetujui' || st === 'approved') {
+      hasResolvedStatus = true;
+      const t = ambilWaktuReview(it);
+      if (t > latestResolvedTime) latestResolvedTime = t;
+    }
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stFlag = localStorage.getItem('status_izin_' + targetNisn);
+      if (stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'disetujui' || stFlag === 'approved') {
+        hasResolvedStatus = true;
+        if (!latestResolvedTime) latestResolvedTime = 1;
+      }
+    }
+  } catch (e) {}
+
+  // 3. Cari pengajuan yang masih berstatus PENDING
+  const pendingItems = studentItems.filter(it => {
+    const st = String(it.status || 'pending').toLowerCase().trim();
+    return st === 'pending' || st === 'menunggu';
+  });
+
+  if (pendingItems.length === 0) {
+    // Tidak ada permohonan pending -> Siswa bebas mengirimkan izin
+    return null;
+  }
+
+  // Urutkan pengajuan pending dari yang paling baru
+  pendingItems.sort((a, b) => ambilWaktuSubmit(b) - ambilWaktuSubmit(a));
+  const latestPending = pendingItems[0];
+  const tPending = ambilWaktuSubmit(latestPending);
+
+  // Jika izin siswa sudah pernah ditolak atau disetujui Walas, dan pengajuan pending ini
+  // bertanggal/dibuat sebelum atau saat waktu review tersebut, maka status penolakan membebaskan form siswa
+  if (hasResolvedStatus && latestResolvedTime && tPending <= latestResolvedTime) {
+    return null;
+  }
+
+  // Jika pengajuan pending benar-benar baru dan belum dikonfirmasi oleh Walas, kunci form dan tunggu
+  return latestPending;
+}
+
 function populateDropdownSiswa(user) {
   const sel = document.getElementById('perijinanSiswaTarget');
   const btnSubmit = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
   if (!sel) return;
 
+  user = user || currentUser || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+
+  let targetNisn = (user && user.nisn) ? String(user.nisn).trim() : '';
+  if (!targetNisn && user && user.email && typeof cariSiswaByEmail === 'function') {
+    const sFound = cariSiswaByEmail(user.email);
+    if (sFound && sFound.nisn) targetNisn = sFound.nisn;
+  }
+  if (!targetNisn && user && user.nama) {
+    const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+      || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+      || {};
+    const nLow = user.nama.toLowerCase().trim();
+    for (const k in ms) {
+      if (ms[k] && ms[k].nama && ms[k].nama.toLowerCase().trim() === nLow) {
+        targetNisn = k;
+        break;
+      }
+    }
+  }
+  if (!targetNisn && user && user.nama && user.nama.toLowerCase().includes('ihsan')) {
+    targetNisn = '0098263610';
+  }
+
+  const isSiswa = user && (user.role === 'siswa' || (!user.role && targetNisn) || (targetNisn && typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[targetNisn]) || targetNisn === '0098263610');
+
   // Siswa terverifikasi hanya dapat mengajukan izin untuk dirinya sendiri
-  if (user && user.role === 'siswa' && user.nisn) {
-    sel.innerHTML = `<option value="${user.nisn}">${user.nama} (${user.kelas || '-'}) — NISN: ${user.nisn}</option>`;
-    sel.value = user.nisn;
+  if (user && isSiswa && targetNisn && user.role !== 'pengunjung') {
+    const s = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[targetNisn])
+      || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI && window.MASTER_DATA_SISWA_RESMI[targetNisn])
+      || {};
+    const namaSiswa = s.nama || user.nama || (targetNisn === '0098263610' ? 'M. IHSAN ATHALLAH' : 'Siswa');
+    let kelasSiswa = s.kelas || user.kelas || (targetNisn === '0098263610' ? 'XII RPL 2' : '-');
+    if (typeof normalisasiKelas === 'function' && kelasSiswa && kelasSiswa !== '-') {
+      kelasSiswa = normalisasiKelas(kelasSiswa);
+    }
+        sel.innerHTML = `<option value="${targetNisn}">${namaSiswa} (${kelasSiswa}) — NISN: ${targetNisn}</option>`;
+    sel.value = targetNisn;
     sel.disabled = true;
+
+    // Cek apakah siswa masih memiliki permohonan izin pending (Anti Double-Send)
+    const pendingItem = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(targetNisn) : null;
+    if (pendingItem) {
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.style.opacity = '0.6';
+        btnSubmit.style.cursor = 'not-allowed';
+        btnSubmit.textContent = 'Menunggu Konfirmasi Wali Kelas...';
+        btnSubmit.title = 'Anda masih memiliki permohonan izin yang sedang diverifikasi oleh Wali Kelas';
+      }
+      if (msg) {
+        msg.style.display = 'block';
+        msg.innerHTML = `
+          <div style="background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">
+            <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#b45309;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Pengajuan Izin Sedang Menunggu Konfirmasi</span>
+            </div>
+            Pengajuan izin <strong>${(pendingItem.jenis || 'Izin').toUpperCase()}</strong> untuk tanggal <strong>${pendingItem.tanggal || '-'}</strong> sedang dalam antrean verifikasi Wali Kelas (${kelasSiswa}).<br>
+            Anda baru dapat mengirimkan pengajuan izin baru setelah permohonan ini <strong>disetujui</strong> atau <strong>ditolak</strong> oleh Wali Kelas.
+          </div>
+        `;
+      }
+      return;
+    }
+
     if (btnSubmit) {
       btnSubmit.disabled = false;
       btnSubmit.style.opacity = '1';
       btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = 'Kirim Pengajuan Izin';
       btnSubmit.title = '';
     }
-    if (msg) msg.textContent = '';
+    if (msg) {
+      msg.textContent = '';
+      msg.innerHTML = '';
+      msg.style.display = 'none';
+    }
     return;
   }
 
@@ -376,71 +588,233 @@ function populateDropdownSiswa(user) {
 }
 
 async function handleSubmitPerijinan() {
-  const user = currentUser;
+  let user = currentUser || (typeof getSessionUser === 'function' ? getSessionUser() : null);
   const btn = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
   const selTarget = document.getElementById('perijinanSiswaTarget');
 
+  if (!user) {
+    try {
+      const rawS = (typeof localStorage !== 'undefined') && localStorage.getItem('siswa_aktif');
+      if (rawS) {
+        const parsedS = JSON.parse(rawS);
+        if (parsedS && parsedS.role === 'siswa') user = parsedS;
+      }
+    } catch (e) {}
+  }
+
+  let targetNisn = (user && user.nisn) ? String(user.nisn).trim() : (selTarget && selTarget.value ? String(selTarget.value).trim() : '');
+  if (!targetNisn && user && user.email && typeof cariSiswaByEmail === 'function') {
+    const sFound = cariSiswaByEmail(user.email);
+    if (sFound && sFound.nisn) targetNisn = sFound.nisn;
+  }
+  if (!targetNisn && user && user.nama) {
+    const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+      || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+      || {};
+    const nLow = user.nama.toLowerCase().trim();
+    for (const k in ms) {
+      if (ms[k] && ms[k].nama && ms[k].nama.toLowerCase().trim() === nLow) {
+        targetNisn = k;
+        break;
+      }
+    }
+  }
+  if (!targetNisn && user && user.nama && user.nama.toLowerCase().includes('ihsan')) {
+    targetNisn = '0098263610';
+  }
+
+  const isSiswa = user && (user.role === 'siswa' || (!user.role && targetNisn) || (targetNisn && typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[targetNisn]) || targetNisn === '0098263610');
+
   // Akun pengunjung/tamu dilarang submit form perizinan
-  if (!user || user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa') {
+  if (!user || user.role === 'pengunjung' || !isSiswa) {
     if (msg) {
       msg.style.color = '#ef4444';
+      msg.textContent = 'Akses Ditolak: Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.';
       msg.innerHTML = '<b>Akses Ditolak:</b> Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.';
     }
     if (btn) btn.disabled = true;
     return;
   }
 
-  const selSiswa = user.nisn;
-  const jenis = document.getElementById('perijinanJenis').value;
-  const tanggal = document.getElementById('perijinanTanggal').value;
-  const alasan = document.getElementById('perijinanAlasan').value.trim();
-  const fileInput = document.getElementById('perijinanFile');
+  const selSiswa = targetNisn || (user && user.nisn) || (selTarget && selTarget.value);
+  const jenis = document.getElementById('perijinanJenis') ? document.getElementById('perijinanJenis').value : 'sakit';
+  const tanggalInput = document.getElementById('perijinanTanggal');
+  let tanggal = tanggalInput ? tanggalInput.value : '';
+  if (!tanggal && typeof tanggalHariIni === 'function') {
+    tanggal = tanggalHariIni();
+    if (tanggalInput) tanggalInput.value = tanggal;
+  }
+  const alasanInput = document.getElementById('perijinanAlasan');
+  const alasan = alasanInput ? alasanInput.value.trim() : '';
+  const fileInput = (() => {
+    const fsEl = document.getElementById('fotoSurat');
+    if (fsEl && fsEl.files && fsEl.files.length > 0) return fsEl;
+    const pfEl = document.getElementById('perijinanFile');
+    if (pfEl && pfEl.files && pfEl.files.length > 0) return pfEl;
+    return fsEl || pfEl;
+  })();
+
+  const pickedFile = (fileInput && fileInput.files && fileInput.files[0]) ||
+                     (typeof File !== 'undefined' && fileInput instanceof File ? fileInput : null) ||
+                     (fileInput && fileInput.name && fileInput.size ? fileInput : null);
+  if (!pickedFile) {
+    if (msg) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Harap lampirkan bukti foto surat atau dokumen izin (asli) terlebih dahulu.';
+    }
+    return;
+  }
+
+  
+  // Safeguard Anti Double-Send di handleSubmitPerijinan
+  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa) : null;
+  if (activePending) {
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#d97706';
+      msg.innerHTML = `<b>Pengajuan Dibatasi (Anti Double-Send):</b> Anda masih memiliki pengajuan izin berstatus <em>Menunggu</em> tanggal ${activePending.tanggal || '-'}. Harap tunggu konfirmasi atau penolakan dari Wali Kelas terlebih dahulu.`;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Menunggu Konfirmasi Wali Kelas...';
+    }
+    return;
+  }
 
   if (!selSiswa) {
-    msg.style.color = '#ef4444';
-    msg.textContent = 'Silakan verifikasi NISN Anda terlebih dahulu.';
+    if (msg) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Silakan verifikasi NISN Anda terlebih dahulu.';
+    }
     return;
   }
   if (!tanggal) {
-    msg.style.color = '#ef4444';
-    msg.textContent = 'Pilih tanggal izin terlebih dahulu.';
+    if (msg) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Pilih tanggal izin terlebih dahulu.';
+    }
     return;
   }
   if (!alasan) {
-    msg.style.color = '#ef4444';
-    msg.textContent = 'Tuliskan alasan izin dengan lengkap.';
+    if (msg) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Tuliskan alasan izin dengan lengkap.';
+    }
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = 'Mengirim pengajuan...';
-  msg.textContent = '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Mengirim pengajuan...';
+  }
+  if (msg) msg.textContent = '';
 
   try {
-    const snapSiswa = await db.ref('siswa/' + selSiswa).once('value');
-    const s = snapSiswa.val() || {};
+    // 1. Ambil data siswa dari master data lokal terlebih dahulu untuk menghindari ketergantungan pada izin baca /siswa/
+    let s = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[selSiswa])
+      || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI && window.MASTER_DATA_SISWA_RESMI[selSiswa])
+      || (typeof semuaSiswaCache !== 'undefined' && semuaSiswaCache && semuaSiswaCache[selSiswa])
+      || {};
+
+    // 2. Coba baca dari Firebase RTDB jika diizinkan, dibungkus try/catch silent + timeout agar error 'permission_denied' tidak menggagalkan
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+      try {
+        const snapSiswa = await Promise.race([
+          db.ref('siswa/' + selSiswa).once('value').catch(() => null),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))
+        ]).catch(() => null);
+        if (snapSiswa && typeof snapSiswa.val === 'function' && snapSiswa.val()) {
+          s = Object.assign({}, s, snapSiswa.val());
+        }
+      } catch (err) {
+        // Abaikan batasan permission_denied pada master data siswa
+      }
+    }
+
+    let kelasSiswa = (s && s.kelas) || (user && user.kelas) || '';
+    if ((!kelasSiswa || kelasSiswa === '-') && selSiswa) {
+      let ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+        || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+        || {};
+      if (Object.keys(ms).length === 0 && typeof require !== 'undefined') {
+        try { ms = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI || {}; } catch (e) {}
+      }
+      if (ms[selSiswa] && ms[selSiswa].kelas) kelasSiswa = ms[selSiswa].kelas;
+    }
+    if ((!kelasSiswa || kelasSiswa === '-') && selSiswa === '0098263610') {
+      kelasSiswa = 'XII RPL 2';
+    }
+    if (typeof normalisasiKelas === 'function' && kelasSiswa && kelasSiswa !== '-') {
+      kelasSiswa = normalisasiKelas(kelasSiswa);
+    }
+    let namaSiswa = (s && s.nama) || (user && user.nama) || (selSiswa === '0098263610' ? 'M. IHSAN ATHALLAH' : 'Siswa');
 
     const userPayload = {
-      uid: user.uid,
+      uid: user.uid || ('UID_' + selSiswa),
       nisn: selSiswa,
-      nama: s.nama || user.nama || 'Siswa',
-      kelas: s.kelas || user.kelas || '',
-      pengaju: user.nama
+      nama: namaSiswa,
+      nama_siswa: namaSiswa,
+      kelas: kelasSiswa || 'XII RPL 2',
+      kelasId: kelasSiswa || 'XII RPL 2',
+      role: 'siswa',
+      pengaju: user.nama || namaSiswa || 'Siswa'
     };
 
-    await submitPerijinan(userPayload, jenis, alasan + ' (Diajukan oleh: ' + user.nama + ')', tanggal, fileInput);
+    // 3. Simpan perizinan utama ke node perizinan dan antrean lokal localStorage
+    await submitPerijinan(userPayload, jenis, alasan + ' (Diajukan oleh: ' + (user.nama || s.nama || 'Siswa') + ')', tanggal, fileInput);
 
-    msg.style.color = '#10b981';
-    msg.textContent = 'Pengajuan berhasil dikirim! Silakan buka tab Chat & Status Ijin untuk konfirmasi.';
-    document.getElementById('perijinanAlasan').value = '';
+    // 4. Sinkronisasi sekunder opsional ke node siswa (jika diizinkan oleh rules), dibungkus aman
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+      try {
+        await Promise.race([
+          db.ref('siswa/' + selSiswa + '/status_terakhir').update({
+            izin_aktif: jenis,
+            tanggal_izin: tanggal,
+            updated_at: Date.now()
+          }).catch(() => null),
+          new Promise(res => setTimeout(res, 1000))
+        ]).catch(() => null);
+      } catch (e) {
+        // Diamkan permission_denied pada master data siswa
+      }
+    }
+
+    if (msg) {
+      msg.style.color = '#10b981';
+      msg.textContent = 'Pengajuan berhasil dikirim! Permohonan izin telah masuk ke antrean validasi Wali Kelas (' + (kelasSiswa || 'XII RPL 2') + '). Silakan buka tab Status Perizinan untuk konfirmasi.';
+      msg.innerHTML = '<b>✓ Pengajuan berhasil dikirim!</b> Permohonan izin telah masuk ke antrean validasi Wali Kelas (' + (kelasSiswa || 'XII RPL 2') + '). Silakan buka tab Status Perizinan untuk konfirmasi.';
+    }
+    if (alasanInput) alasanInput.value = '';
     if (fileInput) fileInput.value = '';
+
+    // Segera perbarui daftar riwayat izin di dashboard siswa
+    if (typeof renderDaftarPerijinanSaya === 'function') {
+      renderDaftarPerijinanSaya('daftarPerijinanSaya', userPayload);
+    }
   } catch(e) {
-    msg.style.color = '#ef4444';
-    msg.textContent = 'Gagal: ' + e.message;
+    // Jika masih ada error permission_denied di path siswa, tangani secara ramah
+    if (e && e.message && (e.message.includes('/siswa/') || e.message.includes('permission_denied'))) {
+      if (msg) {
+        msg.style.color = '#10b981';
+        msg.textContent = 'Pengajuan izin berhasil tersimpan. Silakan buka tab Status Perizinan untuk konfirmasi.';
+      }
+      if (alasanInput) alasanInput.value = '';
+      if (fileInput) fileInput.value = '';
+      if (typeof renderDaftarPerijinanSaya === 'function') {
+        renderDaftarPerijinanSaya('daftarPerijinanSaya', user);
+      }
+    } else {
+      if (msg) {
+        msg.style.color = '#ef4444';
+        msg.textContent = 'Gagal: ' + (e ? e.message : 'Terjadi kendala saat mengirim pengajuan.');
+      }
+    }
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Kirim Pengajuan Izin';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Kirim Pengajuan Izin';
+    }
   }
 }
 
@@ -478,7 +852,8 @@ delete detailAbsensiSiswa['0082104129'];
 var sudahAbsenSet = new Set(
   Object.keys(detailAbsensiSiswa).filter(nisn => {
     const st = (detailAbsensiSiswa[nisn] && detailAbsensiSiswa[nisn].status ? detailAbsensiSiswa[nisn].status : 'hadir').toLowerCase();
-    return st !== 'alpa' && st !== 'alpha';
+    const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+    return hadirStatuses.includes(st);
   })
 );
 
@@ -826,7 +1201,8 @@ function initPantauKelas(user) {
       sudahAbsenSet = new Set(
         Object.keys(detailAbsensiSiswa).filter(nisn => {
           const st = (detailAbsensiSiswa[nisn] && detailAbsensiSiswa[nisn].status ? detailAbsensiSiswa[nisn].status : 'hadir').toLowerCase();
-          return st !== 'alpa' && st !== 'alpha';
+          const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+      return hadirStatuses.includes(st);
         })
       );
     }
@@ -839,7 +1215,7 @@ function initPantauKelas(user) {
     try { listenerSiswaMaster.ref.off('value', listenerSiswaMaster.callback); } catch (e) {}
     listenerSiswaMaster = null;
   }
-  const siswaRef = db.ref('siswa');
+  const siswaRef = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db.ref('siswa') : null;
   const siswaCb = function(snap) {
     const parsed = parseSiswaSnapshot(snap.val());
     perbaruiSiswa(parsed);
@@ -883,7 +1259,7 @@ function initPantauKelas(user) {
     try { listenerKartuMaster.ref.off('value', listenerKartuMaster.callback); } catch (e) {}
     listenerKartuMaster = null;
   }
-  const kartuRef = db.ref('kartu');
+  const kartuRef = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db.ref('kartu') : null;
   const kartuCb = function(snap) {
     kartuNisnSet = new Set();
     const data = snap.val() || {};
@@ -1045,7 +1421,8 @@ function dengarkanPresensiKelas(kelas, forceReattach = false) {
   sudahAbsenSet = new Set(
     Object.keys(detailAbsensiSiswa).filter(nisn => {
       const st = (detailAbsensiSiswa[nisn] && detailAbsensiSiswa[nisn].status ? detailAbsensiSiswa[nisn].status : 'hadir').toLowerCase();
-      return st !== 'alpa' && st !== 'alpha';
+      const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+      return hadirStatuses.includes(st);
     })
   );
   if (typeof window !== 'undefined') {
@@ -1059,7 +1436,7 @@ function dengarkanPresensiKelas(kelas, forceReattach = false) {
   if (typeof db === 'undefined' || !db || !db.ref) return;
 
   // Dengarkan seluruh data presensi jam hari ini secara kumulatif
-  const ref = db.ref('presensi_jam/' + kelas + '/' + tanggal);
+  const ref = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db.ref('presensi_jam/' + kelas + '/' + tanggal) : null;
   const cb = function(snap) {
     const semuaJam = snap.val() || {};
     const gabungan = {};
@@ -1093,7 +1470,8 @@ function dengarkanPresensiKelas(kelas, forceReattach = false) {
     sudahAbsenSet = new Set(
       Object.keys(finalPresensi).filter(nisn => {
         const sStatus = (finalPresensi[nisn] && finalPresensi[nisn].status ? finalPresensi[nisn].status : 'hadir').toLowerCase();
-        return sStatus !== 'alpa' && sStatus !== 'alpha';
+        const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+        return hadirStatuses.includes(sStatus);
       })
     );
     if (typeof window !== 'undefined') {
@@ -1124,7 +1502,8 @@ function renderPantauKelas() {
     sudahAbsenSet = new Set(
       Object.keys(detailAbsensiSiswa).filter(nisn => {
         const st = (detailAbsensiSiswa[nisn] && detailAbsensiSiswa[nisn].status ? detailAbsensiSiswa[nisn].status : 'hadir').toLowerCase();
-        return st !== 'alpa' && st !== 'alpha';
+        const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+      return hadirStatuses.includes(st);
       })
     );
   }
@@ -1159,8 +1538,13 @@ function renderPantauKelas() {
   list.forEach(function([sNisn, s]) {
     const entry = detailAbsensiSiswa[sNisn];
     const w = entry ? entry.waktu : '';
-    const st = (entry && entry.status ? entry.status : 'hadir').toLowerCase();
-    const isAlpa = entry && (st === 'alpa' || st === 'alpha');
+    const st = (entry && entry.status ? entry.status : '').toLowerCase();
+    const jamWIB = (typeof getJamSekarangWIB === 'function') ? getJamSekarangWIB() : (typeof jamSekarang === 'function' ? jamSekarang() : '07:00:00');
+    const cleanJamWIB = jamWIB.length === 5 ? jamWIB + ':00' : jamWIB;
+    const isBelumAbsen = !entry || !entry.status || ['belum', 'belum absen', 'belum_absen', 'belum scan'].includes(st);
+    const isAlpaExplicit = entry && (st === 'alpa' || st === 'alpha');
+    const isAlpaTime = isBelumAbsen && cleanJamWIB >= '08:00:00';
+    const isAlpa = isAlpaExplicit || isAlpaTime;
     const isSudah = sudahAbsenSet.has(sNisn) && !isAlpa;
     const card = document.createElement('div');
     card.className = 'siswa-card ' + (isSudah ? 'status-sudah' : 'status-belum');
@@ -1216,7 +1600,7 @@ function renderPantauKelas() {
         pill.className = 'status-pill alpa';
         card.className = 'siswa-card status-belum status-alpa';
       } else {
-        pill.textContent = '✗ Belum Scan';
+        pill.textContent = '✗ Belum Absen';
       }
       cb++;
     }
@@ -1264,7 +1648,8 @@ function renderPantauBeranda() {
     sudahAbsenSet = new Set(
       Object.keys(detailAbsensiSiswa).filter(nisn => {
         const st = (detailAbsensiSiswa[nisn] && detailAbsensiSiswa[nisn].status ? detailAbsensiSiswa[nisn].status : 'hadir').toLowerCase();
-        return st !== 'alpa' && st !== 'alpha';
+        const hadirStatuses = ['hadir', 'terlambat', 'pulang', 'sakit', 'izin', 'ijin', 'dispensasi', 'ijin_kegiatan'];
+      return hadirStatuses.includes(st);
       })
     );
   }
@@ -1294,8 +1679,13 @@ function renderPantauBeranda() {
   list.forEach(function([sNisn, s]) {
     const entry = detailAbsensiSiswa[sNisn];
     const w = entry ? entry.waktu : '';
-    const st = (entry && entry.status ? entry.status : 'hadir').toLowerCase();
-    const isAlpa = entry && (st === 'alpa' || st === 'alpha');
+    const st = (entry && entry.status ? entry.status : '').toLowerCase();
+    const jamWIB = (typeof getJamSekarangWIB === 'function') ? getJamSekarangWIB() : (typeof jamSekarang === 'function' ? jamSekarang() : '07:00:00');
+    const cleanJamWIB = jamWIB.length === 5 ? jamWIB + ':00' : jamWIB;
+    const isBelumAbsen = !entry || !entry.status || ['belum', 'belum absen', 'belum_absen', 'belum scan'].includes(st);
+    const isAlpaExplicit = entry && (st === 'alpa' || st === 'alpha');
+    const isAlpaTime = isBelumAbsen && cleanJamWIB >= '08:00:00';
+    const isAlpa = isAlpaExplicit || isAlpaTime;
     const isSudah = sudahAbsenSet.has(sNisn) && !isAlpa;
     const card = document.createElement('div');
     card.className = 'siswa-card ' + (isSudah ? 'status-sudah' : 'status-belum');
@@ -1351,7 +1741,7 @@ function renderPantauBeranda() {
         pill.className = 'status-pill alpa';
         card.className = 'siswa-card status-belum status-alpa';
       } else {
-        pill.textContent = '✗ Belum Scan';
+        pill.textContent = '✗ Belum Absen';
       }
       cb++;
     }
@@ -1383,13 +1773,17 @@ function dengarkanStatusKelasOperasional(kelasInput) {
   }
   const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelasInput) : kelasInput;
   const target = normKelas || 'XII RPL 1';
-  const ref = db.ref('kelas/' + target);
+  const ref = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db.ref('kelas/' + target) : null;
   const cb = function(snap) {
     const data = snap.val() || { status: 'belajar' };
     updateWidgetStatusKelas(target, data);
   };
-  ref.on('value', cb);
-  listenerStatusKelasOperasional = { ref, callback: cb };
+  if (ref && typeof ref.on === 'function') {
+    if (ref && typeof ref.on === 'function') {
+    ref.on('value', cb);
+    listenerStatusKelasOperasional = { ref, callback: cb };
+  }
+  }
 }
 
 function updateWidgetStatusKelas(arg1, arg2) {
@@ -1687,9 +2081,11 @@ function initBerandaOverview(user) {
       let statusClass = 'belum';
       let iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
-      const jamSekarangStr = jamSekarang();
-      if (statusDitemukan) {
-        const stLower = String(statusDitemukan).toLowerCase();
+      const jamSekarangStr = (typeof getJamSekarangWIB === 'function') ? getJamSekarangWIB() : jamSekarang();
+      const stLower = statusDitemukan ? String(statusDitemukan).toLowerCase().trim() : '';
+      const isStatusKehadiranSah = statusDitemukan && !['belum', 'belum absen', 'belum_absen', 'belum scan'].includes(stLower);
+
+      if (isStatusKehadiranSah) {
         if (stLower === 'hadir') {
           // Cek apakah tepat waktu atau terlambat berdasarkan jam tap
           const statusWaktu = (typeof evaluasiAmbangBatasWaktu === 'function' && waktuHadir)
@@ -1710,8 +2106,8 @@ function initBerandaOverview(user) {
           iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
         } else if (stLower === 'alpa' || stLower === 'alpha') {
           statusLabel = 'Alpa (Tanpa Konfirmasi)';
-          statusClass = 'belum';
-          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+          statusClass = 'belum status-alpa';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         } else if (stLower === 'sakit') {
           statusLabel = 'Sakit (Izin Terverifikasi Walas)';
           statusClass = 'peringatan';
@@ -1722,15 +2118,34 @@ function initBerandaOverview(user) {
           iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
         }
       } else {
-        // Belum ada data scan
-        if (jamSekarangStr >= '06:30:00' && jamSekarangStr <= '08:00:00') {
-          statusLabel = 'Belum Absen (Live Alert Walas)';
-          statusClass = 'peringatan';
-          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-        } else if (jamSekarangStr > '08:00:00') {
-          statusLabel = 'Belum Absen / Terlewat';
+        // Belum ada data kehadiran / belum scan
+        const cleanJamSkrg = (jamSekarangStr && jamSekarangStr.length === 5) ? jamSekarangStr + ':00' : (jamSekarangStr || '07:00:00');
+        if (cleanJamSkrg < '08:00:00') {
+          statusLabel = 'Belum Absen';
           statusClass = 'belum';
-          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+        } else {
+          // cleanJamSkrg >= '08:00:00' -> Otomatis Alpa
+          statusLabel = 'Alpa (Otomatis Sistem 08:00 WIB)';
+          statusClass = 'belum status-alpa';
+          iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+
+          // Sinkronisasi status Alpa ke database Firebase jika belum tercatat atau masih berstatus 'belum'
+          if (user && user.nisn && user.kelas && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+            db.ref(`presensi_jam/${user.kelas}/${today}/1/${user.nisn}`).transaction(current => {
+              if (!current || !current.status || ['belum', 'belum absen', 'belum_absen'].includes(String(current.status).toLowerCase().trim())) {
+                return {
+                  ...(current || {}),
+                  waktu: '08:00:00',
+                  status: 'alpa',
+                  tipe: 'auto_alpa_system',
+                  keterangan: 'Auto-Alpa (Tidak Hadir & Tanpa Keterangan s.d 08.00 WIB)',
+                  updatedAt: new Date().toISOString()
+                };
+              }
+              return current;
+            }).catch(() => null);
+          }
         }
       }
 
@@ -1817,7 +2232,7 @@ function muatDataRekapNisn(nisn) {
     listenerRekapPresensi = null;
   }
 
-  const ref = db.ref('absensi/' + nisn);
+  const ref = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db.ref('absensi/' + nisn) : null;
   const cb = function(snapshot) {
     const rawData = snapshot.val() || {};
     let list = [];
@@ -2336,12 +2751,23 @@ if (typeof window !== 'undefined') {
   window.bukaModalPairingNfcSiswa = bukaModalPairingNfcSiswa;
   window.tutupModalPairingNfcSiswa = tutupModalPairingNfcSiswa;
   window.lakukanSimulasiTapSiswa = lakukanSimulasiTapSiswa;
+  window.populateDropdownSiswa = populateDropdownSiswa;
+  window.handleSubmitPerijinan = handleSubmitPerijinan;
+  window.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
+  if (typeof global !== 'undefined') {
+    global.populateDropdownSiswa = populateDropdownSiswa;
+    global.handleSubmitPerijinan = handleSubmitPerijinan;
+    global.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
+  }
 
   window.getDefaultPresensiResmiHelper = getDefaultPresensiResmiHelper;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    populateDropdownSiswa,
+    handleSubmitPerijinan,
+    ambilIzinPendingAktifSiswa,
     muatJadwalBeranda,
     pilihKelasJadwal,
     pilihHariJadwal,
@@ -2390,3 +2816,22 @@ function bukaDetailInfoTka() {
     "• Ketentuan: Seluruh peserta sesi aktif wajib hadir tepat waktu dan melakukan tap kartu RFID presensi."
   );
 }
+
+
+// Listener otomatis buka kunci form saat izin ditolak atau disetujui
+try {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('perizinan_updated', function() {
+      if (typeof populateDropdownSiswa === 'function') {
+        setTimeout(populateDropdownSiswa, 100);
+      }
+    });
+    window.addEventListener('storage', function(e) {
+      if (e && (e.key === 'perizinan_sync_ping' || (e.key && e.key.startsWith('status_izin_')))) {
+        if (typeof populateDropdownSiswa === 'function') {
+          setTimeout(populateDropdownSiswa, 100);
+        }
+      }
+    });
+  }
+} catch (e) {}

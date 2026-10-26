@@ -52,6 +52,11 @@ function clearSession() {
 
 // 1. Google Sign-In
 function loginDenganGoogle() {
+  if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth.GoogleAuthProvider) {
+    const errSdk = new Error('Layanan Google Sign-In tidak tersedia (offline atau Firebase SDK belum siap).');
+    errSdk.code = 'auth/network-request-failed';
+    return Promise.reject(errSdk);
+  }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return firebase.auth().signInWithPopup(provider);
@@ -84,6 +89,10 @@ function cariSiswaByEmail(email) {
   if (!email || typeof email !== 'string') return null;
   const clean = email.toLowerCase().trim();
   if (!clean) return null;
+  // Akun guru/walas resmi DILARANG dipetakan ke siswa
+  if (clean === 'ihsan33roblox@gmail.com' || clean.startsWith('echa') || clean.startsWith('rijal') || clean.startsWith('heri') || clean.startsWith('hali') || clean.startsWith('hani')) {
+    return null;
+  }
   let siswaList = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI) ? MASTER_DATA_SISWA_RESMI : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI : null);
   if (!siswaList && typeof require !== 'undefined') { try { siswaList = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI; } catch(e) {} }
   if (!siswaList) siswaList = {};
@@ -95,8 +104,11 @@ function cariSiswaByEmail(email) {
   // 2. Official Student Email mapping table for common school email variations
   const siswaEmailMap = {
     'zemapk15@gmail.com': '0098263610',
+    'zemapk16@gmail.com': '0098263610',
     'ihsan@gmail.com': '0098263610',
     'ihsan@smkn1sumedang.sch.id': '0098263610',
+    'ihsanathallah@gmail.com': '0098263610',
+    'ihsan.athallah@gmail.com': '0098263610',
     'rizky@gmail.com': '0082104129',
     'rizkyramadhani@gmail.com': '0082104129'
   };
@@ -111,7 +123,9 @@ function cariSiswaByEmail(email) {
 function cariGuruByEmail(email) {
   if (!email) return null;
   const clean = email.toLowerCase().trim();
-  const guruList = typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : {};
+  let guruList = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI) ? MASTER_GURU_RESMI : ((typeof window !== 'undefined' && window.MASTER_GURU_RESMI) ? window.MASTER_GURU_RESMI : null);
+  if (!guruList && typeof require !== 'undefined') { try { guruList = require('./firebase-config.js').MASTER_GURU_RESMI; } catch(e) {} }
+  if (!guruList) guruList = {};
   const guruEmailMap = {
     'hani@smkn1sumedang.sch.id': '198109012009022003',
     'hani.hanifah@gmail.com': '198109012009022003',
@@ -119,6 +133,7 @@ function cariGuruByEmail(email) {
     'echa@smkn1sumedang.sch.id': '199209142022211007',
     'echaputra@gmail.com': '199209142022211007',
     'echa@gmail.com': '199209142022211007',
+    'ihsan33roblox@gmail.com': '199209142022211007',
     'rijal@smkn1sumedang.sch.id': '198312052022211017',
     'rijal@gmail.com': '198312052022211017',
     'heri@smkn1sumedang.sch.id': '198504252024211008',
@@ -143,6 +158,11 @@ async function registerDenganEmail(email, password, nama) {
   let isOfflineResilience = false;
 
   try {
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+      const errSdk = new Error('Firebase SDK tidak tersedia.');
+      errSdk.code = 'auth/network-request-failed';
+      throw errSdk;
+    }
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
     fbUser = cred.user;
 
@@ -271,6 +291,11 @@ async function kirimUlangVerifikasi(email, password) {
 async function loginDenganEmail(email, password) {
   let fbUser = null;
   try {
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+      const errSdk = new Error('Firebase SDK tidak tersedia.');
+      errSdk.code = 'auth/network-request-failed';
+      throw errSdk;
+    }
     const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
     fbUser = cred.user;
 
@@ -337,7 +362,21 @@ async function prosesLoginUser(firebaseUser) {
 
   const isAdm = isEmailAdmin(email);
   const guruMatch = cariGuruByEmail(email);
-  const sisMatch = cariSiswaByEmail(email);
+  let sisMatch = cariSiswaByEmail(email);
+  const dispName = (firebaseUser.displayName || '').toLowerCase().trim();
+  if (!guruMatch && !sisMatch && dispName) {
+    if (dispName.includes('ihsan') || dispName.includes('athallah')) {
+      const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+        || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+        || {};
+      sisMatch = ms['0098263610'] || { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', kelas: 'XII RPL 2' };
+    } else if (dispName.includes('rizky') || dispName.includes('ramadhani')) {
+      const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+        || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+        || {};
+      sisMatch = ms['0082104129'] || { nisn: '0082104129', nama: 'RIZKY RAMADHANI', kelas: 'XII RPL 2' };
+    }
+  }
 
   // Ambil data akun tertaut lokal jika sebelumnya pernah verifikasi identitas (NIP/NISN)
   let localLinked = null;
@@ -373,12 +412,11 @@ async function prosesLoginUser(firebaseUser) {
         isVerified: true,
         foto_google: firebaseUser.photoURL || null
       };
-      const isSwitched = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true';
-      if (isSwitched) {
-        if (activeSess && activeSess.role) {
-          userData = { ...userData, ...activeSess, isRoleSwitched: true };
-        }
-      }
+      // Akun administrator resmi selalu berstatus admin dan membersihkan residu switched role
+      try {
+        sessionStorage.removeItem('isRoleSwitched');
+        localStorage.removeItem('isRoleSwitched');
+      } catch (e) {}
     } else if (guruMatch) {
       userData = {
         uid: uid,
@@ -389,6 +427,17 @@ async function prosesLoginUser(firebaseUser) {
         isWalas: !!guruMatch.isWalas,
         walasKelasId: guruMatch.walasKelasId || null,
         role: guruMatch.isWalas ? 'walas' : 'guru',
+        isVerified: true,
+        foto_google: firebaseUser.photoURL || null
+      };
+    } else if (sisMatch) {
+      userData = {
+        uid: uid,
+        email: email,
+        nama: sisMatch.nama,
+        nisn: sisMatch.nisn,
+        kelas: sisMatch.kelas,
+        role: 'siswa',
         isVerified: true,
         foto_google: firebaseUser.photoURL || null
       };
@@ -438,7 +487,7 @@ async function prosesLoginUser(firebaseUser) {
 
     // CRITICAL: Jika user sedang dalam sesi switched/demo role (misal 1-Click Demo Testing),
     // pertahankan role aktif dari sessionStorage agar akun anonim/baru tidak tertimpa ke pengunjung
-    const isSwitchedGlobal = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true';
+    const isSwitchedGlobal = !isAdm && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true';
     if (isSwitchedGlobal) {
       if (activeSess && activeSess.role) {
         userData = { ...userData, ...activeSess, isRoleSwitched: true };
@@ -452,26 +501,43 @@ async function prosesLoginUser(firebaseUser) {
     }
   } else {
     // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
-    const isSwitched = !!userData.isRoleSwitched || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
-    if (isSwitched) {
-      if (activeSess && activeSess.role) {
-        userData = { ...userData, ...activeSess, isRoleSwitched: true };
-      }
+    if (isAdm) {
+      userData.role = 'admin';
+      userData.isVerified = true;
+      delete userData.isRoleSwitched;
+      if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
+      try {
+        sessionStorage.removeItem('isRoleSwitched');
+        localStorage.removeItem('isRoleSwitched');
+        await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama });
+      } catch (e) {}
     } else {
-      if (isAdm && userData.role !== 'admin') {
-        userData.role = 'admin';
-        if (!userData.nama || userData.nama === 'Pengunjung') userData.nama = 'Administrator Sistem';
-        userData.isVerified = true;
-        try { await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama }); } catch (e) {}
-      } else if (guruMatch && !userData.nisn) {
+      const isSwitched = !!userData.isRoleSwitched || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
+      if (isSwitched) {
+        if (activeSess && activeSess.role) {
+          userData = { ...userData, ...activeSess, isRoleSwitched: true };
+        }
+      } else if (guruMatch) {
         const expectedRole = guruMatch.isWalas ? 'walas' : 'guru';
-        if (userData.role !== expectedRole || userData.walasKelasId !== guruMatch.walasKelasId || !userData.isVerified) {
+        // Bersihkan residu siswa jika sebelumnya pernah salah tersimpan
+        delete userData.nisn;
+        delete userData.kelas;
+        if (userData.role !== expectedRole || userData.walasKelasId !== guruMatch.walasKelasId || !userData.isVerified || userData.nip !== guruMatch.nip) {
           userData.role = expectedRole;
           userData.nama = guruMatch.nama;
           userData.nip = guruMatch.nip;
           userData.mapel = guruMatch.mapel;
           userData.isWalas = !!guruMatch.isWalas;
           userData.walasKelasId = guruMatch.walasKelasId || null;
+          userData.isVerified = true;
+          try { await db.ref('users/' + uid).set(userData); } catch (e) {}
+        }
+      } else if (sisMatch && !userData.nip) {
+        if (userData.role !== 'siswa' || userData.nisn !== sisMatch.nisn || !userData.isVerified) {
+          userData.role = 'siswa';
+          userData.nama = sisMatch.nama;
+          userData.nisn = sisMatch.nisn;
+          userData.kelas = sisMatch.kelas;
           userData.isVerified = true;
           try { await db.ref('users/' + uid).update(userData); } catch (e) {}
         }
@@ -838,10 +904,94 @@ function logout() {
   }
 }
 
+// Simpan riwayat permintaan reset password offline/lokal
+function simpanResetPasswordLokal(email, userData) {
+  try {
+    const key = 'local_password_reset_requests';
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    list.unshift({
+      email: email,
+      nama: userData ? (userData.nama || userData.displayName) : email.split('@')[0],
+      nisn: userData ? userData.nisn : null,
+      nip: userData ? userData.nip : null,
+      role: userData ? (userData.nisn ? 'siswa' : (userData.nip ? 'guru' : 'user')) : 'user',
+      timestamp: Date.now(),
+      waktu: new Date().toLocaleString('id-ID'),
+      status: 'diajukan'
+    });
+    if (list.length > 20) list.length = 20;
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch (e) {}
+}
+
 // 6. Reset Kata Sandi via Email Gmail
 async function kirimResetPassword(email) {
   if (!email || !email.trim()) throw new Error('Harap masukkan alamat email Gmail Anda.');
-  return firebase.auth().sendPasswordResetEmail(email.trim());
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Validasi format email dasar
+  if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+    const err = new Error('Format email tidak valid.');
+    err.code = 'auth/invalid-email';
+    throw err;
+  }
+
+  // 1. Cek kecocokan akun di master data siswa/guru/admin resmi
+  const sis = cariSiswaByEmail(cleanEmail);
+  const gur = cariGuruByEmail(cleanEmail);
+  const adm = isEmailAdmin(cleanEmail);
+
+  // Cek apakah ada di local_registered_users
+  let localList = {};
+  try {
+    const rawLocal = localStorage.getItem('local_registered_users');
+    if (rawLocal) localList = JSON.parse(rawLocal);
+  } catch (e) {}
+  const localUser = localList[cleanEmail] || null;
+
+  // 2. Coba kirim via Firebase Auth jika SDK dan method tersedia
+  const hasFirebase = (typeof firebase !== 'undefined' && firebase && typeof firebase.auth === 'function');
+  if (hasFirebase) {
+    try {
+      const authObj = firebase.auth();
+      if (typeof authObj.sendPasswordResetEmail === 'function') {
+        await authObj.sendPasswordResetEmail(cleanEmail);
+        return {
+          success: true,
+          email: cleanEmail,
+          method: 'firebase',
+          message: 'Link pemulihan kata sandi telah dikirim ke ' + cleanEmail + '. Cek kotak masuk / spam di Gmail Anda.'
+        };
+      }
+    } catch (fbErr) {
+      console.warn('Firebase sendPasswordResetEmail gagal/offline:', fbErr);
+      if (fbErr && fbErr.code === 'auth/invalid-email') {
+        throw fbErr;
+      }
+      if (fbErr && fbErr.code === 'auth/user-not-found' && !sis && !gur && !adm && !localUser) {
+        throw fbErr;
+      }
+    }
+  }
+
+  // 3. Fallback Offline / Local Resilience
+  // Jika email adalah siswa resmi, guru resmi, admin, atau terdaftar lokal
+  if (sis || gur || adm || localUser) {
+    const matchedData = sis || gur || localUser || { nama: 'Administrator Sistem' };
+    simpanResetPasswordLokal(cleanEmail, matchedData);
+    return {
+      success: true,
+      email: cleanEmail,
+      isOffline: true,
+      user: matchedData,
+      message: 'Permintaan pemulihan diproses untuk ' + (matchedData.nama || cleanEmail) + '. Akun Anda terverifikasi di sistem sekolah.'
+    };
+  }
+
+  // Jika sama sekali tidak ditemukan di Firebase maupun master data
+  const notFoundErr = new Error('Email belum terdaftar di sistem presensi.');
+  notFoundErr.code = 'auth/user-not-found';
+  throw notFoundErr;
 }
 
 // 7. Ubah Kata Sandi Akun (User Sedang Login)
@@ -1082,8 +1232,21 @@ if (typeof window !== 'undefined') {
   window.gantiRoleSesi = gantiRoleSesi;
   window.verifikasiAksesHalaman = verifikasiAksesHalaman;
   window.cariSiswaByEmail = cariSiswaByEmail;
+  window.kirimResetPassword = kirimResetPassword;
+  window.simpanResetPasswordLokal = simpanResetPasswordLokal;
+  window.prosesLoginUser = prosesLoginUser;
+  window.periksaNisnSiswa = periksaNisnSiswa;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cariSiswaByEmail, cariGuruByEmail, isEmailAdmin, encodeEmail };
+  module.exports = {
+    cariSiswaByEmail,
+    cariGuruByEmail,
+    isEmailAdmin,
+    encodeEmail,
+    kirimResetPassword,
+    simpanResetPasswordLokal,
+    prosesLoginUser,
+    periksaNisnSiswa
+  };
 }

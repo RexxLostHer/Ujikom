@@ -342,6 +342,27 @@ def proses_kartu(uid_kartu):
     nama_siswa = siswa.get("nama", nisn) if siswa else nisn
     kelas = siswa.get("kelas", DEFAULT_KELAS) if siswa else DEFAULT_KELAS
 
+    # Periksa apakah siswa sudah memiliki status Izin/Sakit yang disetujui hari ini
+    # (PRD & Spesifikasi: Status Izin/Sakit disetujui Walas DILARANG ditimpa oleh scan IoT)
+    izin_disetujui = False
+    for path_node in ("perijinan", "perizinan"):
+        data_p = get_firebase(path_node)
+        if data_p and isinstance(data_p, dict):
+            for pid, pval in data_p.items():
+                if isinstance(pval, dict):
+                    p_nisn = str(pval.get("nisn") or pval.get("siswaId") or "").strip()
+                    p_tgl = str(pval.get("tanggal") or pval.get("tanggal_norm") or "").strip()
+                    p_status = str(pval.get("status") or "").lower().strip()
+                    if p_nisn == str(nisn).strip() and p_tgl == tanggal and p_status in ("disetujui", "approved"):
+                        izin_disetujui = True
+                        break
+            if izin_disetujui:
+                break
+
+    if izin_disetujui:
+        print(f"[ABAIKAN SCAN] ℹ️ Siswa {nama_siswa} (NISN: {nisn}) sudah berstatus Izin/Sakit resmi yang disetujui. Scan IoT tidak menimpa status.")
+        return
+
     # Evaluasi Ambang Batas Waktu PRD
     status, keterangan = evaluasi_waktu_absen(waktu)
 

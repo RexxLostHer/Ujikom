@@ -1,0 +1,76 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "perizinan": {
+      ".read": true,
+      ".write": true
+    },
+    "perijinan": {
+      ".read": true,
+      ".write": true
+    },
+    "chat_perijinan": {
+      ".read": true,
+      ".write": true
+    },
+    "perijinan_chats": {
+      ".read": true,
+      ".write": true
+    },
+    "users": {
+      ".read": true,
+      "$uid": {
+        ".write": true
+      }
+    },
+    "siswa": {
+      ".read": true,
+      ".write": true
+    },
+    "kartu": {
+      ".read": true,
+      ".write": true
+    },
+    "pairing_request": {
+      ".read": true,
+      ".write": true
+    },
+    "presensi_jam": {
+      ".read": true,
+      ".write": true
+    },
+    "presensi_guru": {
+      ".read": true,
+      ".write": true
+    },
+    "absensi": {
+      ".read": true,
+      ".write": true
+    },
+    "kelas": {
+      ".read": true,
+      ".write": true
+    },
+    "status_kelas": {
+      ".read": true,
+      ".write": true
+    },
+    "perizinan_guru": {
+      ".read": true,
+      ".write": true
+    },
+    "kendala_mengajar": {
+      ".read": true,
+      ".write": true
+    },
+    "laporan_kendala": {
+      ".read": true,
+      ".write": true
+    },
+    "kendala_guru": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

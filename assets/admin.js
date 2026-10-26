@@ -28,9 +28,20 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
     if (rawSess) {
       const sess = JSON.parse(rawSess);
       if (sess && sess.role && sess.role !== 'admin') {
-        shouldHaltAdmin = true;
-        const targetUrl = (sess.role === 'guru' || sess.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
-        window.location.replace(targetUrl);
+        const isEmailAnAdmin = sess.email && typeof isEmailAdmin === 'function' && isEmailAdmin(sess.email);
+        if (isEmailAnAdmin) {
+          sess.role = 'admin';
+          delete sess.isRoleSwitched;
+          try {
+            sessionStorage.removeItem('isRoleSwitched');
+            localStorage.removeItem('isRoleSwitched');
+            sessionStorage.setItem('user_aktif', JSON.stringify(sess));
+          } catch (e) {}
+        } else {
+          shouldHaltAdmin = true;
+          const targetUrl = (sess.role === 'guru' || sess.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
+          window.location.replace(targetUrl);
+        }
       }
     }
   } catch (e) {}
@@ -42,7 +53,14 @@ if (!shouldHaltAdmin && typeof firebase !== 'undefined' && firebase.auth) {
     if (!fbUser) {
       const session = typeof getSessionUser === 'function' ? getSessionUser() : null;
       if (session) {
-        if (session.role === 'admin') {
+        if (session.role === 'admin' || (session.email && typeof isEmailAdmin === 'function' && isEmailAdmin(session.email))) {
+          session.role = 'admin';
+          delete session.isRoleSwitched;
+          try {
+            sessionStorage.removeItem('isRoleSwitched');
+            localStorage.removeItem('isRoleSwitched');
+            sessionStorage.setItem('user_aktif', JSON.stringify(session));
+          } catch (e) {}
           adminSessionUser = session;
           const badge = document.getElementById('adminNamaBadge');
           if (badge) badge.textContent = session.nama || 'Administrator';
@@ -58,20 +76,23 @@ if (!shouldHaltAdmin && typeof firebase !== 'undefined' && firebase.auth) {
       return;
     }
     const userData = await prosesLoginUser(fbUser);
-    if (userData.role !== 'admin') {
-      if (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email) && !userData.isRoleSwitched) {
-        userData.role = 'admin';
-        userData.nama = (userData.nama && userData.nama !== 'Pengunjung') ? userData.nama : 'Administrator Sistem';
-        setSessionUser(userData);
-        if (db) db.ref('users/' + fbUser.uid).update({ role: 'admin', isVerified: true }).catch(() => null);
-      } else {
-        shouldHaltAdmin = true;
-        const targetUrl = (typeof getDashboardUrlByRole === 'function')
-          ? getDashboardUrlByRole(userData.role)
-          : ((userData.role === 'guru' || userData.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html');
-        window.location.replace(targetUrl);
-        return;
-      }
+    const isUserAdmin = (userData.role === 'admin') || (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email || (fbUser && fbUser.email)));
+    if (!isUserAdmin) {
+      shouldHaltAdmin = true;
+      const targetUrl = (typeof getDashboardUrlByRole === 'function')
+        ? getDashboardUrlByRole(userData.role)
+        : ((userData.role === 'guru' || userData.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html');
+      window.location.replace(targetUrl);
+      return;
+    } else if (userData.role !== 'admin') {
+      userData.role = 'admin';
+      delete userData.isRoleSwitched;
+      try {
+        sessionStorage.removeItem('isRoleSwitched');
+        localStorage.removeItem('isRoleSwitched');
+      } catch (e) {}
+      setSessionUser(userData);
+      if (db) db.ref('users/' + fbUser.uid).update({ role: 'admin', isVerified: true }).catch(() => null);
     }
     adminSessionUser = userData;
     const badge = document.getElementById('adminNamaBadge');
@@ -184,6 +205,10 @@ function switchToTab(tabName) {
     renderKendalaGuruAdmin(filterKendalaAktif);
   }
 
+  if (tabName === 'perijinan') {
+    renderDaftarPerijinanAdmin('daftarPerijinanAdmin', filterPerijinanAktif);
+  }
+
   if (tabName === 'simulasi') {
     populateVirtualSiswaSimulasi();
   }
@@ -204,28 +229,48 @@ function showMsg(elId, text, type) {
 let filterPerijinanAktif = 'pending';
 
 function setFilterPerijinan(btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filterPerijinanAktif = btn.dataset.filter;
+  const container = (btn && btn.parentElement) ? btn.parentElement : document.getElementById('tab-perijinan');
+  if (container) {
+    container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    document.querySelectorAll('#tab-perijinan .filter-btn').forEach(b => b.classList.remove('active'));
+  }
+  if (btn) btn.classList.add('active');
+  filterPerijinanAktif = (btn && btn.dataset && btn.dataset.filter) ? btn.dataset.filter : 'pending';
   renderDaftarPerijinanAdmin('daftarPerijinanAdmin', filterPerijinanAktif);
 }
 
 function listenPendingCount() {
-  db.ref('perijinan').orderByChild('status').equalTo('pending').on('value', function (snap) {
-    const n = snap.numChildren();
-    const banner = document.getElementById('notifPerijinanBanner');
-    const jml = document.getElementById('jumlahPending');
-    const badge = document.getElementById('badgePerijinan');
-    if (n > 0) {
-      banner.classList.add('show');
-      jml.textContent = n;
-      badge.textContent = n;
-      badge.style.display = 'inline-block';
-    } else {
-      banner.classList.remove('show');
-      badge.style.display = 'none';
-    }
-  });
+  if (typeof updatePendingBadgeDanBanner === 'function') {
+    updatePendingBadgeDanBanner();
+  }
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    try {
+      db.ref('perijinan').orderByChild('status').equalTo('pending').on('value', function (snap) {
+        if (typeof updatePendingBadgeDanBanner === 'function') {
+          updatePendingBadgeDanBanner();
+        } else {
+          const n = snap.numChildren();
+          const banner = document.getElementById('notifPerijinanBanner');
+          const jml = document.getElementById('jumlahPending');
+          const badge = document.getElementById('badgePerijinan');
+          if (n > 0) {
+            if (banner) banner.classList.add('show');
+            if (jml) jml.textContent = n;
+            if (badge) { badge.textContent = n; badge.style.display = 'inline-block'; }
+          } else {
+            if (banner) banner.classList.remove('show');
+            if (badge) badge.style.display = 'none';
+          }
+        }
+      });
+      db.ref('kendala_guru').orderByChild('status').equalTo('pending').on('value', function () {
+        if (typeof updatePendingBadgeDanBanner === 'function') {
+          updatePendingBadgeDanBanner();
+        }
+      });
+    } catch (e) {}
+  }
 }
 
 // ===================================================================
@@ -1328,6 +1373,8 @@ if (chatInput) {
 // ===================================================================
 let filterKendalaAktif = 'pending';
 let kendalaGuruCache = {};
+if (typeof window !== 'undefined') window.kendalaGuruCache = kendalaGuruCache;
+if (typeof global !== 'undefined') global.kendalaGuruCache = kendalaGuruCache;
 
 function setFilterKendalaAdmin(filter, btn) {
   document.querySelectorAll('[data-filter-kendala]').forEach(b => b.classList.remove('active'));
@@ -1337,17 +1384,52 @@ function setFilterKendalaAdmin(filter, btn) {
 }
 
 function listenKendalaGuruAdmin() {
-  db.ref('kendala_guru').on('value', function (snap) {
-    kendalaGuruCache = snap.val() || {};
-    updateBadgeKendalaGuru();
-    renderKendalaGuruAdmin(filterKendalaAktif);
+  // 1. Ambil data lokal terlebih dahulu untuk render instan & offline support
+  let localList = [];
+  try {
+    localList = JSON.parse(localStorage.getItem('local_kendala_guru') || '[]');
+  } catch (e) {}
+  try {
+    const rawIzin = JSON.parse(localStorage.getItem('local_izin_guru') || '[]');
+    if (Array.isArray(rawIzin)) {
+      rawIzin.forEach(item => {
+        if (item && item.id && !localList.some(k => k && k.id === item.id)) {
+          localList.push(item);
+        }
+      });
+    }
+  } catch (e) {}
+
+  localList.forEach(k => {
+    if (k && k.id) kendalaGuruCache[k.id] = k;
   });
+  updateBadgeKendalaGuru();
+  renderKendalaGuruAdmin(filterKendalaAktif);
+
+  // 2. Dengarkan perubahan realtime dari Firebase
+  try {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+      const handleSnapKendala = function (snap) {
+        const val = snap.val() || {};
+        Object.keys(val).forEach(k => {
+          kendalaGuruCache[k] = Object.assign({}, kendalaGuruCache[k] || {}, val[k]);
+        });
+        updateBadgeKendalaGuru();
+        renderKendalaGuruAdmin(filterKendalaAktif);
+      };
+      ['kendala_mengajar', 'laporan_kendala', 'kendala_guru'].forEach(pathNode => {
+        db.ref(pathNode).on('value', handleSnapKendala, function (err) {
+          console.warn('[Kendala Guru Admin] Listener warning on ' + pathNode + ':', err);
+        });
+      });
+    }
+  } catch (e) {}
 }
 
 function updateBadgeKendalaGuru() {
   const badge = document.getElementById('badgeKendalaGuru');
   if (!badge) return;
-  const countPending = Object.values(kendalaGuruCache).filter(k => k.status === 'pending').length;
+  const countPending = Object.values(kendalaGuruCache).filter(k => k && k.status === 'pending').length;
   if (countPending > 0) {
     badge.textContent = countPending;
     badge.style.display = 'inline-block';
@@ -1361,7 +1443,11 @@ function renderKendalaGuruAdmin(filter) {
   if (!container) return;
 
   const entries = Object.entries(kendalaGuruCache).filter(([, k]) => {
+    if (!k) return false;
     if (filter === 'semua') return true;
+    if (filter === 'approved') return k.status === 'approved' || k.status === 'disetujui';
+    if (filter === 'pending') return k.status === 'pending' || !k.status;
+    if (filter === 'rejected') return k.status === 'rejected' || k.status === 'ditolak';
     return k.status === filter;
   }).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
 
@@ -1392,7 +1478,7 @@ function renderKendalaGuruAdmin(filter) {
       aksiHtml = `
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="btn-primary" style="background:#dc2626;padding:8px 16px;font-weight:700;" onclick="adminApproveKendala('${id}')">
-            ⚡ ACC (Setujui Jamkos Kelas ${k.kelasId})
+            ⚡ ACC (Setujui Jamkos Kelas ${k.kelasId || k.kelas || '-'})
           </button>
           <button class="btn-secondary" style="padding:8px 16px;" onclick="adminRejectKendala('${id}')">
             Tolak Laporan
@@ -1407,17 +1493,28 @@ function renderKendalaGuruAdmin(filter) {
       `;
     }
 
+    const peranBadge = `<span style="font-size:11px;font-weight:700;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;margin-left:6px;">${k.peran || 'Guru'}</span>`;
+    const lampiranBukti = (k.buktiKendala || k.lampiran)
+      ? `<div style="margin-top:8px;">
+          <a href="${k.buktiKendala || k.lampiran}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#4f46e5;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;border:1px solid #c7d2fe;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Lihat Lampiran Bukti Kendala</span>
+          </a>
+        </div>`
+      : '';
+
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
         <div>
-          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;">${k.guruNama || 'Guru'} (${k.guruNip || '-'})</h4>
-          <span style="font-size:12px;color:#64748b;">Mengajar: <strong>${k.mapel || '-'}</strong> di Kelas <strong style="color:#2563eb;">${k.kelasId || '-'}</strong></span>
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;display:flex;align-items:center;">${k.guruNama || k.nama || 'Guru'} (${k.guruNip || k.nip || '-'})${peranBadge}</h4>
+          <span style="font-size:12px;color:#64748b;">Mengajar: <strong>${k.mapel || '-'}</strong> di Kelas <strong style="color:#2563eb;">${k.kelasId || k.kelas || '-'}</strong></span>
         </div>
         ${statusBadge}
       </div>
       <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;margin:10px 0;font-size:13px;">
         <div style="margin-bottom:4px;"><strong>Jenis Kendala:</strong> ${k.jenis || 'Jam Kosong'}</div>
-        <div><strong>Alasan / Keterangan:</strong> ${k.alasan || '-'}</div>
+        <div><strong>Alasan / Keterangan:</strong> ${k.deskripsiKendala || k.alasan || '-'}</div>
+        ${lampiranBukti}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#94a3b8;">
         <span>Tanggal Pengajuan: ${k.tanggal || '-'}</span>
@@ -1430,51 +1527,242 @@ function renderKendalaGuruAdmin(filter) {
 }
 
 async function adminApproveKendala(id) {
-  const k = kendalaGuruCache[id];
+  const k = kendalaGuruCache[id] || (typeof cacheSemuaPerizinanAdmin !== 'undefined' ? cacheSemuaPerizinanAdmin[id] : null);
   if (!k) return;
-  const konfirmasi = confirm(
-    `Setujui laporan kendala dari ${k.guruNama}?\n\n` +
-    `TINDAKAN OTOMATIS:\n` +
-    `1. Kelas ${k.kelasId} dialihkan menjadi status 'JAMKOS'.\n` +
-    `2. Live alert Jamkos dipancarkan ke seluruh Siswa & Walas kelas ${k.kelasId}.`
-  );
+  const targetKelas = k.kelasId || k.kelas;
+  const konfirmasi = (typeof confirm === 'function')
+    ? confirm(
+        `Setujui laporan kendala dari ${k.guruNama || k.nama}?\n\n` +
+        `TINDAKAN OTOMATIS:\n` +
+        `1. Kelas ${targetKelas} dialihkan menjadi status 'JAMKOS'.\n` +
+        `2. Live alert Jamkos dipancarkan ke seluruh Siswa & Walas kelas ${targetKelas}.`
+      )
+    : true;
   if (!konfirmasi) return;
 
+  const adminNama = (adminSessionUser && adminSessionUser.nama) ? adminSessionUser.nama : 'Administrator';
+
+  // 1. Optimistic Update LocalStorage (local_kendala_guru & local_izin_guru)
   try {
-    const adminNama = (adminSessionUser && adminSessionUser.nama) ? adminSessionUser.nama : 'Administrator';
-    // 1. Update status kendala
-    await db.ref('kendala_guru/' + id).update({
-      status: 'approved',
-      approvedBy: adminNama,
-      approvedAt: new Date().toISOString()
+    ['local_kendala_guru', 'local_izin_guru'].forEach(key => {
+      let list = JSON.parse(localStorage.getItem(key) || '[]');
+      let updated = false;
+      list = list.map(item => {
+        if (item && (item.id === id || item.pid === id)) {
+          updated = true;
+          return {
+            ...item,
+            status: 'approved',
+            statusKonfirmasi: 'Disetujui',
+            approvedBy: adminNama,
+            approvedAt: new Date().toISOString()
+          };
+        }
+        return item;
+      });
+      if (updated) localStorage.setItem(key, JSON.stringify(list));
     });
+  } catch (e) {}
 
-    // 2. Ubah status operasional kelas menjadi jamkos
-    await db.ref('kelas/' + k.kelasId).update({
-      status: 'jamkos',
-      activeMapel: k.mapel || 'Jam Kosong',
-      activeTeacherNama: k.guruNama || '-',
-      keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
-      updatedAt: new Date().toISOString()
-    });
+  // 2. Update memory caches
+  if (kendalaGuruCache[id]) {
+    kendalaGuruCache[id].status = 'approved';
+    kendalaGuruCache[id].statusKonfirmasi = 'Disetujui';
+    kendalaGuruCache[id].approvedBy = adminNama;
+    kendalaGuruCache[id].approvedAt = new Date().toISOString();
+  }
+  if (typeof cacheSemuaPerizinanAdmin !== 'undefined' && cacheSemuaPerizinanAdmin[id]) {
+    cacheSemuaPerizinanAdmin[id].status = 'disetujui';
+    cacheSemuaPerizinanAdmin[id].rawStatus = 'approved';
+  }
 
-    alert(`✅ Laporan disetujui! Status kelas ${k.kelasId} kini resmi berstatus JAMKOS.`);
-  } catch (err) {
-    alert('Gagal menyetujui kendala: ' + err.message);
+  // 3. Update UI
+  updateBadgeKendalaGuru();
+  renderKendalaGuruAdmin(filterKendalaAktif);
+  if (typeof renderDaftarPerijinanAdmin === 'function') {
+    renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
+  }
+
+  if (typeof alert === 'function') {
+    alert(`✅ Laporan disetujui! Status kelas ${targetKelas} kini resmi berstatus JAMKOS.`);
+  }
+
+  // 4. Update Firebase RTDB secara non-blocking dengan timeout safety
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    try {
+      const updates = [
+        db.ref('kendala_mengajar/' + id).update({
+          status: 'approved',
+          statusKonfirmasi: 'Disetujui',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('laporan_kendala/' + id).update({
+          status: 'approved',
+          statusKonfirmasi: 'Disetujui',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('kendala_guru/' + id).update({
+          status: 'approved',
+          statusKonfirmasi: 'Disetujui',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perizinan_guru/' + id).update({
+          status: 'approved',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perijinan/' + id).update({
+          status: 'disetujui',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perizinan/' + id).update({
+          status: 'disetujui',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('permits/' + id).update({
+          status: 'approved',
+          approvedBy: adminNama,
+          approvedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('kelas/' + targetKelas).update({
+          status: 'jamkos',
+          activeMapel: k.mapel || 'Jam Kosong',
+          activeTeacherNama: k.guruNama || k.nama || '-',
+          keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
+          updatedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('classes/' + targetKelas).update({
+          status: 'jamkos',
+          statusKelas: 'jamkos',
+          activeMapel: k.mapel || 'Jam Kosong',
+          activeTeacherNama: k.guruNama || k.nama || '-',
+          keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
+          updatedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('status_kelas/' + targetKelas).update({
+          status: 'jamkos',
+          keterangan: k.alasan || 'Tugas Mandiri',
+          mapel: k.mapel || 'Jam Kosong',
+          updatedAt: Date.now()
+        }).catch(() => null)
+      ];
+      await Promise.race([
+        Promise.all(updates),
+        new Promise(res => setTimeout(res, 2000))
+      ]);
+    } catch (err) {}
   }
 }
 
 async function adminRejectKendala(id) {
-  if (!confirm('Tolak laporan kendala ini?')) return;
+  const konfirmasi = (typeof confirm === 'function')
+    ? confirm('Tolak laporan kendala ini?')
+    : true;
+  if (!konfirmasi) return;
+  const adminNama = (adminSessionUser && adminSessionUser.nama) || 'Administrator';
+
+  // 1. Optimistic Update LocalStorage
   try {
-    await db.ref('kendala_guru/' + id).update({
-      status: 'rejected',
-      rejectedBy: (adminSessionUser && adminSessionUser.nama) || 'Administrator',
-      rejectedAt: new Date().toISOString()
+    ['local_kendala_guru', 'local_izin_guru'].forEach(key => {
+      let list = JSON.parse(localStorage.getItem(key) || '[]');
+      let updated = false;
+      list = list.map(item => {
+        if (item && (item.id === id || item.pid === id)) {
+          updated = true;
+          return {
+            ...item,
+            status: 'rejected',
+            statusKonfirmasi: 'Ditolak',
+            rejectedBy: adminNama,
+            rejectedAt: new Date().toISOString()
+          };
+        }
+        return item;
+      });
+      if (updated) localStorage.setItem(key, JSON.stringify(list));
     });
-    alert('Laporan kendala berhasil ditolak.');
-  } catch (err) {
-    alert('Gagal menolak kendala: ' + err.message);
+  } catch (e) {}
+
+  // 2. Update memory caches
+  if (kendalaGuruCache[id]) {
+    kendalaGuruCache[id].status = 'rejected';
+    kendalaGuruCache[id].statusKonfirmasi = 'Ditolak';
+    kendalaGuruCache[id].rejectedBy = adminNama;
+    kendalaGuruCache[id].rejectedAt = new Date().toISOString();
+  }
+  if (typeof cacheSemuaPerizinanAdmin !== 'undefined' && cacheSemuaPerizinanAdmin[id]) {
+    cacheSemuaPerizinanAdmin[id].status = 'ditolak';
+    cacheSemuaPerizinanAdmin[id].rawStatus = 'rejected';
+  }
+
+  // 3. Update UI
+  updateBadgeKendalaGuru();
+  renderKendalaGuruAdmin(filterKendalaAktif);
+  if (typeof renderDaftarPerijinanAdmin === 'function') {
+    renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
+  }
+
+  if (typeof alert === 'function') alert('Laporan kendala berhasil ditolak.');
+
+  // 4. Update Firebase RTDB secara non-blocking
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    try {
+      const updates = [
+        db.ref('kendala_mengajar/' + id).update({
+          status: 'rejected',
+          statusKonfirmasi: 'Ditolak',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('laporan_kendala/' + id).update({
+          status: 'rejected',
+          statusKonfirmasi: 'Ditolak',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('kendala_guru/' + id).update({
+          status: 'rejected',
+          statusKonfirmasi: 'Ditolak',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perizinan_guru/' + id).update({
+          status: 'rejected',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perijinan/' + id).update({
+          status: 'ditolak',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('perizinan/' + id).update({
+          status: 'ditolak',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null),
+        db.ref('permits/' + id).update({
+          status: 'rejected',
+          rejectedBy: adminNama,
+          rejectedAt: new Date().toISOString()
+        }).catch(() => null)
+      ];
+      await Promise.race([
+        Promise.all(updates),
+        new Promise(res => setTimeout(res, 2000))
+      ]);
+    } catch (e) {}
+  }
+
+  updateBadgeKendalaGuru();
+  renderKendalaGuruAdmin(filterKendalaAktif);
+  if (typeof renderDaftarPerijinanAdmin === 'function') {
+    renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
   }
 }
 
@@ -1824,6 +2112,34 @@ async function submitSimulasiTapLengkap() {
     }
   }
 
+  // Pastikan siswa yang berstatus Izin/Sakit yang disetujui tidak tertimpa oleh tap RFID
+  try {
+    let izinAda = null;
+    if (typeof cacheSemuaPerizinanAdmin !== 'undefined') {
+      izinAda = Object.values(cacheSemuaPerizinanAdmin).find(iz =>
+        iz && (iz.nisn === targetSiswa.nisn || iz.siswaId === targetSiswa.nisn) &&
+        iz.tanggal === tglInput && (iz.status === 'disetujui' || iz.status === 'approved')
+      );
+    }
+    if (!izinAda && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+      const [snapPj, snapPz] = await Promise.all([
+        db.ref('perijinan').once('value').catch(() => null),
+        db.ref('perizinan').once('value').catch(() => null)
+      ]);
+      const findIzin = (snap) => snap && snap.val() && Object.values(snap.val()).find(iz =>
+        iz && (iz.nisn === targetSiswa.nisn || iz.siswaId === targetSiswa.nisn) &&
+        iz.tanggal === tglInput && (iz.status === 'disetujui' || iz.status === 'approved')
+      );
+      izinAda = findIzin(snapPj) || findIzin(snapPz);
+    }
+    if (izinAda) {
+      const ketIzin = (izinAda.jenis || 'izin').toUpperCase();
+      logTerminalSimulasi(`ℹ️ [TAP DIABAIKAN] ${targetSiswa.nama} sudah memiliki status resmi: ${ketIzin} (Tidak dapat ditimpa oleh scan)`, '#3b82f6');
+      showMsg('simulasiMsg', `ℹ️ Siswa ${targetSiswa.nama} sudah berstatus ${ketIzin} yang disetujui. Scan IoT tidak menimpa status izin.`, 'info');
+      return;
+    }
+  } catch (eIzinCheck) {}
+
   // Evaluasi Ambang Batas Waktu PRD Bab 4.1
   const cleanJam = jamInput.length === 5 ? jamInput + ':00' : jamInput;
   let statusBaru = 'hadir';
@@ -1973,3 +2289,38 @@ async function jalankanAutomasiAutoAlpa() {
   }
 }
 
+// Sinkronisasi realtime lintas-tab / window via storage event untuk admin
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key) return;
+    const relevantKeys = ['local_kendala_guru', 'local_izin_guru', 'local_perijinan', 'local_perizinan', 'daftar_perizinan_lokal'];
+    if (relevantKeys.includes(e.key)) {
+      if (typeof renderDaftarPerijinanAdmin === 'function') {
+        renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
+      }
+      if (typeof listenKendalaGuruAdmin === 'function') {
+        listenKendalaGuruAdmin();
+      }
+      if (typeof updatePendingBadgeDanBanner === 'function') {
+        updatePendingBadgeDanBanner();
+      }
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.listenKendalaGuruAdmin = listenKendalaGuruAdmin;
+  window.renderKendalaGuruAdmin = renderKendalaGuruAdmin;
+  window.adminApproveKendala = adminApproveKendala;
+  window.adminRejectKendala = adminRejectKendala;
+  window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    listenKendalaGuruAdmin,
+    renderKendalaGuruAdmin,
+    adminApproveKendala,
+    adminRejectKendala,
+    submitSimulasiTapLengkap
+  };
+}

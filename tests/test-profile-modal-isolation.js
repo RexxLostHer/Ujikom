@@ -111,14 +111,12 @@ assert.ok(guestModalHtml.includes('inputNisnVerif'), 'Modal pengunjung HARUS men
 assert.ok(guestModalHtml.includes('inputNipVerif'), 'Modal pengunjung HARUS menyediakan input NIP');
 console.log('✓ Akun Pengunjung pada dashboard.html hanya melihat profil dan form verifikasi resmi (tanpa switcher).\n');
 
-// 3. Evaluasi Penolakan Pemanggilan pilihPresetRole pada dashboard.html
-console.log('[Test 3] Evaluasi Proteksi Pemanggilan Langsung pilihPresetRole di dashboard.html...');
-guestEnv.ctx.pilihPresetRole('walas');
-const notifGuest = guestEnv.elementsById.profilNotifBox.textContent;
-assert.ok(notifGuest.includes('Akses Ditolak'), 'Pemanggilan pilihPresetRole pada dashboard.html harus memunculkan Akses Ditolak');
-console.log('✓ Pemanggilan switcher instan dari dashboard.html berhasil diblokir 100%.\n');
+// 3. Evaluasi Ketiadaan Fungsi pilihPresetRole pada Lingkungan Runtime
+console.log('[Test 3] Evaluasi Ketiadaan Fungsi pilihPresetRole di Lingkungan Runtime...');
+assert.strictEqual(typeof guestEnv.ctx.pilihPresetRole, 'undefined', 'Fungsi pilihPresetRole TIDAK boleh didefinisikan di context');
+console.log('✓ Fungsi pilihPresetRole terbukti 100% telah dihapus dari runtime.\n');
 
-// 4. Evaluasi Akses Administrator pada admin.html
+// 4. Evaluasi Modal Profil Administrator pada admin.html (Bebas dari Preset Switcher)
 console.log('[Test 4] Evaluasi Modal Profil untuk Administrator pada admin.html...');
 const adminUser = {
   role: 'admin',
@@ -131,19 +129,12 @@ const adminEnv = createMockEnvironment('admin.html', adminUser);
 adminEnv.ctx.bukaModalProfil();
 const adminModalHtml = adminEnv.mockElement.innerHTML;
 
-// Verifikasi bahwa admin pada admin.html memiliki akses switcher pengujian
-assert.ok(adminModalHtml.includes('sectionPresetAdmin'), 'Modal admin di admin.html harus memuat sectionPresetAdmin');
-assert.ok(adminModalHtml.includes('1-Click Preset'), 'Modal admin di admin.html harus memuat 1-Click Preset untuk pengujian');
-assert.ok(adminModalHtml.includes('pilihPresetRole(\'walas\''), 'Modal admin di admin.html harus menyediakan preset walas');
-assert.ok(adminModalHtml.includes('pilihPresetRole(\'guru\''), 'Modal admin di admin.html harus menyediakan preset guru');
-assert.ok(adminModalHtml.includes('pilihPresetRole(\'siswa\''), 'Modal admin di admin.html harus menyediakan preset siswa');
-
-// Verifikasi eksekusi nyata switcher role pada admin.html berhasil 100%
-const switchedWalas = adminEnv.ctx.gantiRoleSesi('walas');
-assert.strictEqual(switchedWalas.role, 'walas', 'Eksekusi switcher role walas harus sukses');
-assert.strictEqual(switchedWalas.isRoleSwitched, true, 'isRoleSwitched harus aktif');
-assert.strictEqual(adminEnv.mockWindow.location.href, 'dashboard-guru.html', 'Admin ganti role walas harus diarahkan ke dashboard-guru.html');
-console.log('✓ Administrator asli pada admin.html dapat mengakses dan mengeksekusi preset pengujian secara aman.\n');
+// Verifikasi bahwa modal profil admin bersih dari preset switcher
+assert.ok(!adminModalHtml.includes('sectionPresetAdmin'), 'Modal admin di admin.html TIDAK boleh memuat sectionPresetAdmin');
+assert.ok(!adminModalHtml.includes('1-Click Preset'), 'Modal admin di admin.html TIDAK boleh memuat 1-Click Preset');
+assert.ok(!adminModalHtml.includes('pilihPresetRole'), 'Modal admin di admin.html TIDAK boleh menyediakan preset role switcher');
+assert.ok(!adminModalHtml.includes('Beralih Peran & Mode Pengujian UJIKOM'), 'Modal admin di admin.html TIDAK boleh memuat judul switcher peran');
+console.log('✓ Modal profil Administrator pada admin.html terbukti 100% bersih tanpa quick role preset.\n');
 
 // 5. Evaluasi Penolakan gantiRoleSesi pada Halaman Publik
 console.log('[Test 5] Evaluasi Proteksi Eksekusi gantiRoleSesi di Lingkungan dashboard.html...');

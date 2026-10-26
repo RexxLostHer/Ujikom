@@ -35,10 +35,15 @@
   <!-- APP BAR -->
   <div class="admin-appbar">
     <div class="admin-brand">
-      <div class="admin-brand-icon">⚙️</div>
+      <div class="admin-brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
       <div class="admin-brand-text">
-        <small>Panel Kontrol</small>
-        <strong>Sistem Presensi</strong>
+        <small>SMKN 1 Sumedang</small>
+        <strong>Panel Admin</strong>
       </div>
     </div>
     <div class="admin-appbar-right">
@@ -46,18 +51,29 @@
         <span class="dot"></span>
         <span id="adminNamaBadge">Administrator</span>
       </div>
-      <button class="btn-nav" onclick="bukaModalProfil()" style="background:#eff6ff;color:#2563eb;font-weight:700;">👤 Profil Admin</button>
-      <a href="dashboard-guru.html" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('walas');return false;}" class="btn-nav">👨‍🏫 Portal Walas & Guru</a>
-      <a href="dashboard.html" onclick="if(typeof pilihPresetRole==='function'){pilihPresetRole('siswa');return false;}" class="btn-nav">📊 Dashboard Siswa</a>
-      <button id="logoutBtn" class="btn-logout-admin">↩ Keluar</button>
+      <button class="btn-nav" onclick="bukaModalProfil()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Profil</span>
+      </button>
+      <button id="logoutBtn" class="btn-logout-admin">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Keluar</span>
+      </button>
     </div>
   </div>
 
   <!-- NOTIF PENDING BANNER -->
   <div class="notif-pending-bar" id="notifPerijinanBanner">
-    🔔 Ada perijinan yang belum direspon!
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </svg>
+    <span>Ada perijinan yang belum direspon!</span>
     <span class="notif-count" id="jumlahPending">0</span>
-    <a onclick="switchToTab('perijinan')">Lihat sekarang →</a>
+    <a onclick="switchToTab('perijinan')">Lihat sekarang &rarr;</a>
   </div>
 
   <!-- LAYOUT SIDEBAR + KONTEN -->
@@ -65,56 +81,100 @@
 
     <!-- SIDEBAR NAVIGASI -->
     <nav class="admin-sidebar">
-      <div class="sidebar-section-label">Manajemen</div>
+      <div class="sidebar-section-label">Menu Utama</div>
       <button class="sidebar-btn active" data-tab="perijinan" onclick="switchToTab('perijinan')">
-        <span class="icon">📋</span>
-        <span class="label">Perijinan Masuk</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/>
+          </svg>
+        </span>
+        <span class="label">Perizinan</span>
         <span class="badge" id="badgePerijinan" style="display:none">0</span>
       </button>
       <button class="sidebar-btn" data-tab="kendala" onclick="switchToTab('kendala')">
-        <span class="icon">⚠️</span>
-        <span class="label">ACC Kendala Guru</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </span>
+        <span class="label">Kendala Guru</span>
         <span class="badge" id="badgeKendalaGuru" style="display:none;background:#ef4444;">0</span>
       </button>
       <button class="sidebar-btn" data-tab="monitoring3kelas" onclick="switchToTab('monitoring3kelas')">
-        <span class="icon">🏫</span>
-        <span class="label">Pengawasan 3 Kelas</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+        </span>
+        <span class="label">Pantau Kelas</span>
       </button>
       <button class="sidebar-btn" data-tab="presensi" onclick="switchToTab('presensi')">
-        <span class="icon">✏️</span>
-        <span class="label">Edit Presensi</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </span>
+        <span class="label">Presensi Manual</span>
       </button>
       <button class="sidebar-btn" data-tab="rekap" onclick="switchToTab('rekap')">
-        <span class="icon">📑</span>
-        <span class="label">Rekap & Laporan</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+        </span>
+        <span class="label">Rekap Presensi</span>
       </button>
       <button class="sidebar-btn" data-tab="siswa" onclick="switchToTab('siswa')">
-        <span class="icon">👤</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </span>
         <span class="label">Data Siswa</span>
       </button>
       <button class="sidebar-btn" data-tab="kartu" onclick="switchToTab('kartu')">
-        <span class="icon">🪪</span>
-        <span class="label">Kartu NFC</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </span>
+        <span class="label">Kartu RFID</span>
       </button>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Konfigurasi</div>
+      <div class="sidebar-section-label">Pengaturan</div>
       <button class="sidebar-btn" data-tab="jadwal" onclick="switchToTab('jadwal')">
-        <span class="icon">🕐</span>
-        <span class="label">Jadwal Pulang</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </span>
+        <span class="label">Jam Pulang</span>
       </button>
       <button class="sidebar-btn" data-tab="pelajaran" onclick="switchToTab('pelajaran')">
-        <span class="icon">📚</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+        </span>
         <span class="label">Jadwal Pelajaran</span>
       </button>
       <button class="sidebar-btn" data-tab="guru" onclick="switchToTab('guru')">
-        <span class="icon">👥</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </span>
         <span class="label">Kelola Akun</span>
       </button>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Tools & Pengujian</div>
+      <div class="sidebar-section-label">Simulasi</div>
       <button class="sidebar-btn" data-tab="simulasi" onclick="switchToTab('simulasi')">
-        <span class="icon">🧪</span>
-        <span class="label">Simulasi Absen & Auto-Alpa</span>
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </span>
+        <span class="label">Simulasi Presensi</span>
       </button>
     </nav>
 
@@ -124,14 +184,14 @@
       <!-- ===== PERIJINAN MASUK ===== -->
       <div id="tab-perijinan" class="tab-panel active">
         <div class="content-header">
-          <h2>Perijinan Masuk</h2>
-          <p>Tinjau, setujui, atau tolak pengajuan ijin dari siswa / orang tua. Persetujuan otomatis mengubah status presensi di kelas.</p>
+          <h2>Perizinan Masuk</h2>
+          <p>Daftar permohonan izin dan sakit yang diajukan siswa dan guru.</p>
         </div>
         <div class="filter-bar">
-          <button class="filter-btn active" data-filter="pending" onclick="setFilterPerijinan(this)">⏳ Menunggu</button>
-          <button class="filter-btn" data-filter="disetujui" onclick="setFilterPerijinan(this)">✅ Disetujui</button>
-          <button class="filter-btn" data-filter="ditolak" onclick="setFilterPerijinan(this)">❌ Ditolak</button>
-          <button class="filter-btn" data-filter="semua" onclick="setFilterPerijinan(this)">📋 Semua</button>
+          <button class="filter-btn active" data-filter="pending" onclick="setFilterPerijinan(this)">Menunggu</button>
+          <button class="filter-btn" data-filter="disetujui" onclick="setFilterPerijinan(this)">Disetujui</button>
+          <button class="filter-btn" data-filter="ditolak" onclick="setFilterPerijinan(this)">Ditolak</button>
+          <button class="filter-btn" data-filter="semua" onclick="setFilterPerijinan(this)">Semua</button>
         </div>
         <div id="daftarPerijinanAdmin"></div>
       </div>
@@ -139,8 +199,8 @@
       <!-- ===== EDIT PRESENSI MANUAL ===== -->
       <div id="tab-presensi" class="tab-panel">
         <div class="content-header">
-          <h2>Edit Presensi Manual</h2>
-          <p>Ubah status kehadiran siswa secara langsung (misal siswa lupa bawa kartu atau ada kendala di alat reader).</p>
+          <h2>Presensi Manual</h2>
+          <p>Koreksi kehadiran siswa secara langsung jika kartu tertinggal atau ada kendala.</p>
         </div>
         <div class="admin-form-card">
           <div class="form-row">
@@ -172,16 +232,16 @@
             <div class="form-group">
               <label>Status Baru</label>
               <select id="presensiStatus">
-                <option value="hadir">✓ Hadir</option>
-                <option value="sakit">🤒 Sakit</option>
-                <option value="dispensasi">📄 Dispensasi</option>
-                <option value="ijin_kegiatan">🏆 Ijin Kegiatan</option>
-                <option value="alpha">✗ Alpha (Tanpa Keterangan)</option>
+                <option value="hadir">Hadir</option>
+                <option value="sakit">Sakit</option>
+                <option value="dispensasi">Dispensasi</option>
+                <option value="ijin_kegiatan">Izin Kegiatan</option>
+                <option value="alpha">Alpha (Tanpa Keterangan)</option>
               </select>
             </div>
           </div>
           <div class="form-actions">
-            <button class="btn-primary" onclick="simpanPresensiManual()">💾 Simpan Perubahan</button>
+            <button class="btn-primary" onclick="simpanPresensiManual()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Perubahan</span></button>
           </div>
           <div class="msg" id="presensiManualMsg"></div>
         </div>
@@ -212,9 +272,9 @@
             </div>
           </div>
           <div class="form-actions" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn-primary" onclick="muatRekapPresensi()">🔍 Tampilkan Rekap</button>
-            <button class="btn-secondary" onclick="cetakLaporanPresensi()">🖨️ Cetak / Print PDF</button>
-            <button class="btn-secondary" onclick="exportCsvPresensi()">📥 Export CSV (Excel)</button>
+            <button class="btn-primary" onclick="muatRekapPresensi()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Tampilkan Rekap</span></button>
+            <button class="btn-secondary" onclick="cetakLaporanPresensi()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg><span>Cetak PDF</span></button>
+            <button class="btn-secondary" onclick="exportCsvPresensi()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export CSV</span></button>
           </div>
         </div>
 
@@ -280,7 +340,7 @@
               </tr>
             </thead>
             <tbody id="rekapTableBody">
-              <tr><td colspan="8" class="empty-state"><div class="empty-icon">📊</div><p>Pilih kelas dan klik "Tampilkan Rekap" untuk memuat data.</p></td></tr>
+              <tr><td colspan="8" class="empty-state"><div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><p>Pilih kelas dan klik "Tampilkan Rekap" untuk memuat data.</p></td></tr>
             </tbody>
           </table>
         </div>
@@ -308,10 +368,10 @@
       <div id="tab-siswa" class="tab-panel">
         <div class="content-header">
           <h2>Data Siswa</h2>
-          <p>Tambah, ubah, atau hapus data siswa. NISN dipakai sebagai key utama di database.</p>
+          <p>Daftar dan manajemen data siswa sekolah.</p>
         </div>
         <div class="admin-form-card">
-          <h3 id="siswaFormTitle">Tambah Siswa Baru</h3>
+          <h3 id="siswaFormTitle">Tambah Siswa</h3>
           <input type="hidden" id="siswaEditingKey">
           <div class="form-row">
             <div class="form-group">
@@ -348,11 +408,11 @@
       <!-- ===== KARTU NFC ===== -->
       <div id="tab-kartu" class="tab-panel">
         <div class="content-header">
-          <h2>Mapping Kartu NFC / RFID</h2>
-          <p>Hubungkan UID kartu fisik RFID ke NISN siswa yang bersangkutan.</p>
+          <h2>Kartu RFID / NFC</h2>
+          <p>Penautan nomor kartu fisik RFID ke data siswa.</p>
         </div>
         <div class="admin-form-card">
-          <h3>Tambah Mapping Kartu</h3>
+          <h3>Tautkan Kartu</h3>
           <div class="form-row">
             <div class="form-group">
               <label>UID Kartu RFID</label>
@@ -363,12 +423,8 @@
               <select id="kartuNisn"></select>
             </div>
           </div>
-          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="pilihSiswaQuick('0098263610')">⚡ Pilih M. Ihsan Athallah (0098263610)</button>
-            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="pilihSiswaQuick('0082104129')">⚡ Pilih Rizky Ramadani (0082104129)</button>
-          </div>
           <div class="form-actions">
-            <button class="btn-primary" onclick="submitKartu()">🪪 Simpan Mapping</button>
+            <button class="btn-primary" onclick="submitKartu()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Mapping</span></button>
           </div>
           <div class="msg" id="kartuMsg"></div>
         </div>
@@ -381,8 +437,8 @@
       <!-- ===== JADWAL PULANG ===== -->
       <div id="tab-jadwal" class="tab-panel">
         <div class="content-header">
-          <h2>Jadwal Pulang Per Kelas</h2>
-          <p>Tentukan jam pulang resmi tiap kelas. Format HH:MM (contoh: 15:15).</p>
+          <h2>Jam Pulang Kelas</h2>
+          <p>Atur jam kepulangan resmi untuk setiap kelas.</p>
         </div>
         <div class="admin-form-card">
           <div class="form-row">
@@ -396,7 +452,7 @@
             </div>
           </div>
           <div class="form-actions">
-            <button class="btn-primary" onclick="submitJadwal()">💾 Simpan Jadwal</button>
+            <button class="btn-primary" onclick="submitJadwal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Jadwal</span></button>
           </div>
           <div class="msg" id="jadwalMsg"></div>
         </div>
@@ -409,8 +465,8 @@
       <!-- ===== JADWAL PELAJARAN ===== -->
       <div id="tab-pelajaran" class="tab-panel">
         <div class="content-header">
-          <h2>Jadwal Pelajaran</h2>
-          <p>Jam pelajaran dipakai sistem untuk menentukan slot presensi yang aktif saat ini.</p>
+          <h2>Jadwal Pembelajaran</h2>
+          <p>Atur jadwal mata pelajaran dan jam KBM kelas.</p>
         </div>
         <div class="admin-form-card">
           <div class="form-row">
@@ -452,7 +508,7 @@
           <div class="form-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn-primary" onclick="submitPelajaran()">+ Tambah Jam Pelajaran</button>
             <button type="button" class="btn-primary" onclick="terapkanMasterJadwalResmi()" style="background:#059669; border-color:#059669;">
-              ⚡ Terapkan Master Jadwal Resmi (Semua Kelas & 5 Hari KBM)
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Terapkan Master Jadwal Resmi</span>
             </button>
           </div>
           <div class="msg" id="pelajaranMsg"></div>
@@ -470,7 +526,7 @@
           <p>Daftarkan email guru atau staf baru, dan kelola role semua user yang pernah login ke sistem.</p>
         </div>
         <div class="admin-form-card">
-          <h3>Daftarkan Guru / Staf Baru</h3>
+          <h3>Tambah Akun Guru</h3>
           <div class="form-row">
             <div class="form-group">
               <label>Email Guru (Gmail)</label>
@@ -506,34 +562,34 @@
       <!-- ===== PANEL ACC KENDALA GURU (JAMKOS - PRD Bab 4.2 & 7.4) ===== -->
       <div id="tab-kendala" class="tab-panel">
         <div class="content-header">
-          <h2>Panel ACC Kendala Guru & Automasi Status Jamkos</h2>
-          <p>Tinjau laporan kendala mengajar dari guru pengajar. Saat Admin menekan Approve (ACC), sistem secara otomatis mengalihkan status kelas terdampak menjadi <strong>Jamkos</strong> dan memancarkan notifikasi realtime ke siswa dan wali kelas.</p>
+          <h2>Kendala Guru & Jamkos</h2>
+          <p>Persetujuan laporan kendala mengajar guru untuk mengaktifkan status jam kosong kelas.</p>
         </div>
 
         <!-- Kontrol Cepat Status Operasional 3 Kelas -->
         <div class="admin-form-card" style="margin-bottom:20px;background:#f8fafc;">
-          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:10px;">🏫 Kontrol Langsung Status 3 Kelas Pilot</h3>
+          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:10px;">Kontrol Langsung Status 3 Kelas Pilot</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;" id="boxControlStatusKelas">
             <!-- Disuntikkan via JS -->
           </div>
         </div>
 
         <div class="filter-bar">
-          <button class="filter-btn active" data-filter-kendala="pending" onclick="setFilterKendalaAdmin('pending', this)">⏳ Menunggu ACC</button>
-          <button class="filter-btn" data-filter-kendala="approved" onclick="setFilterKendalaAdmin('approved', this)">✅ Sudah di-ACC (Jamkos)</button>
+          <button class="filter-btn active" data-filter-kendala="pending" onclick="setFilterKendalaAdmin('pending', this)">Menunggu ACC</button>
+          <button class="filter-btn" data-filter-kendala="approved" onclick="setFilterKendalaAdmin('approved', this)">Sudah di-ACC (Jamkos)</button>
           <button class="filter-btn" data-filter-kendala="semua" onclick="setFilterKendalaAdmin('semua', this)">Semua Laporan</button>
         </div>
 
         <div id="daftarKendalaAdmin">
-          <div class="empty-state"><div class="empty-icon">📋</div><p>Memuat laporan kendala guru...</p></div>
+          <div class="empty-state"><div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>Memuat laporan kendala guru...</p></div>
         </div>
       </div>
 
       <!-- ===== PUSAT PENGAWASAN 3 KELAS TERPADU (PRD Bab 7.4) ===== -->
       <div id="tab-monitoring3kelas" class="tab-panel">
         <div class="content-header">
-          <h2>Pusat Pengawasan 3 Kelas Pilot</h2>
-          <p>Pemantauan terpadu komparasi kehadiran realtime antara Kelas XII RPL 1, XII RPL 2, dan XII TKJ 1.</p>
+          <h2>Pantau Kehadiran Kelas</h2>
+          <p>Pantau status kehadiran siswa secara langsung di setiap kelas.</p>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-bottom:24px;" id="cards3KelasMonitoring">
@@ -542,8 +598,8 @@
 
         <div class="admin-form-card">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-            <h3 style="font-size:15px;font-weight:800;color:#1e293b;">📡 Matriks Live Kehadiran 3 Kelas Hari Ini</h3>
-            <button class="btn-secondary" onclick="muatMonitoring3Kelas()" style="padding:6px 14px;font-size:12.5px;">🔄 Refresh Telemetri</button>
+            <h3 style="font-size:15px;font-weight:800;color:#1e293b;">Matriks Live Kehadiran 3 Kelas Hari Ini</h3>
+            <button class="btn-secondary" onclick="muatMonitoring3Kelas()" style="padding:6px 14px;font-size:12.5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Refresh Telemetri</span></button>
           </div>
           <div id="tabelRingkasan3Kelas" style="overflow-x:auto;">
             <!-- Tabel komparasi -->
@@ -554,22 +610,22 @@
       <!-- ===== SIMULASI ABSEN RFID VIRTUAL & AUTO-ALPA (PRD Bab 4.1, 5.2, 7.4) ===== -->
       <div id="tab-simulasi" class="tab-panel">
         <div class="content-header">
-          <h2>Modul Simulasi Tap Kartu RFID Virtual & Automasi Sistem</h2>
-          <p>Uji coba fungsionalitas presensi RFID dan aturan ambang batas waktu (06.30 / 08.00 WIB) tanpa menggunakan alat fisik. Menguji Kartu A (Siswa), Kartu B (Guru), dan siswa kelas lainnya.</p>
+          <h2>Simulasi Presensi</h2>
+          <p>Uji coba tap kartu virtual dan pengecekan alur presensi tanpa perangkat fisik.</p>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:18px;">
           
           <!-- Kartu 1: Form Simulasi Tap RFID -->
           <div class="admin-form-card">
-            <h3 style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Pemicu Tap Kartu RFID Virtual</h3>
+            <h3 style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:12px;">Pemicu Tap Kartu RFID Virtual</h3>
             
             <div class="form-group" style="margin-bottom:12px;">
               <label>Pilih Mode Pengujian Kartu</label>
               <select id="simulasiModeKartu" onchange="gantiModeSimulasiKartu(this.value)" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-weight:700;">
-                <option value="kartuA">🏷️ Kartu A Fisik (Siswa XII RPL 1: Ahsan Mahmud)</option>
-                <option value="kartuB">🏷️ Kartu B Fisik (Guru Pengajar: Hani Hanifah, S.Si)</option>
-                <option value="virtualSiswa">🎓 Siswa Virtual (Pilih dari 3 Kelas Pilot)</option>
+                <option value="kartuA">Kartu A Fisik (Siswa XII RPL 1: Ahsan Mahmud)</option>
+                <option value="kartuB">Kartu B Fisik (Guru Pengajar: Hani Hanifah, S.Si)</option>
+                <option value="virtualSiswa">Siswa Virtual (Pilih dari 3 Kelas Pilot)</option>
               </select>
             </div>
 
@@ -596,7 +652,7 @@
 
             <div class="form-actions" style="margin-top:16px;">
               <button class="btn-primary" onclick="submitSimulasiTapLengkap()" style="width:100%;padding:12px;background:#4f46e5;font-weight:800;">
-                ⚡ Eksekusi Tap Kartu RFID Virtual
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Eksekusi Tap Kartu RFID Virtual</span>
               </button>
             </div>
             <div class="msg" id="simulasiMsg" style="margin-top:10px;"></div>
@@ -617,7 +673,7 @@
               <input type="date" id="autoAlpaTanggalInput" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #fcd34d;font-weight:700;">
             </div>
             <button class="btn-primary" onclick="jalankanAutomasiAutoAlpa()" style="width:100%;padding:12px;background:#dc2626;font-weight:800;border:none;">
-              ⚠️ Eksekusi Automasi 08.00 WIB (Tandai Alpa)
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Eksekusi Automasi 08.00 WIB (Tandai Alpa)</span>
             </button>
             <div id="autoAlpaMsg" style="margin-top:12px;font-size:13px;font-weight:700;display:none;"></div>
           </div>
@@ -640,11 +696,11 @@
   <div class="chat-modal-box">
     <div class="chat-modal-header">
       <span id="modalChatJudul">Chat Perijinan</span>
-      <button onclick="tutupModalChat()" class="btn-secondary" style="padding:6px 14px;font-size:13px;border:none;">✕ Tutup</button>
+      <button onclick="tutupModalChat()" class="btn-secondary" style="padding:6px 14px;font-size:13px;border:none;">Tutup</button>
     </div>
     <div class="chat-messages" id="chatBubbleContainer"></div>
     <div class="chat-input-row">
-      <input type="text" id="chatInputPesan" placeholder="Tulis balasan...">
+      <input type="text" id="chatInputPesan" placeholder="Tulis balasan..." onkeydown="if(event.key==='Enter') kirimPesanChat()">
       <button class="btn-send" onclick="kirimPesanChat()">Kirim</button>
     </div>
   </div>
