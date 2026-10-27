@@ -38,6 +38,26 @@
   let activeRoomFirebaseRef2 = null;
   let activeRoomFirebaseCallback2 = null;
 
+  // Global listener reference untuk pemantauan seluruh chat room secara real-time
+  let globalChatRoomsRef = null;
+  let globalChatRoomsCallback = null;
+
+  function getActiveDb() {
+    if (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function') return global.db;
+    if (typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function') return window.db;
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') return db;
+    if (typeof window !== 'undefined' && window.firebase && typeof window.firebase.database === 'function' && window.firebase.apps && window.firebase.apps.length > 0) {
+      try { return window.firebase.database(); } catch (e) {}
+    }
+    if (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && firebase.apps && firebase.apps.length > 0) {
+      try { return firebase.database(); } catch (e) {}
+    }
+    if (typeof window !== 'undefined' && window.firebase && typeof window.firebase.database === 'function') {
+      try { return window.firebase.database(); } catch (e) {}
+    }
+    return null;
+  }
+
   // Tab Unique ID untuk mencegah BroadcastChannel menerima pesannya sendiri (anti double bubble)
   const CURRENT_TAB_ID = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7);
   let waBroadcastChannel = null;
@@ -471,34 +491,13 @@
     }
     try {
       localStorage.setItem(localKey, JSON.stringify(history));
-      // Update thread timestamp & metadata lawan bicara (bukan nama diri sendiri!)
-      const threadKey = 'wa_threads';
-      let threads = JSON.parse(localStorage.getItem(threadKey) || '{}');
-      let contactName = (threads[roomId] && threads[roomId].contactName) ? threads[roomId].contactName : null;
-      if (!contactName || contactName === user.nama) {
-        if (roomId.startsWith('group_')) {
-          const groups = getDaftarGrupResmi();
-          contactName = (groups[roomId] && groups[roomId].nama) || 'Grup Komunitas';
-        } else if (roomId.startsWith('direct_')) {
-          const parts = roomId.replace(/^direct_/, '').split('_');
-          const otherId = parts.find(p => p !== String(user.id)) || parts[0];
-          const allC = getSemuaKontak();
-          const targetC = allC.find(c => String(c.id) === String(otherId) || String(c.nomorKontak) === String(otherId));
-          contactName = targetC ? targetC.nama : ('Kontak ' + otherId);
-        }
-      }
-      threads[roomId] = {
-        roomId: roomId,
-        contactName: contactName || 'Kontak Presensia',
-        lastMessage: type === 'audio' ? '🎵 Pesan Suara (Voice Note)' : cleanText,
-        lastTime: Date.now(),
-        senderName: user.nama
-      };
-      localStorage.setItem(threadKey, JSON.stringify(threads));
+      updateThreadMetadata(roomId, msgPayload);
+      try { localStorage.setItem('wa_last_read_' + roomId, String(Date.now())); } catch (eR) {}
+      perbaruiBadgeCounter();
     } catch (e) {}
 
     // 2. Render Seketika di UI jika sedang di room ini (Optimistic UI)
-    if (waActiveRoomId === roomId) {
+    if (waActiveRoomId && String(waActiveRoomId).trim() === String(roomId).trim()) {
       appendBubblePesan(msgPayload);
       scrollChatKeBawah();
     }
@@ -516,13 +515,7 @@
     } catch (eBc) {}
 
     // 4. Simpan ke Firebase RTDB jika online (Dual write: chat_rooms & chat_perijinan menjamin tembus cloud)
-    const activeDb = (typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
-      ? window.db
-      : ((typeof window !== 'undefined' && window.firebase && typeof window.firebase.database === 'function')
-        ? window.firebase.database()
-        : ((typeof db !== 'undefined' && db && typeof db.ref === 'function')
-          ? db
-          : ((typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function') ? global.db : null)));
+    const activeDb = getActiveDb();
 
     if (activeDb) {
       try {
@@ -537,6 +530,182 @@
       } catch (eDb) {
         console.warn('[Firebase RTDB] Error saat mengirim pesan:', eDb);
       }
+    }
+  }
+
+  // 6b. Helper Update Thread Metadata & Unread Badge Counter
+  function updateThreadMetadata(roomId, msgPayload) {
+    if (!roomId || !msgPayload) return;
+    const currentUser = getActiveUserChat();
+    const threadKey = 'wa_threads';
+    let threads = {};
+    try { threads = JSON.parse(localStorage.getItem(threadKey) || '{}'); } catch (e) {}
+    if (typeof threads !== 'object' || threads === null) threads = {};
+
+    let contactName = (threads[roomId] && threads[roomId].contactName) ? threads[roomId].contactName : null;
+    const isGroup = roomId.startsWith('group_');
+    if (!contactName || contactName === currentUser.nama) {
+      if (isGroup) {
+        const groups = getDaftarGrupResmi();
+        contactName = (groups[roomId] && groups[roomId].nama) || 'Grup Komunitas';
+      } else if (roomId.startsWith('direct_')) {
+        const parts = roomId.replace(/^direct_/, '').split('_');
+        const otherId = parts.find(p => p !== String(currentUser.id)) || parts[0];
+        const allC = getSemuaKontak();
+        const targetC = allC.find(c => String(c.id) === String(otherId) || String(c.nomorKontak) === String(otherId));
+        contactName = targetC ? targetC.nama : ('Kontak ' + otherId);
+      } else {
+        contactName = (threads[roomId] && threads[roomId].contactName) || 'Kontak Presensia';
+      }
+    }
+
+    const cleanText = msgPayload.pesan || '';
+    const lastMsgText = msgPayload.tipe === 'audio' ? '🎵 Pesan Suara (Voice Note)' : cleanText;
+    const lastTime = typeof msgPayload.waktu === 'number' ? msgPayload.waktu : (Date.parse(msgPayload.waktu) || Date.now());
+
+    threads[roomId] = {
+      roomId: roomId,
+      contactName: contactName || 'Kontak Presensia',
+      lastMessage: lastMsgText || 'Mulai percakapan',
+      lastTime: lastTime,
+      senderName: msgPayload.nama || '',
+      senderId: msgPayload.pengirimId || '',
+      roomType: isGroup ? 'group' : 'direct'
+    };
+
+    try {
+      localStorage.setItem(threadKey, JSON.stringify(threads));
+    } catch (e) {}
+  }
+
+  function perbaruiBadgeCounter() {
+    if (typeof document === 'undefined') return;
+    const badge = document.getElementById('waBadgeCounter');
+    if (!badge) return;
+    const currentUser = getActiveUserChat();
+    if (!currentUser || !currentUser.id) return;
+
+    let totalUnread = 0;
+    const threadKey = 'wa_threads';
+    let threads = {};
+    try { threads = JSON.parse(localStorage.getItem(threadKey) || '{}'); } catch (e) {}
+
+    Object.keys(threads).forEach(rId => {
+      // Jika room ini sedang aktif dibuka di layar, tidak ada unread
+      if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) return;
+
+      const localKey = 'wa_msgs_' + rId;
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch (e) {}
+      if (!Array.isArray(msgs) || msgs.length === 0) return;
+
+      const lastRead = parseInt(localStorage.getItem('wa_last_read_' + rId) || '0', 10);
+      const unreadMsgs = msgs.filter(m => m && String(m.pengirimId) !== String(currentUser.id) && (m.waktu || 0) > lastRead);
+      totalUnread += unreadMsgs.length;
+    });
+
+    if (totalUnread > 0) {
+      badge.textContent = totalUnread > 99 ? '99+' : String(totalUnread);
+      badge.style.display = 'flex';
+    } else {
+      badge.textContent = '0';
+      badge.style.display = 'none';
+    }
+  }
+
+  // 6c. Pemantau Global Latar Belakang Seluruh Chat Room Pengguna Aktif
+  function pasangGlobalChatRoomsListener(force = false) {
+    const activeDb = getActiveDb();
+    if (!activeDb) {
+      setTimeout(() => pasangGlobalChatRoomsListener(force), 600);
+      return;
+    }
+    if (globalChatRoomsRef && !force) return;
+    if (globalChatRoomsRef && globalChatRoomsCallback && force) {
+      try { globalChatRoomsRef.off('value', globalChatRoomsCallback); } catch (e) {}
+      globalChatRoomsRef = null;
+      globalChatRoomsCallback = null;
+    }
+
+    try {
+      globalChatRoomsRef = activeDb.ref('chat_rooms');
+      globalChatRoomsCallback = globalChatRoomsRef.on('value', snap => {
+        const roomsData = snap ? (typeof snap.val === 'function' ? snap.val() : snap) : {};
+        if (!roomsData || typeof roomsData !== 'object') return;
+
+        const currentUser = getActiveUserChat();
+        if (!currentUser || !currentUser.id) return;
+
+        const myId = String(currentUser.id).trim();
+        const myNomor = String(currentUser.nomorKontak || myId).trim();
+        const groups = getDaftarGrupResmi();
+
+        let adaPerubahan = false;
+
+        Object.keys(roomsData).forEach(rId => {
+          const rObj = roomsData[rId];
+          if (!rObj || typeof rObj !== 'object') return;
+          const msgsObj = rObj.messages || {};
+
+          let isRelasiUser = false;
+          if (rId.startsWith('direct_')) {
+            const parts = rId.replace(/^direct_/, '').split('_');
+            if (parts.includes(myId) || parts.includes(myNomor)) {
+              isRelasiUser = true;
+            }
+          } else if (rId.startsWith('group_')) {
+            const g = groups[rId];
+            if (g && cekAksesGrup(currentUser, g)) {
+              isRelasiUser = true;
+            }
+          }
+
+          if (!isRelasiUser) return;
+
+          const cloudMsgs = [];
+          Object.keys(msgsObj).forEach(k => {
+            const m = msgsObj[k];
+            if (m && typeof m === 'object') {
+              if (!m.id) m.id = k;
+              cloudMsgs.push(m);
+            }
+          });
+
+          if (cloudMsgs.length === 0) return;
+
+          const lKey = 'wa_msgs_' + rId;
+          let currentLocal = [];
+          try { currentLocal = JSON.parse(localStorage.getItem(lKey) || '[]'); } catch (e) {}
+          if (!Array.isArray(currentLocal)) currentLocal = [];
+
+          const map = {};
+          currentLocal.forEach(m => { if (m && m.id) map[m.id] = m; });
+          cloudMsgs.forEach(m => { if (m && m.id) map[m.id] = m; });
+          const merged = Object.values(map).sort((a, b) => (a.waktu || 0) - (b.waktu || 0));
+          try { localStorage.setItem(lKey, JSON.stringify(merged)); } catch (e) {}
+
+          const lastM = merged[merged.length - 1];
+          if (lastM) updateThreadMetadata(rId, lastM);
+          adaPerubahan = true;
+
+          // Jika user sedang aktif membuka room ini, langsung render seketika!
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            renderDaftarPesan(merged);
+            try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (e) {}
+          }
+        });
+
+        if (adaPerubahan) {
+          perbaruiBadgeCounter();
+          if (waActiveTab === 'chats' && !waActiveRoomId) {
+            renderTabKontenWa();
+          }
+        }
+      }, err => {
+        console.warn('[Firebase RTDB] Global chat_rooms listener ditolak aturan keamanan:', err);
+      });
+    } catch (eGlobal) {
+      console.warn('[Firebase RTDB] Gagal memasang global listener:', eGlobal);
     }
   }
 
@@ -561,13 +730,7 @@
       activeRoomFirebaseCallback2 = null;
     }
 
-    const activeDb = (typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function')
-      ? window.db
-      : ((typeof window !== 'undefined' && window.firebase && typeof window.firebase.database === 'function')
-        ? window.firebase.database()
-        : ((typeof db !== 'undefined' && db && typeof db.ref === 'function')
-          ? db
-          : ((typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function') ? global.db : null)));
+    const activeDb = getActiveDb();
 
     if (activeDb) {
       // 1. Self-healing sync: dorong pesan lokal yang ada ke cloud agar terbaca lawan bicara
@@ -583,7 +746,16 @@
       // 2. Handler penggabungan pesan cloud ke lokal & tampilan
       const handleSnapshot = snap => {
         const val = snap.val() || {};
-        const cloudMsgs = Object.values(val);
+        const cloudMsgs = [];
+        if (val && typeof val === 'object') {
+          Object.keys(val).forEach(k => {
+            const item = val[k];
+            if (item && typeof item === 'object') {
+              if (!item.id) item.id = k;
+              cloudMsgs.push(item);
+            }
+          });
+        }
         if (cloudMsgs.length > 0) {
           let currentLocal = [];
           try { currentLocal = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch (e) {}
@@ -594,21 +766,33 @@
           cloudMsgs.forEach(m => { if (m && m.id) map[m.id] = m; });
           const merged = Object.values(map).sort((a, b) => (a.waktu || 0) - (b.waktu || 0));
           try { localStorage.setItem(localKey, JSON.stringify(merged)); } catch (e) {}
-          if (waActiveRoomId === roomId) {
+
+          const lastM = merged[merged.length - 1];
+          if (lastM) updateThreadMetadata(roomId, lastM);
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(roomId).trim()) {
             renderDaftarPesan(merged);
+            try { localStorage.setItem('wa_last_read_' + roomId, String(Date.now())); } catch (e) {}
+            perbaruiBadgeCounter();
+          } else {
+            perbaruiBadgeCounter();
+            if (waActiveTab === 'chats' && !waActiveRoomId) {
+              renderTabKontenWa();
+            }
           }
         }
       };
 
       try {
-        activeRoomFirebaseRef = activeDb.ref('chat_rooms/' + roomId + '/messages').limitToLast(60);
+        // Plain reference tanpa .limitToLast() yang memicu HTTP 400 Bad Request jika belum diindeks
+        activeRoomFirebaseRef = activeDb.ref('chat_rooms/' + roomId + '/messages');
         activeRoomFirebaseCallback = activeRoomFirebaseRef.on('value', handleSnapshot, err => {
           console.warn('[Firebase RTDB] Listener chat_rooms ditolak aturan keamanan (Permission Denied):', err);
         });
       } catch (eSnap1) {}
 
       try {
-        activeRoomFirebaseRef2 = activeDb.ref('chat_perijinan/' + roomId + '/messages').limitToLast(60);
+        activeRoomFirebaseRef2 = activeDb.ref('chat_perijinan/' + roomId + '/messages');
         activeRoomFirebaseCallback2 = activeRoomFirebaseRef2.on('value', handleSnapshot, err => {
           console.warn('[Firebase RTDB] Listener chat_perijinan ditolak aturan keamanan (Permission Denied):', err);
         });
@@ -697,7 +881,8 @@
     }
 
     const currentUser = getActiveUserChat();
-    const isMe = String(msg.pengirimId) === String(currentUser.id);
+    const isMe = String(msg.pengirimId).trim() === String(currentUser.id).trim() ||
+                 (msg.nomorKontak && currentUser.nomorKontak && String(msg.nomorKontak).trim() === String(currentUser.nomorKontak).trim());
 
     const bubble = document.createElement('div');
     bubble.id = bubbleId;
@@ -814,7 +999,9 @@
         threads[roomId].roomType = roomType;
       }
       localStorage.setItem(threadKey, JSON.stringify(threads));
+      localStorage.setItem('wa_last_read_' + roomId, String(Date.now()));
     } catch (e) {}
+    perbaruiBadgeCounter();
 
     const winList = document.getElementById('waListPanel');
     const winChat = document.getElementById('waChatView');
@@ -845,6 +1032,7 @@
     if (winChat) winChat.style.display = 'none';
     if (winList) winList.style.display = 'flex';
     renderTabKontenWa();
+    perbaruiBadgeCounter();
   }
 
   // 11. Render Konten Tab (Chats, Groups, Contacts)
@@ -1379,13 +1567,22 @@
     btnFloat.onclick = () => {
       const isVisible = hubWin.style.display === 'flex';
       hubWin.style.display = isVisible ? 'none' : 'flex';
-      if (!isVisible && !waActiveRoomId) {
-        renderTabKontenWa();
+      if (!isVisible) {
+        if (!waActiveRoomId) {
+          renderTabKontenWa();
+        } else {
+          try { localStorage.setItem('wa_last_read_' + waActiveRoomId, String(Date.now())); } catch (e) {}
+        }
+      } else {
+        waActiveRoomId = null;
       }
+      perbaruiBadgeCounter();
     };
 
     document.getElementById('waBtnMinimize').onclick = () => {
       hubWin.style.display = 'none';
+      waActiveRoomId = null;
+      perbaruiBadgeCounter();
     };
 
     document.getElementById('waBtnBackToList').onclick = kembaliKeDaftarWa;
@@ -1456,11 +1653,17 @@
             }
           } catch (errLocal) {}
 
-          if (waActiveRoomId === rId) {
+          updateThreadMetadata(rId, m);
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
             appendBubblePesan(m);
             scrollChatKeBawah();
-          } else if (waActiveTab === 'chats') {
-            renderTabKontenWa();
+            try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (eR) {}
+          } else {
+            perbaruiBadgeCounter();
+            if (waActiveTab === 'chats' && !waActiveRoomId) {
+              renderTabKontenWa();
+            }
           }
         }
       };
@@ -1470,20 +1673,28 @@
       window.addEventListener('storage', e => {
         if (e && e.key && e.key.startsWith('wa_msgs_')) {
           const rId = e.key.replace('wa_msgs_', '');
-          if (waActiveRoomId === rId) {
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
             try {
               const msgs = JSON.parse(e.newValue || '[]');
               if (Array.isArray(msgs)) {
                 msgs.forEach(m => appendBubblePesan(m));
                 scrollChatKeBawah();
+                try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (eR) {}
               }
             } catch (errParse) {}
-          } else if (waActiveTab === 'chats') {
-            renderTabKontenWa();
+          } else {
+            perbaruiBadgeCounter();
+            if (waActiveTab === 'chats' && !waActiveRoomId) {
+              renderTabKontenWa();
+            }
           }
         }
       });
     } catch (eStorage) {}
+
+    // Inisialisasi Badge Counter & Listener Real-Time Global Latar Belakang
+    perbaruiBadgeCounter();
+    pasangGlobalChatRoomsListener();
   }
 
   // 16. Window Bridge Functions
@@ -1514,6 +1725,7 @@
   window.tambahAnggotaGrupWa = function () {
     if (waActiveGroupDetailId) tambahAnggotaGrup(waActiveGroupDetailId);
   };
+  window.perbaruiBadgeCounter = perbaruiBadgeCounter;
 
   // Otomatis Pasang saat DOM Siap
   if (typeof document !== 'undefined') {
@@ -1534,5 +1746,10 @@
     global.appendBubblePesan = appendBubblePesan;
     global.getDirectRoomId = getDirectRoomId;
     global.renderTabKontenWa = renderTabKontenWa;
+    global.perbaruiBadgeCounter = perbaruiBadgeCounter;
+    global.updateThreadMetadata = updateThreadMetadata;
+    global.pasangGlobalChatRoomsListener = pasangGlobalChatRoomsListener;
+    global.muatPesanRoom = muatPesanRoom;
+    global.getActiveDb = getActiveDb;
   }
 })();

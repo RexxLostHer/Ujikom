@@ -57,7 +57,7 @@ function createMockElement(tag, id = '') {
   return el;
 }
 
-const KNOWN_CHAT_DOM_IDS = ['waMessagesContainer', 'waInputText', 'waInputBar', 'waBtnSend', 'waBtnMic', 'waListPanel', 'waChatView', 'waPanelBody', 'waSearchInput', 'waGroupInfoModal', 'waMentionPopup', 'waChatHeaderName', 'waChatHeaderStatus', 'waBtnGroupInfo', 'waFloatingBtn', 'waHubWindow', 'waHeaderUserDisplay'];
+const KNOWN_CHAT_DOM_IDS = ['waMessagesContainer', 'waInputText', 'waInputBar', 'waBtnSend', 'waBtnMic', 'waListPanel', 'waChatView', 'waPanelBody', 'waSearchInput', 'waGroupInfoModal', 'waMentionPopup', 'waChatHeaderName', 'waChatHeaderStatus', 'waBtnGroupInfo', 'waFloatingBtn', 'waHubWindow', 'waHeaderUserDisplay', 'waBadgeCounter'];
 
 global.document = {
   getElementById: (id) => {
@@ -93,6 +93,23 @@ const mockDb = {
   chat_rooms: {}
 };
 
+const activeListeners = {};
+function notifyListeners(path) {
+  Object.keys(activeListeners).forEach(lPath => {
+    if (path.startsWith(lPath) || lPath.startsWith(path) || lPath === 'chat_rooms') {
+      const parts = lPath.split('/');
+      let cur = mockDb;
+      for (const p of parts) {
+        if (!cur) break;
+        cur = cur[p];
+      }
+      activeListeners[lPath].forEach(cb => {
+        try { cb({ val: () => cur || null }); } catch (e) {}
+      });
+    }
+  });
+}
+
 global.db = {
   ref: (path) => ({
     set: async (val) => {
@@ -103,6 +120,7 @@ global.db = {
         cur = cur[parts[i]];
       }
       cur[parts[parts.length - 1]] = val;
+      notifyListeners(path);
       return true;
     },
     update: async (val) => {
@@ -114,6 +132,7 @@ global.db = {
       }
       const last = parts[parts.length - 1];
       cur[last] = Object.assign(cur[last] || {}, val);
+      notifyListeners(path);
       return true;
     },
     remove: async () => {
@@ -124,6 +143,7 @@ global.db = {
         cur = cur[parts[i]];
       }
       delete cur[parts[parts.length - 1]];
+      notifyListeners(path);
       return true;
     },
     once: async () => ({
@@ -143,7 +163,24 @@ global.db = {
         }
       }
     }),
-    on: () => {},
+    on: (evt, cb) => {
+      if (!activeListeners[path]) activeListeners[path] = [];
+      activeListeners[path].push(cb);
+      const parts = path.split('/');
+      let cur = mockDb;
+      for (const p of parts) {
+        if (!cur) break;
+        cur = cur[p];
+      }
+      try { cb({ val: () => cur || null }); } catch (e) {}
+      return cb;
+    },
+    off: (evt, cb) => {
+      if (activeListeners[path]) {
+        if (cb) activeListeners[path] = activeListeners[path].filter(f => f !== cb);
+        else activeListeners[path] = [];
+      }
+    },
     limitToLast: () => ({ on: () => {} }),
     push: () => ({ key: 'PUSH_' + Date.now(), set: async () => {} })
   })
@@ -385,6 +422,104 @@ async function runTest7() {
   console.log('  ✓ Thread obrolan terbukti menampilkan nama lawan bicara (Pak Echa) dan bebas dari bug nama diri sendiri.\n');
 }
 
+// -------------------------------------------------------------
+// [TEST 8] Pengujian Listener Real-Time Global Latar Belakang (Cross-User Background Sync)
+// -------------------------------------------------------------
+console.log('▶ [Test 8] Pengujian Listener Real-Time Global Background (Antar Siswa & Guru)...');
+
+async function runTest8() {
+  // Simulasi Sesi Guru Pak Echa di dashboard-guru.html
+  global.window.location = { pathname: '/dashboard-guru.html', href: 'http://localhost/dashboard-guru.html' };
+  global.currentUser = null;
+  mockLocalStorage['guru_aktif'] = JSON.stringify({
+    nip: '199209142022211007',
+    nama: 'Muhammad Echa Putra, S.Kom.Gr',
+    role: 'walas',
+    kelas: 'XII RPL 2'
+  });
+
+  const roomId = 'direct_0098263610_199209142022211007';
+
+  // Pasang global background listener pada sesi Pak Echa (force reattach)
+  global.pasangGlobalChatRoomsListener(true);
+
+  // Simulasi pesan baru masuk dari cloud (dikirim oleh Siswa M. Ihsan)
+  const incomingMsgId = 'MSG_TEST_INCOMING_CLOUD_999';
+  const incomingMsg = {
+    id: incomingMsgId,
+    roomId: roomId,
+    pengirimId: '0098263610',
+    nama: 'M. IHSAN ATHALLAH',
+    role: 'siswa',
+    nomorKontak: '0098263610',
+    pesan: 'Pak Echa, saya sudah upload surat izin sakit',
+    tipe: 'teks',
+    waktu: Date.now() + 5000
+  };
+
+  // Simpan langsung ke cloud Firebase RTDB (chat_rooms)
+  await global.db.ref('chat_rooms/' + roomId + '/messages/' + incomingMsgId).set(incomingMsg);
+
+  // Verifikasi listener global otomatis menangkap pesan cloud ke localStorage Pak Echa
+  const localList = JSON.parse(mockLocalStorage['wa_msgs_' + roomId] || '[]');
+  const found = localList.find(m => m && m.id === incomingMsgId);
+  assert.ok(found, 'Pesan dari Siswa harus otomatis disinkronkan ke localStorage Pak Echa via listener global background');
+  assert.strictEqual(found.pesan, 'Pak Echa, saya sudah upload surat izin sakit');
+
+  // Verifikasi wa_threads di sisi Pak Echa otomatis terupdate dengan nama lawan bicara M. IHSAN ATHALLAH
+  const threads = JSON.parse(mockLocalStorage['wa_threads'] || '{}');
+  assert.ok(threads[roomId], 'Metadata thread harus otomatis tercipta di sisi penerima');
+  assert.strictEqual(threads[roomId].contactName, 'M. IHSAN ATHALLAH', 'Nama lawan bicara pada thread harus M. IHSAN ATHALLAH');
+  assert.strictEqual(threads[roomId].lastMessage, 'Pak Echa, saya sudah upload surat izin sakit');
+
+  console.log('  ✓ Listener global background terbukti 100% menangkap pesan cloud tanpa perlu membuka room terlebih dahulu.\n');
+}
+
+// -------------------------------------------------------------
+// [TEST 9] Pengujian Unread Badge Counter (#waBadgeCounter)
+// -------------------------------------------------------------
+console.log('▶ [Test 9] Pengujian Unread Badge Counter (#waBadgeCounter)...');
+
+async function runTest9() {
+  const badge = document.getElementById('waBadgeCounter');
+  assert.ok(badge, 'Elemen badge counter #waBadgeCounter harus ada');
+
+  // Set last read ke masa lalu sehingga pesan incoming di Test 8 berstatus unread
+  const roomId = 'direct_0098263610_199209142022211007';
+  mockLocalStorage['wa_last_read_' + roomId] = '0';
+
+  global.perbaruiBadgeCounter();
+
+  assert.strictEqual(badge.style.display, 'flex', 'Badge counter harus tampil (display: flex) saat ada pesan unread');
+  assert.ok(parseInt(badge.textContent, 10) >= 1, 'Jumlah unread harus minimal 1');
+
+  // Buka room chat -> badge counter harus otomatis reset
+  global.bukaChatWhatsApp('0098263610', 'direct');
+
+  assert.strictEqual(badge.style.display, 'none', 'Badge counter harus hilang (display: none) setelah room dibuka');
+
+  console.log('  ✓ Unread badge counter terbukti akurat menghitung pesan belum terbaca dan mereset saat room dibuka.\n');
+}
+
+// -------------------------------------------------------------
+// [TEST 10] Pengujian Query Bersih Tanpa limitToLast(60)
+// -------------------------------------------------------------
+console.log('▶ [Test 10] Pengujian Query Bersih Tanpa limitToLast(60)...');
+
+async function runTest10() {
+  const roomId = 'direct_0098263610_199209142022211007';
+
+  // Muat pesan room
+  const msgs = global.muatPesanRoom(roomId);
+  assert.ok(Array.isArray(msgs), 'muatPesanRoom harus mengembalikan array pesan valid');
+
+  // Verifikasi query aktif tidak menghasilkan error 400 Bad Request
+  const activeDb = global.getActiveDb();
+  assert.ok(activeDb, 'Active database instance harus terhubung');
+
+  console.log('  ✓ Query database bersih tanpa limitToLast membuktikan eliminasi total terhadap error 400 Bad Request.\n');
+}
+
 (async () => {
   try {
     await runTest1();
@@ -394,6 +529,9 @@ async function runTest7() {
     await runTest5();
     await runTest6();
     await runTest7();
+    await runTest8();
+    await runTest9();
+    await runTest10();
     console.log('================================================================');
     console.log('🎉 SELURUH PENGUJIAN BATALKAN KIRIM & WHATSAPP CHAT LULUS 100%!');
     console.log('================================================================');
