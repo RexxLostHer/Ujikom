@@ -1,101 +1,5 @@
 {
   "0098263610": {
-    "log_2025-10-15_in_0098263610": {
-      "tanggal": "2025-10-15",
-      "waktu": "06:45:45",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-15_out_0098263610": {
-      "tanggal": "2025-10-15",
-      "waktu": "15:30:45",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-16_in_0098263610": {
-      "tanggal": "2025-10-16",
-      "waktu": "06:46:52",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-16_out_0098263610": {
-      "tanggal": "2025-10-16",
-      "waktu": "15:31:56",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-17_in_0098263610": {
-      "tanggal": "2025-10-17",
-      "waktu": "06:47:59",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-17_out_0098263610": {
-      "tanggal": "2025-10-17",
-      "waktu": "15:32:07",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-20_in_0098263610": {
-      "tanggal": "2025-10-20",
-      "waktu": "06:50:20",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-20_out_0098263610": {
-      "tanggal": "2025-10-20",
-      "waktu": "15:35:40",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-21_in_0098263610": {
-      "tanggal": "2025-10-21",
-      "waktu": "06:51:27",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-21_out_0098263610": {
-      "tanggal": "2025-10-21",
-      "waktu": "15:36:51",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-22_in_0098263610": {
-      "tanggal": "2025-10-22",
-      "waktu": "06:52:34",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-22_out_0098263610": {
-      "tanggal": "2025-10-22",
-      "waktu": "15:37:02",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-23_in_0098263610": {
-      "tanggal": "2025-10-23",
-      "waktu": "06:53:41",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-23_out_0098263610": {
-      "tanggal": "2025-10-23",
-      "waktu": "15:38:13",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-24_in_0098263610": {
-      "tanggal": "2025-10-24",
-      "waktu": "06:54:48",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-24_out_0098263610": {
-      "tanggal": "2025-10-24",
-      "waktu": "15:39:24",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
     "log_2025-10-27_in_0098263610": {
       "tanggal": "2025-10-27",
       "waktu": "06:57:09",
@@ -2976,105 +2880,105 @@
       "waktu": "15:44:34",
       "status": "pulang",
       "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-15_in_0098263610": {
+      "tanggal": "2026-10-15",
+      "waktu": "06:45:45",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-15_out_0098263610": {
+      "tanggal": "2026-10-15",
+      "waktu": "15:30:45",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-16_in_0098263610": {
+      "tanggal": "2026-10-16",
+      "waktu": "06:46:52",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-16_out_0098263610": {
+      "tanggal": "2026-10-16",
+      "waktu": "15:31:56",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-19_in_0098263610": {
+      "tanggal": "2026-10-19",
+      "waktu": "06:49:13",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-19_out_0098263610": {
+      "tanggal": "2026-10-19",
+      "waktu": "15:34:29",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-20_in_0098263610": {
+      "tanggal": "2026-10-20",
+      "waktu": "06:50:20",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-20_out_0098263610": {
+      "tanggal": "2026-10-20",
+      "waktu": "15:35:40",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-21_in_0098263610": {
+      "tanggal": "2026-10-21",
+      "waktu": "06:51:27",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-21_out_0098263610": {
+      "tanggal": "2026-10-21",
+      "waktu": "15:36:51",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-22_in_0098263610": {
+      "tanggal": "2026-10-22",
+      "waktu": "06:52:34",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-22_out_0098263610": {
+      "tanggal": "2026-10-22",
+      "waktu": "15:37:02",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-23_in_0098263610": {
+      "tanggal": "2026-10-23",
+      "waktu": "06:53:41",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-23_out_0098263610": {
+      "tanggal": "2026-10-23",
+      "waktu": "15:38:13",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-26_in_0098263610": {
+      "tanggal": "2026-10-26",
+      "waktu": "06:56:02",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-26_out_0098263610": {
+      "tanggal": "2026-10-26",
+      "waktu": "15:41:46",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
     }
   },
   "0082104129": {
-    "log_2025-10-15_in_0082104129": {
-      "tanggal": "2025-10-15",
-      "waktu": "06:48:45",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-15_out_0082104129": {
-      "tanggal": "2025-10-15",
-      "waktu": "15:35:45",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-16_in_0082104129": {
-      "tanggal": "2025-10-16",
-      "waktu": "06:49:52",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-16_out_0082104129": {
-      "tanggal": "2025-10-16",
-      "waktu": "15:36:56",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-17_in_0082104129": {
-      "tanggal": "2025-10-17",
-      "waktu": "06:50:59",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-17_out_0082104129": {
-      "tanggal": "2025-10-17",
-      "waktu": "15:37:07",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-20_in_0082104129": {
-      "tanggal": "2025-10-20",
-      "waktu": "06:53:20",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-20_out_0082104129": {
-      "tanggal": "2025-10-20",
-      "waktu": "15:40:40",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-21_in_0082104129": {
-      "tanggal": "2025-10-21",
-      "waktu": "06:54:27",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-21_out_0082104129": {
-      "tanggal": "2025-10-21",
-      "waktu": "15:41:51",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-22_in_0082104129": {
-      "tanggal": "2025-10-22",
-      "waktu": "06:55:34",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-22_out_0082104129": {
-      "tanggal": "2025-10-22",
-      "waktu": "15:42:02",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-23_in_0082104129": {
-      "tanggal": "2025-10-23",
-      "waktu": "06:56:41",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-23_out_0082104129": {
-      "tanggal": "2025-10-23",
-      "waktu": "15:43:13",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-24_in_0082104129": {
-      "tanggal": "2025-10-24",
-      "waktu": "06:57:48",
-      "status": "hadir",
-      "device_id": "gateway-rpl-01"
-    },
-    "log_2025-10-24_out_0082104129": {
-      "tanggal": "2025-10-24",
-      "waktu": "15:44:24",
-      "status": "pulang",
-      "device_id": "gateway-rpl-01"
-    },
     "log_2025-10-27_in_0082104129": {
       "tanggal": "2025-10-27",
       "waktu": "06:45:09",
@@ -5958,6 +5862,102 @@
     "log_2026-10-14_out_0082104129": {
       "tanggal": "2026-10-14",
       "waktu": "15:34:34",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-15_in_0082104129": {
+      "tanggal": "2026-10-15",
+      "waktu": "06:48:45",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-15_out_0082104129": {
+      "tanggal": "2026-10-15",
+      "waktu": "15:35:45",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-16_in_0082104129": {
+      "tanggal": "2026-10-16",
+      "waktu": "06:49:52",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-16_out_0082104129": {
+      "tanggal": "2026-10-16",
+      "waktu": "15:36:56",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-19_in_0082104129": {
+      "tanggal": "2026-10-19",
+      "waktu": "06:52:13",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-19_out_0082104129": {
+      "tanggal": "2026-10-19",
+      "waktu": "15:39:29",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-20_in_0082104129": {
+      "tanggal": "2026-10-20",
+      "waktu": "06:53:20",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-20_out_0082104129": {
+      "tanggal": "2026-10-20",
+      "waktu": "15:40:40",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-21_in_0082104129": {
+      "tanggal": "2026-10-21",
+      "waktu": "06:54:27",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-21_out_0082104129": {
+      "tanggal": "2026-10-21",
+      "waktu": "15:41:51",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-22_in_0082104129": {
+      "tanggal": "2026-10-22",
+      "waktu": "06:55:34",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-22_out_0082104129": {
+      "tanggal": "2026-10-22",
+      "waktu": "15:42:02",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-23_in_0082104129": {
+      "tanggal": "2026-10-23",
+      "waktu": "06:56:41",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-23_out_0082104129": {
+      "tanggal": "2026-10-23",
+      "waktu": "15:43:13",
+      "status": "pulang",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-26_in_0082104129": {
+      "tanggal": "2026-10-26",
+      "waktu": "06:59:02",
+      "status": "hadir",
+      "device_id": "gateway-rpl-01"
+    },
+    "log_2026-10-26_out_0082104129": {
+      "tanggal": "2026-10-26",
+      "waktu": "15:31:46",
       "status": "pulang",
       "device_id": "gateway-rpl-01"
     }

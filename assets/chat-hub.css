@@ -419,11 +419,48 @@
   border-bottom-left-radius: 2px;
 }
 
+.wa-bubble-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.wa-bubble-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #334155;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.wa-bubble-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.wa-bubble-sender.is-me {
+  color: #047857;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .wa-bubble-sender {
   font-size: 11.5px;
   font-weight: 800;
   color: #075E54;
-  margin-bottom: 3px;
+  margin-bottom: 0px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -493,7 +530,26 @@
   flex: 1;
   background: #94A3B8;
   border-radius: 2px;
-  transition: height 0.2s;
+  transition: height 0.2s, background 0.2s;
+  transform-origin: center;
+}
+
+.wa-vn-bar.is-animating {
+  background: #128C7E;
+  animation: waWaveDance 0.8s ease-in-out infinite alternate;
+}
+
+.wa-vn-bar.is-animating:nth-child(1) { animation-delay: 0.1s; }
+.wa-vn-bar.is-animating:nth-child(2) { animation-delay: 0.3s; }
+.wa-vn-bar.is-animating:nth-child(3) { animation-delay: 0.05s; }
+.wa-vn-bar.is-animating:nth-child(4) { animation-delay: 0.25s; }
+.wa-vn-bar.is-animating:nth-child(5) { animation-delay: 0.15s; }
+.wa-vn-bar.is-animating:nth-child(6) { animation-delay: 0.35s; }
+
+@keyframes waWaveDance {
+  0% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1.1); }
+  100% { transform: scaleY(0.5); }
 }
 
 .wa-vn-time {
@@ -641,6 +697,146 @@
   padding: 16px;
 }
 
+/* Group Profile Styles */
+.wa-group-avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.wa-group-avatar-clickable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.wa-group-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 16px;
+  border-bottom: 1.5px solid #F1F5F9;
+  margin-bottom: 14px;
+}
+.wa-group-profile-avatar-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.wa-group-info-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(18, 140, 126, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid #ffffff;
+  font-weight: 800;
+  font-size: 26px;
+}
+.wa-btn-change-avatar {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  background: #128C7E;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 9999px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: all 0.2s;
+}
+.wa-btn-change-avatar:hover {
+  background: #075E54;
+  transform: scale(1.05);
+}
+.wa-group-info-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.wa-avatar-picker-panel {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.wa-avatar-icons-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wa-avatar-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+  background: #FFFFFF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.wa-avatar-icon-btn:hover, .wa-avatar-icon-btn.selected {
+  border-color: #128C7E;
+  background: #E6FFFA;
+  transform: scale(1.08);
+}
+.wa-avatar-colors-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wa-avatar-color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wa-avatar-color-btn:hover, .wa-avatar-color-btn.selected {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #128C7E;
+}
+.wa-btn-save-avatar {
+  background: #128C7E;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wa-btn-save-avatar:hover {
+  background: #075E54;
+}
+.wa-btn-cancel-avatar {
+  background: #E2E8F0;
+  color: #475569;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.wa-btn-cancel-avatar:hover {
+  background: #CBD5E1;
+}
+
 .wa-member-row {
   display: flex;
   align-items: center;
@@ -708,4 +904,56 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* =================================================================== */
+/* 16. KUNCI AKSES CHAT KHUSUS AKUN TERVERIFIKASI & MODAL PROMPT       */
+/* =================================================================== */
+.wa-floating-btn.wa-floating-btn-locked {
+  filter: saturate(0.85);
+}
+
+.wa-floating-lock-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes waFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes waScaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.wa-lock-modal-card {
+  box-sizing: border-box;
+}
+
+.wa-lock-modal-card * {
+  box-sizing: border-box;
+}
+
+.wa-locked-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }

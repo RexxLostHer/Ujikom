@@ -119,8 +119,8 @@ assert.strictEqual(Object.keys(rpl1Presensi).length, 33, 'Seluruh 33 siswa XII R
 
 const rpl2Students = Object.entries(MASTER_DATA_SISWA_RESMI).filter(([n, s]) => normalisasiKelas(ambilKelasSiswa(s)) === 'XII RPL 2');
 const rpl2Presensi = generateDefaultPresensiResmi('XII RPL 2');
-assert.strictEqual(rpl2Students.length, 34, 'XII RPL 2 harus memiliki 34 siswa resmi');
-assert.strictEqual(Object.keys(rpl2Presensi).length, 32, '32 siswa XII RPL 2 hadir tepat waktu dan 2 siswa belum tap RFID');
+assert.strictEqual(rpl2Students.length, 35, 'XII RPL 2 harus memiliki 35 siswa resmi');
+assert.strictEqual(Object.keys(rpl2Presensi).length, 33, '33 siswa XII RPL 2 hadir tepat waktu dan 2 siswa belum tap RFID');
 assert.strictEqual(rpl2Presensi['0098263610'], undefined, 'M. Ihsan Athallah harus belum tap');
 assert.strictEqual(rpl2Presensi['0082104129'], undefined, 'Rizky Ramadhani harus belum tap');
 

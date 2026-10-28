@@ -30,7 +30,9 @@ function bukaModalProfil() {
   const userEmail = user.email || (fbUser ? fbUser.email : '');
   const isSiswa = user.role === 'siswa' && (user.nisn || user.foto);
   const fotoSiswa = isSiswa ? (user.foto || ('assets/foto/' + user.nisn + '.jpg')) : null;
-  const fotoUser = fotoSiswa || user.foto_google || user.foto || null;
+  const fotoAdmin = (user.role === 'admin' || user.isAdmin) ? 'assets/foto/admin.jpg' : null;
+  const fotoGuru = (user.role === 'guru' || user.role === 'walas' || user.isGuru) ? (user.foto || (user.nip ? 'assets/foto/guru_' + user.nip + '.jpg' : null)) : null;
+  const fotoUser = fotoAdmin || fotoGuru || fotoSiswa || user.foto_google || user.foto || null;
   const fallbackAvatarAction = user.foto_google
     ? `this.src='${user.foto_google}';`
     : `this.parentElement.innerHTML='<span>${initial}</span>';`;
@@ -840,8 +842,21 @@ async function handleKonfirmasiTautkanGuru() {
 if (typeof window !== 'undefined') {
   window.toggleAccordionKlaim = toggleAccordionKlaim;
   window.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
+  window.bukaModalProfil = bukaModalProfil;
+  window.bukaModalProfilDenganTabNisn = bukaModalProfilDenganTabNisn;
+  window.bukaModalProfilDenganTabNip = bukaModalProfilDenganTabNip;
+}
+if (typeof global !== 'undefined') {
+  global.toggleAccordionKlaim = toggleAccordionKlaim;
+  global.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
+  global.bukaModalProfil = (typeof window !== 'undefined' ? window.bukaModalProfil : bukaModalProfil);
+  global.bukaModalProfilDenganTabNisn = (typeof window !== 'undefined' ? window.bukaModalProfilDenganTabNisn : bukaModalProfilDenganTabNisn);
+  global.bukaModalProfilDenganTabNip = (typeof window !== 'undefined' ? window.bukaModalProfilDenganTabNip : bukaModalProfilDenganTabNip);
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
+  module.exports.bukaModalProfil = bukaModalProfil;
+  module.exports.bukaModalProfilDenganTabNisn = bukaModalProfilDenganTabNisn;
+  module.exports.bukaModalProfilDenganTabNip = bukaModalProfilDenganTabNip;
 }
 

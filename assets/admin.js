@@ -1251,6 +1251,19 @@ function loadUsers() {
     }
 
     entries.forEach(function ([uid, u]) {
+      // Auto-cleanup: Lepaskan role M. Ihsan dari zemapk16 agar tidak ganda dengan 7dosabesar557
+      if (u && u.email && u.email.toLowerCase().trim() === 'zemapk16@gmail.com' && (u.role === 'siswa' || u.nisn === '0098263610')) {
+        u.role = 'pengunjung';
+        u.nisn = null;
+        u.kelas = null;
+        if (u.nama === 'M. IHSAN ATHALLAH' || u.nama === 'M. Ihsan Athallah') u.nama = 'Pengunjung';
+        if (typeof db !== 'undefined' && db) {
+          db.ref('users/' + uid).update({ role: 'pengunjung', nisn: null, kelas: null, nama: u.nama }).catch(() => null);
+          const encZem = 'zemapk16(at)gmail,com';
+          db.ref('email_mapping/' + encZem).remove().catch(() => null);
+        }
+      }
+
       const tr = document.createElement('tr');
 
       // Role select
@@ -1341,7 +1354,23 @@ async function lepasTautanNisnAdmin(uid, nisn, email) {
 }
 
 async function ubahRoleUser(uid, role) {
-  await db.ref('users/' + uid + '/role').set(role);
+  const updates = { role: role };
+  if (role === 'pengunjung') {
+    updates.nisn = null;
+    updates.kelas = null;
+    try {
+      const snap = await db.ref('users/' + uid).once('value');
+      const u = snap.val();
+      if (u && u.nisn) {
+        await db.ref('nisn_claimed/' + u.nisn).remove().catch(() => null);
+      }
+      if (u && u.email) {
+        const encoded = u.email.toLowerCase().replace(/\./g, ',').replace(/@/g, '(at)');
+        await db.ref('email_mapping/' + encoded).remove().catch(() => null);
+      }
+    } catch (e) {}
+  }
+  await db.ref('users/' + uid).update(updates);
 }
 
 async function hapusUser(uid) {
@@ -1494,12 +1523,16 @@ function renderKendalaGuruAdmin(filter) {
     }
 
     const peranBadge = `<span style="font-size:11px;font-weight:700;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;margin-left:6px;">${k.peran || 'Guru'}</span>`;
-    const lampiranBukti = (k.buktiKendala || k.lampiran)
+    const hasLampiran = Boolean(
+      k.buktiKendala || k.lampiranUrl || k.dokumen_url || k.bukti_url || k.foto_bukti || k.lampiran || k.lampiranNama ||
+      (typeof localStorage !== 'undefined' && (localStorage.getItem('lampiran_kendala_' + id) || localStorage.getItem('lampiran_foto_' + id)))
+    );
+    const lampiranBukti = hasLampiran
       ? `<div style="margin-top:8px;">
-          <a href="${k.buktiKendala || k.lampiran}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#4f46e5;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;border:1px solid #c7d2fe;">
+          <button type="button" class="btn-lihat-lampiran-kendala" onclick="bukaModalBuktiKendalaAdmin('${id}')" style="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#4f46e5;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #c7d2fe;cursor:pointer;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>Lihat Lampiran Bukti Kendala</span>
-          </a>
+          </button>
         </div>`
       : '';
 
@@ -1524,6 +1557,34 @@ function renderKendalaGuruAdmin(filter) {
     `;
     container.appendChild(card);
   });
+}
+
+function bukaModalBuktiKendalaAdmin(id) {
+  if (typeof bukaModalBuktiIzinAdmin === 'function') {
+    return bukaModalBuktiIzinAdmin(id);
+  }
+  let k = (typeof kendalaGuruCache !== 'undefined' ? kendalaGuruCache[id] : null);
+  if (!k && typeof cacheSemuaPerizinanAdmin !== 'undefined') k = cacheSemuaPerizinanAdmin[id];
+  if (!k && typeof localStorage !== 'undefined') {
+    try {
+      const arr = JSON.parse(localStorage.getItem('local_kendala_guru') || '[]');
+      k = arr.find(x => x && (x.id === id || x.kid === id));
+    } catch (e) {}
+  }
+  let fotoUrl = k.buktiKendala || k.lampiranUrl || k.dokumen_url || k.bukti_url || k.foto_bukti || k.lampiran;
+  const isBareOrMissing = !fotoUrl ||
+    fotoUrl === '[Tersimpan di Penyimpanan Lokal]' ||
+    (typeof fotoUrl === 'string' && !fotoUrl.startsWith('data:') && !fotoUrl.startsWith('http') && !fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('/') && !fotoUrl.startsWith('./') && !fotoUrl.startsWith('assets/'));
+  if (isBareOrMissing && typeof localStorage !== 'undefined') {
+    fotoUrl = localStorage.getItem('lampiran_kendala_' + id) || localStorage.getItem('lampiran_foto_' + id) || fotoUrl;
+  }
+  const nama = k.guruNama || k.nama || 'Guru';
+  const namaFile = k.lampiranNama || k.lampiran || (typeof fotoUrl === 'string' && !fotoUrl.startsWith('data:') && !fotoUrl.startsWith('http') ? fotoUrl : null);
+  if (typeof bukaModalBukti === 'function') {
+    bukaModalBukti(fotoUrl, nama, namaFile);
+  } else if (typeof window !== 'undefined' && typeof window.bukaModalBukti === 'function') {
+    window.bukaModalBukti(fotoUrl, nama, namaFile);
+  }
 }
 
 async function adminApproveKendala(id) {
@@ -2326,6 +2387,8 @@ if (typeof window !== 'undefined') {
 if (typeof window !== 'undefined') {
   window.listenKendalaGuruAdmin = listenKendalaGuruAdmin;
   window.renderKendalaGuruAdmin = renderKendalaGuruAdmin;
+  window.bukaModalBuktiKendalaAdmin = bukaModalBuktiKendalaAdmin;
+  window.bukaModalBuktiIzinAdmin = (typeof bukaModalBuktiIzinAdmin === 'function') ? bukaModalBuktiIzinAdmin : (typeof window !== 'undefined' ? window.bukaModalBuktiIzinAdmin : null);
   window.adminApproveKendala = adminApproveKendala;
   window.adminRejectKendala = adminRejectKendala;
   window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
@@ -2335,6 +2398,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     listenKendalaGuruAdmin,
     renderKendalaGuruAdmin,
+    bukaModalBuktiKendalaAdmin,
+    bukaModalBuktiIzinAdmin: (typeof bukaModalBuktiIzinAdmin === 'function') ? bukaModalBuktiIzinAdmin : null,
     adminApproveKendala,
     adminRejectKendala,
     submitSimulasiTapLengkap,

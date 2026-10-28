@@ -574,6 +574,15 @@ var MASTER_DATA_SISWA_RESMI = {
     "foto": "assets/foto/0098263610.jpg",
     "foto_karakter": "Kiyotaka Ayanokouji"
   },
+  "00082109": {
+    "nisn": "00082109",
+    "nama": "TIFANI ADISYA RAMADHANI",
+    "kelas": "XII RPL 2",
+    "nis": "24.25.X.664",
+    "email": "tifaniadisya@gmail.com",
+    "foto": "assets/foto/00082109.jpg",
+    "foto_karakter": "Kei Karuizawa"
+  },
   "0094996233": {
     "nisn": "0094996233",
     "nama": "MUHAMMAD ARDAN ZAQUAN AL KAHFI",
@@ -767,46 +776,67 @@ var MASTER_DATA_SISWA_RESMI = {
 
 // Master Guru & Walas Resmi SMKN 1 Sumedang (PRD & Penetapan Resmi)
 var MASTER_GURU_RESMI = {
-  '198109012009022003': {
-    nip: '198109012009022003',
-    nama: 'Hani Hanifah, S.Si',
-    mapel: 'Pemrograman Web & Perangkat Bergerak',
-    rfidUid: 'E5F6A7B8',
-    isWalas: false,
-    walasKelasId: null
+  "198109012009022003": {
+    "nip": "198109012009022003",
+    "nama": "Hani Hanifah, S.Si",
+    "mapel": "Pemrograman Web & Perangkat Bergerak",
+    "rfidUid": "E5F6A7B8",
+    "isWalas": false,
+    "walasKelasId": null,
+    "foto": "assets/foto/guru_198109012009022003.jpg",
+    "foto_karakter": "Sae Chabashira"
   },
-  '197905032006042004': {
-    nip: '197905032006042004',
-    nama: 'Hali, ST',
-    mapel: 'Informatika & Rekayasa Perangkat Lunak',
-    rfidUid: 'S1T2U3V4',
-    isWalas: false,
-    walasKelasId: null
+  "197905032006042004": {
+    "nip": "197905032006042004",
+    "nama": "Hali, ST",
+    "mapel": "Informatika & Rekayasa Perangkat Lunak",
+    "rfidUid": "S1T2U3V4",
+    "isWalas": false,
+    "walasKelasId": null,
+    "foto": "assets/foto/guru_197905032006042004.jpg",
+    "foto_karakter": "Atsuomi Ayanokouji"
   },
-  '199209142022211007': {
-    nip: '199209142022211007',
-    nama: 'Muhammad Echa Putra, S.Kom.Gr',
-    mapel: 'Basis Data & Pemodelan RPL',
-    rfidUid: 'G9H0I1J2',
-    isWalas: true,
-    walasKelasId: 'XII RPL 2'
+  "199209142022211007": {
+    "nip": "199209142022211007",
+    "nama": "Muhammad Echa Putra, S.Kom.Gr",
+    "mapel": "Basis Data & Pemodelan RPL",
+    "rfidUid": "G9H0I1J2",
+    "isWalas": true,
+    "walasKelasId": "XII RPL 2",
+    "foto": "assets/foto/guru_199209142022211007.jpg",
+    "foto_karakter": "Tomonari Mashima"
   },
-  '198312052022211017': {
-    nip: '198312052022211017',
-    nama: 'Rijal Nur Rahmat, S.T',
-    mapel: 'Administrasi Infrastruktur Jaringan',
-    rfidUid: 'K3L4M5N6',
-    isWalas: true,
-    walasKelasId: 'XII RPL 1'
+  "198312052022211017": {
+    "nip": "198312052022211017",
+    "nama": "Rijal Nur Rahmat, S.T",
+    "mapel": "Administrasi Infrastruktur Jaringan",
+    "rfidUid": "K3L4M5N6",
+    "isWalas": true,
+    "walasKelasId": "XII RPL 1",
+    "foto": "assets/foto/guru_198312052022211017.jpg",
+    "foto_karakter": "Katsunori Shiba"
   },
-  '198504252024211008': {
-    nip: '198504252024211008',
-    nama: 'Heri Anggara, S.Kom',
-    mapel: 'Teknologi Jaringan & Komputer',
-    rfidUid: 'O7P8Q9R0',
-    isWalas: true,
-    walasKelasId: 'XII TKJ 2'
+  "198504252024211008": {
+    "nip": "198504252024211008",
+    "nama": "Heri Anggara, S.Kom",
+    "mapel": "Teknologi Jaringan & Komputer",
+    "rfidUid": "O7P8Q9R0",
+    "isWalas": true,
+    "walasKelasId": "XII TKJ 2",
+    "foto": "assets/foto/guru_198504252024211008.jpg",
+    "foto_karakter": "Tokinari Tsukishiro"
   }
+};
+
+var ADMIN_IDENTITY_RESMI = {
+  id: "admin",
+  nip: "ADMIN-01",
+  nomorKontak: "ADMIN",
+  nama: "Administrator SMKN 1 Sumedang",
+  role: "admin",
+  foto: "assets/foto/admin.jpg",
+  foto_karakter: "Narumori Sakayanagi",
+  jabatan: "Kepala Sekolah & Administrator Utama"
 };
 
 // Prototipe 2 Kartu RFID Fisik & Uji Coba (PRD Bab 5.2)
@@ -909,19 +939,37 @@ function getTanggalHariIniWIB(d) {
   }
 }
 
+// Helper pemformat status perizinan manusiawi (PRD & Humanized Status)
+function formatHumanStatusIzin(jenis) {
+  if (!jenis) return 'Izin';
+  let j = String(jenis).trim();
+  // Bersihkan karakter robotic seperti (izin), (sakit), prefix Izin Resmi, dll.
+  const lower = j.toLowerCase();
+  if (lower.includes('sakit')) return 'Sakit';
+  if (lower.includes('dispen')) return 'Dispensasi';
+  if (lower.includes('izin') || lower.includes('ijin')) return 'Izin';
+  // Hapus tanda kurung dan prefix redundan jika ada jenis lain
+  j = j.replace(/\s*\([^)]*\)/g, '').replace(/^(izin|ijin|sakit)\s+resmi\s*/i, '').trim();
+  return j ? (j.charAt(0).toUpperCase() + j.slice(1)) : 'Izin';
+}
+
 // Logika Evaluasi Status Kehadiran Real-Time (WIB):
 // - Jika siswa sudah scan / hadir: status 'hadir' atau 'terlambat'
 // - Jika siswa ada perizinan/sakit yang disetujui: status 'izin' atau 'sakit' (tidak boleh ditimpa alpa/scan)
 // - Jika belum scan & tidak izin/sakit:
-//     * Waktu < 08:00 WIB  -> "Belum Absen"
+//     * Waktu < 08:00 WIB  -> "Terlambat" (Dihitung Terlambat, bukan lagi Belum Absen)
 //     * Waktu >= 08:00 WIB -> "Alpa" (Otomatis)
 function evaluasiStatusKehadiranRealtime(params) {
   const p = params || {};
   if (p.hasApprovedIzin) {
     const j = p.jenisIzin || 'izin';
+    const humanLabel = formatHumanStatusIzin(j);
+    const cleanJ = String(j).trim().toLowerCase();
+    const finalStatus = cleanJ.includes('sakit') ? 'sakit'
+      : (cleanJ.includes('dispen') ? 'dispensasi' : 'izin');
     return {
-      status: j,
-      label: 'Izin Resmi (' + j.toUpperCase() + ')',
+      status: finalStatus,
+      label: humanLabel,
       cardClass: 'izin-sakit',
       isAlpa: false
     };
@@ -947,7 +995,10 @@ function evaluasiStatusKehadiranRealtime(params) {
       isAlpa: true
     };
   }
-  const jam = p.waktuSekarangWIB || getJamSekarangWIB();
+  const getJamFn = (typeof global !== 'undefined' && typeof global.getJamSekarangWIB === 'function')
+    ? global.getJamSekarangWIB
+    : getJamSekarangWIB;
+  const jam = p.waktuSekarangWIB || (getJamFn ? getJamFn() : '07:00:00');
   const cleanJam = jam.length === 5 ? jam + ':00' : jam;
   if (cleanJam >= '08:00:00') {
     return {
@@ -958,9 +1009,9 @@ function evaluasiStatusKehadiranRealtime(params) {
     };
   }
   return {
-    status: 'belum',
-    label: 'Belum Absen',
-    cardClass: 'belum',
+    status: 'terlambat',
+    label: 'Terlambat',
+    cardClass: 'status-terlambat terlambat',
     isAlpa: false
   };
 }
@@ -970,11 +1021,14 @@ function evaluasiStatusKehadiranRealtime(params) {
 // Memeriksa seluruh siswa di kelas. Jika belum memiliki record kehadiran
 // atau berstatus 'belum' / 'belum absen' (dan tidak sedang Izin/Sakit disetujui),
 // otomatis mengubah dan menyimpan statusnya di Firebase menjadi 'alpa'.
-async function sinkronisasiStatusAlpaFirebase(kelasInput, tanggalInput) {
-  const jamWIB = getJamSekarangWIB();
+async function sinkronisasiStatusAlpaFirebase(kelasInput, tanggalInput, jamInput) {
+  const getJamFn = (typeof global !== 'undefined' && typeof global.getJamSekarangWIB === 'function')
+    ? global.getJamSekarangWIB
+    : getJamSekarangWIB;
+  const jamWIB = jamInput || (getJamFn ? getJamFn() : '07:00:00');
   const cleanJamWIB = jamWIB.length === 5 ? jamWIB + ':00' : jamWIB;
   if (cleanJamWIB < '08:00:00') {
-    return { success: false, synced: 0, reason: 'BELUM_08_00_WIB', jamWIB: jamWIB };
+    return { success: false, synced: 0, totalSynced: 0, reason: 'BELUM_08_00_WIB', jamWIB: jamWIB };
   }
 
   const tanggal = tanggalInput || getTanggalHariIniWIB();
@@ -2054,6 +2108,7 @@ if (typeof window !== 'undefined') {
   window.getWIBTime = getWIBTime;
   window.getJamSekarangWIB = getJamSekarangWIB;
   window.getTanggalHariIniWIB = getTanggalHariIniWIB;
+  window.formatHumanStatusIzin = formatHumanStatusIzin;
   window.evaluasiStatusKehadiranRealtime = evaluasiStatusKehadiranRealtime;
   window.sinkronisasiStatusAlpaFirebase = sinkronisasiStatusAlpaFirebase;
   window.bootstrapSistemUjikom = bootstrapSistemUjikom;
@@ -2085,6 +2140,7 @@ if (typeof window !== 'undefined') {
     global.enforceAttendanceCutoffAndSync = enforceAttendanceCutoffAndSync;
     global.approveStudentPermit = approveStudentPermit;
     global.rejectStudentPermit = rejectStudentPermit;
+    global.formatHumanStatusIzin = formatHumanStatusIzin;
     global.approveTeacherObstacle = approveTeacherObstacle;
   }
 
@@ -2096,6 +2152,7 @@ if (typeof module !== 'undefined' && module.exports) {
     firebaseConfig,
     DAFTAR_KELAS_RESMI,
     MASTER_GURU_RESMI,
+    ADMIN_IDENTITY_RESMI,
     KARTU_UJI_COBA,
     DEFAULT_STATUS_KELAS,
     MASTER_DATA_SISWA_RESMI,
@@ -2110,6 +2167,7 @@ if (typeof module !== 'undefined' && module.exports) {
     getWIBTime,
     getJamSekarangWIB,
     getTanggalHariIniWIB,
+    formatHumanStatusIzin,
     evaluasiStatusKehadiranRealtime,
     sinkronisasiStatusAlpaFirebase,
     bootstrapSistemUjikom,

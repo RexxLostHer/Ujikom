@@ -15,6 +15,23 @@ function getSessionUser() {
     const user = JSON.parse(raw);
     if (!user || typeof user !== 'object') return null;
     // CRITICAL: Prevent stale admin token in localStorage from escalating fresh unauthenticated visitors to admin
+    // Pembersihan duplikasi: Akun zemapk16 dibebaskan dari peran M. Ihsan agar tidak ganda dengan 7dosabesar557
+    if (user && user.email && user.email.toLowerCase().trim() === 'zemapk16@gmail.com') {
+      if (user.role === 'siswa' || user.nisn === '0098263610') {
+        user.role = 'pengunjung';
+        user.nisn = null;
+        user.kelas = null;
+        if (user.nama === 'M. IHSAN ATHALLAH' || user.nama === 'M. Ihsan Athallah') {
+          user.nama = 'Pengunjung';
+        }
+        delete user.foto;
+        try {
+          if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('user_aktif', JSON.stringify(user));
+          if (typeof localStorage !== 'undefined') localStorage.setItem('user_aktif', JSON.stringify(user));
+        } catch (e) {}
+      }
+    }
+
     if (user.role === 'admin') {
       const sessRaw = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('user_aktif') : null;
       if (!sessRaw) {
@@ -90,7 +107,8 @@ function cariSiswaByEmail(email) {
   const clean = email.toLowerCase().trim();
   if (!clean) return null;
   // Akun guru/walas resmi DILARANG dipetakan ke siswa
-  if (clean === 'ihsan33roblox@gmail.com' || clean.startsWith('echa') || clean.startsWith('rijal') || clean.startsWith('heri') || clean.startsWith('hali') || clean.startsWith('hani')) {
+  // Akun guru/walas resmi & akun zemapk16 DILARANG dipetakan ke siswa M. Ihsan
+  if (clean === 'zemapk16@gmail.com' || clean === 'ihsan33roblox@gmail.com' || clean.startsWith('echa') || clean.startsWith('rijal') || clean.startsWith('heri') || clean.startsWith('hali') || clean.startsWith('hani')) {
     return null;
   }
   let siswaList = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI) ? MASTER_DATA_SISWA_RESMI : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI : null);
@@ -103,8 +121,8 @@ function cariSiswaByEmail(email) {
   }
   // 2. Official Student Email mapping table for common school email variations
   const siswaEmailMap = {
+    '7dosabesar557@gmail.com': '0098263610',
     'zemapk15@gmail.com': '0098263610',
-    'zemapk16@gmail.com': '0098263610',
     'ihsan@gmail.com': '0098263610',
     'ihsan@smkn1sumedang.sch.id': '0098263610',
     'ihsanathallah@gmail.com': '0098263610',
@@ -363,8 +381,11 @@ async function prosesLoginUser(firebaseUser) {
   const isAdm = isEmailAdmin(email);
   const guruMatch = cariGuruByEmail(email);
   let sisMatch = cariSiswaByEmail(email);
+  if (email === 'zemapk16@gmail.com') {
+    sisMatch = null;
+  }
   const dispName = (firebaseUser.displayName || '').toLowerCase().trim();
-  if (!guruMatch && !sisMatch && dispName) {
+  if (email !== 'zemapk16@gmail.com' && !guruMatch && !sisMatch && dispName) {
     if (dispName.includes('ihsan') || dispName.includes('athallah')) {
       const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
         || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
@@ -384,13 +405,19 @@ async function prosesLoginUser(firebaseUser) {
     const rawLinked = localStorage.getItem('local_linked_accounts');
     if (rawLinked) {
       const mapLinked = JSON.parse(rawLinked);
-      localLinked = mapLinked[uid] || (email ? mapLinked[email] : null) || null;
+      if (email === 'zemapk16@gmail.com') {
+        delete mapLinked[uid];
+        delete mapLinked['zemapk16@gmail.com'];
+        localStorage.setItem('local_linked_accounts', JSON.stringify(mapLinked));
+      } else {
+        localLinked = mapLinked[uid] || (email ? mapLinked[email] : null) || null;
+      }
     }
   } catch (e) {}
 
   const activeSess = (typeof getSessionUser === 'function') ? getSessionUser() : null;
   const isSessionMatching = activeSess && (activeSess.uid === uid || (email && activeSess.email && activeSess.email.toLowerCase().trim() === email));
-  const hasActiveVerifiedIdentity = isSessionMatching && activeSess.isVerified && (activeSess.nip || activeSess.nisn);
+  const hasActiveVerifiedIdentity = email !== 'zemapk16@gmail.com' && isSessionMatching && activeSess.isVerified && (activeSess.nip || activeSess.nisn);
 
   if (!userData) {
     let mapped = null;
@@ -457,7 +484,7 @@ async function prosesLoginUser(firebaseUser) {
         email: email || activeSess.email,
         foto_google: firebaseUser.photoURL || activeSess.foto_google || null
       };
-    } else if (mapped) {
+    } else if (mapped && email !== 'zemapk16@gmail.com') {
       userData = {
         uid: uid,
         email: email,
@@ -501,7 +528,33 @@ async function prosesLoginUser(firebaseUser) {
     }
   } else {
     // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
-    if (isAdm) {
+    if (email === 'zemapk16@gmail.com') {
+      userData.role = 'pengunjung';
+      userData.nisn = null;
+      userData.kelas = null;
+      userData.isVerified = false;
+      if (userData.nama === 'M. IHSAN ATHALLAH' || userData.nama === 'M. Ihsan Athallah') {
+        userData.nama = firebaseUser.displayName || 'Pengunjung';
+      }
+      delete userData.foto;
+      try {
+        await db.ref('users/' + uid).update({
+          role: 'pengunjung',
+          nisn: null,
+          kelas: null,
+          isVerified: false,
+          nama: userData.nama
+        });
+        const encEmail = encodeEmail(email);
+        await db.ref('email_mapping/' + encEmail).remove();
+        await db.ref('nisn_claimed/0098263610').once('value').then(snap => {
+          const val = snap.val();
+          if (val && (val.email === 'zemapk16@gmail.com' || val.uid === uid || val === uid)) {
+            return db.ref('nisn_claimed/0098263610').remove();
+          }
+        });
+      } catch (e) {}
+    } else if (isAdm) {
       userData.role = 'admin';
       userData.isVerified = true;
       delete userData.isRoleSwitched;
@@ -620,8 +673,9 @@ async function periksaNisnSiswa(nisn) {
     const claimedUid = typeof claimData === 'string' ? claimData : (claimData.uid || null);
     const claimedEmail = (claimData.email || '').toLowerCase().trim();
 
-    const isDifferentUid = !!(currentUid && claimedUid && claimedUid !== currentUid);
-    const isDifferentEmail = !!(currentEmail && claimedEmail && claimedEmail !== currentEmail);
+    const isLegacyZemapk16Claim = cleanNisn === '0098263610' && claimedEmail === 'zemapk16@gmail.com';
+    const isDifferentUid = !isLegacyZemapk16Claim && !!(currentUid && claimedUid && claimedUid !== currentUid);
+    const isDifferentEmail = !isLegacyZemapk16Claim && !!(currentEmail && claimedEmail && claimedEmail !== currentEmail);
 
     if (isDifferentUid || isDifferentEmail) {
       const maskEmail = (em) => {

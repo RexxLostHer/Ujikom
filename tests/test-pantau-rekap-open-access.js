@@ -203,16 +203,28 @@ assert.strictEqual(resHadir.pillClass, 'status-pill sudah', 'Hadir sebelum 06.30
 assert.ok(resHadir.label.includes('Sudah Hadir'), 'Label harus Sudah Hadir');
 console.log('✓ [Test 5] Urutan evaluasi status pill valid: Sakit & Izin tidak keliru menjadi Terlambat.');
 
-// 6. Evaluasi Struktur Kartu Siswa Minimalis (Hanya Foto, Nama, NISN, Badge)
-console.log('[Test 6] Evaluasi Tampilan Kartu Siswa Minimalis...');
+// 6. Evaluasi Struktur Kartu Siswa Minimalis & Perlindungan Privasi NISN
+console.log('[Test 6] Evaluasi Tampilan Kartu Siswa Minimalis & Privasi NISN...');
 const dashJsContent = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
 assert.ok(dashJsContent.includes('photo.className = \'siswa-card-photo\';'), 'Kartu siswa harus memiliki elemen foto');
 assert.ok(dashJsContent.includes('nama.className = \'siswa-card-nama\';'), 'Kartu siswa harus memiliki nama');
-assert.ok(dashJsContent.includes('sub.className = \'siswa-card-sub\';'), 'Kartu siswa harus memiliki baris NISN');
-assert.ok(dashJsContent.includes("'NISN: ' + (s.nisn || sNisn)"), 'Kartu siswa hanya menampilkan NISN');
+assert.ok(dashJsContent.includes("card.setAttribute('data-nisn'"), 'Kartu siswa harus menyimpan data-nisn sebagai attribute');
+assert.ok(!dashJsContent.includes("'NISN: ' + (s.nisn || sNisn)"), 'Kartu siswa tidak boleh mengekspos NISN secara publik');
 assert.ok(!dashJsContent.includes('s.nis +'), 'Kartu monitoring tidak boleh menampilkan NIS');
 assert.ok(!dashJsContent.includes('s.email +'), 'Kartu monitoring tidak boleh membocorkan email');
-console.log('✓ [Test 6] Tampilan kartu siswa terbukti minimalis (Foto CotE, Nama Siswa, NISN, Badge).');
+
+const presensiLiveContent = fs.readFileSync(path.join(__dirname, '../assets/presensi-live.js'), 'utf8');
+assert.ok(presensiLiveContent.includes("card.setAttribute('data-nisn', nisn)"), 'Kartu presensi live harus memiliki data-nisn');
+assert.ok(!presensiLiveContent.includes("'NISN: ' + nisn"), 'Kartu presensi live tidak boleh mengekspos NISN secara publik');
+
+const dashGuruContent = fs.readFileSync(path.join(__dirname, '../assets/dashboard-guru.js'), 'utf8');
+assert.ok(dashGuruContent.includes("card.setAttribute('data-nisn', nisn)"), 'Kartu walas harus memiliki data-nisn');
+assert.ok(dashGuruContent.includes("card.setAttribute('data-nisn', s.nisn)"), 'Kartu grid guru harus memiliki data-nisn');
+assert.ok(!dashGuruContent.includes("NISN: ${s.nisn}"), 'Grid siswa guru tidak boleh menampilkan NISN');
+assert.ok(!dashGuruContent.includes("NISN: ${nisn} • Kelas:"), 'Live alert walas tidak boleh menampilkan NISN');
+assert.ok(!dashGuruContent.includes("NISN: ${nisn}</div>"), 'Statistik walas tidak boleh menampilkan NISN');
+assert.ok(!dashGuruContent.includes("NISN: ${nisn}):"), 'Prompt izin cepat walas tidak boleh mengekspos NISN');
+console.log('✓ [Test 6] Tampilan kartu siswa terbukti minimalis & aman di dashboard, presensi-live, dan dashboard-guru (Foto CotE, Nama Siswa, Badge, Bebas dari Spill NISN).');
 
 // 7. Evaluasi Interaktivitas & Informasi Akademik TOEIC & TKA
 console.log('[Test 7] Evaluasi Handler Info TOEIC & TKA...');

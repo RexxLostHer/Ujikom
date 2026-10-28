@@ -39,14 +39,14 @@ async function runTests() {
   assert.strictEqual(typeof tglWIB, 'string', 'getTanggalHariIniWIB harus mengembalikan string');
   assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(tglWIB), 'Format tanggal WIB harus YYYY-MM-DD');
 
-  // B. Evaluasi < 08:00 WIB: Siswa belum scan -> Status "Belum Absen"
+  // B. Evaluasi < 08:00 WIB: Siswa belum scan -> Status "Terlambat"
   const evalSebelum08 = evaluasiStatusKehadiranRealtime({
     hasScan: false,
     hasApprovedIzin: false,
     waktuSekarangWIB: '07:15:00'
   });
-  assert.strictEqual(evalSebelum08.status, 'belum', 'Status sebelum 08:00 harus belum');
-  assert.strictEqual(evalSebelum08.label, 'Belum Absen', 'Label sebelum 08:00 harus "Belum Absen"');
+  assert.strictEqual(evalSebelum08.status, 'terlambat', 'Status sebelum 08:00 harus terlambat');
+  assert.strictEqual(evalSebelum08.label, 'Terlambat', 'Label sebelum 08:00 harus "Terlambat"');
   assert.strictEqual(evalSebelum08.isAlpa, false, 'isAlpa sebelum 08:00 harus false');
 
   // C. Evaluasi >= 08:00 WIB: Siswa belum scan -> Otomatis Status "Alpa"
@@ -67,7 +67,34 @@ async function runTests() {
     waktuSekarangWIB: '08:30:00'
   });
   assert.strictEqual(evalIzin.status, 'sakit', 'Status izin/sakit tidak boleh ditimpa Alpa');
+  assert.strictEqual(evalIzin.label, 'Sakit', 'Label sakit harus bersih dan manusiawi');
   assert.strictEqual(evalIzin.isAlpa, false, 'isAlpa pada siswa sakit harus false');
+
+  const evalIzinRobotic = evaluasiStatusKehadiranRealtime({
+    hasScan: false,
+    hasApprovedIzin: true,
+    jenisIzin: 'Izin Resmi (izin)',
+    waktuSekarangWIB: '08:30:00'
+  });
+  assert.strictEqual(evalIzinRobotic.status, 'izin', 'Status izin resmi harus izin');
+  assert.strictEqual(evalIzinRobotic.label, 'Izin', 'Label robotic "Izin Resmi (izin)" harus dimanusiakan menjadi "Izin"');
+
+  const evalDispen = evaluasiStatusKehadiranRealtime({
+    hasScan: false,
+    hasApprovedIzin: true,
+    jenisIzin: 'dispen',
+    waktuSekarangWIB: '08:30:00'
+  });
+  assert.strictEqual(evalDispen.status, 'dispensasi', 'Status dispen harus dispensasi');
+  assert.strictEqual(evalDispen.label, 'Dispensasi', 'Label dispen harus Dispensasi');
+
+  // Helper formatHumanStatusIzin test
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('Izin Resmi (izin)'), 'Izin');
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('Sakit Resmi (sakit)'), 'Sakit');
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('dispen'), 'Dispensasi');
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('dispensasi'), 'Dispensasi');
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('sakit_mendadak'), 'Sakit');
+  assert.strictEqual(fbConfig.formatHumanStatusIzin('ijin_kegiatan'), 'Izin');
 
   // E. Scan IoT sebelum 08:00 WIB
   const evalScanPagi = evaluasiStatusKehadiranRealtime({
@@ -86,7 +113,7 @@ async function runTests() {
     statusScan: 'belum',
     waktuSekarangWIB: '07:30:00'
   });
-  assert.strictEqual(evalBelumSebelum08.status, 'belum', 'Status scan belum sebelum 08:00 harus "belum"');
+  assert.strictEqual(evalBelumSebelum08.status, 'terlambat', 'Status scan belum sebelum 08:00 harus "terlambat"');
   assert.strictEqual(evalBelumSebelum08.isAlpa, false, 'isAlpa harus false');
 
   const evalBelumSetelah08 = evaluasiStatusKehadiranRealtime({

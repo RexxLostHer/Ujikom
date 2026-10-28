@@ -47,6 +47,7 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
 
   const card = document.createElement('div');
   card.className = 'siswa-card ' + (statusSudah ? 'status-sudah' : 'status-belum');
+  if (typeof card.setAttribute === 'function') card.setAttribute('data-nisn', nisn);
 
   // Foto / Avatar Inisial
   const photoEl = document.createElement('div');
@@ -77,21 +78,35 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
   nama.className = 'siswa-card-nama';
   nama.textContent = s.nama;
 
-  const sub = document.createElement('div');
-  sub.className = 'siswa-card-sub';
-  sub.textContent = 'NISN: ' + nisn;
-
   const jamWIB = (typeof getWIBTime === 'function') ? getWIBTime() : ((typeof getJamSekarangWIB === 'function') ? getJamSekarangWIB() : '07:00:00');
   const cleanJamWIB = (jamWIB && jamWIB.length === 5) ? jamWIB + ':00' : (jamWIB || '07:00:00');
   const isLewat08 = cleanJamWIB >= '08:00:00';
 
   const pill = document.createElement('span');
   if (statusSudah) {
-    pill.className = 'status-pill sudah';
-    if (isDummy) {
+    const entry = detailAbsensi[nisn];
+    const stEntry = entry && entry.status ? String(entry.status).toLowerCase().trim() : '';
+    if (stEntry.includes('sakit')) {
+      pill.className = 'status-pill izin';
+      pill.textContent = 'Sakit';
+      card.className = 'siswa-card status-sudah status-izin';
+    } else if (stEntry.includes('dispen')) {
+      pill.className = 'status-pill izin';
+      pill.textContent = 'Dispensasi';
+      card.className = 'siswa-card status-sudah status-izin';
+    } else if (stEntry.includes('izin') || stEntry.includes('ijin')) {
+      pill.className = 'status-pill izin';
+      pill.textContent = 'Izin';
+      card.className = 'siswa-card status-sudah status-izin';
+    } else if (stEntry === 'terlambat' || ((entry?.waktu) && entry.waktu > '06:30:00')) {
+      pill.className = 'status-pill terlambat';
+      pill.textContent = 'Terlambat' + (entry?.waktu ? ' (' + entry.waktu.slice(0, 5) + ')' : '');
+    } else if (isDummy) {
+      pill.className = 'status-pill sudah';
       pill.textContent = '✓ Hadir (Otomatis)';
     } else {
-      const waktu = detailAbsensi[nisn]?.waktu || '';
+      pill.className = 'status-pill sudah';
+      const waktu = entry?.waktu || '';
       pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
     }
   } else {
@@ -108,16 +123,15 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
         }).catch(() => null);
       }
     } else if (cleanJamWIB >= '06:30:00') {
-      pill.className = 'status-pill peringatan';
-      pill.textContent = 'Belum Absen (Pantauan Walas)';
+      pill.className = 'status-pill terlambat peringatan';
+      pill.textContent = 'Terlambat (Pantauan Walas)';
     } else {
-      pill.className = 'status-pill belum';
-      pill.textContent = '⏱ Belum Scan Kartu';
+      pill.className = 'status-pill terlambat belum';
+      pill.textContent = '⏱ Terlambat';
     }
   }
 
   info.appendChild(nama);
-  info.appendChild(sub);
   info.appendChild(pill);
   card.appendChild(info);
 

@@ -527,7 +527,7 @@
         </div>
         <div class="stat-card" style="border-left:4px solid #ef4444;">
           <div class="stat-num" id="walasBelumAbsen" style="color:#dc2626;">0</div>
-          <div class="stat-label">Belum Hadir</div>
+          <div class="stat-label">Terlambat (Belum Tap)</div>
         </div>
       </div>
     </div>
@@ -553,7 +553,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             JAM MASUK: 06.30 - 08.00 WIB
           </div>
-          <h2 style="font-size:18px;font-weight:800;color:#0f172a;">Siswa Belum Hadir Pagi Ini</h2>
+          <h2 style="font-size:18px;font-weight:800;color:#0f172a;">Siswa Terlambat Pagi Ini</h2>
           <p style="font-size:13px;color:#64748b;margin-top:2px;">Daftar siswa yang belum tap kartu setelah 06.30 WIB agar dapat dipantau langsung oleh Wali Kelas.</p>
         </div>
         <button onclick="muatLiveAlertWalas()" class="btn-mini-action" style="background:#b91c1c;color:#fff;padding:9px 16px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;">
@@ -786,7 +786,7 @@
         </div>
         <div>
           <div class="stat-num" id="statBelumGuru" style="color:#991b1b;font-size:32px;font-weight:800;line-height:1;">0</div>
-          <div class="stat-label" style="font-size:13px;font-weight:700;color:#b91c1c;margin-top:6px;">Belum Absen / Belum Tap</div>
+          <div class="stat-label" style="font-size:13px;font-weight:700;color:#b91c1c;margin-top:6px;">Terlambat / Belum Tap</div>
           <div style="font-size:11.5px;color:#ef4444;margin-top:2px;">Perlu verifikasi manual</div>
         </div>
       </div>
@@ -809,7 +809,7 @@
             Semua (<span id="countChipSemua">0</span>)
           </button>
           <button type="button" class="btn-filter-chip" id="btnFilterBelum" onclick="filterGuruSiswa('belum', this)">
-            Belum Scan (<span id="countChipBelum">0</span>)
+            Terlambat (<span id="countChipBelum">0</span>)
           </button>
           <button type="button" class="btn-filter-chip" id="btnFilterHadir" onclick="filterGuruSiswa('hadir', this)">
             Sudah Hadir (<span id="countChipHadir">0</span>)
@@ -982,10 +982,16 @@
 <div class="modal-preview" id="modalBuktiIzin">
   <div class="modal-preview-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <h3 style="font-size:16px;font-weight:800;color:#1e293b;" id="modalBuktiTitle">Bukti Lampiran Izin</h3>
-      <button onclick="tutupModalBukti()" style="border:none;background:#f8fafc;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='#f8fafc';this.style.color='#64748b'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin:0;" id="modalBuktiTitle">Bukti Lampiran Izin</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="btnBukaDiTabBaru" onclick="if(typeof bukaLampiranAktifDiTabBaru==='function')bukaLampiranAktifDiTabBaru();" style="display:none;border:none;background:#f1f5f9;color:#475569;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;align-items:center;gap:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Tab Baru
+        </button>
+        <button onclick="tutupModalBukti()" style="border:none;background:#f8fafc;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='#f8fafc';this.style.color='#64748b'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
     <div id="modalBuktiBody" style="text-align:center;max-height:400px;overflow-y:auto;">
       <img id="modalBuktiImg" src="" alt="Bukti" style="max-width:100%;border-radius:12px;display:none;">

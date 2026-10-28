@@ -1,5 +1,7 @@
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
+const ROOT_DIR = path.resolve(__dirname, '..');
 
 console.log('====================================================');
 console.log('🧪 PENGUJIAN AUDIT NAVBAR, SPACING & FULL CODEBASE');
@@ -17,7 +19,7 @@ console.log('  ✅ e2e/screenshot-generator.js valid, dapat dieksekusi tanpa syn
 
 // 2. Verifikasi style.css: Navbar Polos 1 Jajar (Single Row Equal Width) & Spacing
 console.log('▶ [Test 2] Verifikasi style.css: Navbar Polos 1 Jajar & Spacing...');
-const css = fs.readFileSync('assets/style.css', 'utf8');
+const css = fs.readFileSync(path.join(ROOT_DIR, 'assets/style.css'), 'utf8');
 assert.ok(css.includes('.view-tabs {'), 'view-tabs must exist');
 assert.ok(css.includes('flex-wrap: nowrap;'), 'view-tabs must be single row (flex-wrap: nowrap)');
 assert.ok(css.includes('padding: 8px 10px;'), 'view-tabs must have 8px 10px padding');
@@ -35,7 +37,7 @@ console.log('  ✅ assets/style.css navbar polos 1 jajar Soft UI proporsional da
 
 // 3. Verifikasi dashboard-guru.html: Modal Chat & Walas Controls
 console.log('▶ [Test 3] Verifikasi dashboard-guru.html: Modal Chat & Walas Controls...');
-const guruHtml = fs.readFileSync('dashboard-guru.html', 'utf8');
+const guruHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard-guru.html'), 'utf8');
 assert.ok(guruHtml.includes('class="btn-chat-close"'), 'guru modal chat has btn-chat-close');
 assert.ok(guruHtml.includes('class="chat-input-field"'), 'guru modal chat has chat-input-field');
 assert.ok(guruHtml.includes('class="btn-chat-send"'), 'guru modal chat has btn-chat-send');
@@ -44,18 +46,18 @@ console.log('  ✅ dashboard-guru.html modal chat & controls lega dan proporsion
 
 // 4. Verifikasi DOM Invariants di dashboard.html
 console.log('▶ [Test 4] Verifikasi DOM Invariants di dashboard.html...');
-const dashHtml = fs.readFileSync('dashboard.html', 'utf8');
+const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
 const reqIds = ['countSudah', 'countBelum', 'gridSudahAbsen', 'gridBelumAbsen', 'pilihKelasPantau', 'namaUser', 'roleBadge', 'smartCardImg', 'btnTabBeranda', 'btnTabKelas', 'btnTabRekap', 'btnTabPerijinan', 'btnTabRiwayatIjin', 'btnTabJadwalTataTertib'];
 for (const id of reqIds) {
   assert.ok(dashHtml.includes('id="' + id + '"'), 'dashboard.html must contain #' + id);
 }
 console.log('  ✅ Seluruh atribut ID DOM wajib utuh 100%!\n');
 
-// 5. Verifikasi Master Siswa 69 & Invariant Belum Absen
-console.log('▶ [Test 5] Verifikasi Master Data 69 Siswa & 2 Siswa Belum Scan...');
-const siswa = JSON.parse(fs.readFileSync('assets/data-siswa.json', 'utf8'));
+// 5. Verifikasi Master Siswa 70 & Invariant Belum Absen
+console.log('▶ [Test 5] Verifikasi Master Data 70 Siswa & 2 Siswa Belum Scan...');
+const siswa = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'assets/data-siswa.json'), 'utf8'));
 const list = Array.isArray(siswa) ? siswa : Object.values(siswa);
-assert.strictEqual(list.length, 69, 'Must have exactly 69 students');
+assert.strictEqual(list.length, 70, 'Must have exactly 70 students');
 const ihsan = list.find(s => s.nisn === '0098263610');
 assert.ok(ihsan && ihsan.kelas === 'XII RPL 2', 'Ihsan must be in XII RPL 2');
 const rizky = list.find(s => s.nisn === '0082104129');

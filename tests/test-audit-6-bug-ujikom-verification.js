@@ -150,7 +150,7 @@ async function runAuditVerification() {
   global.MASTER_DATA_SISWA_RESMI = fbConfig.MASTER_DATA_SISWA_RESMI;
 
   // Jalankan sinkronisasiStatusAlpaFirebase untuk jam > 08:00
-  const syncAlpaRes = await fbConfig.sinkronisasiStatusAlpaFirebase('XII RPL 2', '2026-10-26');
+  const syncAlpaRes = await fbConfig.sinkronisasiStatusAlpaFirebase('XII RPL 2', '2026-10-26', '08:15:00');
   assert.ok(syncAlpaRes.totalSynced > 0, 'Siswa belum absen harus otomatis tersinkronisasi alpa');
   // Verifikasi penulisan ke node absensi/{nisn}/{tanggal}
   assert.ok(mockDbData.absensi['0098263610'], 'Node absensi untuk siswa belum absen (Ihsan) harus tercatat');
@@ -230,8 +230,8 @@ async function runAuditVerification() {
   assert.strictEqual(JENIS_PERIJINAN.sakit.label, 'Sakit');
   assert.strictEqual(JENIS_PERIJINAN.izin.label, 'Izin');
   assert.strictEqual(JENIS_PERIJINAN.ijin_kegiatan.label, 'Izin');
-  assert.strictEqual(JENIS_PERIJINAN.dispen.label, 'Dispen');
-  assert.strictEqual(JENIS_PERIJINAN.dispensasi.label, 'Dispen');
+  assert.strictEqual(JENIS_PERIJINAN.dispen.label, 'Dispensasi');
+  assert.strictEqual(JENIS_PERIJINAN.dispensasi.label, 'Dispensasi');
 
   // Verifikasi re-submit bebas blokir jika izin sebelumnya ditolak
   const storageMap = {};

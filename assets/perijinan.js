@@ -3,9 +3,10 @@
 
 const JENIS_PERIJINAN = {
   izin: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
-  dispen: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', dokumenWajib: true },
+  dispen: { label: 'Dispensasi', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', dokumenWajib: true },
   sakit: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: true },
-  dispensasi: { label: 'Dispen', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
+  dispensasi: { label: 'Dispensasi', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', dokumenWajib: true },
+  ijin: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true },
   ijin_kegiatan: { label: 'Izin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', dokumenWajib: true },
   sakit_mendadak: { label: 'Sakit', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', dokumenWajib: true },
   penugasan_dinas: { label: 'Tugas Luar / Dinas', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>', dokumenWajib: false },
@@ -15,10 +16,13 @@ const JENIS_PERIJINAN = {
 
 function getJenisPerijinanInfo(jenis) {
   if (jenis && JENIS_PERIJINAN[jenis]) return JENIS_PERIJINAN[jenis];
-  const clean = (jenis || 'Izin').replace(/_/g, ' ');
-  const capitalized = clean.charAt(0).toUpperCase() + clean.slice(1);
+  const clean = (typeof formatHumanStatusIzin === 'function')
+    ? formatHumanStatusIzin(jenis)
+    : ((typeof window !== 'undefined' && typeof window.formatHumanStatusIzin === 'function')
+        ? window.formatHumanStatusIzin(jenis)
+        : (jenis || 'Izin').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
   return {
-    label: capitalized,
+    label: clean,
     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     dokumenWajib: false
   };
@@ -1020,7 +1024,9 @@ function normalisasiItemPerizinan(item, isGuruHint) {
     tanggal: item.tanggal || '',
     status: statusNorm,
     rawStatus: rawStatus,
-    dokumen_url: item.dokumen_url || item.foto_bukti || null,
+    dokumen_url: item.dokumen_url || item.bukti_url || item.lampiranUrl || item.buktiKendala || item.foto_bukti || item.lampiran || null,
+    lampiranUrl: item.lampiranUrl || item.dokumen_url || item.bukti_url || item.buktiKendala || item.foto_bukti || item.lampiran || null,
+    lampiranNama: item.lampiranNama || item.lampiran || null,
     dibuat_pada: waktu
   };
 }
@@ -1082,8 +1088,12 @@ function renderCardPerizinanAdmin(p) {
   const safeNama = (p.nama || '').replace(/'/g, "\\'");
   const chatButton = '<button class="btn-chat" onclick="bukaModalChat(\'' + p.id + '\', \'' + safeNama + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>';
 
-  const docLink = p.dokumen_url
-    ? '<a class="perijinan-dok-link" href="' + p.dokumen_url + '" target="_blank"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen/Surat</a>'
+  const hasDoc = Boolean(
+    p.dokumen_url || p.bukti_url || p.lampiranUrl || p.buktiKendala || p.foto_bukti || p.lampiran || p.lampiranNama ||
+    (typeof localStorage !== 'undefined' && (localStorage.getItem('lampiran_kendala_' + p.id) || localStorage.getItem('lampiran_foto_' + p.id) || (p.nisn && localStorage.getItem('foto_izin_' + p.nisn))))
+  );
+  const docLink = hasDoc
+    ? '<button type="button" class="perijinan-dok-link btn-lihat-dokumen" onclick="bukaModalBuktiIzinAdmin(\'' + p.id + '\')" style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:6px 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Lihat Dokumen/Surat</button>'
     : '';
 
   const el = document.createElement('div');
@@ -2010,37 +2020,128 @@ if (typeof module !== 'undefined' && module.exports) {
     resetSemuaDataIzinDanChat,
     batalkanPengajuanIzin,
     bukaModalBukti,
-    tutupModalBukti
+    tutupModalBukti,
+    bukaModalBuktiIzinAdmin,
+    bukaLampiranAktifDiTabBaru
   };
 }
 
-function bukaModalBukti(fotoUrl, nama) {
-  if (typeof window !== 'undefined' && typeof window.bukaModalBukti === 'function' && window.bukaModalBukti !== bukaModalBukti) {
-    return window.bukaModalBukti(fotoUrl, nama);
+let currentBuktiUrlForTab = null;
+
+function bukaLampiranAktifDiTabBaru() {
+  if (!currentBuktiUrlForTab) return;
+  const url = currentBuktiUrlForTab;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+    window.open(url, '_blank');
+    return;
   }
+  if (url.startsWith('data:')) {
+    try {
+      const parts = url.split(',');
+      const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      return;
+    } catch (e) {
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write('<html><head><title>Lampiran Dokumen</title></head><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="' + url + '" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body></html>');
+        win.document.close();
+      }
+      return;
+    }
+  }
+  if (url.startsWith('/') || url.startsWith('./') || url.startsWith('assets/')) {
+    window.open(url, '_blank');
+  }
+}
+
+function bukaModalBukti(fotoUrl, nama, namaFile) {
+  if (typeof window !== 'undefined' && typeof window.bukaModalBukti === 'function' && window.bukaModalBukti !== bukaModalBukti) {
+    return window.bukaModalBukti(fotoUrl, nama, namaFile);
+  }
+  currentBuktiUrlForTab = null;
   const elTitle = document.getElementById('modalBuktiTitle');
   if (elTitle) elTitle.textContent = 'Bukti Surat Izin — ' + (nama || 'Siswa');
   const img = document.getElementById('modalBuktiImg');
   const txt = document.getElementById('modalBuktiText');
+  const btnTab = document.getElementById('btnBukaDiTabBaru');
+  if (btnTab) btnTab.style.display = 'none';
+
   if (img && txt) {
     if (!fotoUrl || fotoUrl === '[Tersimpan di Penyimpanan Lokal]') {
       img.style.display = 'none';
-      txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;text-align:center;">Tidak ada dokumen lampiran tersimpan.</div>';
+      txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;line-height:1.6;text-align:center;">' +
+        '<p style="font-weight:700;color:#0f172a;margin-bottom:6px;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju.</p>' +
+        '<p style="color:#64748b;font-size:12.5px;">Lampiran foto/dokumen ini telah tercatat secara sah di perangkat.</p>' +
+      '</div>';
     } else {
-      const isPdf = typeof fotoUrl === 'string' && (fotoUrl.startsWith('data:application/pdf') || fotoUrl.toLowerCase().includes('.pdf'));
+      const isPdf = typeof fotoUrl === 'string' && (
+        fotoUrl.startsWith('data:application/pdf') ||
+        /\.pdf(\?.*)?$/i.test(fotoUrl) ||
+        fotoUrl.includes('.pdf?') ||
+        fotoUrl.includes('.pdf&') ||
+        fotoUrl.endsWith('.pdf')
+      );
       const isSample = typeof fotoUrl === 'string' && fotoUrl.includes('sample-surat-dokter');
+      const isBareFileName = typeof fotoUrl === 'string' &&
+        !fotoUrl.startsWith('data:') &&
+        !fotoUrl.startsWith('http://') &&
+        !fotoUrl.startsWith('https://') &&
+        !fotoUrl.startsWith('blob:') &&
+        !fotoUrl.startsWith('/') &&
+        !fotoUrl.startsWith('./') &&
+        !fotoUrl.startsWith('assets/');
+
       if (isSample) {
         img.onerror = null;
         img.src = (typeof generateDigitalSuratDokterDataUrl === 'function') ? generateDigitalSuratDokterDataUrl(nama || 'M. IHSAN ATHALLAH', 'XII RPL 2') : fotoUrl;
         img.style.display = 'block';
         txt.innerHTML = '';
+        currentBuktiUrlForTab = img.src;
+        if (btnTab) btnTab.style.display = 'inline-flex';
       } else if (isPdf) {
         img.style.display = 'none';
-        txt.innerHTML = '<iframe src="' + fotoUrl + '" style="width:100%;height:70vh;border:none;"></iframe><div style="margin-top:10px;"><a href="' + fotoUrl + '" target="_blank" style="color:#4f46e5;font-weight:700;">Buka / Unduh Dokumen Surat Izin (PDF)</a></div>';
+        txt.innerHTML = '<iframe src="' + fotoUrl + '" style="width:100%;height:70vh;border:none;border-radius:10px;margin-bottom:10px;"></iframe>' +
+          '<div style="text-align:center;margin-top:10px;">' +
+            '<a href="' + fotoUrl + '" target="_blank" rel="noopener noreferrer" style="color:#4f46e5;font-weight:700;display:inline-flex;align-items:center;gap:6px;text-decoration:none;" onclick="if(this.getAttribute(\'href\').startsWith(\'data:\')&&typeof bukaLampiranAktifDiTabBaru===\'function\'){event.preventDefault();bukaLampiranAktifDiTabBaru();}">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 1-2 2v16a2 2 0 0 1 2 2h12a2 2 0 0 1 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+              'Buka / Unduh Dokumen Surat Izin (PDF)' +
+            '</a>' +
+          '</div>';
+        currentBuktiUrlForTab = fotoUrl;
+        if (btnTab) btnTab.style.display = 'inline-flex';
+      } else if (isBareFileName) {
+        img.style.display = 'none';
+        currentBuktiUrlForTab = null;
+        if (btnTab) btnTab.style.display = 'none';
+        txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;line-height:1.6;text-align:center;">' +
+          '<div style="font-size:32px;margin-bottom:8px;">📎</div>' +
+          '<p style="font-weight:700;color:#0f172a;margin-bottom:6px;">' + (namaFile || fotoUrl) + '</p>' +
+          '<p style="color:#64748b;font-size:12.5px;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju (' + (nama || 'Pengaju') + ').</p>' +
+        '</div>';
       } else {
         img.src = fotoUrl;
         img.style.display = 'block';
         txt.innerHTML = '';
+        currentBuktiUrlForTab = fotoUrl;
+        if (btnTab) btnTab.style.display = 'inline-flex';
+        img.onerror = function() {
+          img.style.display = 'none';
+          currentBuktiUrlForTab = null;
+          if (btnTab) btnTab.style.display = 'none';
+          txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;text-align:center;">' +
+            '<p style="font-weight:700;color:#0f172a;margin-bottom:6px;">' + (namaFile || 'Lampiran Dokumen') + '</p>' +
+            '<p style="color:#64748b;font-size:12.5px;">Lampiran tersimpan di penyimpanan lokal pengaju.</p>' +
+          '</div>';
+        };
       }
     }
   }
@@ -2050,6 +2151,34 @@ function bukaModalBukti(fotoUrl, nama) {
     modal.classList.add('open');
     modal.style.display = 'flex';
   }
+}
+
+function bukaModalBuktiIzinAdmin(id) {
+  let p = (typeof cacheSemuaPerizinanAdmin !== 'undefined' ? cacheSemuaPerizinanAdmin[id] : null);
+  if (!p && typeof kendalaGuruCache !== 'undefined') p = kendalaGuruCache[id];
+  if (!p && typeof ambilDataPerizinanLokal === 'function') {
+    const all = ambilDataPerizinanLokal();
+    p = all.find(x => x && (x.id === id || x.pid === id || x.kid === id));
+  }
+  p = p || {};
+  let fotoUrl = p.dokumen_url || p.bukti_url || p.lampiranUrl || p.buktiKendala || p.foto_bukti || p.lampiran;
+
+  const isBareOrMissing = !fotoUrl ||
+    fotoUrl === '[Tersimpan di Penyimpanan Lokal]' ||
+    (typeof fotoUrl === 'string' && !fotoUrl.startsWith('data:') && !fotoUrl.startsWith('http') && !fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('/') && !fotoUrl.startsWith('./') && !fotoUrl.startsWith('assets/'));
+
+  if (isBareOrMissing && typeof localStorage !== 'undefined') {
+    const localFoto = localStorage.getItem('lampiran_kendala_' + id) ||
+                      localStorage.getItem('lampiran_foto_' + id) ||
+                      (p.nisn ? localStorage.getItem('foto_izin_' + p.nisn) : null);
+    if (localFoto) {
+      fotoUrl = localFoto;
+    }
+  }
+
+  const namaPengaju = p.nama || p.guruNama || (p.isGuru ? 'Guru' : 'Siswa');
+  const namaFile = p.lampiranNama || p.lampiran || (typeof fotoUrl === 'string' && !fotoUrl.startsWith('data:') && !fotoUrl.startsWith('http') ? fotoUrl : null);
+  bukaModalBukti(fotoUrl, namaPengaju, namaFile);
 }
 
 function tutupModalBukti() {
@@ -2063,8 +2192,12 @@ function tutupModalBukti() {
 if (typeof window !== 'undefined') {
   window.bukaModalBukti = bukaModalBukti;
   window.tutupModalBukti = tutupModalBukti;
+  window.bukaModalBuktiIzinAdmin = bukaModalBuktiIzinAdmin;
+  window.bukaLampiranAktifDiTabBaru = bukaLampiranAktifDiTabBaru;
 }
 if (typeof global !== 'undefined') {
   global.bukaModalBukti = bukaModalBukti;
   global.tutupModalBukti = tutupModalBukti;
+  global.bukaModalBuktiIzinAdmin = bukaModalBuktiIzinAdmin;
+  global.bukaLampiranAktifDiTabBaru = bukaLampiranAktifDiTabBaru;
 }

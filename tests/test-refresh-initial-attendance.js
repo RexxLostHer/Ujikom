@@ -1,7 +1,7 @@
 // ===================================================================
 // TEST SUITE: test-refresh-initial-attendance.js
 // Menguji siklus hidup refresh / initial load pada dashboard.html
-// Memastikan kelas XII RPL 2 langsung tampil 32 Hadir & 2 Belum Scan
+// Memastikan kelas XII RPL 2 langsung tampil 33 Hadir & 2 Belum Scan
 // secara instan tanpa perlu ganti kelas terlebih dahulu.
 // ===================================================================
 
@@ -12,7 +12,7 @@ const vm = require('vm');
 
 console.log('===================================================================');
 console.log('🧪 PENGUJIAN SIKLUS HIDUP REFRESH & INISIALISASI PANTAU PRESENSI');
-console.log('   Target: XII RPL 2 Instan 32 Hadir & 2 Belum Scan');
+console.log('   Target: XII RPL 2 Instan 33 Hadir & 2 Belum Scan');
 console.log('===================================================================\n');
 
 // -------------------------------------------------------------------
@@ -22,14 +22,14 @@ console.log('[Test 1] Evaluasi Nilai Statis Markup HTML pada dashboard.html...')
 const htmlPath = path.join(__dirname, '..', 'dashboard.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
-assert.ok(html.includes('id="homeCountSudah">32</div>'), 'homeCountSudah harus berstatus awal 32');
+assert.ok(html.includes('id="homeCountSudah">33</div>'), 'homeCountSudah harus berstatus awal 33');
 assert.ok(html.includes('id="homeCountBelum">2</div>'), 'homeCountBelum harus berstatus awal 2');
-assert.ok(html.includes('id="countSudah">32</div>'), 'countSudah harus berstatus awal 32');
+assert.ok(html.includes('id="countSudah">33</div>'), 'countSudah harus berstatus awal 33');
 assert.ok(html.includes('id="countBelum">2</div>'), 'countBelum harus berstatus awal 2');
-assert.ok(html.includes('id="titleCountSudah">32</span>'), 'titleCountSudah harus berstatus awal 32');
+assert.ok(html.includes('id="titleCountSudah">33</span>'), 'titleCountSudah harus berstatus awal 33');
 assert.ok(html.includes('id="titleCountBelum">2</span>'), 'titleCountBelum harus berstatus awal 2');
 assert.ok(!html.includes('id="infoJamPelajaran"'), 'Banner notifikasi infoJamPelajaran harus dihapus dari dashboard.html sesuai permintaan user');
-console.log('✓ [Test 1] Markup static dashboard.html terverifikasi langsung menampilkan 32 Hadir & 2 Belum Scan (dan banner notifikasi berhasil dihapus).\n');
+console.log('✓ [Test 1] Markup static dashboard.html terverifikasi langsung menampilkan 33 Hadir & 2 Belum Scan (dan banner notifikasi berhasil dihapus).\n');
 
 // -------------------------------------------------------------------
 // Helper Mock DOM & Lingkungan Browser
@@ -266,10 +266,10 @@ vm.runInContext(dashSrc, sandbox);
 console.log('[Test 2] Evaluasi State Sinkron Top-Level assets/dashboard.js...');
 const topLevelSudah = sandbox.sudahAbsenSet;
 assert.ok(topLevelSudah, 'sudahAbsenSet harus terinisialisasi');
-assert.strictEqual(topLevelSudah.size, 32, 'sudahAbsenSet pada level teratas script harus langsung berukuran 32');
+assert.strictEqual(topLevelSudah.size, 33, 'sudahAbsenSet pada level teratas script harus langsung berukuran 33');
 assert.ok(!topLevelSudah.has('0098263610'), 'M. Ihsan Athallah (0098263610) wajib belum absen');
 assert.ok(!topLevelSudah.has('0082104129'), 'Rizky Ramadhani (0082104129) wajib belum absen');
-console.log('✓ [Test 2] State sinkron top-level assets/dashboard.js terverifikasi langsung 32 siswa.\n');
+console.log('✓ [Test 2] State sinkron top-level assets/dashboard.js terverifikasi langsung 33 siswa.\n');
 
 // -------------------------------------------------------------------
 // [Test 3] Evaluasi DOM Rendering Awal (Inisialisasi Pantau Awal / Refresh)
@@ -278,14 +278,14 @@ console.log('[Test 3] Evaluasi DOM Rendering Awal Sesaat Setelah Refresh Halaman
 // Jalankan inisialisasiPantauAwal
 sandbox.inisialisasiPantauAwal();
 
-assert.strictEqual(elements.countSudah.textContent, 32, 'countSudah harus bernilai 32');
+assert.strictEqual(elements.countSudah.textContent, 33, 'countSudah harus bernilai 33');
 assert.strictEqual(elements.countBelum.textContent, 2, 'countBelum harus bernilai 2');
-assert.strictEqual(elements.titleCountSudah.textContent, 32, 'titleCountSudah harus bernilai 32');
+assert.strictEqual(elements.titleCountSudah.textContent, 33, 'titleCountSudah harus bernilai 33');
 assert.strictEqual(elements.titleCountBelum.textContent, 2, 'titleCountBelum harus bernilai 2');
-assert.strictEqual(elements.homeCountSudah.textContent, 32, 'homeCountSudah harus bernilai 32');
+assert.strictEqual(elements.homeCountSudah.textContent, 33, 'homeCountSudah harus bernilai 33');
 assert.strictEqual(elements.homeCountBelum.textContent, 2, 'homeCountBelum harus bernilai 2');
 
-assert.strictEqual(elements.gridSudahAbsen.children.length, 32, 'gridSudahAbsen harus berisi tepat 32 kartu siswa');
+assert.strictEqual(elements.gridSudahAbsen.children.length, 33, 'gridSudahAbsen harus berisi tepat 33 kartu siswa');
 assert.strictEqual(elements.gridBelumAbsen.children.length, 2, 'gridBelumAbsen harus berisi tepat 2 kartu siswa');
 
 // Validasi 2 siswa di gridBelumAbsen
@@ -297,7 +297,7 @@ const belumNames = belumCards.map(c => {
 });
 assert.ok(belumNames.some(n => n.includes('IHSAN')), 'M. Ihsan Athallah harus ada di daftar belum absen');
 assert.ok(belumNames.some(n => n.includes('RIZKY')), 'Rizky Ramadhani harus ada di daftar belum absen');
-console.log('✓ [Test 3] Tampilan DOM awal langsung 32 Hadir dan 2 Belum Absen tanpa jeda atau klik.\n');
+console.log('✓ [Test 3] Tampilan DOM awal langsung 33 Hadir dan 2 Belum Absen tanpa jeda atau klik.\n');
 
 // -------------------------------------------------------------------
 // [Test 4] Resiliensi Snapshot Firebase Kosong
@@ -306,9 +306,9 @@ console.log('[Test 4] Evaluasi Resiliensi saat Snapshot Firebase Mengembalikan D
 const today = sandbox.tanggalHariIni ? sandbox.tanggalHariIni() : '2026-10-15';
 mockDb.trigger('presensi_jam/XII RPL 2/' + today, null);
 
-assert.strictEqual(elements.countSudah.textContent, 32, 'countSudah harus tetap 32 meski Firebase kosong');
+assert.strictEqual(elements.countSudah.textContent, 33, 'countSudah harus tetap 33 meski Firebase kosong');
 assert.strictEqual(elements.countBelum.textContent, 2, 'countBelum harus tetap 2 meski Firebase kosong');
-assert.strictEqual(elements.homeCountSudah.textContent, 32, 'homeCountSudah harus tetap 32');
+assert.strictEqual(elements.homeCountSudah.textContent, 33, 'homeCountSudah harus tetap 33');
 assert.strictEqual(elements.homeCountBelum.textContent, 2, 'homeCountBelum harus tetap 2');
 console.log('✓ [Test 4] Snapshot Firebase kosong tidak menghapus data kehadiran default.\n');
 
@@ -323,12 +323,12 @@ mockDb.trigger('presensi_jam/XII RPL 2/' + today, {
   }
 });
 
-assert.strictEqual(elements.countSudah.textContent, 33, 'countSudah harus bertambah menjadi 33 setelah Ihsan tap kartu');
+assert.strictEqual(elements.countSudah.textContent, 34, 'countSudah harus bertambah menjadi 34 setelah Ihsan tap kartu');
 assert.strictEqual(elements.countBelum.textContent, 1, 'countBelum harus berkurang menjadi 1 setelah Ihsan tap kartu');
-assert.strictEqual(elements.homeCountSudah.textContent, 33, 'homeCountSudah harus bertambah menjadi 33');
+assert.strictEqual(elements.homeCountSudah.textContent, 34, 'homeCountSudah harus bertambah menjadi 34');
 assert.strictEqual(elements.homeCountBelum.textContent, 1, 'homeCountBelum harus berkurang menjadi 1');
 assert.strictEqual(elements.gridBelumAbsen.children.length, 1, 'gridBelumAbsen sekarang hanya berisi 1 siswa');
-console.log('✓ [Test 5] Tap live kartu RFID Ihsan berhasil terintegrasi secara realtime (33 Hadir, 1 Belum).\n');
+console.log('✓ [Test 5] Tap live kartu RFID Ihsan berhasil terintegrasi secara realtime (34 Hadir, 1 Belum).\n');
 
 // -------------------------------------------------------------------
 // [Test 6] Evaluasi Pergantian Kelas Silang (XII RPL 2 -> XII RPL 1 -> XII RPL 2)
@@ -345,7 +345,7 @@ assert.strictEqual(elements.pilihKelasHome.value, 'XII RPL 1');
 // Pindah kembali ke XII RPL 2 (reset simulasi db tap untuk menguji keadaan murni)
 mockDb.trigger('presensi_jam/XII RPL 2/' + today, null);
 sandbox.onKelasPantauGanti('XII RPL 2');
-assert.strictEqual(elements.countSudah.textContent, 32, 'Kembali ke XII RPL 2 harus langsung 32 Hadir');
+assert.strictEqual(elements.countSudah.textContent, 33, 'Kembali ke XII RPL 2 harus langsung 33 Hadir');
 assert.strictEqual(elements.countBelum.textContent, 2, 'Kembali ke XII RPL 2 harus langsung 2 Belum Absen');
 assert.strictEqual(elements.pilihKelasPantau.value, 'XII RPL 2');
 assert.strictEqual(elements.pilihKelasHome.value, 'XII RPL 2');
@@ -364,11 +364,11 @@ const tamuUser = {
 };
 
 sandbox.initDashboard(tamuUser);
-assert.strictEqual(elements.countSudah.textContent, 32, 'Pengunjung harus melihat 32 Hadir untuk XII RPL 2');
+assert.strictEqual(elements.countSudah.textContent, 33, 'Pengunjung harus melihat 33 Hadir untuk XII RPL 2');
 assert.strictEqual(elements.countBelum.textContent, 2, 'Pengunjung harus melihat 2 Belum Absen untuk XII RPL 2');
-assert.strictEqual(elements.homeCountSudah.textContent, 32, 'Home pengunjung harus melihat 32 Hadir');
+assert.strictEqual(elements.homeCountSudah.textContent, 33, 'Home pengunjung harus melihat 33 Hadir');
 assert.strictEqual(elements.homeCountBelum.textContent, 2, 'Home pengunjung harus melihat 2 Belum Absen');
-console.log('✓ [Test 7] Akun pengunjung langsung melihat statistik kehadiran 32 & 2 secara akurat.\n');
+console.log('✓ [Test 7] Akun pengunjung langsung melihat statistik kehadiran 33 & 2 secara akurat.\n');
 
 // -------------------------------------------------------------------
 // [Test 8] Evaluasi Inisialisasi Otomatis Mandiri (Zero-Intervention Synchronous Load)
@@ -427,9 +427,9 @@ vm.runInContext(juSrc, freshSandbox);
 vm.runInContext(dashSrc, freshSandbox);
 
 // Tanpa memanggil freshSandbox.inisialisasiPantauAwal() secara manual:
-assert.strictEqual(freshDom.elements.countSudah.textContent, 32, 'Auto-init mandiri harus langsung menampilkan 32 Hadir');
+assert.strictEqual(freshDom.elements.countSudah.textContent, 33, 'Auto-init mandiri harus langsung menampilkan 33 Hadir');
 assert.strictEqual(freshDom.elements.countBelum.textContent, 2, 'Auto-init mandiri harus langsung menampilkan 2 Belum Absen');
-assert.strictEqual(freshDom.elements.gridSudahAbsen.children.length, 32, 'Auto-init mandiri harus langsung mengisi 32 kartu Hadir');
+assert.strictEqual(freshDom.elements.gridSudahAbsen.children.length, 33, 'Auto-init mandiri harus langsung mengisi 33 kartu Hadir');
 assert.strictEqual(freshDom.elements.gridBelumAbsen.children.length, 2, 'Auto-init mandiri harus langsung mengisi 2 kartu Belum');
 console.log('✓ [Test 8] Inisialisasi synchronous mandiri terbukti 100% aktif seketika script dimuat.\n');
 
@@ -440,9 +440,9 @@ console.log('[Test 9] Evaluasi Resiliensi Roster saat Cache Siswa Kosong...');
 // Kosongkan cache lokal untuk mensimulasikan latensi atau kegagalan fetch awal
 sandbox.semuaSiswaCache = {};
 sandbox.renderPantauKelas();
-assert.strictEqual(elements.countSudah.textContent, 32, 'Fallback master data harus tetap menjamin 32 Hadir');
+assert.strictEqual(elements.countSudah.textContent, 33, 'Fallback master data harus tetap menjamin 33 Hadir');
 assert.strictEqual(elements.countBelum.textContent, 2, 'Fallback master data harus tetap menjamin 2 Belum Absen');
-assert.strictEqual(elements.gridSudahAbsen.children.length, 32, 'Grid hadir harus tetap memuat 32 kartu siswa utuh');
+assert.strictEqual(elements.gridSudahAbsen.children.length, 33, 'Grid hadir harus tetap memuat 33 kartu siswa utuh');
 assert.strictEqual(elements.gridBelumAbsen.children.length, 2, 'Grid belum absen harus tepat 2 siswa (Ihsan & Rizky)');
 console.log('✓ [Test 9] Fallback master data resmi terbukti tangguh mencegah bug 2 siswa / 0 Hadir.\n');
 
@@ -460,12 +460,12 @@ mockDb.trigger('presensi_jam/XII RPL 2/' + today, {
     }
   }
 });
-assert.strictEqual(elements.countSudah.textContent, 31, 'Siswa Alpa harus dikeluarkan dari Hadir (32 -> 31)');
+assert.strictEqual(elements.countSudah.textContent, 32, 'Siswa Alpa harus dikeluarkan dari Hadir (33 -> 32)');
 assert.strictEqual(elements.countBelum.textContent, 3, 'Siswa Alpa harus dihitung ke Belum Hadir / Alpa (2 -> 3)');
 
 // Reset kembali status db presensi_jam
 mockDb.trigger('presensi_jam/XII RPL 2/' + today, null);
-assert.strictEqual(elements.countSudah.textContent, 32, 'Setelah reset snapshot, Hadir kembali ke default 32');
+assert.strictEqual(elements.countSudah.textContent, 33, 'Setelah reset snapshot, Hadir kembali ke default 33');
 assert.strictEqual(elements.countBelum.textContent, 2, 'Setelah reset snapshot, Belum kembali ke default 2');
 console.log('✓ [Test 10] Penanganan status Alpa terverifikasi akurat dan tidak bocor ke kategori Hadir.\n');
 
@@ -545,10 +545,10 @@ vm.runInContext(dashSrc, tabSandbox);
 // Tab Kelas otomatis dipulihkan menjadi aktif dan kartu langsung dirender
 assert.strictEqual(tabContentKelas.style.display, 'block', 'tabKelas harus otomatis berstatus display block saat refresh');
 assert.ok(tabContentKelas.classList.contains('active'), 'tabKelas harus memiliki class active');
-assert.strictEqual(tabDom.elements.countSudah.textContent, 32, 'tabKelas harus langsung menampilkan 32 Hadir');
+assert.strictEqual(tabDom.elements.countSudah.textContent, 33, 'tabKelas harus langsung menampilkan 33 Hadir');
 assert.strictEqual(tabDom.elements.countBelum.textContent, 2, 'tabKelas harus langsung menampilkan 2 Belum Scan');
-assert.strictEqual(tabDom.elements.gridSudahAbsen.children.length, 32, 'tabKelas gridSudahAbsen langsung terisi 32 kartu');
-console.log('✓ [Test 12] Pemulihan tab aktif saat refresh (tabKelas) terverifikasi langsung menampilkan 32 & 2 kartu.\n');
+assert.strictEqual(tabDom.elements.gridSudahAbsen.children.length, 33, 'tabKelas gridSudahAbsen langsung terisi 33 kartu');
+console.log('✓ [Test 12] Pemulihan tab aktif saat refresh (tabKelas) terverifikasi langsung menampilkan 33 & 2 kartu.\n');
 
 // -------------------------------------------------------------------
 // [Test 13] Evaluasi Efisiensi Cache Listener dengarkanPresensiKelas

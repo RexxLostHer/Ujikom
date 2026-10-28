@@ -22,19 +22,23 @@ global.MASTER_DATA_SISWA_RESMI = firebaseConfig.MASTER_DATA_SISWA_RESMI;
 const authModule = require('../assets/auth.js');
 const { cariSiswaByEmail, kirimResetPassword } = authModule;
 
-// [Test 1] Pengenalan Email Siswa M. Ihsan Athallah
-console.log('[Test 1] Validasi pemetaan email zemapk16@gmail.com ke siswa M. Ihsan Athallah');
-const siswaIhsan16 = cariSiswaByEmail('zemapk16@gmail.com');
-assert.ok(siswaIhsan16, 'Siswa zemapk16@gmail.com harus ditemukan');
-assert.strictEqual(siswaIhsan16.nisn, '0098263610', 'NISN harus 0098263610 (M. Ihsan Athallah)');
-assert.strictEqual(siswaIhsan16.kelas, 'XII RPL 2', 'Kelas harus XII RPL 2');
-console.log('✓ Email zemapk16@gmail.com berhasil dipetakan ke M. Ihsan Athallah (NISN: 0098263610, XII RPL 2)\n');
+// [Test 1] Pengenalan Email Siswa M. Ihsan Athallah & Pelepasan Role zemapk16
+console.log('[Test 1] Validasi pemetaan email 7dosabesar557@gmail.com & pelepasan zemapk16@gmail.com');
+const siswa7Dosa = cariSiswaByEmail('7dosabesar557@gmail.com');
+assert.ok(siswa7Dosa, 'Siswa 7dosabesar557@gmail.com harus ditemukan sebagai M. Ihsan');
+assert.strictEqual(siswa7Dosa.nisn, '0098263610', 'NISN harus 0098263610 (M. Ihsan Athallah)');
+assert.strictEqual(siswa7Dosa.kelas, 'XII RPL 2', 'Kelas harus XII RPL 2');
+
+// Verifikasi zemapk16@gmail.com bebas dari peran M. Ihsan (tidak ada duplikasi)
+const siswaZemapk16 = cariSiswaByEmail('zemapk16@gmail.com');
+assert.strictEqual(siswaZemapk16, null, 'zemapk16@gmail.com TIDAK boleh terpetakan ke M. Ihsan lagi');
+console.log('✓ Email 7dosabesar557@gmail.com berhasil dipetakan ke M. Ihsan Athallah & zemapk16@gmail.com bersih dari duplikasi.\n');
 
 // [Test 2] Reset Password saat Firebase belum didefinisikan (Offline Resilience)
 console.log('[Test 2] Pengujian kirimResetPassword saat Firebase SDK tidak tersedia (bebas ReferenceError)');
 (async () => {
   try {
-    const res = await kirimResetPassword('zemapk16@gmail.com');
+    const res = await kirimResetPassword('7dosabesar557@gmail.com');
     assert.ok(res, 'Hasil reset password harus ada');
     assert.strictEqual(res.success, true, 'Status success harus true');
     assert.strictEqual(res.isOffline, true, 'Harus masuk ke mode isOffline resilience');
@@ -44,7 +48,7 @@ console.log('[Test 2] Pengujian kirimResetPassword saat Firebase SDK tidak terse
     // Periksa apakah tersimpan di local_password_reset_requests
     const reqs = JSON.parse(global.localStorage.getItem('local_password_reset_requests') || '[]');
     assert.ok(reqs.length > 0, 'Permintaan reset harus tersimpan di local_password_reset_requests');
-    assert.strictEqual(reqs[0].email, 'zemapk16@gmail.com');
+    assert.strictEqual(reqs[0].email, '7dosabesar557@gmail.com');
     console.log('✓ kirimResetPassword sukses menangani mode offline tanpa melempar ReferenceError\n');
 
     // [Test 3] Validasi Format Email Tidak Valid

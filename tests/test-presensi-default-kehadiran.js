@@ -24,20 +24,20 @@ assert.strictEqual(fb.EXCLUDED_BELUM_ABSEN_NISN.length, 2, 'Hanya ada 2 siswa da
 console.log('✓ [Test 1] Konstanta pengecualian Ihsan & Rizky terverifikasi akurat.\n');
 
 // 2. Verifikasi Kehadiran Kelas XII RPL 2
-console.log('[Test 2] Evaluasi Presensi Kelas XII RPL 2 (34 Siswa: 32 Hadir, 2 Belum Absen)...');
+console.log('[Test 2] Evaluasi Presensi Kelas XII RPL 2 (35 Siswa: 33 Hadir, 2 Belum Absen)...');
 const defRpl2 = fb.generateDefaultPresensiResmi('XII RPL 2', '2026-10-15');
 const allRpl2 = Object.values(fb.MASTER_DATA_SISWA_RESMI).filter(s => fb.normalisasiKelas(fb.ambilKelasSiswa(s)) === 'XII RPL 2');
-assert.strictEqual(allRpl2.length, 34, 'Total siswa XII RPL 2 harus tepat 34');
+assert.strictEqual(allRpl2.length, 35, 'Total siswa XII RPL 2 harus tepat 35');
 
 const hadirRpl2 = allRpl2.filter(s => defRpl2[s.nisn] && defRpl2[s.nisn].status === 'hadir');
 const belumRpl2 = allRpl2.filter(s => !defRpl2[s.nisn]);
 
-assert.strictEqual(hadirRpl2.length, 32, 'Harus ada 32 siswa XII RPL 2 yang Sudah Hadir');
+assert.strictEqual(hadirRpl2.length, 33, 'Harus ada 33 siswa XII RPL 2 yang Sudah Hadir');
 assert.strictEqual(belumRpl2.length, 2, 'Harus ada tepat 2 siswa XII RPL 2 yang Belum Absen');
 
 const belumNisns = belumRpl2.map(s => s.nisn).sort();
 assert.deepStrictEqual(belumNisns, ['0082104129', '0098263610'], 'Dua siswa yang belum absen wajib Ihsan & Rizky');
-console.log('✓ [Test 2] XII RPL 2 terverifikasi: 32 Hadir, 2 Belum Absen (M. Ihsan Athallah & Rizky Ramadhani).\n');
+console.log('✓ [Test 2] XII RPL 2 terverifikasi: 33 Hadir, 2 Belum Absen (M. Ihsan Athallah & Rizky Ramadhani).\n');
 
 // 3. Verifikasi Kehadiran Kelas XII RPL 1
 console.log('[Test 3] Evaluasi Presensi Kelas XII RPL 1 (33 Siswa: Seluruhnya Hadir)...');
@@ -65,16 +65,16 @@ assert.strictEqual(hadirTkj1.length, 2, 'Seluruh 2 siswa XII TKJ 1 harus Sudah H
 assert.strictEqual(belumTkj1.length, 0, 'Tidak boleh ada siswa XII TKJ 1 yang Belum Absen');
 console.log('✓ [Test 4] XII TKJ 1 terverifikasi: Seluruh 2 siswa Sudah Hadir.\n');
 
-// 5. Total Kumulatif 69 Siswa
-console.log('[Test 5] Evaluasi Total Kumulatif 3 Kelas (69 Siswa: 67 Hadir, 2 Belum Absen)...');
+// 5. Total Kumulatif 70 Siswa
+console.log('[Test 5] Evaluasi Total Kumulatif 3 Kelas (70 Siswa: 68 Hadir, 2 Belum Absen)...');
 const defSemua = fb.generateDefaultPresensiResmi(null, '2026-10-15');
 const totalSiswaResmi = Object.keys(fb.MASTER_DATA_SISWA_RESMI).length;
 const totalHadir = Object.keys(defSemua).length;
 
-assert.strictEqual(totalSiswaResmi, 69, 'Total siswa resmi harus tepat 69');
-assert.strictEqual(totalHadir, 67, 'Total siswa hadir harus tepat 67');
+assert.strictEqual(totalSiswaResmi, 70, 'Total siswa resmi harus tepat 70');
+assert.strictEqual(totalHadir, 68, 'Total siswa hadir harus tepat 68');
 assert.strictEqual(totalSiswaResmi - totalHadir, 2, 'Tepat selisih 2 siswa belum absen');
-console.log('✓ [Test 5] Total kumulatif terverifikasi: 67 Hadir, 2 Belum Absen.\n');
+console.log('✓ [Test 5] Total kumulatif terverifikasi: 68 Hadir, 2 Belum Absen.\n');
 
 // 6. Simulasi Tap RFID Live M. Ihsan Athallah
 console.log('[Test 6] Simulasi Tap RFID Live M. Ihsan Athallah (0098263610)...');
@@ -95,7 +95,7 @@ assert.strictEqual(finalPresensi['0098263610'].waktu, '06:55:00', 'Jam tap Ihsan
 assert.strictEqual(finalPresensi['0082104129'], undefined, 'Rizky tetap Belum Absen karena belum di-tap');
 
 const hitungSudahSetelahTap = Object.keys(finalPresensi).length;
-assert.strictEqual(hitungSudahSetelahTap, 33, 'Setelah Ihsan tap, jumlah hadir naik jadi 33');
+assert.strictEqual(hitungSudahSetelahTap, 34, 'Setelah Ihsan tap, jumlah hadir naik jadi 34');
 console.log('✓ [Test 6] Transisi live tap RFID Ihsan terverifikasi mulus.\n');
 
 // 7. Normalisasi Prefix Kelas & Sanitasi Input Dropdown
@@ -109,7 +109,7 @@ console.log('[Test 7] Evaluasi Normalisasi Variasi Input Dropdown (Prefix "Kelas
 ['Kelas XII RPL 2', 'kelas  xii-rpl-2', '12 RPL 2', 'XII RPL 2'].forEach(input => {
   assert.strictEqual(fb.normalisasiKelas(input), 'XII RPL 2', `Input "${input}" harus dinormalisasi menjadi "XII RPL 2"`);
   const res = fb.generateDefaultPresensiResmi(input, '2026-10-15');
-  assert.strictEqual(Object.keys(res).length, 32, `Hasil presensi untuk input "${input}" harus tetap 32 siswa (minus Ihsan & Rizky)`);
+  assert.strictEqual(Object.keys(res).length, 33, `Hasil presensi untuk input "${input}" harus tetap 33 siswa (minus Ihsan & Rizky)`);
 });
 
 ['Kelas XII TKJ 1', 'kelas  xii-tkj-1', '12 TKJ 1', 'XII TKJ 1'].forEach(input => {
