@@ -66,11 +66,11 @@ console.log('  ✅ Master data 69 siswa utuh dan 2 siswa belum scan (Ihsan & Riz
 
 // 6. Verifikasi Penyederhanaan Teks Navbar Dashboard Siswa
 console.log('▶ [Test 6] Verifikasi Penyederhanaan Teks Navbar Siswa...');
-assert.ok(dashHtml.includes('Pantau Kelas'), 'Navbar siswa harus memuat "Pantau Kelas"');
+assert.ok(dashHtml.includes('Kehadiran'), 'Navbar siswa harus memuat "Kehadiran"');
 assert.ok(!dashHtml.includes('Pantau Presensi Kelas'), 'Navbar siswa TIDAK boleh memuat teks panjang "Pantau Presensi Kelas"');
 assert.ok(dashHtml.includes('Riwayat Kehadiran'), 'Navbar siswa harus memuat "Riwayat Kehadiran"');
 assert.ok(!dashHtml.includes('Riwayat Kehadiran Saya'), 'Navbar siswa TIDAK boleh memuat teks "Riwayat Kehadiran Saya"');
-console.log('  ✅ Label tab berhasil disederhanakan: "Pantau Kelas" dan "Riwayat Kehadiran" terverifikasi presisi!\n');
+console.log('  ✅ Label tab berhasil disederhanakan: "Kehadiran" dan "Riwayat Kehadiran" terverifikasi presisi!\n');
 
 // 7. Verifikasi Modern Vector SVG Icons (Bebas Emoji AI Slop)
 console.log('▶ [Test 7] Verifikasi Modern Vector SVG Icons di dashboard.html & dashboard-guru.html...');

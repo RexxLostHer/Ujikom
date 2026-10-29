@@ -240,7 +240,7 @@
     </button>
     <button class="view-tab-btn" id="btnTabKelas" onclick="switchTab('tabKelas', this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Pantau Kelas
+      Kehadiran
     </button>
     <button class="view-tab-btn" id="btnTabRekap" onclick="switchTab('tabRekap', this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
@@ -672,48 +672,102 @@
 
   </div>
 
-  <!-- ===== TAB 1: PANTAU PRESENSI KELAS ===== -->
+  <!-- ===== TAB 1: KEHADIRAN (SISWA & DEWAN GURU) ===== -->
   <div id="tabKelas" class="tab-content" style="display:none;">
-    <div class="filter-bar">
-      <select id="pilihKelasPantau" onchange="if(typeof onKelasPantauGanti==='function') onKelasPantauGanti(this.value); else if(typeof onKelasGanti==='function') onKelasGanti(this.value);">
-        <option value="XII RPL 1">Kelas XII RPL 1</option>
-        <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
-        <option value="XII TKJ 1">Kelas XII TKJ 1</option>
-      </select>
-      <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">
+    <!-- Sub-Tab Switcher Modern -->
+    <div class="subtab-kehadiran-wrap">
+      <button type="button" class="subtab-kehadiran-btn active" id="btnSubtabSiswa" onclick="switchSubtabKehadiran('siswa')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Kehadiran Siswa
+      </button>
+      <button type="button" class="subtab-kehadiran-btn" id="btnSubtabGuru" onclick="switchSubtabKehadiran('guru')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Kehadiran Guru
+      </button>
     </div>
 
-    <!-- Statistik Ringkasan -->
-    <div class="ringkasan-grid">
-      <div class="stat-box sudah">
-        <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <!-- 1. KONTEN KEHADIRAN SISWA (3 KELAS RESMI) -->
+    <div id="kontenKehadiranSiswa">
+      <div class="filter-bar">
+        <select id="pilihKelasPantau" onchange="if(typeof onKelasPantauGanti==='function') onKelasPantauGanti(this.value); else if(typeof onKelasGanti==='function') onKelasGanti(this.value);">
+          <option value="XII RPL 1">Kelas XII RPL 1</option>
+          <option value="XII RPL 2" selected>Kelas XII RPL 2</option>
+          <option value="XII TKJ 1">Kelas XII TKJ 1</option>
+        </select>
+        <input type="text" id="cariNamaSiswa" placeholder="Cari nama siswa atau NISN...">
+      </div>
+
+      <!-- Statistik Ringkasan -->
+      <div class="ringkasan-grid">
+        <div class="stat-box sudah">
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="stat-number" id="countSudah">33</div>
+            <div class="stat-label">Sudah Hadir di Kelas</div>
+          </div>
         </div>
-        <div>
-          <div class="stat-number" id="countSudah">33</div>
-          <div class="stat-label">Sudah Hadir di Kelas</div>
+        <div class="stat-box belum">
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="stat-number" id="countBelum">2</div>
+            <div class="stat-label">Tanpa Keterangan</div>
+          </div>
         </div>
       </div>
-      <div class="stat-box belum">
-        <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+
+      <div class="section-title">
+        <span style="color:#38B2AC;font-size:18px;">●</span> Sudah Absen (<span id="titleCountSudah">33</span>)
+      </div>
+      <div class="siswa-grid" id="gridSudahAbsen"></div>
+
+      <div class="section-title" style="margin-top:32px;">
+        <span style="color:#E53E3E;font-size:18px;">●</span> Tanpa Keterangan (<span id="titleCountBelum">2</span>)
+      </div>
+      <div class="siswa-grid" id="gridBelumAbsen"></div>
+    </div>
+
+    <!-- 2. KONTEN KEHADIRAN DEWAN GURU (REALTIME NFC SCAN & OPEN ACCESS) -->
+    <div id="kontenKehadiranGuru" style="display:none;">
+      <div class="filter-bar" style="margin-bottom:20px;">
+        <input type="text" id="cariNamaGuru" oninput="if(typeof renderKehadiranGuru==='function') renderKehadiranGuru()" placeholder="Cari nama guru atau mata pelajaran..." style="flex:1;">
+      </div>
+
+      <!-- Statistik Ringkasan Guru -->
+      <div class="ringkasan-grid">
+        <div class="stat-box sudah">
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="stat-number" id="countGuruHadir">0</div>
+            <div class="stat-label">Guru Hadir (Tap NFC)</div>
+          </div>
         </div>
-        <div>
-          <div class="stat-number" id="countBelum">2</div>
-          <div class="stat-label">Tanpa Keterangan</div>
+        <div class="stat-box belum">
+          <div class="stat-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="stat-number" id="countGuruBelum">5</div>
+            <div class="stat-label">Belum Hadir</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="section-title">
-      <span style="color:#38B2AC;font-size:18px;">●</span> Sudah Absen (<span id="titleCountSudah">33</span>)
-    </div>
-    <div class="siswa-grid" id="gridSudahAbsen"></div>
+      <div class="section-title">
+        <span style="color:#10B981;font-size:18px;">●</span> Dewan Guru Hadir (<span id="titleCountGuruHadir">0</span>)
+      </div>
+      <div class="siswa-grid" id="gridGuruHadir"></div>
 
-    <div class="section-title" style="margin-top:32px;">
-      <span style="color:#E53E3E;font-size:18px;">●</span> Tanpa Keterangan (<span id="titleCountBelum">2</span>)
+      <div class="section-title" style="margin-top:32px;">
+        <span style="color:#F43F5E;font-size:18px;">●</span> Belum Hadir (<span id="titleCountGuruBelum">5</span>)
+      </div>
+      <div class="siswa-grid" id="gridGuruBelum"></div>
     </div>
-    <div class="siswa-grid" id="gridBelumAbsen"></div>
   </div>
 
   <!-- ===== TAB 2: AJUKAN IJIN ===== -->

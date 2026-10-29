@@ -255,8 +255,13 @@ function switchTab(id, btn) {
     }
   } catch (e) {}
 
-  if (id === 'tabKelas' && typeof renderPantauKelas === 'function') {
-    renderPantauKelas();
+  if (id === 'tabKelas') {
+    if (typeof renderPantauKelas === 'function') {
+      renderPantauKelas();
+    }
+    if (typeof subtabKehadiranAktif !== 'undefined' && subtabKehadiranAktif === 'guru' && typeof renderKehadiranGuru === 'function') {
+      renderKehadiranGuru();
+    }
   }
   if (id === 'tabBeranda' && typeof renderPantauBeranda === 'function') {
     renderPantauBeranda();
@@ -724,9 +729,8 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
       const catB = (jB === 'dispensasi' || jB === 'dispen') ? 'dispen' : ((jB === 'izin' || jB === 'ijin_kegiatan' || jB === 'ijin') ? 'izin' : jB);
       if (catA !== catB) return false;
     }
-    if (tanggal && it.tanggal && it.tanggal !== tanggal) {
-      return false;
-    }
+    // Aturan Sistemik Anti Double-Send: Jangan batasi tanggal pada izin pending.
+    // Selama siswa memiliki izin berstatus pending, siswa dilarang mengajukan izin kedua.
     return true;
   });
 
@@ -854,7 +858,14 @@ function populateDropdownSiswa(user) {
   }
 }
 
+let isSubmittingPerijinan = false;
+
 async function handleSubmitPerijinan() {
+  if (isSubmittingPerijinan) {
+    console.warn('[Anti-Double-Send] Pengajuan izin sedang diproses. Mengabaikan klik berulang.');
+    return;
+  }
+
   let user = currentUser || (typeof getSessionUser === 'function' ? getSessionUser() : null);
   const btn = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
@@ -935,9 +946,8 @@ async function handleSubmitPerijinan() {
     return;
   }
 
-  
-  // Safeguard Anti Double-Send di handleSubmitPerijinan
-  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa, jenis, tanggal) : null;
+  // Safeguard Anti Double-Send di handleSubmitPerijinan: Satu siswa hanya bisa memiliki 1 pengajuan pending aktif
+  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa) : null;
   if (activePending) {
     if (msg) {
       msg.style.display = 'block';
@@ -973,12 +983,14 @@ async function handleSubmitPerijinan() {
     return;
   }
 
+  isSubmittingPerijinan = true;
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Mengirim pengajuan...';
   }
   if (msg) msg.textContent = '';
 
+  let isSuccessSubmit = false;
   try {
     // 1. Ambil data siswa dari master data lokal terlebih dahulu untuk menghindari ketergantungan pada izin baca /siswa/
     let s = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[selSiswa])
@@ -1032,6 +1044,7 @@ async function handleSubmitPerijinan() {
 
     // 3. Simpan perizinan utama ke node perizinan dan antrean lokal localStorage
     await submitPerijinan(userPayload, jenis, alasan, tanggal, fileInput);
+    isSuccessSubmit = true;
 
     // 4. Sinkronisasi sekunder opsional ke node siswa (jika diizinkan oleh rules), dibungkus aman
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
@@ -1050,6 +1063,7 @@ async function handleSubmitPerijinan() {
     }
 
     if (msg) {
+      msg.style.display = 'block';
       msg.style.color = '#10b981';
       msg.textContent = 'Pengajuan berhasil dikirim! Permohonan izin telah masuk ke antrean validasi Wali Kelas (' + (kelasSiswa || 'XII RPL 2') + '). Silakan buka tab Status Perizinan untuk konfirmasi.';
       msg.innerHTML = '<b>✓ Pengajuan berhasil dikirim!</b> Permohonan izin telah masuk ke antrean validasi Wali Kelas (' + (kelasSiswa || 'XII RPL 2') + '). Silakan buka tab Status Perizinan untuk konfirmasi.';
@@ -1064,9 +1078,12 @@ async function handleSubmitPerijinan() {
   } catch(e) {
     // Jika masih ada error permission_denied di path siswa, tangani secara ramah
     if (e && e.message && (e.message.includes('/siswa/') || e.message.includes('permission_denied'))) {
+      isSuccessSubmit = true;
       if (msg) {
+        msg.style.display = 'block';
         msg.style.color = '#10b981';
         msg.textContent = 'Pengajuan izin berhasil tersimpan. Silakan buka tab Status Perizinan untuk konfirmasi.';
+        msg.innerHTML = '<b>✓ Pengajuan izin berhasil tersimpan.</b> Silakan buka tab Status Perizinan untuk konfirmasi.';
       }
       if (alasanInput) alasanInput.value = '';
       if (fileInput) fileInput.value = '';
@@ -1075,11 +1092,13 @@ async function handleSubmitPerijinan() {
       }
     } else {
       if (msg) {
+        msg.style.display = 'block';
         msg.style.color = '#ef4444';
         msg.textContent = 'Gagal: ' + (e ? e.message : 'Terjadi kendala saat mengirim pengajuan.');
       }
     }
   } finally {
+    isSubmittingPerijinan = false;
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Kirim Pengajuan Izin';
@@ -1921,6 +1940,225 @@ function renderPantauKelas() {
   if (cBelum) cBelum.textContent = cb;
   if (tSudah) tSudah.textContent = cs;
   if (tBelum) tBelum.textContent = cb;
+}
+
+// ===== KEHADIRAN DEWAN GURU & SUB-TAB SWITCHER =====
+var subtabKehadiranAktif = 'siswa';
+var cachePresensiGuruHariIni = {};
+
+function switchSubtabKehadiran(target) {
+  subtabKehadiranAktif = target || 'siswa';
+  const btnSiswa = document.getElementById('btnSubtabSiswa');
+  const btnGuru = document.getElementById('btnSubtabGuru');
+  const kontenSiswa = document.getElementById('kontenKehadiranSiswa');
+  const kontenGuru = document.getElementById('kontenKehadiranGuru');
+
+  if (target === 'guru') {
+    if (btnSiswa) btnSiswa.classList.remove('active');
+    if (btnGuru) btnGuru.classList.add('active');
+    if (kontenSiswa) kontenSiswa.style.display = 'none';
+    if (kontenGuru) kontenGuru.style.display = 'block';
+    renderKehadiranGuru();
+  } else {
+    if (btnGuru) btnGuru.classList.remove('active');
+    if (btnSiswa) btnSiswa.classList.add('active');
+    if (kontenGuru) kontenGuru.style.display = 'none';
+    if (kontenSiswa) kontenSiswa.style.display = 'block';
+    renderPantauKelas();
+  }
+}
+
+function getStatusPresensiGuru(nip, targetTanggal) {
+  const tgl = targetTanggal || ((typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
+  const sNip = String(nip || '').trim();
+
+  // 1. Cek cache in-memory presensi_guru
+  if (cachePresensiGuruHariIni) {
+    if (cachePresensiGuruHariIni[sNip]) {
+      if (cachePresensiGuruHariIni[sNip][tgl]) return cachePresensiGuruHariIni[sNip][tgl];
+      if (cachePresensiGuruHariIni[sNip].status) return cachePresensiGuruHariIni[sNip];
+    }
+    if (cachePresensiGuruHariIni[tgl] && cachePresensiGuruHariIni[tgl][sNip]) {
+      return cachePresensiGuruHariIni[tgl][sNip];
+    }
+  }
+
+  // 2. Cek localStorage
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const keys = [
+        'local_presensi_guru_' + tgl + '_' + sNip,
+        'local_presensi_guru_' + sNip + '_' + tgl,
+        'presensi_guru_' + sNip + '_' + tgl,
+        'presensi_guru_' + sNip
+      ];
+      for (const k of keys) {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.status || parsed.waktu || parsed.jam_masuk || parsed.jam)) return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 3. Fallback detailAbsensiGuru jika ada
+  if (typeof window !== 'undefined' && window.detailAbsensiGuru && window.detailAbsensiGuru[sNip]) {
+    return window.detailAbsensiGuru[sNip];
+  }
+  if (typeof global !== 'undefined' && global.detailAbsensiGuru && global.detailAbsensiGuru[sNip]) {
+    return global.detailAbsensiGuru[sNip];
+  }
+
+  return null;
+}
+
+function renderKehadiranGuru() {
+  const gridHadir = document.getElementById('gridGuruHadir');
+  const gridBelum = document.getElementById('gridGuruBelum');
+  if (!gridHadir || !gridBelum) return;
+
+  const cariEl = document.getElementById('cariNamaGuru');
+  const cari = cariEl ? cariEl.value.toLowerCase().trim() : '';
+
+  const master = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI)
+    || (typeof window !== 'undefined' && window.MASTER_GURU_RESMI)
+    || (typeof require !== 'undefined' ? (() => { try { return require('./firebase-config.js').MASTER_GURU_RESMI; } catch(e) { return {}; } })() : {});
+
+  const listGuru = Object.entries(master).map(([nip, g]) => ({
+    nip: String(nip),
+    nama: g.nama || 'Dewan Guru',
+    mapel: g.mapel || 'Guru Pengajar',
+    rfidUid: g.rfidUid || '',
+    isWalas: !!g.isWalas,
+    walasKelasId: g.walasKelasId || null,
+    foto: g.foto || ('assets/foto/guru_' + nip + '.jpg'),
+    foto_karakter: g.foto_karakter || ''
+  })).filter(g => {
+    if (!cari) return true;
+    const n = g.nama.toLowerCase();
+    const m = (g.mapel || '').toLowerCase();
+    const nip = g.nip.toLowerCase();
+    const w = (g.walasKelasId || '').toLowerCase();
+    return n.includes(cari) || m.includes(cari) || nip.includes(cari) || w.includes(cari);
+  });
+
+  gridHadir.innerHTML = '';
+  gridBelum.innerHTML = '';
+  let countHadir = 0;
+  let countBelum = 0;
+
+  listGuru.forEach(g => {
+    const record = getStatusPresensiGuru(g.nip);
+    let isHadir = false;
+    let jamMasuk = '';
+
+    if (record) {
+      const st = String(record.status || '').toLowerCase().trim();
+      if (st === 'hadir' || st === 'masuk' || st === 'pulang' || st === 'terlambat') {
+        isHadir = true;
+        jamMasuk = record.jam_masuk || record.jamMasuk || record.jam || record.waktu || record.waktu_masuk || '';
+      }
+    }
+
+    const card = document.createElement('div');
+    card.className = 'siswa-card ' + (isHadir ? 'status-sudah' : 'status-belum');
+    if (typeof card.setAttribute === 'function') {
+      card.setAttribute('data-nip', g.nip);
+      card.setAttribute('data-nama', g.nama);
+    }
+
+    // Foto Guru
+    const photo = document.createElement('div');
+    photo.className = 'siswa-card-photo';
+    const inisial = g.nama.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    photo.textContent = inisial;
+    const img = document.createElement('img');
+    img.src = g.foto;
+    img.alt = g.nama;
+    img.onload = function() {
+      photo.innerHTML = '';
+      photo.appendChild(img);
+    };
+    img.onerror = function() {
+      photo.textContent = inisial;
+    };
+    photo.appendChild(img);
+    card.appendChild(photo);
+
+    // Info Guru
+    const info = document.createElement('div');
+    info.className = 'siswa-card-info';
+
+    const nama = document.createElement('div');
+    nama.className = 'siswa-card-nama';
+    nama.textContent = g.nama;
+
+    const subInfo = document.createElement('div');
+    subInfo.style.cssText = 'font-size:12px;color:#64748b;margin-top:2px;line-height:1.4;';
+    const walasBadge = g.walasKelasId ? ` &bull; <span style="color:#4f46e5;font-weight:700;">Walas ${g.walasKelasId}</span>` : '';
+    subInfo.innerHTML = `<span>${g.mapel}</span>${walasBadge}`;
+
+    const pillWrap = document.createElement('div');
+    pillWrap.style.marginTop = '6px';
+
+    const pill = document.createElement('span');
+    pill.className = 'status-pill ' + (isHadir ? 'sudah' : 'belum');
+    if (isHadir) {
+      const displayJam = jamMasuk ? ` (${jamMasuk.slice(0, 5)} WIB)` : ' (NFC)';
+      pill.textContent = '✓ Hadir' + displayJam;
+      countHadir++;
+    } else {
+      pill.textContent = 'Belum Hadir';
+      countBelum++;
+    }
+    pillWrap.appendChild(pill);
+
+    info.appendChild(nama);
+    info.appendChild(subInfo);
+    info.appendChild(pillWrap);
+    card.appendChild(info);
+
+    if (isHadir) {
+      gridHadir.appendChild(card);
+    } else {
+      gridBelum.appendChild(card);
+    }
+  });
+
+  if (countHadir === 0) {
+    gridHadir.innerHTML = '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#94a3b8;font-size:13px;font-weight:600;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:14px;">Belum ada dewan guru yang tap kartu NFC hari ini.</div>';
+  }
+  if (countBelum === 0 && listGuru.length > 0) {
+    gridBelum.innerHTML = '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#059669;font-size:13px;font-weight:600;background:#ecfdf5;border:1px dashed #a7f3d0;border-radius:14px;">Seluruh dewan guru telah hadir di sekolah!</div>';
+  }
+  if (listGuru.length === 0) {
+    gridBelum.innerHTML = '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#94a3b8;font-size:13px;font-weight:600;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:14px;">Tidak ditemukan data guru yang sesuai dengan pencarian.</div>';
+  }
+
+  const elCountHadir = document.getElementById('countGuruHadir');
+  const elCountBelum = document.getElementById('countGuruBelum');
+  const elTitleCountHadir = document.getElementById('titleCountGuruHadir');
+  const elTitleCountBelum = document.getElementById('titleCountGuruBelum');
+
+  if (elCountHadir) elCountHadir.textContent = countHadir;
+  if (elCountBelum) elCountBelum.textContent = countBelum;
+  if (elTitleCountHadir) elTitleCountHadir.textContent = countHadir;
+  if (elTitleCountBelum) elTitleCountBelum.textContent = countBelum;
+}
+
+function initRealtimePresensiGuru() {
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    try {
+      db.ref('presensi_guru').on('value', snap => {
+        const val = snap.val() || {};
+        cachePresensiGuruHariIni = Object.assign({}, cachePresensiGuruHariIni, val);
+        if (typeof renderKehadiranGuru === 'function' && subtabKehadiranAktif === 'guru') {
+          renderKehadiranGuru();
+        }
+      });
+    } catch (e) {}
+  }
 }
 
 function renderPantauBeranda() {
@@ -3384,12 +3622,20 @@ if (typeof window !== 'undefined') {
   window.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
   window.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
   window.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
+  window.switchSubtabKehadiran = switchSubtabKehadiran;
+  window.renderKehadiranGuru = renderKehadiranGuru;
+  window.getStatusPresensiGuru = getStatusPresensiGuru;
+  window.initRealtimePresensiGuru = initRealtimePresensiGuru;
   if (typeof global !== 'undefined') {
     global.populateDropdownSiswa = populateDropdownSiswa;
     global.handleSubmitPerijinan = handleSubmitPerijinan;
     global.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
     global.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
     global.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
+    global.switchSubtabKehadiran = switchSubtabKehadiran;
+    global.renderKehadiranGuru = renderKehadiranGuru;
+    global.getStatusPresensiGuru = getStatusPresensiGuru;
+    global.initRealtimePresensiGuru = initRealtimePresensiGuru;
   }
 
   window.getDefaultPresensiResmiHelper = getDefaultPresensiResmiHelper;
@@ -3402,6 +3648,10 @@ if (typeof module !== 'undefined' && module.exports) {
     ambilIzinPendingAktifSiswa,
     bukaKunciFormPengajuanSiswa,
     inisialisasiSinkronisasiPerizinanSiswa,
+    switchSubtabKehadiran,
+    renderKehadiranGuru,
+    getStatusPresensiGuru,
+    initRealtimePresensiGuru,
     muatJadwalBeranda,
     pilihKelasJadwal,
     pilihHariJadwal,

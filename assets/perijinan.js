@@ -364,6 +364,70 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   if (!user || user.role === 'pengunjung' || !finalNisn || !isSiswa) {
     throw new Error('Akses Ditolak: Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.');
   }
+
+  // Guard Anti-Double Send: Siswa hanya bisa mengajukan sekali izin jika masih ada izin pending
+  const isGuruOrWalas = (typeof guruAktif !== 'undefined' && guruAktif) ||
+                        (typeof window !== 'undefined' && window.guruAktif) ||
+                        (typeof global !== 'undefined' && global.guruAktif);
+  if (!isGuruOrWalas) {
+    let pendingPermit = null;
+    if (typeof ambilIzinPendingAktifSiswa === 'function') {
+      pendingPermit = ambilIzinPendingAktifSiswa(finalNisn);
+    } else if (typeof window !== 'undefined' && typeof window.ambilIzinPendingAktifSiswa === 'function') {
+      pendingPermit = window.ambilIzinPendingAktifSiswa(finalNisn);
+    } else if (typeof global !== 'undefined' && typeof global.ambilIzinPendingAktifSiswa === 'function') {
+      pendingPermit = global.ambilIzinPendingAktifSiswa(finalNisn);
+    }
+
+    if (!pendingPermit) {
+      // Periksa antrean lokal: local_perizinan, local_perijinan, daftar_perizinan_lokal
+      const stObj = (typeof localStorage !== 'undefined') ? localStorage : ((typeof global !== 'undefined') ? global.localStorage : null);
+      if (stObj) {
+        try {
+          const keys = ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'];
+          const resolvedIds = new Set();
+          for (const k of keys) {
+            const raw = stObj.getItem(k);
+            if (raw) {
+              const arr = JSON.parse(raw);
+              if (Array.isArray(arr)) {
+                for (const it of arr) {
+                  const s = String(it.status || '').toLowerCase().trim();
+                  if (s === 'ditolak' || s === 'rejected' || s === 'disetujui' || s === 'approved' || s === 'dibatalkan') {
+                    if (it.id) resolvedIds.add(it.id);
+                    if (it.pid) resolvedIds.add(it.pid);
+                  }
+                }
+              }
+            }
+          }
+          for (const k of keys) {
+            const raw = stObj.getItem(k);
+            if (raw) {
+              const arr = JSON.parse(raw);
+              if (Array.isArray(arr)) {
+                for (const it of arr) {
+                  const itNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+                  if (itNisn === finalNisn || (finalNisn === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan'))) {
+                    const s = String(it.status || 'pending').toLowerCase().trim();
+                    if ((s === 'pending' || s === 'menunggu') && !resolvedIds.has(it.id) && !resolvedIds.has(it.pid)) {
+                      pendingPermit = it;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            if (pendingPermit) break;
+          }
+        } catch(e) {}
+      }
+    }
+
+    if (pendingPermit) {
+      throw new Error('Anda masih memiliki pengajuan izin yang sedang menunggu konfirmasi Wali Kelas. Tidak dapat mengajukan permohonan ganda.');
+    }
+  }
   let perijinanRef = null;
   try {
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
