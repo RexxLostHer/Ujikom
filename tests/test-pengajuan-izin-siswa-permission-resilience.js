@@ -302,9 +302,9 @@ async function main() {
             domElements.perijinanMsg.textContent.includes('Pengajuan izin berhasil tersimpan'),
     'Harus menampilkan pesan konfirmasi berhasil');
 
-  // Validasi tombol submit kembali aktif
-  assert.strictEqual(domElements.btnSubmitPerijinan.disabled, false, 'Tombol submit harus aktif kembali');
-  assert.strictEqual(domElements.btnSubmitPerijinan.textContent, 'Kirim Pengajuan Izin', 'Label tombol harus kembali normal');
+  // Validasi tombol submit terkunci otomatis (Anti Double-Send)
+  assert.strictEqual(domElements.btnSubmitPerijinan.disabled, true, 'Tombol submit harus terkunci setelah izin terkirim (pending)');
+  assert.strictEqual(domElements.btnSubmitPerijinan.textContent, 'Menunggu Konfirmasi Wali Kelas...', 'Label tombol harus menunggu konfirmasi');
 
   // Validasi field alasan dikosongkan setelah sukses
   assert.strictEqual(domElements.perijinanAlasan.value, '', 'Field alasan harus di-reset');
