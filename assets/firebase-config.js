@@ -990,7 +990,7 @@ function evaluasiStatusKehadiranRealtime(params) {
   if (cleanScanStatus === 'alpa' || cleanScanStatus === 'alpha') {
     return {
       status: 'alpa',
-      label: 'Alpa (Tanpa Keterangan)',
+      label: 'Tanpa Keterangan',
       cardClass: 'belum status-alpa',
       isAlpa: true
     };
@@ -1003,7 +1003,7 @@ function evaluasiStatusKehadiranRealtime(params) {
   if (cleanJam >= '08:00:00') {
     return {
       status: 'alpa',
-      label: 'Alpa',
+      label: 'Tanpa Keterangan',
       cardClass: 'belum status-alpa',
       isAlpa: true
     };
@@ -1966,6 +1966,16 @@ async function approveStudentPermit(permitIdOrObj) {
 
   if (typeof prosesApprovalIzin === 'function') {
     await prosesApprovalIzin(permit.id, 'disetujui');
+  } else {
+    const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
+    if (fnCeklis) {
+      fnCeklis({
+        judul: 'Izin Siswa Berhasil Di-ACC!',
+        pesan: `Pengajuan ${permit.labelTipe || permit.tipe || 'Izin'} untuk ${permit.namaPengaju || 'Siswa'} telah disetujui.`,
+        badge: 'ACC WALI KELAS',
+        kategori: 'izin'
+      });
+    }
   }
 
   if (typeof firestoreDb !== 'undefined' && firestoreDb && typeof firestoreDb.collection === 'function') {

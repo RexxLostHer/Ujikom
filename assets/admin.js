@@ -4,6 +4,25 @@
 // ===================================================================
 
 var db = (typeof firebase !== 'undefined' && firebase.database) ? firebase.database() : (typeof window !== 'undefined' && window.db ? window.db : null);
+if (typeof require !== 'undefined' && typeof tampilkanAnimasiCeklis === 'undefined') {
+  try {
+    const cpMod = require('./ceklis-popup.js');
+    if (cpMod && cpMod.tampilkanAnimasiCeklis) {
+      if (typeof global !== 'undefined') {
+        global.tampilkanAnimasiCeklis = cpMod.tampilkanAnimasiCeklis;
+        global.showSuccessCheckmark = cpMod.tampilkanAnimasiCeklis;
+        global.tampilkanAnimasiTolak = cpMod.tampilkanAnimasiTolak;
+        global.showRejectedAlert = cpMod.showRejectedAlert;
+      }
+      if (typeof window !== 'undefined') {
+        window.tampilkanAnimasiCeklis = cpMod.tampilkanAnimasiCeklis;
+        window.showSuccessCheckmark = cpMod.tampilkanAnimasiCeklis;
+        window.tampilkanAnimasiTolak = cpMod.tampilkanAnimasiTolak;
+        window.showRejectedAlert = cpMod.showRejectedAlert;
+      }
+    }
+  } catch (e) {}
+}
 let adminSessionUser = null;
 let siswaCache = {};
 let kartuCache = {};
@@ -543,7 +562,7 @@ async function muatRekapPresensi() {
 
     const semuaStatus = [jam1, jam2, jam3, jam4].filter(s => s !== '-');
 
-    let statusAkhir = 'Alpha';
+    let statusAkhir = 'Tanpa Keterangan';
     let badgeClass = 'ditolak';
 
     if (semuaStatus.some(s => s === 'hadir')) {
@@ -563,7 +582,7 @@ async function muatRekapPresensi() {
       badgeClass = 'pending';
       hitungIzin++;
     } else {
-      statusAkhir = 'Alpha';
+      statusAkhir = 'Tanpa Keterangan';
       badgeClass = 'ditolak';
       hitungAlpha++;
     }
@@ -1347,7 +1366,17 @@ async function lepasTautanNisnAdmin(uid, nisn, email) {
       const encoded = email.toLowerCase().replace(/\./g, ',').replace(/@/g, '(at)');
       await db.ref('email_mapping/' + encoded).remove();
     }
-    alert('✅ Tautan NISN ' + nisn + ' berhasil dilepas dari akun ' + email + '. Siswa kini dapat menautkannya ke akun baru.');
+    const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
+    if (fnCeklis) {
+      fnCeklis({
+        judul: 'Tautan NISN Dilepas!',
+        pesan: 'Tautan NISN ' + nisn + ' berhasil dilepas dari akun ' + email + '. Siswa kini dapat menautkannya ke akun baru.',
+        badge: 'VERIFIKASI AKUN',
+        kategori: 'verifikasi'
+      });
+    } else if (typeof alert === 'function') {
+      alert('✅ Tautan NISN ' + nisn + ' berhasil dilepas dari akun ' + email + '. Siswa kini dapat menautkannya ke akun baru.');
+    }
   } catch (err) {
     alert('Gagal melepas tautan NISN: ' + err.message);
   }
@@ -1371,6 +1400,15 @@ async function ubahRoleUser(uid, role) {
     } catch (e) {}
   }
   await db.ref('users/' + uid).update(updates);
+  const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
+  if (fnCeklis) {
+    fnCeklis({
+      judul: 'Role Berhasil Diperbarui!',
+      pesan: `Hak akses akun pengguna telah diubah menjadi role: ${role.toUpperCase()}.`,
+      badge: 'KONFIRMASI ROLE',
+      kategori: 'role'
+    });
+  }
 }
 
 async function hapusUser(uid) {
@@ -1588,7 +1626,10 @@ function bukaModalBuktiKendalaAdmin(id) {
 }
 
 async function adminApproveKendala(id) {
-  const k = kendalaGuruCache[id] || (typeof cacheSemuaPerizinanAdmin !== 'undefined' ? cacheSemuaPerizinanAdmin[id] : null);
+  const k = (typeof kendalaGuruCache !== 'undefined' && kendalaGuruCache[id])
+    || (typeof cacheSemuaPerizinanAdmin !== 'undefined' ? cacheSemuaPerizinanAdmin[id] : null)
+    || (typeof window !== 'undefined' && window.cacheSemuaPerizinanAdmin ? window.cacheSemuaPerizinanAdmin[id] : null)
+    || (typeof global !== 'undefined' && global.cacheSemuaPerizinanAdmin ? global.cacheSemuaPerizinanAdmin[id] : null);
   if (!k) return;
   const targetKelas = k.kelasId || k.kelas;
   const konfirmasi = (typeof confirm === 'function')
@@ -1644,9 +1685,19 @@ async function adminApproveKendala(id) {
     renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
   }
 
-  if (typeof alert === 'function') {
-    alert(`✅ Laporan disetujui! Status kelas ${targetKelas} kini resmi berstatus JAMKOS.`);
-  }
+  // Notifikasi popup ceklis ACC
+    const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
+    if (fnCeklis) {
+      fnCeklis({
+        judul: 'Kendala Guru Berhasil Di-ACC!',
+        pesan: `Laporan kendala dari ${k.guruNama || k.nama || 'Guru'} telah disetujui. Status operasional kelas ${targetKelas} kini resmi beralih ke JAMKOS.`,
+        badge: 'ACC KENDALA GURU',
+        kategori: 'kendala'
+      });
+    } else if (typeof alert === 'function') {
+      alert(`✅ Laporan disetujui! Status kelas ${targetKelas} kini resmi berstatus JAMKOS.`);
+    }
+
 
   // 4. Update Firebase RTDB secara non-blocking dengan timeout safety
   const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
@@ -1777,7 +1828,22 @@ async function adminRejectKendala(id) {
     renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
   }
 
-  if (typeof alert === 'function') alert('Laporan kendala berhasil ditolak.');
+  const fnTolak = (typeof tampilkanAnimasiTolak === 'function' ? tampilkanAnimasiTolak : (typeof window !== 'undefined' && window.tampilkanAnimasiTolak ? window.tampilkanAnimasiTolak : (typeof global !== 'undefined' && global.tampilkanAnimasiTolak ? global.tampilkanAnimasiTolak : null)));
+  if (fnTolak) {
+    const item = (typeof kendalaGuruCache !== 'undefined' && kendalaGuruCache[id])
+      || (typeof window !== 'undefined' && window.kendalaGuruCache && window.kendalaGuruCache[id])
+      || (typeof global !== 'undefined' && global.kendalaGuruCache && global.kendalaGuruCache[id])
+      || (typeof cacheSemuaPerizinanAdmin !== 'undefined' && cacheSemuaPerizinanAdmin[id])
+      || {};
+    fnTolak({
+      judul: 'Laporan Kendala Ditolak',
+      pesan: `Laporan kendala guru ${item.guruNama || 'terkait'} (${item.kelasId || ''}) telah ditolak.`,
+      badge: 'KENDALA DITOLAK',
+      kategori: 'kendala'
+    });
+  } else if (typeof alert === 'function') {
+    alert('Laporan kendala berhasil ditolak.');
+  }
 
   // 4. Update Firebase RTDB secara non-blocking
   const activeDb = (typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function')
@@ -2061,7 +2127,7 @@ async function muatMonitoring3Kelas() {
             <th>Tepat Waktu</th>
             <th>Terlambat</th>
             <th>Izin/Sakit</th>
-            <th>Belum Hadir / Alpa</th>
+            <th>Belum Hadir / Tanpa Keterangan</th>
             <th>Persentase</th>
             <th>Aksi Cepat</th>
           </tr>
@@ -2341,12 +2407,12 @@ async function jalankanAutomasiAutoAlpa() {
             updatedAt: new Date().toISOString()
           });
           countAlpa++;
-          logTerminalSimulasi(`⚠️ [AUTO-ALPA 08.00] ${s.nama} (${cls}) ditetapkan: <strong style="color:#ef4444;">ALPA</strong> (Tanpa Keterangan)`, '#dc2626');
+          logTerminalSimulasi(`⚠️ [AUTO-SISTEM 08.00] ${s.nama} (${cls}) ditetapkan: <strong style="color:#ef4444;">Tanpa Keterangan</strong>`, '#dc2626');
         }
       }
     }
 
-    const ringkasan = `✅ Automasi 08.00 WIB tuntas: ${countAlpa} siswa ditandai Alpa, ${countIzinOtomatis} siswa izin/sakit resmi, ${countLewat} siswa sudah tap.`;
+    const ringkasan = `✅ Automasi 08.00 WIB tuntas: ${countAlpa} siswa ditandai Tanpa Keterangan, ${countIzinOtomatis} siswa izin/sakit resmi, ${countLewat} siswa sudah tap.`;
     logTerminalSimulasi(ringkasan, '#10b981');
     if (elMsg) {
       elMsg.style.display = 'block';
@@ -2393,6 +2459,14 @@ if (typeof window !== 'undefined') {
   window.adminRejectKendala = adminRejectKendala;
   window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
   window.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof window !== 'undefined' ? window.resetSemuaDataIzinDanChat : null);
+  window.setujuiIzinSiswa = async function (id, isGuru, nisn, tanggal, jenis) {
+    if (typeof adminApprovePerizinanItem === 'function') {
+      return adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis);
+    } else if (typeof adminApproveKendala === 'function') {
+      return adminApproveKendala(id);
+    }
+  };
+  window.verifikasiIzin = window.setujuiIzinSiswa;
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -2403,6 +2477,16 @@ if (typeof module !== 'undefined' && module.exports) {
     adminApproveKendala,
     adminRejectKendala,
     submitSimulasiTapLengkap,
-    resetSemuaDataIzinDanChat: (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : null
+    resetSemuaDataIzinDanChat: (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : null,
+    ubahRoleUser,
+    lepasTautanNisnAdmin,
+    setujuiIzinSiswa: async function (id, isGuru, nisn, tanggal, jenis) {
+      if (typeof adminApprovePerizinanItem === 'function') return adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis);
+      if (typeof adminApproveKendala === 'function') return adminApproveKendala(id);
+    },
+    verifikasiIzin: async function (id, isGuru, nisn, tanggal, jenis) {
+      if (typeof adminApprovePerizinanItem === 'function') return adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis);
+      if (typeof adminApproveKendala === 'function') return adminApproveKendala(id);
+    }
   };
 }

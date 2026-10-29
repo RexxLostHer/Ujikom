@@ -56,7 +56,7 @@ async function runTests() {
     waktuSekarangWIB: '08:01:00'
   });
   assert.strictEqual(evalSetelah08.status, 'alpa', 'Status setelah 08:00 harus alpa');
-  assert.strictEqual(evalSetelah08.label, 'Alpa', 'Label setelah 08:00 harus "Alpa"');
+  assert.strictEqual(evalSetelah08.label, 'Tanpa Keterangan', 'Label setelah 08:00 harus "Tanpa Keterangan"');
   assert.strictEqual(evalSetelah08.isAlpa, true, 'isAlpa setelah 08:00 harus true');
 
   // D. Siswa dengan status Izin/Sakit yang disetujui DILARANG DITIMPA oleh Alpa

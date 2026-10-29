@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/admin.css">
-<link rel="stylesheet" href="assets/chat-hub.css?v=20261026_04">
+<link rel="stylesheet" href="assets/chat-hub.css?v=20261029_06">
+<link rel="stylesheet" href="assets/ceklis-popup.css?v=20261029_08">
 <style>
   :root {
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -230,7 +231,7 @@
           <button class="filter-btn" data-filter="disetujui" onclick="setFilterPerijinan(this)">Disetujui</button>
           <button class="filter-btn" data-filter="ditolak" onclick="setFilterPerijinan(this)">Ditolak</button>
           <button class="filter-btn" data-filter="semua" onclick="setFilterPerijinan(this)">Semua</button>
-          <button type="button" class="filter-btn" onclick="resetSemuaDataIzinDanChat()" id="btnResetIzinTestingAdmin" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:700;margin-left:auto;cursor:pointer;" title="Reset bersih data izin, chat, dan kendala guru untuk testing">Reset Data Izin (Testing)</button>
+
         </div>
         <div id="daftarPerijinanAdmin"></div>
       </div>
@@ -275,7 +276,7 @@
                 <option value="sakit">Sakit</option>
                 <option value="dispensasi">Dispensasi</option>
                 <option value="ijin_kegiatan">Izin Kegiatan</option>
-                <option value="alpha">Alpha (Tanpa Keterangan)</option>
+                <option value="alpha">Tanpa Keterangan</option>
               </select>
             </div>
           </div>
@@ -336,7 +337,7 @@
             <h3 id="statIzin" style="font-size:22px; font-weight:800; color:#d97706; margin-top:4px;">0</h3>
           </div>
           <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:14px; text-align:center;">
-            <span style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">Alpha</span>
+            <span style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">Tanpa Keterangan</span>
             <h3 id="statAlpha" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0</h3>
           </div>
         </div>
@@ -702,18 +703,18 @@
           <div class="admin-form-card" style="border:1.5px solid #fca5a5;background:#fffaf0;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
               <span style="font-size:22px;">⏰</span>
-              <h3 style="font-size:15px;font-weight:800;color:#991b1b;">Automasi Sistem: Tepat 08.00 WIB (Auto-Alpa)</h3>
+              <h3 style="font-size:15px;font-weight:800;color:#991b1b;">Automasi Sistem: Tepat 08.00 WIB (Auto-Tanpa Keterangan)</h3>
             </div>
             <p style="font-size:13px;color:#78350f;line-height:1.5;margin-bottom:14px;">
               Sesuai aturan bisnis PRD Bab 4.1: Tepat pukul 08.00 WIB, sistem memeriksa seluruh siswa di 3 kelas binaan. 
-              Siswa yang belum tap kartu dan tidak memiliki konfirmasi izin resmi disetujui Walas akan dialihkan statusnya secara otomatis menjadi <strong>Alpa</strong>.
+              Siswa yang belum tap kartu dan tidak memiliki konfirmasi izin resmi disetujui Walas akan dialihkan statusnya secara otomatis menjadi <strong>Tanpa Keterangan</strong>.
             </p>
             <div style="margin-bottom:14px;">
               <label style="display:block;font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px;">Target Tanggal Automasi</label>
               <input type="date" id="autoAlpaTanggalInput" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #fcd34d;font-weight:700;">
             </div>
             <button class="btn-primary" onclick="jalankanAutomasiAutoAlpa()" style="width:100%;padding:12px;background:#dc2626;font-weight:800;border:none;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Eksekusi Automasi 08.00 WIB (Tandai Alpa)</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Eksekusi Automasi 08.00 WIB (Tandai Tanpa Keterangan)</span>
             </button>
             <div id="autoAlpaMsg" style="margin-top:12px;font-size:13px;font-weight:700;display:none;"></div>
           </div>
@@ -775,12 +776,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261001_10"></script>
+<script src="assets/firebase-config.js?v=20261029_07"></script>
 <script src="assets/jadwal-util.js?v=20261001_10"></script>
 <script src="assets/auth.js?v=20261001_10"></script>
-<script src="assets/perijinan.js?v=20261001_10"></script>
-<script src="assets/admin.js?v=20261001_10"></script>
-<script src="assets/chat-hub.js?v=20261026_04"></script>
+<script src="assets/ceklis-popup.js?v=20261029_08"></script>
+<script src="assets/perijinan.js?v=20261029_09"></script>
+<script src="assets/admin.js?v=20261029_07"></script>
+<script src="assets/chat-hub.js?v=20261029_06"></script>
 <script src="assets/profile-modal.js?v=20261001_10"></script>
 
 <script>

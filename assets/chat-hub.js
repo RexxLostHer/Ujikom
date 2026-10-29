@@ -367,15 +367,15 @@
 
     modal.innerHTML = `
       <div class="wa-lock-modal-card" style="background:#ffffff;border-radius:20px;max-width:460px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid #e2e8f0;overflow:hidden;text-align:center;font-family:inherit;position:relative;z-index:100001;">
-        <div style="background:linear-gradient(135deg, #075E54 0%, #128C7E 100%);padding:24px 20px 20px 20px;color:#ffffff;position:relative;">
-          <button type="button" class="wa-lock-close-btn" id="waLockCloseBtn" onclick="tutupModalKunciWaChat()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.2);border:none;color:#ffffff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" title="Tutup">✕</button>
-          <div style="width:58px;height:58px;background:rgba(255,255,255,0.18);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:26px;">
+        <div style="background:#0F172A;padding:24px 20px 20px 20px;color:#ffffff;position:relative;">
+          <button type="button" class="wa-lock-close-btn" id="waLockCloseBtn" onclick="tutupModalKunciWaChat()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#ffffff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" title="Tutup">✕</button>
+          <div style="width:58px;height:58px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:26px;">
             🔒
           </div>
           <h3 style="margin:0;font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">
-            WhatsApp Presensia Terkunci
+            Bubble (WhatsApp Presensia Terkunci)
           </h3>
-          <p style="margin:6px 0 0 0;font-size:13px;opacity:0.9;color:#E0F2F1;">
+          <p style="margin:6px 0 0 0;font-size:13px;opacity:0.9;color:#94A3B8;">
             Khusus Siswa & Guru / Walas Terverifikasi
           </p>
         </div>
@@ -525,6 +525,9 @@
     if (!isVerified) {
       if (hubWin && hubWin.style.display !== 'none') {
         hubWin.style.display = 'none';
+        if (btnFloat && btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
+          btnFloat.classList.remove('is-open');
+        }
         waActiveRoomId = null;
       }
       if (typeof tutupInfoGrupModal === 'function') tutupInfoGrupModal();
@@ -1088,6 +1091,9 @@
       audio_url: mediaData ? mediaData.audio_url : null,
       audio_durasi: mediaData ? mediaData.audio_durasi : 0,
       mentions: mentions,
+      status: 'sent',
+      isEdited: false,
+      isDeleted: false,
       waktu: Date.now()
     };
 
@@ -1354,7 +1360,22 @@
 
           const map = {};
           currentLocal.forEach(m => { if (m && m.id) map[m.id] = m; });
-          cloudMsgs.forEach(m => { if (m && m.id) map[m.id] = m; });
+          cloudMsgs.forEach(m => {
+            if (m && m.id) {
+              map[m.id] = m;
+              const msgAge = Date.now() - (m.waktu || 0);
+              if (!isCurrentSender(m, currentUser) && msgAge < 300000 && !waNotifiedMsgIds.has(m.id)) {
+                tampilkanNotifikasiPesanBaru(m, rId);
+                if (m.status === 'sent') {
+                  m.status = 'delivered';
+                  const activeDb = getActiveDb();
+                  if (activeDb) {
+                    activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'delivered' }).catch(() => null);
+                  }
+                }
+              }
+            }
+          });
           const merged = Object.values(map).sort((a, b) => (a.waktu || 0) - (b.waktu || 0));
           try { localStorage.setItem(lKey, JSON.stringify(merged)); } catch (e) {}
 
@@ -1364,8 +1385,18 @@
 
           // Jika user sedang aktif membuka room ini, langsung render seketika!
           if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            merged.forEach(m => {
+              if (m && !isCurrentSender(m, currentUser) && m.status !== 'read') {
+                m.status = 'read';
+                const activeDb = getActiveDb();
+                if (activeDb) {
+                  activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+                  activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+                }
+              }
+            });
             renderDaftarPesan(merged);
-            try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (e) {}
+            try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (eR) {}
           }
         });
 
@@ -1587,6 +1618,376 @@
     }
   }
 
+  // 8b. Status Ceklis Pesan (Ceklis 1 Abu, Ceklis 2 Abu, Ceklis 2 Biru persis WhatsApp)
+  function getCheckmarkIconHtml(status) {
+    const st = status || 'sent';
+    if (st === 'read') {
+      return `<span class="wa-check-icon is-read" title="Dibaca (✓✓)">✓✓</span>`;
+    } else if (st === 'delivered') {
+      return `<span class="wa-check-icon is-delivered" title="Tersampaikan (✓✓)">✓✓</span>`;
+    }
+    return `<span class="wa-check-icon is-sent" title="Terkirim (✓)">✓</span>`;
+  }
+
+  // 8c. State & Handler Edit, Delete & Salin Pesan
+  let waEditingMessageId = null;
+  let waEditingRoomId = null;
+
+  function mulaiEditPesanWa(msgId, roomId) {
+    tutupSemuaMenuBubble();
+    const rId = roomId || waActiveRoomId;
+    if (!rId || !msgId) return;
+    const lKey = 'wa_msgs_' + rId;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(lKey) || '[]'); } catch (e) {}
+    const target = hist.find(x => x && x.id === msgId);
+    if (!target) return;
+
+    const currentUser = getActiveUserChat();
+    if (!isCurrentSender(target, currentUser)) {
+      if (typeof alert === 'function') alert('Hanya pengirim pesan yang dapat mengedit pesan.');
+      return;
+    }
+    if (target.isDeleted) {
+      if (typeof alert === 'function') alert('Pesan yang telah dihapus tidak dapat diedit.');
+      return;
+    }
+    if (target.tipe === 'audio') {
+      if (typeof alert === 'function') alert('Pesan suara tidak dapat diedit.');
+      return;
+    }
+
+    waEditingMessageId = msgId;
+    waEditingRoomId = rId;
+
+    const bar = document.getElementById('waEditModeBar');
+    const preview = document.getElementById('waEditModePreview');
+    const txtInput = document.getElementById('waInputText');
+
+    if (bar && preview) {
+      preview.textContent = target.pesan || '';
+      bar.style.display = 'flex';
+    }
+    if (txtInput) {
+      txtInput.value = target.pesan || '';
+      txtInput.focus();
+    }
+  }
+
+  function batalEditPesanWa() {
+    waEditingMessageId = null;
+    waEditingRoomId = null;
+    const bar = document.getElementById('waEditModeBar');
+    if (bar) bar.style.display = 'none';
+    const txtInput = document.getElementById('waInputText');
+    if (txtInput && txtInput.value) {
+      txtInput.value = '';
+    }
+  }
+
+  async function simpanEditPesanWa(msgId, roomId, newText) {
+    const rId = roomId || waActiveRoomId;
+    if (!rId || !msgId || !newText) {
+      batalEditPesanWa();
+      return;
+    }
+    const cleanText = newText.trim();
+    if (!cleanText) {
+      batalEditPesanWa();
+      return;
+    }
+
+    const lKey = 'wa_msgs_' + rId;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(lKey) || '[]'); } catch (e) {}
+    const target = hist.find(x => x && x.id === msgId);
+    if (target) {
+      target.pesan = cleanText;
+      target.isEdited = true;
+      target.editedAt = Date.now();
+      try { localStorage.setItem(lKey, JSON.stringify(hist)); } catch (e) {}
+    }
+
+    // Update DOM seketika
+    const bId = 'waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const bubbleEl = document.getElementById(bId);
+    if (bubbleEl) {
+      const txtEl = bubbleEl.querySelector('.wa-bubble-text');
+      if (txtEl) txtEl.innerHTML = escapeHtmlWa(cleanText);
+      const metaEl = bubbleEl.querySelector('.wa-bubble-meta');
+      if (metaEl && !metaEl.querySelector('.wa-msg-edited-tag')) {
+        const sp = document.createElement('span');
+        sp.className = 'wa-msg-edited-tag';
+        sp.title = 'Diedit';
+        sp.textContent = '(diedit)';
+        const checkEl = metaEl.querySelector('.wa-check-icon');
+        if (checkEl) metaEl.insertBefore(sp, checkEl);
+        else metaEl.appendChild(sp);
+      }
+    }
+
+    batalEditPesanWa();
+
+    // Broadcast Lintas-Tab
+    if (waBroadcastChannel) {
+      try {
+        waBroadcastChannel.postMessage({
+          type: 'EDIT_WA_MESSAGE',
+          roomId: rId,
+          messageId: msgId,
+          newText: cleanText,
+          editedAt: Date.now()
+        });
+      } catch (eBc) {}
+    }
+
+    // Update Firebase RTDB
+    const activeDb = getActiveDb();
+    if (activeDb) {
+      const patch = { pesan: cleanText, isEdited: true, editedAt: Date.now() };
+      activeDb.ref('chat_rooms/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
+      activeDb.ref('chat_perijinan/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
+    }
+  }
+
+  async function hapusPesanWa(msgId, roomId) {
+    tutupSemuaMenuBubble();
+    const rId = roomId || waActiveRoomId;
+    if (!rId || !msgId) return;
+
+    const lKey = 'wa_msgs_' + rId;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(lKey) || '[]'); } catch (e) {}
+    const target = hist.find(x => x && x.id === msgId);
+    if (!target) return;
+
+    const currentUser = getActiveUserChat();
+    const isMe = isCurrentSender(target, currentUser);
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.isAdmin);
+    if (!isMe && !isAdmin) {
+      if (typeof alert === 'function') alert('Hanya pengirim pesan atau Admin yang dapat menghapus pesan.');
+      return;
+    }
+
+    let ok = true;
+    if (typeof confirm === 'function') {
+      try { ok = confirm('Hapus pesan ini untuk semua orang?'); } catch (e) { ok = true; }
+    }
+    if (!ok) return;
+
+    target.isDeleted = true;
+    target.pesan = '🚫 Pesan ini telah dihapus';
+    target.audio_url = null;
+    target.deletedAt = Date.now();
+    try { localStorage.setItem(lKey, JSON.stringify(hist)); } catch (e) {}
+
+    // Update DOM seketika
+    const bId = 'waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const bubbleEl = document.getElementById(bId);
+    if (bubbleEl) {
+      const txtEl = bubbleEl.querySelector('.wa-bubble-text') || bubbleEl.querySelector('.wa-vn-player');
+      if (txtEl) {
+        txtEl.className = 'wa-bubble-text wa-msg-deleted';
+        txtEl.innerHTML = '<i>🚫 Pesan ini telah dihapus</i>';
+      }
+      const menuBtn = bubbleEl.querySelector('.wa-bubble-actions-btn');
+      if (menuBtn) menuBtn.remove();
+      const menuEl = bubbleEl.querySelector('.wa-bubble-actions-menu');
+      if (menuEl) menuEl.remove();
+    }
+
+    if (waEditingMessageId === msgId) {
+      batalEditPesanWa();
+    }
+
+    // Broadcast Lintas-Tab
+    if (waBroadcastChannel) {
+      try {
+        waBroadcastChannel.postMessage({
+          type: 'DELETE_WA_MESSAGE',
+          roomId: rId,
+          messageId: msgId
+        });
+      } catch (eBc) {}
+    }
+
+    // Update Firebase RTDB
+    const activeDb = getActiveDb();
+    if (activeDb) {
+      const patch = { isDeleted: true, pesan: '🚫 Pesan ini telah dihapus', audio_url: null, deletedAt: Date.now() };
+      activeDb.ref('chat_rooms/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
+      activeDb.ref('chat_perijinan/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
+    }
+  }
+
+  function toggleMenuAksiBubble(e, msgId) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const cleanId = String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetMenu = document.getElementById('waBubbleMenu_' + cleanId);
+    if (!targetMenu) return;
+    const wasActive = targetMenu.classList.contains('is-active');
+    tutupSemuaMenuBubble();
+    if (!wasActive) {
+      targetMenu.classList.add('is-active');
+    }
+  }
+
+  function tutupSemuaMenuBubble() {
+    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+    document.querySelectorAll('.wa-bubble-actions-menu.is-active').forEach(m => {
+      m.classList.remove('is-active');
+    });
+  }
+
+  function salinTeksPesanWa(msgId) {
+    tutupSemuaMenuBubble();
+    if (typeof document === 'undefined') return;
+    const bId = 'waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const bubble = document.getElementById(bId);
+    if (!bubble) return;
+    const txt = bubble.querySelector('.wa-bubble-text')?.textContent || '';
+    if (txt && typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).catch(() => null);
+    }
+  }
+
+  // 8d. Audio Notifikasi & Floating In-App Toast
+  function mainkanSuaraNotifikasiChat() {
+    try {
+      if (typeof window === 'undefined') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      const osc1 = ctx.createOscillator();
+      const g1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now);
+      g1.gain.setValueAtTime(0.12, now);
+      g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      osc1.connect(g1);
+      g1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.22);
+
+      const osc2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.08);
+      g2.gain.setValueAtTime(0.15, now + 0.08);
+      g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      osc2.connect(g2);
+      g2.connect(ctx.destination);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.4);
+    } catch (e) {}
+  }
+
+  const waNotifiedMsgIds = new Set();
+
+  function tampilkanNotifikasiPesanBaru(msg, roomId) {
+    if (!msg || !msg.id || waNotifiedMsgIds.has(msg.id)) return;
+    waNotifiedMsgIds.add(msg.id);
+
+    const currentUser = getActiveUserChat();
+    if (!currentUser || isCurrentSender(msg, currentUser)) return;
+
+    if (typeof document === 'undefined') return;
+
+    const hubWin = document.getElementById('waHubWindow');
+    const isChatOpen = hubWin && hubWin.style.display === 'flex' && !hubWin.classList.contains('is-closing');
+    if (isChatOpen && waActiveRoomId && String(waActiveRoomId).trim() === String(roomId).trim()) {
+      return;
+    }
+
+    mainkanSuaraNotifikasiChat();
+
+    if (typeof Notification !== 'undefined') {
+      try {
+        if (Notification.permission === 'granted') {
+          const n = new Notification(msg.nama || 'Bubble Chat', {
+            body: msg.tipe === 'audio' ? '🎵 Mengirim pesan suara' : (msg.pesan || 'Pesan baru masuk'),
+            icon: msg.foto || getFotoPenggunaChat(msg) || 'assets/foto/default.jpg'
+          });
+          n.onclick = () => {
+            try { window.focus(); } catch (e) {}
+            if (typeof bukaChatWhatsApp === 'function') bukaChatWhatsApp(roomId);
+          };
+        } else if (Notification.permission === 'default') {
+          Notification.requestPermission().catch(() => null);
+        }
+      } catch (eNotif) {}
+    }
+
+    try {
+      let toastWrap = document.getElementById('waToastContainer');
+      if (!toastWrap && typeof document.createElement === 'function' && document.body && typeof document.body.appendChild === 'function') {
+        toastWrap = document.createElement('div');
+        toastWrap.id = 'waToastContainer';
+        toastWrap.className = 'wa-toast-container';
+        document.body.appendChild(toastWrap);
+      }
+
+      if (toastWrap && typeof document.createElement === 'function') {
+        const toast = document.createElement('div');
+        toast.className = 'wa-notif-toast';
+        const sFoto = msg.foto || getFotoPenggunaChat(msg);
+        const inisial = (msg.nama || '?')[0].toUpperCase();
+        const txtPreview = msg.tipe === 'audio' ? '🎵 Mengirim pesan suara' : (msg.pesan || 'Pesan baru');
+
+        toast.innerHTML = `
+          <div class="wa-notif-toast-avatar">
+            ${sFoto ? `<img src="${sFoto}" alt="" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${inisial}';">` : inisial}
+          </div>
+          <div class="wa-notif-toast-content">
+            <div class="wa-notif-toast-top">
+              <span class="wa-notif-toast-sender">${escapeHtmlWa(msg.nama || 'Pengguna')}</span>
+              <span class="wa-notif-toast-badge">Pesan Baru</span>
+            </div>
+            <div class="wa-notif-toast-text">${escapeHtmlWa(txtPreview)}</div>
+          </div>
+          <button type="button" class="wa-notif-toast-close" title="Tutup">✕</button>
+        `;
+
+        toast.onclick = (e) => {
+          if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('.wa-notif-toast-close')) {
+            if (typeof toast.remove === 'function') toast.remove();
+            return;
+          }
+          if (typeof toast.remove === 'function') toast.remove();
+          if (typeof bukaChatWhatsApp === 'function') {
+            bukaChatWhatsApp(roomId);
+          }
+        };
+
+        const closeBtn = typeof toast.querySelector === 'function' ? toast.querySelector('.wa-notif-toast-close') : null;
+        if (closeBtn) {
+          closeBtn.onclick = (e) => {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (toast.classList && typeof toast.classList.add === 'function') {
+              toast.classList.add('is-hiding');
+            }
+            setTimeout(() => { if (typeof toast.remove === 'function') toast.remove(); }, 250);
+          };
+        }
+
+        if (typeof toastWrap.appendChild === 'function') {
+          toastWrap.appendChild(toast);
+        }
+
+        setTimeout(() => {
+          if (toast && toast.parentNode) {
+            if (toast.classList && typeof toast.classList.add === 'function') {
+              toast.classList.add('is-hiding');
+            }
+            setTimeout(() => { if (toast && toast.parentNode && typeof toast.remove === 'function') toast.remove(); }, 250);
+          }
+        }, 5500);
+      }
+    } catch (eToast) {}
+  }
+
   // 9. Render Bubble Pesan dengan Proteksi Anti Double-Render
   function appendBubblePesan(msg) {
     if (!msg || !msg.id) return;
@@ -1632,7 +2033,9 @@
     }
 
     let contentHtml = '';
-    if (msg.tipe === 'audio' && msg.audio_url) {
+    if (msg.isDeleted) {
+      contentHtml = `<div class="wa-bubble-text wa-msg-deleted"><i>🚫 Pesan ini telah dihapus</i></div>`;
+    } else if (msg.tipe === 'audio' && msg.audio_url) {
       if (typeof waAudioRegistry !== 'undefined') {
         waAudioRegistry.set(String(msg.id), msg.audio_url);
       }
@@ -1681,12 +2084,31 @@
       }
     }
 
+    // Context Action Menu (Edit & Delete)
+    let actionsHtml = '';
+    const canEdit = isMe && !msg.isDeleted && msg.tipe !== 'audio';
+    const canDelete = (isMe || (currentUser && (currentUser.role === 'admin' || currentUser.isAdmin))) && !msg.isDeleted;
+    if (canEdit || canDelete) {
+      actionsHtml = `
+        <button type="button" class="wa-bubble-actions-btn" onclick="toggleMenuAksiBubble(event, '${escapeHtmlWa(msg.id)}')" title="Pilihan pesan">⋮</button>
+        <div id="waBubbleMenu_${cleanId}" class="wa-bubble-actions-menu">
+          ${canEdit ? `<button type="button" class="wa-action-item" onclick="mulaiEditPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">✏️ Edit</button>` : ''}
+          ${canDelete ? `<button type="button" class="wa-action-item wa-action-delete" onclick="hapusPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">🗑️ Hapus</button>` : ''}
+          <button type="button" class="wa-action-item" onclick="salinTeksPesanWa('${escapeHtmlWa(msg.id)}')">📋 Salin</button>
+        </div>
+      `;
+    }
+
+    const editedTag = msg.isEdited ? '<span class="wa-msg-edited-tag" title="Diedit">(diedit)</span>' : '';
+
     bubble.innerHTML = `
+      ${actionsHtml}
       ${headerHtml}
       ${contentHtml}
       <div class="wa-bubble-meta">
         <span>${timeStr}</span>
-        ${isMe ? '<span class="wa-check-icon">✓✓</span>' : ''}
+        ${editedTag}
+        ${isMe ? getCheckmarkIconHtml(msg.status || 'sent') : ''}
       </div>
     `;
 
@@ -1809,7 +2231,60 @@
     if (winChat) winChat.style.display = 'flex';
 
     const msgs = muatPesanRoom(roomId);
-    renderDaftarPesan(msgs);
+
+    // Tandai seluruh pesan yang belum dibaca dari lawan bicara menjadi 'read' (Ceklis 2 Biru)
+    const unreadIncoming = msgs.filter(m => m && !isCurrentSender(m, currentUser) && m.status !== 'read');
+    if (unreadIncoming.length > 0) {
+      unreadIncoming.forEach(m => { m.status = 'read'; });
+      try { localStorage.setItem('wa_msgs_' + roomId, JSON.stringify(msgs)); } catch (e) {}
+      const activeDb = getActiveDb();
+      if (activeDb) {
+        unreadIncoming.forEach(m => {
+          if (m && m.id) {
+            activeDb.ref('chat_rooms/' + roomId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+            activeDb.ref('chat_perijinan/' + roomId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+          }
+        });
+      }
+      if (waBroadcastChannel) {
+        try {
+          waBroadcastChannel.postMessage({
+            type: 'MESSAGES_READ',
+            roomId: roomId,
+            readerId: currentUser.id
+          });
+        } catch (eBc) {}
+      }
+    }
+    const isNode = (typeof process !== 'undefined' && process.versions && !!process.versions.node);
+    if (!isNode) {
+      const container = document.getElementById('waMessagesContainer');
+      if (container) {
+        container.innerHTML = `
+          <div class="wa-chat-skeleton-wrap" id="waChatSkeleton">
+            <div class="wa-skeleton-status-pill" style="align-self:center;">
+              <span class="wa-skeleton-status-dot"></span>
+              <span>Menyiapkan obrolan aman...</span>
+            </div>
+            <div class="wa-chat-skeleton-bubble received">
+              <div class="wa-skeleton-line title" style="width:110px;"></div>
+              <div class="wa-skeleton-line sub" style="width:190px;"></div>
+            </div>
+            <div class="wa-chat-skeleton-bubble sent">
+              <div class="wa-skeleton-line sub" style="width:150px;background:#CBD5E1;"></div>
+            </div>
+            <div class="wa-chat-skeleton-bubble received">
+              <div class="wa-skeleton-line sub" style="width:220px;"></div>
+            </div>
+          </div>
+        `;
+      }
+      setTimeout(() => {
+        renderDaftarPesan(msgs);
+      }, 140);
+    } else {
+      renderDaftarPesan(msgs);
+    }
 
     const txtInput = document.getElementById('waInputText');
     if (txtInput) {
@@ -1827,30 +2302,80 @@
     perbaruiBadgeCounter();
   }
 
-  // 11. Render Konten Tab (Chats, Groups, Contacts)
-  function renderTabKontenWa() {
+  // 11. Render Konten Tab (Chats, Groups, Contacts) dengan Skeleton Loading & Motion Stagger
+  let waRenderTimer = null;
+
+  function buatSkeletonHtml(tabName) {
+    const label = tabName === 'groups' ? 'grup kelas' : (tabName === 'contacts' ? 'buku kontak resmi' : 'obrolan aktif');
+    return `
+      <div class="wa-skeleton-wrap" id="waSkeletonWrap">
+        <div class="wa-skeleton-status-pill">
+          <span class="wa-skeleton-status-dot"></span>
+          <span>Memuat struktur ${label}...</span>
+        </div>
+        <div class="wa-skeleton-item">
+          <div class="wa-skeleton-avatar"></div>
+          <div class="wa-skeleton-lines">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="wa-skeleton-line title"></div>
+              <div class="wa-skeleton-line time"></div>
+            </div>
+            <div class="wa-skeleton-line sub"></div>
+          </div>
+        </div>
+        <div class="wa-skeleton-item">
+          <div class="wa-skeleton-avatar"></div>
+          <div class="wa-skeleton-lines">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="wa-skeleton-line title" style="width:42%;"></div>
+              <div class="wa-skeleton-line time"></div>
+            </div>
+            <div class="wa-skeleton-line sub" style="width:65%;"></div>
+          </div>
+        </div>
+        <div class="wa-skeleton-item">
+          <div class="wa-skeleton-avatar"></div>
+          <div class="wa-skeleton-lines">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="wa-skeleton-line title" style="width:58%;"></div>
+              <div class="wa-skeleton-line time"></div>
+            </div>
+            <div class="wa-skeleton-line sub" style="width:78%;"></div>
+          </div>
+        </div>
+        <div class="wa-skeleton-item">
+          <div class="wa-skeleton-avatar"></div>
+          <div class="wa-skeleton-lines">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="wa-skeleton-line title" style="width:50%;"></div>
+              <div class="wa-skeleton-line time"></div>
+            </div>
+            <div class="wa-skeleton-line sub" style="width:70%;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTabKontenWa(forceImmediate = false) {
     const body = document.getElementById('waPanelBody');
     if (!body) return;
     const currentUser = getActiveUserChat();
     const isVerified = isAkunTerverifikasiChat(currentUser);
     const query = (document.getElementById('waSearchInput')?.value || '').toLowerCase().trim();
 
-    // Perbarui label header user secara dinamis
+    // Perbarui label header user secara dinamis (disembunyikan sesuai permintaan UI clean & minimalist)
     const userDisplay = document.getElementById('waHeaderUserDisplay');
     if (userDisplay) {
-      if (!isVerified) {
-        userDisplay.innerHTML = `Masuk sebagai: <strong>${escapeHtmlWa(currentUser.nama)}</strong> • <span style="color:#fca5a5;font-weight:700;">Pengunjung (Belum Terverifikasi)</span>`;
-      } else {
-        const roleName = (currentUser.isAdmin || currentUser.role === 'admin') ? 'Administrator' : (currentUser.isWalas ? 'Wali Kelas' : (currentUser.role === 'guru' ? 'Guru' : 'Siswa'));
-        userDisplay.innerHTML = `Masuk sebagai: <strong>${escapeHtmlWa(currentUser.nama)}</strong> (${currentUser.nomorKontak}) • <span style="opacity:0.9;">${roleName}</span>`;
-      }
+      userDisplay.style.display = 'none';
+      userDisplay.innerHTML = '';
     }
 
     if (!isVerified) {
       body.innerHTML = `
         <div class="wa-locked-panel" style="text-align:center;padding:36px 20px;color:#475569;">
           <div style="width:54px;height:54px;background:#FEE2E2;color:#EF4444;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px auto;font-size:24px;">🔒</div>
-          <div style="font-size:15px;font-weight:800;color:#0F172A;margin-bottom:6px;">WhatsApp Presensia Terkunci</div>
+          <div style="font-size:15px;font-weight:800;color:#0F172A;margin-bottom:6px;">Bubble (WhatsApp Presensia Terkunci)</div>
           <div style="font-size:12.5px;color:#64748B;line-height:1.5;margin-bottom:18px;">
             Akun Anda belum terverifikasi resmi. Tautkan <strong>NISN</strong> (untuk Siswa) atau <strong>NIP</strong> (untuk Guru / Wali Kelas) guna mengakses forum chat & grup kelas.
           </div>
@@ -1863,6 +2388,19 @@
       return;
     }
 
+    const isNode = (typeof process !== 'undefined' && process.versions && !!process.versions.node);
+    if (!isNode && !forceImmediate && !query) {
+      if (waRenderTimer) clearTimeout(waRenderTimer);
+      body.innerHTML = buatSkeletonHtml(waActiveTab);
+      waRenderTimer = setTimeout(() => {
+        isiKontenTabAktif(body, currentUser, query);
+      }, 160);
+    } else {
+      isiKontenTabAktif(body, currentUser, query);
+    }
+  }
+
+  function isiKontenTabAktif(body, currentUser, query) {
     body.innerHTML = '';
 
     // ==========================================
@@ -1907,9 +2445,10 @@
         return;
       }
 
-      threadList.forEach(th => {
+      threadList.forEach((th, idx) => {
         const item = document.createElement('div');
-        item.className = 'wa-list-item';
+        item.className = 'wa-list-item wa-stagger-in';
+        item.style.animationDelay = (idx * 0.035) + 's';
         const dateObj = new Date(th.lastTime || Date.now());
         const timeStr = String(dateObj.getHours()).padStart(2, '0') + ':' + String(dateObj.getMinutes()).padStart(2, '0');
         const roomId = String(th.roomId || '');
@@ -1968,6 +2507,7 @@
         item.innerHTML = `
           <div class="wa-avatar ${isGroup ? 'group-avatar wa-group-avatar-clickable' : ''}" style="${avatarStyle}" title="${isGroup ? 'Klik untuk lihat Profil Grup' : ''}">
             ${avatarContent}
+            ${!isGroup ? '<span class="wa-online-beacon" title="Online"></span>' : ''}
           </div>
           <div class="wa-item-info">
             <div class="wa-item-top">
@@ -2006,9 +2546,10 @@
         return;
       }
 
-      accessibleGroups.forEach(g => {
+      accessibleGroups.forEach((g, idx) => {
         const item = document.createElement('div');
-        item.className = 'wa-list-item';
+        item.className = 'wa-list-item wa-stagger-in';
+        item.style.animationDelay = (idx * 0.035) + 's';
         const isAdmin = Boolean(
           currentUser.isAdmin || currentUser.role === 'admin' ||
           (g.adminIds && g.adminIds.includes(String(currentUser.id)))
@@ -2115,10 +2656,11 @@
         return;
       }
 
-      filtered.forEach(c => {
+      filtered.forEach((c, idx) => {
         const item = document.createElement('div');
         const isPinned = (pinnedWalas && c.id === pinnedWalas.id);
-        item.className = 'wa-list-item ' + (isPinned ? 'wa-pinned-item' : '');
+        item.className = 'wa-list-item ' + (isPinned ? 'wa-pinned-item' : '') + ' wa-stagger-in';
+        item.style.animationDelay = (idx * 0.035) + 's';
 
         let roleLabel = c.role === 'admin' ? 'Administrator' : (c.role === 'walas' ? 'Wali Kelas' : (c.role === 'guru' ? 'Guru' : 'Siswa'));
         let roleBadge = c.role === 'admin' ? 'wa-badge-admin' : (c.role === 'walas' ? 'wa-badge-walas' : (c.role === 'guru' ? 'wa-badge-admin' : 'wa-badge-siswa'));
@@ -2130,19 +2672,19 @@
 
         item.onclick = () => {
           const directId = getDirectRoomId(currentUser.id, c.id);
-          bukaRoomWa(directId, c.nama, `NISN/NIP: ${c.nomorKontak} • ${c.kelas || roleLabel}`, 'direct');
+          bukaRoomWa(directId, c.nama, roleLabel || 'Online', 'direct');
         };
 
         item.innerHTML = `
           <div class="wa-avatar">
             ${c.foto ? `<img src="${c.foto}" alt="${escapeHtmlWa(c.nama)}" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='${c.nama[0]}';">` : c.nama[0].toUpperCase()}
+            <span class="wa-online-beacon" title="Online"></span>
           </div>
           <div class="wa-item-info">
             <div class="wa-item-top">
-              <span class="wa-item-name">${escapeHtmlWa(c.nama)}</span>
+              <span class="wa-item-name" title="${escapeHtmlWa(c.nama)}">${escapeHtmlWa(c.nama)}</span>
               <span class="wa-badge-role ${roleBadge}">${roleLabel}</span>
             </div>
-            <div class="wa-item-sub">Nomor ID: <strong>${c.nomorKontak}</strong> • Kelas: ${escapeHtmlWa(c.kelas || '-')}</div>
           </div>
         `;
         body.appendChild(item);
@@ -2224,7 +2766,7 @@
             <div class="wa-avatar" style="width:36px;height:36px;font-size:12px;">${c.nama ? c.nama[0].toUpperCase() : 'U'}</div>
             <div>
               <div style="font-size:13.5px;font-weight:700;color:#0F172A;">${escapeHtmlWa(c.nama)}</div>
-              <div style="font-size:11.5px;color:#64748B;">ID: ${c.nomorKontak || mId} ${isMemAdmin ? '<span class="wa-badge-role wa-badge-admin" style="margin-left:4px;">👑 Admin Grup</span>' : ''}</div>
+              <div style="font-size:11.5px;color:#64748B;">${c.role === 'admin' ? 'Administrator' : (c.role === 'walas' ? 'Wali Kelas' : (c.isGuru ? 'Guru' : 'Siswa'))} ${isMemAdmin ? '<span class="wa-badge-role wa-badge-admin" style="margin-left:4px;">👑 Admin Grup</span>' : ''}</div>
             </div>
           </div>
           ${isAdmin && mId !== currentUser.id && !isMemAdmin ? `
@@ -2797,10 +3339,13 @@
     const btnFloat = document.createElement('div');
     btnFloat.id = 'waFloatingBtn';
     btnFloat.className = 'wa-floating-btn' + (!isVerified ? ' wa-floating-btn-locked' : '');
-    btnFloat.title = isVerified ? 'Buka WhatsApp Presensia (Chat & Grup)' : 'WhatsApp Presensia (Terkunci - Verifikasi NISN / NIP)';
+    btnFloat.title = isVerified ? 'Buka Bubble (Chat & Grup)' : 'Bubble (Terkunci - Verifikasi NISN / NIP)';
     btnFloat.innerHTML = `
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.98-.276-.1-.476-.15-.677.15-.2.301-.777.98-.953 1.18-.175.2-.351.226-.652.075-.301-.15-1.27-.468-2.42-1.493-.895-.798-1.5-1.784-1.675-2.084-.175-.301-.019-.463.132-.613.136-.135.301-.351.452-.526.15-.176.2-.301.301-.502.101-.2.051-.376-.025-.526-.076-.15-.677-1.631-.928-2.233-.245-.586-.494-.506-.677-.515-.176-.008-.376-.01-.577-.01-.2 0-.527.075-.803.376-.276.301-1.053 1.029-1.053 2.509 0 1.48 1.079 2.91 1.229 3.111.15.2 2.122 3.24 5.141 4.545.718.311 1.279.497 1.716.636.722.23 1.378.197 1.898.12.579-.086 1.78-.727 2.031-1.429.251-.702.251-1.304.176-1.429-.076-.126-.276-.201-.577-.352zM12 21.82a9.78 9.78 0 0 1-4.99-1.373l-.358-.212-3.71.973.99-3.616-.233-.371A9.79 9.79 0 1 1 12 21.82zm0-17.82a8.03 8.03 0 0 0-6.94 12.08l.44.702-.58 2.122 2.17-.57.68.404A8.03 8.03 0 1 0 12 4z"/>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3C6.477 3 2 6.94 2 11.8C2 14.15 3.08 16.29 4.88 17.89L3.5 22L7.92 20.73C9.18 21.28 10.56 21.6 12 21.6C17.523 21.6 22 17.66 22 12.8C22 7.94 17.523 3 12 3Z" fill="white"/>
+        <circle cx="8" cy="12" r="1.5" fill="#0f172a"/>
+        <circle cx="12" cy="12" r="1.5" fill="#0f172a"/>
+        <circle cx="16" cy="12" r="1.5" fill="#0f172a"/>
       </svg>
       <div id="waBadgeCounter" class="wa-badge-counter" style="display:none;">0</div>
       ${!isVerified ? '<div id="waFloatingLockBadge" class="wa-floating-lock-badge" title="Akses chat terkunci (perlu verifikasi)">🔒</div>' : ''}
@@ -2821,26 +3366,27 @@
         <div class="wa-header">
           <div class="wa-header-top">
             <div class="wa-header-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.08L2.1 21.9l4.98-1.24A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.57 0-3.04-.43-4.3-1.18l-.31-.18-2.96.74.79-2.88-.2-.33A7.95 7.95 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>
-              <span>WhatsApp Presensia</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3C6.477 3 2 6.94 2 11.8C2 14.15 3.08 16.29 4.88 17.89L3.5 22L7.92 20.73C9.18 21.28 10.56 21.6 12 21.6C17.523 21.6 22 17.66 22 12.8C22 7.94 17.523 3 12 3Z" fill="white"/>
+                <circle cx="8" cy="12" r="1.5" fill="#0f172a"/>
+                <circle cx="12" cy="12" r="1.5" fill="#0f172a"/>
+                <circle cx="16" cy="12" r="1.5" fill="#0f172a"/>
+              </svg>
+              <span>Bubble</span>
             </div>
             <button type="button" class="wa-btn-close" id="waBtnMinimize">✕</button>
           </div>
-          <div class="wa-header-user" id="waHeaderUserDisplay">
-            ${!isVerified
-              ? `Masuk sebagai: <strong>${escapeHtmlWa(currentUser.nama)}</strong> • <span style="color:#fca5a5;font-weight:700;">Pengunjung (Belum Terverifikasi)</span>`
-              : `Masuk sebagai: <strong>${escapeHtmlWa(currentUser.nama)}</strong> (${currentUser.nomorKontak}) • <span style="opacity:0.9;">${roleName}</span>`
-            }
-          </div>
+          <div class="wa-header-user" id="waHeaderUserDisplay" style="display:none;" aria-hidden="true"></div>
           <div class="wa-nav-tabs">
             <div class="wa-tab-item active" data-tab="chats">Chat</div>
             <div class="wa-tab-item" data-tab="groups">Grup</div>
             <div class="wa-tab-item" data-tab="contacts">Kontak</div>
           </div>
         </div>
+        <div class="wa-header-accent"></div>
 
         <div class="wa-search-box">
-          <input type="text" id="waSearchInput" class="wa-search-input" placeholder="Cari nama siswa, NISN, guru, atau grup...">
+          <input type="text" id="waSearchInput" class="wa-search-input" placeholder="Cari nama...">
         </div>
 
         <div id="waPanelBody" class="wa-panel-body"></div>
@@ -2864,12 +3410,22 @@
             <span>Info Grup</span>
           </button>
         </div>
+        <div class="wa-header-accent"></div>
 
         <!-- BUBBLES -->
         <div id="waMessagesContainer" class="wa-messages-container"></div>
 
         <!-- MENTION AUTOCOMPLETE POPUP -->
         <div id="waMentionPopup" class="wa-mention-popup"></div>
+
+        <!-- EDIT MODE BAR -->
+        <div id="waEditModeBar" class="wa-edit-mode-bar" style="display:none;">
+          <div class="wa-edit-mode-left">
+            <div class="wa-edit-mode-title">✏️ Edit Pesan</div>
+            <div class="wa-edit-mode-preview" id="waEditModePreview"></div>
+          </div>
+          <button type="button" class="wa-btn-cancel-edit" onclick="batalEditPesanWa()" title="Batal Edit">✕</button>
+        </div>
 
         <!-- INPUT BAR -->
         <div id="waInputBar" class="wa-input-bar">
@@ -2947,6 +3503,21 @@
     document.body.appendChild(btnFloat);
     document.body.appendChild(hubWin);
 
+    if (!document.getElementById('waToastContainer')) {
+      const tContainer = document.createElement('div');
+      tContainer.id = 'waToastContainer';
+      tContainer.className = 'wa-toast-container';
+      document.body.appendChild(tContainer);
+    }
+
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('click', e => {
+        if (!e.target || (typeof e.target.closest === 'function' && !e.target.closest('.wa-bubble-actions-btn') && !e.target.closest('.wa-bubble-actions-menu'))) {
+          tutupSemuaMenuBubble();
+        }
+      });
+    }
+
     // Event Listeners
     btnFloat.onclick = () => {
       const activeUser = getActiveUserChat();
@@ -2955,14 +3526,29 @@
         return;
       }
       const isVisible = hubWin.style.display === 'flex';
-      hubWin.style.display = isVisible ? 'none' : 'flex';
       if (!isVisible) {
+        hubWin.style.display = 'flex';
+        hubWin.classList.remove('is-closing', 'is-animating-in');
+        try { void hubWin.offsetWidth; } catch (e) {}
+        hubWin.classList.add('is-animating-in');
+        if (btnFloat.classList && typeof btnFloat.classList.add === 'function') {
+          btnFloat.classList.add('is-open');
+        }
         if (!waActiveRoomId) {
           renderTabKontenWa();
         } else {
           try { localStorage.setItem('wa_last_read_' + waActiveRoomId, String(Date.now())); } catch (e) {}
         }
       } else {
+        hubWin.classList.remove('is-animating-in');
+        hubWin.classList.add('is-closing');
+        if (btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
+          btnFloat.classList.remove('is-open');
+        }
+        setTimeout(() => {
+          hubWin.style.display = 'none';
+          hubWin.classList.remove('is-closing');
+        }, 180);
         waActiveRoomId = null;
       }
       perbaruiBadgeCounter();
@@ -2971,7 +3557,15 @@
     const btnMin = document.getElementById('waBtnMinimize');
     if (btnMin) {
       btnMin.onclick = () => {
-        hubWin.style.display = 'none';
+        hubWin.classList.remove('is-animating-in');
+        hubWin.classList.add('is-closing');
+        if (btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
+          btnFloat.classList.remove('is-open');
+        }
+        setTimeout(() => {
+          hubWin.style.display = 'none';
+          hubWin.classList.remove('is-closing');
+        }, 180);
         waActiveRoomId = null;
         perbaruiBadgeCounter();
       };
@@ -2987,14 +3581,14 @@
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         waActiveTab = tab.getAttribute('data-tab');
-        renderTabKontenWa();
+        renderTabKontenWa(false);
       };
     });
 
     // Search
     const searchInput = document.getElementById('waSearchInput');
     if (searchInput) {
-      searchInput.oninput = () => renderTabKontenWa();
+      searchInput.oninput = () => renderTabKontenWa(true);
     }
 
     // Input Pesan & Send dengan Penanganan Keydown Anti Double
@@ -3004,7 +3598,19 @@
       const doSend = () => {
         const val = txtInput.value;
         if (val.trim()) {
-          kirimPesanWaHub(waActiveRoomId, val, 'teks');
+          if (btnSend.classList && typeof btnSend.classList.add === 'function') {
+            btnSend.classList.add('wa-btn-pop');
+            setTimeout(() => {
+              if (btnSend.classList && typeof btnSend.classList.remove === 'function') {
+                btnSend.classList.remove('wa-btn-pop');
+              }
+            }, 250);
+          }
+          if (waEditingMessageId) {
+            simpanEditPesanWa(waEditingMessageId, waEditingRoomId || waActiveRoomId, val);
+          } else {
+            kirimPesanWaHub(waActiveRoomId, val, 'teks');
+          }
           txtInput.value = '';
           const popup = document.getElementById('waMentionPopup');
           if (popup) popup.style.display = 'none';
@@ -3015,6 +3621,11 @@
         if (e.key === 'Enter') {
           e.preventDefault();
           doSend();
+        } else if (e.key === 'Escape') {
+          if (waEditingMessageId) {
+            e.preventDefault();
+            batalEditPesanWa();
+          }
         }
       };
       txtInput.oninput = handleInputMention;
@@ -3029,13 +3640,16 @@
     // Listener Broadcast Lintas Tab & Lintas Storage
     if (waBroadcastChannel) {
       waBroadcastChannel.onmessage = e => {
-        if (e && e.data && e.data.type === 'NEW_WA_MESSAGE') {
-          if (e.data.senderTabId === CURRENT_TAB_ID) return;
-          const m = e.data.message;
-          const rId = e.data.roomId;
+        if (!e || !e.data) return;
+        const data = e.data;
+        const currentUser = getActiveUserChat();
+
+        if (data.type === 'NEW_WA_MESSAGE') {
+          if (data.senderTabId === CURRENT_TAB_ID) return;
+          const m = data.message;
+          const rId = data.roomId;
           if (!m || !rId) return;
 
-          const currentUser = getActiveUserChat();
           // Filter isolasi: Abaikan broadcast obrolan pribadi atau grup milik akun lain
           if (rId.startsWith('direct_') && !isUserInDirectRoom(currentUser, rId)) return;
           if (rId.startsWith('group_')) {
@@ -3057,13 +3671,160 @@
           updateThreadMetadata(rId, m);
 
           if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            m.status = 'read';
             appendBubblePesan(m);
             scrollChatKeBawah();
             try { localStorage.setItem('wa_last_read_' + rId, String(Date.now())); } catch (eR) {}
+            const activeDb = getActiveDb();
+            if (activeDb) {
+              activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+              activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
+            }
+            try {
+              waBroadcastChannel.postMessage({
+                type: 'MESSAGES_READ',
+                roomId: rId,
+                readerId: currentUser.id
+              });
+            } catch (eBc) {}
           } else {
+            tampilkanNotifikasiPesanBaru(m, rId);
+            if (m.status === 'sent') {
+              const activeDb = getActiveDb();
+              if (activeDb) {
+                activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'delivered' }).catch(() => null);
+                activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'delivered' }).catch(() => null);
+              }
+            }
             perbaruiBadgeCounter();
             if (waActiveTab === 'chats' && !waActiveRoomId) {
               renderTabKontenWa();
+            }
+          }
+        } else if (data.type === 'EDIT_WA_MESSAGE') {
+          const rId = data.roomId;
+          const msgId = data.messageId;
+          const newText = data.newText;
+          if (!rId || !msgId || !newText) return;
+
+          const lKey = 'wa_msgs_' + rId;
+          try {
+            let hist = JSON.parse(localStorage.getItem(lKey) || '[]');
+            const t = hist.find(x => x && x.id === msgId);
+            if (t) {
+              t.pesan = newText;
+              t.isEdited = true;
+              t.editedAt = data.editedAt || Date.now();
+              localStorage.setItem(lKey, JSON.stringify(hist));
+            }
+          } catch (eEd) {}
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            const bId = 'waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const bubbleEl = document.getElementById(bId);
+            if (bubbleEl) {
+              const txtEl = bubbleEl.querySelector('.wa-bubble-text');
+              if (txtEl) txtEl.innerHTML = escapeHtmlWa(newText);
+              const metaEl = bubbleEl.querySelector('.wa-bubble-meta');
+              if (metaEl && !metaEl.querySelector('.wa-msg-edited-tag')) {
+                const sp = document.createElement('span');
+                sp.className = 'wa-msg-edited-tag';
+                sp.title = 'Diedit';
+                sp.textContent = '(diedit)';
+                const checkEl = metaEl.querySelector('.wa-check-icon');
+                if (checkEl) metaEl.insertBefore(sp, checkEl);
+                else metaEl.appendChild(sp);
+              }
+            }
+          }
+        } else if (data.type === 'DELETE_WA_MESSAGE') {
+          const rId = data.roomId;
+          const msgId = data.messageId;
+          if (!rId || !msgId) return;
+
+          const lKey = 'wa_msgs_' + rId;
+          try {
+            let hist = JSON.parse(localStorage.getItem(lKey) || '[]');
+            const t = hist.find(x => x && x.id === msgId);
+            if (t) {
+              t.isDeleted = true;
+              t.pesan = '🚫 Pesan ini telah dihapus';
+              t.audio_url = null;
+              t.deletedAt = Date.now();
+              localStorage.setItem(lKey, JSON.stringify(hist));
+            }
+          } catch (eDel) {}
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            const bId = 'waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const bubbleEl = document.getElementById(bId);
+            if (bubbleEl) {
+              const txtEl = bubbleEl.querySelector('.wa-bubble-text') || bubbleEl.querySelector('.wa-vn-player');
+              if (txtEl) {
+                txtEl.className = 'wa-bubble-text wa-msg-deleted';
+                txtEl.innerHTML = '<i>🚫 Pesan ini telah dihapus</i>';
+              }
+              const menuBtn = bubbleEl.querySelector('.wa-bubble-actions-btn');
+              if (menuBtn) menuBtn.remove();
+              const menuEl = bubbleEl.querySelector('.wa-bubble-actions-menu');
+              if (menuEl) menuEl.remove();
+            }
+          }
+        } else if (data.type === 'MESSAGES_READ') {
+          const rId = data.roomId;
+          if (!rId) return;
+
+          const lKey = 'wa_msgs_' + rId;
+          try {
+            let hist = JSON.parse(localStorage.getItem(lKey) || '[]');
+            let changed = false;
+            hist.forEach(m => {
+              if (m && isCurrentSender(m, currentUser) && m.status !== 'read') {
+                m.status = 'read';
+                changed = true;
+              }
+            });
+            if (changed) localStorage.setItem(lKey, JSON.stringify(hist));
+          } catch (eRd) {}
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            const container = document.getElementById('waMessagesContainer');
+            if (container) {
+              container.querySelectorAll('.wa-bubble.sent .wa-check-icon').forEach(icon => {
+                icon.className = 'wa-check-icon is-read';
+                icon.title = 'Dibaca (✓✓)';
+                icon.textContent = '✓✓';
+              });
+            }
+          }
+        } else if (data.type === 'MESSAGE_DELIVERED') {
+          const rId = data.roomId;
+          const msgId = data.messageId;
+          if (!rId) return;
+
+          const lKey = 'wa_msgs_' + rId;
+          try {
+            let hist = JSON.parse(localStorage.getItem(lKey) || '[]');
+            let changed = false;
+            hist.forEach(m => {
+              if (m && (!msgId || m.id === msgId) && isCurrentSender(m, currentUser) && m.status === 'sent') {
+                m.status = 'delivered';
+                changed = true;
+              }
+            });
+            if (changed) localStorage.setItem(lKey, JSON.stringify(hist));
+          } catch (eDlv) {}
+
+          if (waActiveRoomId && String(waActiveRoomId).trim() === String(rId).trim()) {
+            const bId = msgId ? ('waBubble_' + String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_')) : null;
+            const bubbleEl = bId ? document.getElementById(bId) : null;
+            if (bubbleEl) {
+              const icon = bubbleEl.querySelector('.wa-check-icon');
+              if (icon && !icon.classList.contains('is-read')) {
+                icon.className = 'wa-check-icon is-delivered';
+                icon.title = 'Tersampaikan (✓✓)';
+                icon.textContent = '✓✓';
+              }
             }
           }
         }
@@ -3142,12 +3903,25 @@
     if (!isAkunTerverifikasiChat(currentUser)) {
       const hubWin = document.getElementById('waHubWindow');
       if (hubWin) hubWin.style.display = 'none';
+      const btnFloat = document.getElementById('waFloatingBtn');
+      if (btnFloat && btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
+        btnFloat.classList.remove('is-open');
+      }
       tampilkanModalKunciWaChat();
       return;
     }
     tutupModalKunciWaChat();
     const hubWin = document.getElementById('waHubWindow');
-    if (hubWin) hubWin.style.display = 'flex';
+    if (hubWin) {
+      hubWin.style.display = 'flex';
+      hubWin.classList.remove('is-closing', 'is-animating-in');
+      try { void hubWin.offsetWidth; } catch (e) {}
+      hubWin.classList.add('is-animating-in');
+    }
+    const btnFloat = document.getElementById('waFloatingBtn');
+    if (btnFloat && btnFloat.classList && typeof btnFloat.classList.add === 'function') {
+      btnFloat.classList.add('is-open');
+    }
     if (!targetId) {
       if (typeof kembaliKeDaftarWa === 'function') kembaliKeDaftarWa();
       return;
@@ -3170,7 +3944,7 @@
             const found = allC.find(c => String(c.id) === String(otherId) || String(c.nomorKontak) === String(otherId) || String(c.nip) === String(otherId) || String(c.nisn) === String(otherId));
             if (found) {
               resolvedName = found.nama;
-              if (!resolvedSub) resolvedSub = (found.isGuru ? 'Guru' : 'Siswa') + ' • ' + (found.kelas || 'Pribadi');
+              if (!resolvedSub) resolvedSub = found.isGuru ? 'Guru' : (found.role === 'admin' ? 'Administrator' : 'Siswa');
             }
           }
         }
@@ -3180,12 +3954,12 @@
           const found = allC.find(c => String(c.id) === String(targetId) || String(c.nomorKontak) === String(targetId) || String(c.nip) === String(targetId) || String(c.nisn) === String(targetId));
           if (found) {
             resolvedName = found.nama;
-            if (!resolvedSub) resolvedSub = (found.isGuru ? 'Guru' : 'Siswa') + ' • ' + (found.kelas || 'Pribadi');
+            if (!resolvedSub) resolvedSub = found.isGuru ? 'Guru' : (found.role === 'admin' ? 'Administrator' : 'Siswa');
           }
         }
         directId = getDirectRoomId(currentUser.id, targetId);
       }
-      bukaRoomWa(directId, resolvedName || ('Kontak ' + targetId), resolvedSub || ('ID: ' + targetId), 'direct');
+      bukaRoomWa(directId, resolvedName || ('Kontak ' + targetId), resolvedSub || 'Online', 'direct');
     }
   }
 
@@ -3221,6 +3995,16 @@
     window.getOtherParticipantId = getOtherParticipantId;
     window.getUserIdentifiers = getUserIdentifiers;
     window.isCurrentSender = isCurrentSender;
+    window.mulaiEditPesanWa = mulaiEditPesanWa;
+    window.simpanEditPesanWa = simpanEditPesanWa;
+    window.batalEditPesanWa = batalEditPesanWa;
+    window.hapusPesanWa = hapusPesanWa;
+    window.toggleMenuAksiBubble = toggleMenuAksiBubble;
+    window.tutupSemuaMenuBubble = tutupSemuaMenuBubble;
+    window.salinTeksPesanWa = salinTeksPesanWa;
+    window.mainkanSuaraNotifikasiChat = mainkanSuaraNotifikasiChat;
+    window.tampilkanNotifikasiPesanBaru = tampilkanNotifikasiPesanBaru;
+    window.getCheckmarkIconHtml = getCheckmarkIconHtml;
   }
 
   // Otomatis Pasang saat DOM Siap
@@ -3271,6 +4055,16 @@
     global.getOtherParticipantId = getOtherParticipantId;
     global.getUserIdentifiers = getUserIdentifiers;
     global.isCurrentSender = isCurrentSender;
+    global.mulaiEditPesanWa = mulaiEditPesanWa;
+    global.simpanEditPesanWa = simpanEditPesanWa;
+    global.batalEditPesanWa = batalEditPesanWa;
+    global.hapusPesanWa = hapusPesanWa;
+    global.toggleMenuAksiBubble = toggleMenuAksiBubble;
+    global.tutupSemuaMenuBubble = tutupSemuaMenuBubble;
+    global.salinTeksPesanWa = salinTeksPesanWa;
+    global.mainkanSuaraNotifikasiChat = mainkanSuaraNotifikasiChat;
+    global.tampilkanNotifikasiPesanBaru = tampilkanNotifikasiPesanBaru;
+    global.getCheckmarkIconHtml = getCheckmarkIconHtml;
   }
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -3310,7 +4104,17 @@
       parseDirectRoomParticipants,
       getOtherParticipantId,
       getUserIdentifiers,
-      isCurrentSender
+      isCurrentSender,
+      mulaiEditPesanWa,
+      simpanEditPesanWa,
+      batalEditPesanWa,
+      hapusPesanWa,
+      toggleMenuAksiBubble,
+      tutupSemuaMenuBubble,
+      salinTeksPesanWa,
+      mainkanSuaraNotifikasiChat,
+      tampilkanNotifikasiPesanBaru,
+      getCheckmarkIconHtml,
     };
   }
 })();

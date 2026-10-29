@@ -112,7 +112,7 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
   } else {
     if (isLewat08) {
       pill.className = 'status-pill alpa danger';
-      pill.textContent = '❌ Alpa';
+      pill.textContent = 'Tanpa Keterangan';
       if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
         const todayTgl = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
         db.ref('absensi/' + nisn + '/' + todayTgl).transaction(cur => {
@@ -124,10 +124,10 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
       }
     } else if (cleanJamWIB >= '06:30:00') {
       pill.className = 'status-pill terlambat peringatan';
-      pill.textContent = 'Terlambat (Pantauan Walas)';
+      pill.textContent = 'Tanpa Keterangan';
     } else {
       pill.className = 'status-pill terlambat belum';
-      pill.textContent = '⏱ Terlambat';
+      pill.textContent = 'Tanpa Keterangan';
     }
   }
 
