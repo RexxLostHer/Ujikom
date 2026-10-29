@@ -422,7 +422,33 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
           }
         } catch(e) {}
       }
+    }    // Guard: Cek apakah siswa sudah memiliki izin yang telah DISETUJUI / DI-ACC
+    let approvedPermit = null;
+    if (typeof ambilIzinDisetujuiAktifSiswa === 'function') {
+      approvedPermit = ambilIzinDisetujuiAktifSiswa(finalNisn);
+    } else if (typeof window !== 'undefined' && typeof window.ambilIzinDisetujuiAktifSiswa === 'function') {
+      approvedPermit = window.ambilIzinDisetujuiAktifSiswa(finalNisn);
+    } else if (typeof global !== 'undefined' && typeof global.ambilIzinDisetujuiAktifSiswa === 'function') {
+      approvedPermit = global.ambilIzinDisetujuiAktifSiswa(finalNisn);
     }
+
+    if (!approvedPermit) {
+      const stObj = (typeof localStorage !== 'undefined') ? localStorage : ((typeof global !== 'undefined') ? global.localStorage : null);
+      if (stObj) {
+        try {
+          const stFlag = stObj.getItem('status_izin_' + finalNisn);
+          if (stFlag === 'disetujui' || stFlag === 'approved') {
+            approvedPermit = { status: 'disetujui' };
+          }
+        } catch (eSt) {}
+      }
+    }
+
+    if (approvedPermit) {
+      throw new Error('Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin. Tidak dapat mengirimkan permohonan lagi.');
+    }
+
+
 
     if (pendingPermit) {
       throw new Error('Anda masih memiliki pengajuan izin yang sedang menunggu konfirmasi Wali Kelas. Tidak dapat mengajukan permohonan ganda.');

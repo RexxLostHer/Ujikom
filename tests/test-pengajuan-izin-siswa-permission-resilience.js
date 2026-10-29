@@ -421,6 +421,13 @@ async function main() {
   global.currentUser = userIhsan;
   global.getSessionUser = () => userIhsan;
 
+  // Bersihkan status izin terselesaikan sebelumnya agar siswa dapat mengajukan form baru untuk pengujian kuota
+  ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal', 'antrean_perijinan', 'pengajuan_perizinan'].forEach(k => {
+    mockStorage.removeItem(k);
+  });
+  mockStorage.removeItem('status_izin_0098263610');
+  mockStorage.removeItem('last_submission_0098263610');
+
   // Pasang mock QuotaExceededError jika payload dataURL terlalu besar
   const originalSetItem = mockStorage.setItem.bind(mockStorage);
   let quotaHitCount = 0;

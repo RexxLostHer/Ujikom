@@ -284,12 +284,13 @@ async function runTestSuites() {
   // Verifikasi status tersimpan sebagai disetujui di localStorage
   assert.strictEqual(mockLocalStorage.getItem('status_izin_0098263610'), 'disetujui', 'Flag status_izin_0098263610 harus disetujui');
 
-  // Form siswa otomatis terbuka kembali
+  // Form siswa otomatis TERKUNCI (disabled) karena sudah di-ACC
   await context.populateDropdownSiswa();
-  assert.strictEqual(btnSubmit.disabled, false, 'Tombol submit form siswa harus otomatis aktif kembali (disabled = false)');
-  assert.strictEqual(btnSubmit.textContent, 'Kirim Pengajuan Izin', 'Label tombol submit harus kembali "Kirim Pengajuan Izin"');
+  assert.strictEqual(btnSubmit.disabled, true, 'Tombol submit form siswa harus terkunci saat di-ACC (disabled = true)');
+  assert.strictEqual(btnSubmit.textContent, 'Izin Telah Disetujui Resmi (Terkunci)', 'Label tombol submit harus "Izin Telah Disetujui Resmi (Terkunci)"');
   assert.strictEqual(context.ambilIzinPendingAktifSiswa('0098263610'), null, 'Tidak boleh ada izin pending yang menahan form siswa');
-  console.log('  ✓ Form siswa otomatis TERBUKA kembali saat izin di-ACC oleh Wali Kelas.\n');
+  assert.ok(context.ambilIzinDisetujuiAktifSiswa('0098263610'), 'Izin yang disetujui harus terdeteksi');
+  console.log('  ✓ Form siswa otomatis TERKUNCI (disabled) saat izin di-ACC oleh Wali Kelas.\n');
 
   // =========================================================================
   // SKENARIO 3: Banner Notifikasi Persetujuan Ditampilkan Bersahabat
@@ -306,28 +307,25 @@ async function runTestSuites() {
   console.log('  ✓ Banner konfirmasi disetujui dengan catatan Walas sukses ditampilkan.\n');
 
   // =========================================================================
-  // SKENARIO 4: Siswa Mengajukan Izin Baru Pasca-Approval -> Berhasil Terkirim
+  // SKENARIO 4: Siswa Mencoba Mengajukan Izin Pasca-Approval -> Ditolak Tegas
   // =========================================================================
-  console.log('▶ [Skenario 4] Siswa mengajukan izin baru setelah permohonan pertama disetujui...');
+  console.log('▶ [Skenario 4] Siswa mencoba kirim izin lagi saat status sudah disetujui -> Ditolak...');
   getOrCreateElem('perijinanJenis').value = 'izin';
   getOrCreateElem('perijinanTanggal').value = '2026-10-30';
   getOrCreateElem('perijinanAlasan').value = 'Izin kontrol dokter lanjutan.';
   getOrCreateElem('fotoSurat').files = [{ name: 'surat_kontrol.jpg', size: 1024, type: 'image/jpeg' }];
 
   await context.handleSubmitPerijinan();
-
-  const pendingItemBaru = context.ambilIzinPendingAktifSiswa('0098263610');
-  assert.ok(pendingItemBaru, 'Izin baru harus berhasil tercatat');
-  assert.strictEqual(pendingItemBaru.status, 'pending', 'Izin baru berstatus pending');
-  console.log('  ✓ Siswa berhasil mengirimkan permohonan izin baru pasca-approval.\n');
+  assert.strictEqual(btnSubmit.disabled, true, 'Tombol submit harus tetap terkunci');
+  assert.ok(msgEl.innerHTML.includes('Disetujui') || msgEl.innerHTML.includes('Dibatasi'), 'Pesan blokir izin disetujui harus tampil');
+  console.log('  ✓ Siswa dicegah mengirimkan izin ganda setelah izin disetujui.\n');
 
   // =========================================================================
   // SKENARIO 5: Wali Kelas Menolak Izin -> Form Terbuka & Pesan Penolakan Muncul
   // =========================================================================
-  console.log('▶ [Skenario 5] Wali Kelas menolak permohonan izin baru...');
+  console.log('▶ [Skenario 5] Wali Kelas menolak permohonan izin...');
   context.prompt = () => 'Bukti surat dokter tidak terbaca, mohon foto ulang';
-  const permitBaruId = pendingItemBaru.id || pendingItemBaru.pid;
-  await context.prosesApprovalIzin(permitBaruId, 'ditolak');
+  await context.prosesApprovalIzin(permitId, 'ditolak');
 
   assert.strictEqual(mockLocalStorage.getItem('status_izin_0098263610'), 'ditolak', 'Status izin harus menjadi ditolak');
 
@@ -349,7 +347,7 @@ async function runTestSuites() {
   // SKENARIO 6: Cross-Device / Cross-Browser RTDB Event Sinkronisasi
   // =========================================================================
   console.log('▶ [Skenario 6] Simulasi update RTDB dari perangkat guru eksternal...');
-  // Simulasikan event snapshot realtime Firebase
+  // Simulasikan event snapshot realtime Firebase dengan status disetujui (ACC)
   const rtdbPermit = {
     id: '-OeCloudPermit999',
     pid: '-OeCloudPermit999',
@@ -369,9 +367,33 @@ async function runTestSuites() {
     });
   });
 
-  assert.strictEqual(btnSubmit.disabled, false, 'Form siswa harus tetap aktif setelah event RTDB masuk');
+  assert.strictEqual(btnSubmit.disabled, true, 'Form siswa harus terkunci saat event RTDB berstatus disetujui masuk');
   assert.strictEqual(mockLocalStorage.getItem('status_izin_0098263610'), 'disetujui', 'Status di localStorage harus tersinkron dari RTDB');
-  console.log('  ✓ Event realtime Firebase RTDB berhasil membuka kunci form siswa secara instan.\n');
+  console.log('  ✓ Event realtime Firebase RTDB (disetujui) berhasil mengunci form siswa secara instan.\n');
+
+  // Simulasikan event snapshot realtime Firebase ditolak
+  const rtdbPermitDitolak = {
+    id: '-OeCloudPermit1000',
+    pid: '-OeCloudPermit1000',
+    nisn: '0098263610',
+    nama: 'M. IHSAN ATHALLAH',
+    status: 'ditolak',
+    tanggal: '2026-10-29',
+    jenis: 'izin',
+    alasanTolak: 'Berkas tidak valid, kirim ulang',
+    dibuat_pada: Date.now(),
+    updated_at: new Date(Date.now() + 2000).toISOString()
+  };
+
+  rtdbListeners.forEach(listener => {
+    listener({
+      val: () => ({ '-OeCloudPermit1000': rtdbPermitDitolak })
+    });
+  });
+
+  assert.strictEqual(btnSubmit.disabled, false, 'Form siswa harus terbuka kembali saat event RTDB berstatus ditolak masuk');
+  assert.strictEqual(mockLocalStorage.getItem('status_izin_0098263610'), 'ditolak', 'Status di localStorage harus tersinkron dari RTDB');
+  console.log('  ✓ Event realtime Firebase RTDB (ditolak) berhasil membuka kunci form siswa kembali.\n');
 
   console.log('================================================================');
   console.log('🎉 SELURUH PENGUJIAN SINKRONISASI APPROVAL FORM SISWA SUKSES 100%!');

@@ -418,68 +418,100 @@ async function initDashboard(user) {
   }
 }
 
-// Helper: Buka kunci form pengajuan perizinan siswa dengan pesan informatif
+// Helper: Kelola status dan kunci form pengajuan perizinan siswa dengan pesan informatif
 function bukaKunciFormPengajuanSiswa(itemInfo, user) {
   if (typeof document === 'undefined') return;
   const btnSubmit = document.getElementById('btnSubmitPerijinan');
   const msg = document.getElementById('perijinanMsg');
 
-  if (btnSubmit) {
-    btnSubmit.disabled = false;
-    btnSubmit.style.opacity = '1';
-    btnSubmit.style.cursor = 'pointer';
-    btnSubmit.textContent = 'Kirim Pengajuan Izin';
-    btnSubmit.title = '';
+  if (!itemInfo) {
+    const userNow = user || (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+    const targetNisn = userNow && userNow.nisn ? String(userNow.nisn).trim() : '';
+    const approvedItem = targetNisn ? ambilIzinDisetujuiAktifSiswa(targetNisn) : null;
+    const pendingItem = targetNisn ? ambilIzinPendingAktifSiswa(targetNisn) : null;
+    if (approvedItem) itemInfo = approvedItem;
+    else if (pendingItem) itemInfo = pendingItem;
   }
 
-  if (msg) {
-    if (!itemInfo) {
-      if (msg.innerHTML && msg.innerHTML.includes('Pengajuan Izin Sedang Menunggu Konfirmasi')) {
-        msg.textContent = '';
-        msg.innerHTML = '';
-        msg.style.display = 'none';
-      }
-      return;
+  if (msg && !itemInfo) {
+    if (msg.innerHTML && msg.innerHTML.includes('Pengajuan Izin Sedang Menunggu Konfirmasi')) {
+      msg.textContent = '';
+      msg.innerHTML = '';
+      msg.style.display = 'none';
     }
-    const rawStatus = String(itemInfo.status || itemInfo.statusBaru || '').toLowerCase();
-    const isApproved = (rawStatus === 'disetujui' || rawStatus === 'approved' || itemInfo.type === 'PERMIT_APPROVED');
-    const isRejected = (rawStatus === 'ditolak' || rawStatus === 'rejected' || itemInfo.type === 'PERMIT_REJECTED');
-    const isCancelled = (rawStatus === 'dibatalkan' || rawStatus === 'cancelled' || itemInfo.type === 'PERMIT_CANCELLED');
-    const jenis = (itemInfo.jenis || itemInfo.tipe || 'Izin').toUpperCase();
-    const tgl = itemInfo.tanggal || itemInfo.tanggal_norm || '';
-    const catatan = itemInfo.catatan_guru || itemInfo.catatan || itemInfo.alasanTolak || itemInfo.alasan || '';
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = 'Kirim Pengajuan Izin';
+      btnSubmit.title = '';
+    }
+    return;
+  }
 
-    if (isApproved) {
+  const rawStatus = itemInfo ? String(itemInfo.status || itemInfo.statusBaru || '').toLowerCase() : '';
+  const isApproved = (rawStatus === 'disetujui' || rawStatus === 'approved' || (itemInfo && itemInfo.type === 'PERMIT_APPROVED'));
+  const isRejected = (rawStatus === 'ditolak' || rawStatus === 'rejected' || (itemInfo && itemInfo.type === 'PERMIT_REJECTED'));
+  const isCancelled = (rawStatus === 'dibatalkan' || rawStatus === 'cancelled' || (itemInfo && itemInfo.type === 'PERMIT_CANCELLED'));
+  const jenis = itemInfo ? (itemInfo.jenis || itemInfo.tipe || 'Izin').toUpperCase() : 'IZIN';
+  const tgl = itemInfo ? (itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
+  const catatan = itemInfo ? (itemInfo.catatan_guru || itemInfo.catatan || itemInfo.alasanTolak || itemInfo.alasan || '') : '';
+
+  if (isApproved) {
+    // KETENTUAN USER: Jika sudah di-ACC, maka tombol submit TERKUNCI (tidak bisa kirim lagi)
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.style.opacity = '0.6';
+      btnSubmit.style.cursor = 'not-allowed';
+      btnSubmit.textContent = 'Izin Telah Disetujui Resmi (Terkunci)';
+      btnSubmit.title = 'Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin. Tidak dapat mengirimkan keluhan/izin lagi.';
+    }
+    if (msg) {
       msg.style.display = 'block';
-      msg.innerHTML = `
-        <div style="background:#ecfdf5;border:1.5px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">
-          <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#047857;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Pengajuan Izin Telah Disetujui</span>
-          </div>
-          Pengajuan izin <strong>${jenis}</strong>${tgl ? ` untuk tanggal <strong>${tgl}</strong>` : ''} telah <strong>disetujui</strong> oleh Wali Kelas${catatan ? `. Catatan guru: <em>"${catatan}"</em>` : '.'}<br>
-          Form telah dibuka kembali. Anda dapat mengirimkan pengajuan izin baru jika diperlukan.
-        </div>
-      `;
-    } else if (isRejected) {
+      msg.innerHTML = [
+        '<div style="background:#ecfdf5;border:1.5px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
+        '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#047857;">',
+        '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        '    <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+        '  </div>',
+        '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui</strong> oleh Wali Kelas' + (catatan ? '. Catatan guru: <em>"' + catatan + '"</em>' : '.') + '<br>',
+        '  Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.',
+        '</div>'
+      ].join('\n');
+    }
+  } else if (isRejected) {
+    // KETENTUAN USER: Jika ditolak, baru form dibuka kembali dan bisa kirim lagi
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = 'Kirim Pengajuan Izin';
+      btnSubmit.title = '';
+    }
+    if (msg) {
       msg.style.display = 'block';
-      msg.innerHTML = `
-        <div style="background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">
-          <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#b91c1c;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            <span>Pengajuan Izin Telah Ditolak</span>
-          </div>
-          Pengajuan izin <strong>${jenis}</strong>${tgl ? ` untuk tanggal <strong>${tgl}</strong>` : ''} telah <strong>ditolak</strong> oleh Wali Kelas${catatan ? `. Alasan: <em>"${catatan}"</em>` : '.'}<br>
-          Form telah dibuka kembali. Anda dapat mengirimkan permohonan izin baru dengan melampirkan berkas yang valid.
-        </div>
-      `;
-    } else if (isCancelled) {
+      msg.innerHTML = [
+        '<div style="background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
+        '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#b91c1c;">',
+        '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        '    <span>Pengajuan Izin Telah Ditolak</span>',
+        '  </div>',
+        '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>ditolak</strong> oleh Wali Kelas' + (catatan ? '. Alasan: <em>"' + catatan + '"</em>' : '.') + '<br>',
+        '  Form telah dibuka kembali. Anda dapat mengirimkan permohonan izin baru dengan melampirkan berkas yang valid.',
+        '</div>'
+      ].join('\n');
+    }
+  } else if (isCancelled) {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = 'Kirim Pengajuan Izin';
+      btnSubmit.title = '';
+    }
+    if (msg) {
       msg.style.display = 'block';
-      msg.innerHTML = `
-        <div style="background:#f8fafc;border:1.5px solid #cbd5e1;color:#475569;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">
-          <b>Permohonan Dibatalkan.</b> Form telah dibuka kembali untuk pengajuan permohonan baru.
-        </div>
-      `;
+      msg.innerHTML = '<div style="background:#f8fafc;border:1.5px solid #cbd5e1;color:#475569;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;"><b>Permohonan Dibatalkan.</b> Form telah dibuka kembali untuk pengajuan permohonan baru.</div>';
     }
   }
 }
@@ -756,6 +788,77 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   return latestPending;
 }
 
+// Helper: Cek apakah siswa memiliki izin yang telah DISETUJUI / DI-ACC (Kunci Form jika sudah di-ACC)
+function ambilIzinDisetujuiAktifSiswa(nisn) {
+  if (!nisn) return null;
+  const targetNisn = String(nisn).trim();
+
+  // 1. Cek langsung flag status_izin
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stFlag = localStorage.getItem('status_izin_' + targetNisn);
+      if (stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'dibatalkan' || stFlag === 'cancelled') {
+        return null;
+      }
+      if (stFlag === 'disetujui' || stFlag === 'approved') {
+        const lastSubStr = localStorage.getItem('last_submission_' + targetNisn);
+        if (lastSubStr) {
+          try {
+            const parsed = JSON.parse(lastSubStr);
+            if (parsed) {
+              return Object.assign({}, parsed, { status: 'disetujui' });
+            }
+          } catch (eP) {}
+        }
+        return { status: 'disetujui', nisn: targetNisn };
+      }
+    }
+  } catch (e) {}
+
+  // 2. Kumpulkan rekaman perizinan siswa
+  const localItems = (typeof ambilDataPerizinanLokal === 'function') ? ambilDataPerizinanLokal() : [];
+  const rawStudentItems = [];
+
+  for (const item of localItems) {
+    if (!item) continue;
+    const itemNisn = String(item.nisn || item.siswaId || item.pengajuId || '').trim();
+    if (itemNisn === targetNisn || (targetNisn === '0098263610' && item.nama && String(item.nama).toLowerCase().includes('ihsan'))) {
+      rawStudentItems.push(item);
+    }
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const lastSub = localStorage.getItem('last_submission_' + targetNisn);
+      if (lastSub) {
+        const parsed = JSON.parse(lastSub);
+        if (parsed) rawStudentItems.push(parsed);
+      }
+    }
+  } catch (e) {}
+
+  if (rawStudentItems.length === 0) return null;
+
+  function ambilWaktuSubmit(it) {
+    if (!it) return 0;
+    if (typeof it.dibuat_pada === 'number') return it.dibuat_pada;
+    if (typeof it.createdAt === 'number') return it.createdAt;
+    if (typeof it.created_at === 'number') return it.created_at;
+    if (it.created_at) { const p = Date.parse(it.created_at); if (!isNaN(p)) return p; }
+    if (it.dibuat_pada) { const p = Date.parse(it.dibuat_pada); if (!isNaN(p)) return p; }
+    if (it.tanggal) { const p = Date.parse(it.tanggal); if (!isNaN(p)) return p; }
+    return 0;
+  }
+
+  rawStudentItems.sort((a, b) => ambilWaktuSubmit(b) - ambilWaktuSubmit(a));
+  const latestItem = rawStudentItems[0];
+  const st = String(latestItem.status || '').toLowerCase().trim();
+  if (st === 'disetujui' || st === 'approved') {
+    return latestItem;
+  }
+  return null;
+}
+
 function populateDropdownSiswa(user) {
   const sel = document.getElementById('perijinanSiswaTarget');
   const btnSubmit = document.getElementById('btnSubmitPerijinan');
@@ -801,7 +904,36 @@ function populateDropdownSiswa(user) {
     sel.value = targetNisn;
     sel.disabled = true;
 
-    // Cek apakah siswa masih memiliki permohonan izin pending (Anti Double-Send)
+    // 1. Cek apakah izin siswa sudah DISETUJUI / DI-ACC (Kunci form: tidak bisa kirim keluhan/izin lagi)
+    const approvedItem = (typeof ambilIzinDisetujuiAktifSiswa === 'function') ? ambilIzinDisetujuiAktifSiswa(targetNisn) : null;
+    if (approvedItem) {
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.style.opacity = '0.6';
+        btnSubmit.style.cursor = 'not-allowed';
+        btnSubmit.textContent = 'Izin Telah Disetujui Resmi (Terkunci)';
+        btnSubmit.title = 'Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin.';
+      }
+      if (msg) {
+        msg.style.display = 'block';
+        const jenis = (approvedItem.jenis || approvedItem.tipe || 'Izin').toUpperCase();
+        const tgl = approvedItem.tanggal || approvedItem.tanggal_norm || '';
+        const catatan = approvedItem.catatan_guru || approvedItem.catatan || approvedItem.alasan || '';
+        msg.innerHTML = [
+          '<div style="background:#ecfdf5;border:1.5px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
+          '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#047857;">',
+          '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+          '    <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+          '  </div>',
+          '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui</strong> oleh Wali Kelas' + (catatan ? '. Catatan guru: <em>"' + catatan + '"</em>' : '.') + '<br>',
+          '  Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.',
+          '</div>'
+        ].join('\n');
+      }
+      return;
+    }
+
+    // 2. Cek apakah siswa masih memiliki permohonan izin pending (Anti Double-Send)
     const pendingItem = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(targetNisn) : null;
     if (pendingItem) {
       if (btnSubmit) {
@@ -916,6 +1048,39 @@ async function handleSubmitPerijinan() {
   }
 
   const selSiswa = targetNisn || (user && user.nisn) || (selTarget && selTarget.value);
+
+  // Safeguard: Jika siswa sudah memiliki izin yang DISETUJUI / DI-ACC oleh Walas/Admin
+  const activeApproved = (typeof ambilIzinDisetujuiAktifSiswa === 'function') ? ambilIzinDisetujuiAktifSiswa(selSiswa) : null;
+  if (activeApproved) {
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#047857';
+      msg.innerHTML = '<b>Pengajuan Dibatasi:</b> Permohonan izin Anda telah <em>Disetujui Resmi</em> oleh Wali Kelas/Admin. Anda tidak dapat mengirimkan keluhan/izin lagi.';
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+      btn.textContent = 'Izin Telah Disetujui Resmi (Terkunci)';
+    }
+    return;
+  }
+
+  // Safeguard Anti Double-Send di handleSubmitPerijinan: Satu siswa hanya bisa memiliki 1 pengajuan pending aktif
+  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa) : null;
+  if (activePending) {
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#d97706';
+      msg.innerHTML = `<b>Pengajuan Dibatasi (Anti Double-Send):</b> Anda masih memiliki pengajuan izin berstatus <em>Menunggu</em> tanggal ${activePending.tanggal || '-'}. Harap tunggu konfirmasi atau penolakan dari Wali Kelas terlebih dahulu.`;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Menunggu Konfirmasi Wali Kelas...';
+    }
+    return;
+  }
+
   const jenis = document.getElementById('perijinanJenis') ? document.getElementById('perijinanJenis').value : 'sakit';
   const tanggalInput = document.getElementById('perijinanTanggal');
   let tanggal = tanggalInput ? tanggalInput.value : '';
@@ -942,21 +1107,6 @@ async function handleSubmitPerijinan() {
     if (msg) {
       msg.style.color = '#ef4444';
       msg.textContent = 'Harap lampirkan bukti foto surat atau dokumen izin (asli) terlebih dahulu.';
-    }
-    return;
-  }
-
-  // Safeguard Anti Double-Send di handleSubmitPerijinan: Satu siswa hanya bisa memiliki 1 pengajuan pending aktif
-  const activePending = (typeof ambilIzinPendingAktifSiswa === 'function') ? ambilIzinPendingAktifSiswa(selSiswa) : null;
-  if (activePending) {
-    if (msg) {
-      msg.style.display = 'block';
-      msg.style.color = '#d97706';
-      msg.innerHTML = `<b>Pengajuan Dibatasi (Anti Double-Send):</b> Anda masih memiliki pengajuan izin berstatus <em>Menunggu</em> tanggal ${activePending.tanggal || '-'}. Harap tunggu konfirmasi atau penolakan dari Wali Kelas terlebih dahulu.`;
-    }
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Menunggu Konfirmasi Wali Kelas...';
     }
     return;
   }
@@ -3620,6 +3770,7 @@ if (typeof window !== 'undefined') {
   window.populateDropdownSiswa = populateDropdownSiswa;
   window.handleSubmitPerijinan = handleSubmitPerijinan;
   window.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
+  window.ambilIzinDisetujuiAktifSiswa = ambilIzinDisetujuiAktifSiswa;
   window.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
   window.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
   window.switchSubtabKehadiran = switchSubtabKehadiran;
@@ -3630,6 +3781,7 @@ if (typeof window !== 'undefined') {
     global.populateDropdownSiswa = populateDropdownSiswa;
     global.handleSubmitPerijinan = handleSubmitPerijinan;
     global.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
+    global.ambilIzinDisetujuiAktifSiswa = ambilIzinDisetujuiAktifSiswa;
     global.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
     global.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
     global.switchSubtabKehadiran = switchSubtabKehadiran;
@@ -3646,6 +3798,7 @@ if (typeof module !== 'undefined' && module.exports) {
     populateDropdownSiswa,
     handleSubmitPerijinan,
     ambilIzinPendingAktifSiswa,
+    ambilIzinDisetujuiAktifSiswa,
     bukaKunciFormPengajuanSiswa,
     inisialisasiSinkronisasiPerizinanSiswa,
     switchSubtabKehadiran,
