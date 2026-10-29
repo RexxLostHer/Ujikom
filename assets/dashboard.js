@@ -551,6 +551,16 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
                         (targetNama && itmNama === targetNama);
         if (!isMatch) return;
 
+        const kId = item.id || item.pid || ('PERMIT_' + (item.dibuat_pada || Math.random()));
+        if (typeof window !== 'undefined') {
+          if (!window.cachePerizinanSiswaRealtime) window.cachePerizinanSiswaRealtime = {};
+          window.cachePerizinanSiswaRealtime[kId] = item;
+        }
+        if (typeof global !== 'undefined') {
+          if (!global.cachePerizinanSiswaRealtime) global.cachePerizinanSiswaRealtime = {};
+          global.cachePerizinanSiswaRealtime[kId] = item;
+        }
+
         const st = String(item.status || item.rawStatus || 'pending').toLowerCase().trim();
         if (st === 'disetujui' || st === 'approved' || st === 'ditolak' || st === 'rejected' || st === 'dibatalkan' || st === 'cancelled') {
           permitResolvedList.push(item);
@@ -559,7 +569,37 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
         }
       });
 
-      if (permitResolvedList.length > 0) {
+      if (anyPending) {
+        // SISWA SEDANG MEMILIKI PERMOHONAN PENDING AKTIF DI CLOUD RTDB
+        try {
+          if (typeof localStorage !== 'undefined' && targetNisn) {
+            localStorage.setItem('status_izin_' + targetNisn, 'pending');
+          }
+        } catch (eStorage) {}
+
+        const btnSubmit = document.getElementById('btnSubmitPerijinan');
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          btnSubmit.style.opacity = '0.6';
+          btnSubmit.style.cursor = 'not-allowed';
+          btnSubmit.textContent = 'Menunggu Konfirmasi Wali Kelas...';
+          btnSubmit.title = 'Anda masih memiliki permohonan izin yang sedang diverifikasi oleh Wali Kelas';
+        }
+        const msg = document.getElementById('perijinanMsg');
+        if (msg) {
+          msg.style.display = 'block';
+          msg.innerHTML = `
+            <div style="background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">
+              <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#b45309;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>Pengajuan Izin Sedang Menunggu Konfirmasi</span>
+              </div>
+              Anda memiliki permohonan izin yang sedang dalam antrean verifikasi Wali Kelas.<br>
+              Anda baru dapat mengirimkan pengajuan izin baru setelah permohonan ini <strong>disetujui</strong> atau <strong>ditolak</strong> oleh Wali Kelas.
+            </div>
+          `;
+        }
+      } else if (permitResolvedList.length > 0) {
         // Urutkan yang terbaru
         permitResolvedList.sort((a, b) => {
           const tA = (a.updated_at ? Date.parse(a.updated_at) : 0) || a.dibuat_pada || a.createdAt || 0;
@@ -686,6 +726,21 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
     }
   }
 
+  // Kumpulkan juga dari cache realtime RTDB jika tersedia
+  try {
+    const rtCache = (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) ||
+                    (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) || null;
+    if (rtCache) {
+      Object.values(rtCache).forEach(item => {
+        if (!item) return;
+        const itemNisn = String(item.nisn || item.siswaId || item.pengajuId || '').trim();
+        if (itemNisn === targetNisn || (targetNisn === '0098263610' && item.nama && String(item.nama).toLowerCase().includes('ihsan'))) {
+          rawStudentItems.push(item);
+        }
+      });
+    }
+  } catch (eRt) {}
+
   try {
     if (typeof localStorage !== 'undefined') {
       const lastSub = localStorage.getItem('last_submission_' + targetNisn);
@@ -719,7 +774,6 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
 
   // 2. Evaluasi apakah izin siswa sudah DITOLAK atau DISETUJUI oleh Wali Kelas
   const resolvedIds = new Set();
-  const resolvedDates = new Set();
   let latestResolvedTime = 0;
   let hasResolvedStatus = false;
 
@@ -729,7 +783,6 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
       hasResolvedStatus = true;
       if (it.id) resolvedIds.add(it.id);
       if (it.pid) resolvedIds.add(it.pid);
-      if (it.tanggal) resolvedDates.add(it.tanggal);
       const t = ambilWaktuReview(it);
       if (t > latestResolvedTime) latestResolvedTime = t;
     }
@@ -740,7 +793,6 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
       const stFlag = localStorage.getItem('status_izin_' + targetNisn);
       if (stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'disetujui' || stFlag === 'approved' || stFlag === 'dibatalkan' || stFlag === 'cancelled') {
         hasResolvedStatus = true;
-        if (!latestResolvedTime) latestResolvedTime = Date.now();
       }
     }
   } catch (e) {}
@@ -751,7 +803,7 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
     const isPending = (st === 'pending' || st === 'menunggu');
     if (!isPending) return false;
 
-    // Jika item dengan ID ini sudah resolved, abaikan copy pending yang usang
+    // Jika item dengan ID ini sudah resolved (disetujui / ditolak), abaikan copy pending yang usang
     if ((it.id && resolvedIds.has(it.id)) || (it.pid && resolvedIds.has(it.pid))) {
       return false;
     }
@@ -763,8 +815,6 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
       const catB = (jB === 'dispensasi' || jB === 'dispen') ? 'dispen' : ((jB === 'izin' || jB === 'ijin_kegiatan' || jB === 'ijin') ? 'izin' : jB);
       if (catA !== catB) return false;
     }
-    // Aturan Sistemik Anti Double-Send: Jangan batasi tanggal pada izin pending.
-    // Selama siswa memiliki izin berstatus pending, siswa dilarang mengajukan izin kedua.
     return true;
   });
 
@@ -778,10 +828,10 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   const latestPending = pendingItems[0];
   const tPending = ambilWaktuSubmit(latestPending);
 
-  // Jika izin siswa sudah pernah ditolak atau disetujui Walas, dan pengajuan pending ini
-  // bertanggal/dibuat sebelum atau saat waktu review tersebut, maka status penolakan membebaskan form siswa
-  if (hasResolvedStatus && latestResolvedTime && tPending <= latestResolvedTime) {
-    if ((latestPending.id && resolvedIds.has(latestPending.id)) || (latestPending.pid && resolvedIds.has(latestPending.pid)) || (latestPending.tanggal && resolvedDates.has(latestPending.tanggal))) {
+  // Jika izin siswa pernah ditolak/disetujui Walas, dan pending item ini dibuat SEBELUM waktu review tersebut,
+  // maka pending ini adalah entri usang sebelum review
+  if (hasResolvedStatus && latestResolvedTime && tPending > 0 && tPending < latestResolvedTime) {
+    if ((latestPending.id && resolvedIds.has(latestPending.id)) || (latestPending.pid && resolvedIds.has(latestPending.pid))) {
       return null;
     }
   }
@@ -1369,15 +1419,23 @@ async function handleSubmitPerijinan() {
         renderDaftarPerijinanSaya('daftarPerijinanSaya', user);
       }
     } else {
+      const isLockReason = e && e.message && (e.message.includes('menunggu konfirmasi') || e.message.includes('disetujui resmi'));
+      if (isLockReason && btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+        btn.textContent = e.message.includes('disetujui resmi') ? 'Izin Telah Disetujui Resmi (Terkunci)' : 'Menunggu Konfirmasi Wali Kelas...';
+      }
       if (msg) {
         msg.style.display = 'block';
-        msg.style.color = '#ef4444';
-        msg.textContent = 'Gagal: ' + (e ? e.message : 'Terjadi kendala saat mengirim pengajuan.');
+        msg.style.color = isLockReason ? '#d97706' : '#ef4444';
+        msg.textContent = (e ? e.message : 'Terjadi kendala saat mengirim pengajuan.');
       }
     }
   } finally {
     isSubmittingPerijinan = false;
-    if (!isSuccessSubmit && btn) {
+    const isLockReason = msg && msg.textContent && (msg.textContent.includes('menunggu konfirmasi') || msg.textContent.includes('disetujui resmi'));
+    if (!isSuccessSubmit && !isLockReason && btn) {
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';

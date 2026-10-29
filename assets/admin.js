@@ -550,7 +550,7 @@ async function muatRekapPresensi() {
 
   tbody.innerHTML = '';
   if (daftarSiswa.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">👥</div><p>Tidak ada data siswa di kelas ' + kelas + '.</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Tidak ada data siswa di kelas ' + kelas + '.</p></td></tr>';
     return;
   }
 
@@ -797,7 +797,7 @@ function renderSiswaTable(data) {
   const kelasSet = new Set((typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1']);
 
   if (items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">🧑‍🎓</div><p>Belum ada data siswa.</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada data siswa.</p></td></tr>';
   } else {
     items.forEach(function ([nisn, s]) {
       if (s && s.kelas) kelasSet.add(s.kelas);
@@ -928,7 +928,7 @@ function renderKartuTable(data) {
 
   const idList = Object.keys(data).sort();
   if (idList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🪪</div><p>Belum ada mapping kartu.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div><p>Belum ada mapping kartu.</p></div></td></tr>';
     return;
   }
 
@@ -988,7 +988,7 @@ function renderJadwalTable(data) {
 
   const kelasList = Object.keys(data).sort();
   if (kelasList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="empty-icon">🕐</div><p>Belum ada jadwal pulang.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><p>Belum ada jadwal pulang.</p></div></td></tr>';
     return;
   }
 
@@ -1090,7 +1090,7 @@ function renderPelajaranTable(kelas, data) {
   }
 
   if (!jadwalHari || Object.keys(jadwalHari).length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📚</div><p>Belum ada jadwal untuk kelas ' + kelas + ' pada hari ' + namaHariCap + '.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div><p>Belum ada jadwal untuk kelas ' + kelas + ' pada hari ' + namaHariCap + '.</p></div></td></tr>';
     return;
   }
 
@@ -1265,7 +1265,7 @@ function loadUsers() {
     const entries = Object.entries(data);
 
     if (entries.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada pengguna.</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada pengguna.</p></div></td></tr>';
       return;
     }
 
@@ -1520,9 +1520,14 @@ function renderKendalaGuruAdmin(filter) {
 
   if (entries.length === 0) {
     container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">✅</div>
-        <p>Tidak ada laporan kendala guru dengan status <strong>${filter}</strong>.</p>
+      <div class="empty-state" style="padding:36px 16px;text-align:center;">
+        <div class="empty-icon" style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin:0 auto 12px;color:#94a3b8;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <p style="font-size:14px;color:#64748b;margin:0;">Tidak ada laporan kendala guru dengan status <strong style="color:#0f172a;">${filter}</strong>.</p>
       </div>`;
     return;
   }
@@ -1535,20 +1540,22 @@ function renderKendalaGuruAdmin(filter) {
     card.style.marginBottom = '14px';
 
     const statusBadge = (k.status === 'pending')
-      ? '<span class="status-pill pending">⏳ Menunggu ACC</span>'
+      ? '<span class="status-pill pending" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fff7ed;color:#c2410c;border:1px solid #ffedd5;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Menunggu ACC</span>'
       : (k.status === 'approved'
-        ? '<span class="status-pill disetujui">✅ Disetujui (Jamkos Aktif)</span>'
-        : '<span class="status-pill ditolak">❌ Ditolak</span>');
+        ? '<span class="status-pill disetujui" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#f0fdf4;color:#15803d;border:1px solid #dcfce7;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Disetujui (Jamkos Aktif)</span>'
+        : '<span class="status-pill ditolak" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;border:1px solid #fee2e2;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Ditolak</span>');
 
     let aksiHtml = '';
     if (k.status === 'pending') {
       aksiHtml = `
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
-          <button class="btn-primary" style="background:#dc2626;padding:8px 16px;font-weight:700;" onclick="adminApproveKendala('${id}')">
-            ⚡ ACC (Setujui Jamkos Kelas ${k.kelasId || k.kelas || '-'})
+          <button class="btn-primary" style="background:#2563eb;padding:8px 16px;font-weight:600;border-radius:8px;display:inline-flex;align-items:center;gap:6px;border:none;box-shadow:0 1px 2px rgba(37,99,235,0.2);cursor:pointer;" onclick="adminApproveKendala('${id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Setujui Jamkos (Kelas ${k.kelasId || k.kelas || '-'})</span>
           </button>
-          <button class="btn-secondary" style="padding:8px 16px;" onclick="adminRejectKendala('${id}')">
-            Tolak Laporan
+          <button class="btn-secondary" style="padding:8px 16px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="adminRejectKendala('${id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span>Tolak Laporan</span>
           </button>
         </div>
       `;
@@ -1935,33 +1942,42 @@ function renderStatusKelasControls(dataKelas) {
     const item = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
     const st = item.status || 'belajar';
     const stColor = st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b');
-    const stLabel = st === 'belajar' ? '📖 BELAJAR (KBM AKTIF)' : (st === 'jamkos' ? '⚠️ JAMKOS' : '🏠 PULANG');
+    const stBg = st === 'belajar' ? '#f0fdf4' : (st === 'jamkos' ? '#fef2f2' : '#f8fafc');
+    const stBorder = st === 'belajar' ? '#bbf7d0' : (st === 'jamkos' ? '#fecaca' : '#e2e8f0');
+    const stIcon = st === 'belajar'
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>'
+      : (st === 'jamkos'
+        ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+        : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>');
+    const stLabel = st === 'belajar' ? 'KBM Aktif' : (st === 'jamkos' ? 'Jam Kosong' : 'Selesai / Pulang');
 
     const card = document.createElement('div');
     card.style.background = '#ffffff';
-    card.style.border = '1.5px solid #cbd5e1';
+    card.style.border = '1px solid #e2e8f0';
     card.style.borderRadius = '12px';
     card.style.padding = '14px';
+    card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
 
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <strong style="font-size:14px;color:#0f172a;">${cls}</strong>
-        <span style="font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;background:${stColor}18;color:${stColor};border:1px solid ${stColor}40;">
-          ${stLabel}
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:${stBg};color:${stColor};border:1px solid ${stBorder};">
+          ${stIcon}
+          <span>${stLabel}</span>
         </span>
       </div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:12px;">
-        <div>Mapel: <strong>${item.activeMapel || '-'}</strong></div>
-        <div>Guru / Walas: <strong>${item.walasNama || item.activeTeacherNama || '-'}</strong></div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5;">
+        <div>Mapel: <strong style="color:#334155;">${item.activeMapel || '-'}</strong></div>
+        <div>Guru / Walas: <strong style="color:#334155;">${item.walasNama || item.activeTeacherNama || '-'}</strong></div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button onclick="ubahStatusKelasManual('${cls}', 'belajar')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #10b981;background:${st === 'belajar' ? '#10b981' : '#f0fdf4'};color:${st === 'belajar' ? '#fff' : '#047857'};cursor:pointer;">
+      <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;">
+        <button onclick="ubahStatusKelasManual('${cls}', 'belajar')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'belajar' ? '#10b981' : '#e2e8f0'};background:${st === 'belajar' ? '#10b981' : '#ffffff'};color:${st === 'belajar' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Belajar
         </button>
-        <button onclick="ubahStatusKelasManual('${cls}', 'jamkos')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #ef4444;background:${st === 'jamkos' ? '#ef4444' : '#fef2f2'};color:${st === 'jamkos' ? '#fff' : '#b91c1c'};cursor:pointer;">
+        <button onclick="ubahStatusKelasManual('${cls}', 'jamkos')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'jamkos' ? '#ef4444' : '#e2e8f0'};background:${st === 'jamkos' ? '#ef4444' : '#ffffff'};color:${st === 'jamkos' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Jamkos
         </button>
-        <button onclick="ubahStatusKelasManual('${cls}', 'pulang')" style="flex:1;padding:6px;font-size:11.5px;font-weight:700;border-radius:8px;border:1px solid #64748b;background:${st === 'pulang' ? '#64748b' : '#f8fafc'};color:${st === 'pulang' ? '#fff' : '#475569'};cursor:pointer;">
+        <button onclick="ubahStatusKelasManual('${cls}', 'pulang')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'pulang' ? '#64748b' : '#e2e8f0'};background:${st === 'pulang' ? '#64748b' : '#ffffff'};color:${st === 'pulang' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Pulang
         </button>
       </div>
