@@ -17,6 +17,7 @@ let currentUser = null;
 let shouldHaltDashboard = false;
 
 // Early synchronous guard: dashboard.html is STRICTLY for Siswa and Pengunjung
+(function () {
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
     let rawSess = sessionStorage.getItem('user_aktif');
@@ -37,39 +38,26 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
               if (s && s.role === 'siswa') akunSiswa = s;
             }
           } catch (eS) {}
-          if (!akunSiswa) {
-            akunSiswa = {
-              role: 'siswa',
-              nama: 'M. IHSAN ATHALLAH',
-              nisn: '0098263610',
-              kelas: 'XII RPL 2',
-              isVerified: true
-            };
+          if (akunSiswa) {
+            try {
+              sessionStorage.setItem('user_aktif', JSON.stringify(akunSiswa));
+              rawSess = JSON.stringify(akunSiswa);
+            } catch (eSess) {}
+          } else {
+            shouldHaltDashboard = true;
+            window.location.replace('index.html');
+            return;
           }
-          try {
-            sessionStorage.setItem('user_aktif', JSON.stringify(akunSiswa));
-            localStorage.setItem('siswa_aktif', JSON.stringify(akunSiswa));
-            rawSess = JSON.stringify(akunSiswa);
-          } catch (eSess) {}
         } else {
           rawSess = localSess;
         }
       }
     }
     if (!rawSess) {
-      // Default Siswa Resmi M. Ihsan Athallah (XII RPL 2) saat membuka dashboard.html mandiri
-      const defaultSiswa = {
-        role: 'siswa',
-        nama: 'M. IHSAN ATHALLAH',
-        nisn: '0098263610',
-        kelas: 'XII RPL 2',
-        isVerified: true
-      };
-      try {
-        sessionStorage.setItem('user_aktif', JSON.stringify(defaultSiswa));
-        localStorage.setItem('siswa_aktif', JSON.stringify(defaultSiswa));
-        rawSess = JSON.stringify(defaultSiswa);
-      } catch (eSess) {}
+      // Wajib Login: Pengguna anonim/tanpa sesi login dilarang keras masuk dashboard, seketika alihkan ke index.html
+      shouldHaltDashboard = true;
+      window.location.replace('index.html');
+      return;
     }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
@@ -87,6 +75,7 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
     }
   } catch (e) {}
 }
+})();
 
 if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function(fbUser) {
@@ -94,14 +83,10 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
     if (!fbUser) {
       let session = typeof getSessionUser === 'function' ? getSessionUser() : null;
       if (!session) {
-        // Unauthenticated visitor is treated as 'pengunjung' (Guest/Tamu) and STAYS on dashboard.html
-        session = {
-          role: 'pengunjung',
-          nama: 'Pengunjung / Tamu Sekolah',
-          nisn: null,
-          kelas: null,
-          isVerified: false
-        };
+        // Pengguna tanpa sesi login wajib dialihkan ke portal login index.html
+        shouldHaltDashboard = true;
+        window.location.replace('index.html');
+        return;
       }
       if (session.role === 'admin') {
         shouldHaltDashboard = true;

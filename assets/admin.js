@@ -30,6 +30,7 @@ let kartuCache = {};
 let shouldHaltAdmin = false;
 
 // ===== AUTH GUARD: admin.html is STRICTLY for Administrator =====
+(function () {
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
     let rawSess = sessionStorage.getItem('user_aktif');
@@ -60,11 +61,17 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
           shouldHaltAdmin = true;
           const targetUrl = (sess.role === 'guru' || sess.role === 'walas') ? 'dashboard-guru.html' : 'dashboard.html';
           window.location.replace(targetUrl);
+          return;
         }
       }
+    } else {
+      shouldHaltAdmin = true;
+      window.location.replace('admin-login.html');
+      return;
     }
   } catch (e) {}
 }
+})();
 
 if (!shouldHaltAdmin && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function (fbUser) {
@@ -1591,6 +1598,7 @@ function renderKendalaGuruAdmin(filter) {
       </div>
       <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;margin:10px 0;font-size:13px;">
         <div style="margin-bottom:4px;"><strong>Jenis Kendala:</strong> ${k.jenis || 'Jam Kosong'}</div>
+        ${k.jamPelajaran ? `<div style="margin-bottom:4px;"><strong>Jam Pembelajaran:</strong> <span style="background:#e0e7ff;color:#3730a3;font-weight:700;padding:2px 8px;border-radius:6px;font-size:12px;">${k.jamPelajaran}</span></div>` : ''}
         <div><strong>Alasan / Keterangan:</strong> ${k.deskripsiKendala || k.alasan || '-'}</div>
         ${lampiranBukti}
       </div>
@@ -1761,7 +1769,10 @@ async function adminApproveKendala(id) {
           status: 'jamkos',
           activeMapel: k.mapel || 'Jam Kosong',
           activeTeacherNama: k.guruNama || k.nama || '-',
-          keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
+          keteranganJamkos: (k.jamPelajaran ? `[${k.jamPelajaran}] ` : '') + (k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)'),
+          jamPelajaran: k.jamPelajaran || '',
+          jamMulai: k.jamMulai || '',
+          jamSelesai: k.jamSelesai || '',
           updatedAt: new Date().toISOString()
         }).catch(() => null),
         activeDb.ref('classes/' + targetKelas).update({

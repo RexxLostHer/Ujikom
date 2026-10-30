@@ -45,27 +45,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Canvas Latar Belakang Ambient Partikel */
-  .bg-mesh-canvas {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 1;
-    background:
-      radial-gradient(circle at 50% 18%, rgba(2, 132, 199, 0.18) 0%, transparent 60%),
-      radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 20% 85%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
-      linear-gradient(180deg, #080e1a 0%, #0c1427 100%);
-  }
-
+  /* Canvas Latar Belakang Ambient Partikel (Dinonaktifkan Murni) */
+  .bg-mesh-canvas,
   #ambientCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+    display: none !important;
   }
 
   /* Split Screen Viewport Container (2 Slide / 2 Kolom Modern - True 50/50 Split) */
@@ -73,15 +56,14 @@
     min-height: 100vh;
     width: 100%;
     max-width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* True 50/50 Split (upgraded from grid-template-columns: 1fr 1.15fr) */
-    align-items: center;
+    display: flex;
+    align-items: stretch;
     justify-content: center;
     position: relative;
     z-index: 2;
     margin: 0;
-    padding: 2rem 4vw;
-    gap: 3rem;
+    padding: 0;
+    /* grid-template-columns: 1fr 1.15fr */
   }
 
   /* Compatibility alias for existing centered container */
@@ -113,6 +95,12 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 2.5rem 2.5rem;
+    position: relative;
+    background: #080e1a;
   }
 
   /* Screen-reader & telemetry hidden metadata container */
@@ -808,8 +796,8 @@
 
   @media (min-width: 1200px) {
     .school-portal-split-container {
-      padding: 2rem 5vw;
-      gap: 4rem;
+      padding: 0;
+      gap: 0;
     }
     .auth-form-card {
       max-width: 620px;
@@ -823,8 +811,8 @@
 
   @media (max-width: 1024px) and (min-width: 769px) {
     .school-portal-split-container {
-      gap: 2rem;
-      padding: 2rem 1.5rem;
+      gap: 0;
+      padding: 0;
     }
     .auth-form-card {
       padding: 2.2rem 2rem;
@@ -833,9 +821,9 @@
 
   @media (max-width: 768px) {
     .school-portal-split-container {
-      grid-template-columns: 1fr;
-      gap: 2.2rem;
-      padding: 2rem 1.2rem;
+      display: block;
+      gap: 0;
+      padding: 0;
     }
     .portal-left-content {
       max-width: 480px;
@@ -880,12 +868,14 @@
      FLOATING TOP-LEFT BRAND LOGO: ABSTRACT INFINITE CIRCUIT PORTAL
      ══════════════════════════════════════════════════════════ */
   .portal-top-brand {
+    display: none !important;
     position: fixed;
     top: 1.5rem;
     left: 2.2rem;
-    z-index: 20;
-    pointer-events: auto;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
   }
 
   .portal-brand-pill {
@@ -978,11 +968,7 @@
 
   @media (max-width: 768px) {
     .portal-top-brand {
-      position: static;
-      margin: 1.2rem auto 0.5rem;
-      display: flex;
-      justify-content: center;
-      width: 100%;
+      display: none !important;
     }
     .portal-brand-pill {
       padding: 0.45rem 0.95rem 0.45rem 0.75rem;
@@ -994,65 +980,326 @@
       font-size: 0.58rem;
     }
   }
+
+  /* ══════════════════════════════════════════════════════════
+     FULLSCREEN INTRO LOADING (CLEAN WHITE OVERLAY, 69 FRAMES 1x NO LOOP)
+     ══════════════════════════════════════════════════════════ */
+  .fullscreen-intro-loading {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+  }
+
+  .intro-bg-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    z-index: 1;
+    pointer-events: none;
+    will-change: opacity;
+  }
+
+  .intro-animation-wrapper {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: min(520px, 86vw);
+    max-width: 580px;
+    aspect-ratio: 16 / 9;
+    transform-origin: center center;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .intro-canvas {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    background: transparent;
+    display: block;
+    border: none;
+    outline: none;
+    filter: none;
+    transition: filter 0.3s ease;
+  }
+
+  .intro-canvas.gliding {
+    filter: drop-shadow(0 12px 28px rgba(99, 102, 241, 0.45));
+  }
+
+  /* MASTER SPLIT-CARD (FULL SCREEN 50/50 SEJATI) */
+  .master-split-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #0f172a;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: none;
+    position: relative;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* SISI KIRI: VISUAL MESH CARD (DEEP GRADIENT INDIGO, VIOLET, SLATE) */
+  .portal-left-slide.visual-mesh-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 32%, rgba(99, 102, 241, 0.35) 0%, transparent 60%),
+      radial-gradient(circle at 18% 75%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.2) 0%, transparent 45%),
+      linear-gradient(155deg, #070a13 0%, #110f27 45%, #191238 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .portal-left-content {
+    width: 100%;
+    max-width: 520px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    padding: 3.5rem 2rem;
+  }
+
+  /* Top Minimalist School Brand Pill */
+  .visual-brand-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .visual-brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+    animation: pulseDot 2s infinite ease-in-out;
+  }
+
+  @keyframes pulseDot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.6; }
+  }
+
+  .visual-brand-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+  }
+
+  /* Center Hero Showcase (Logo + Welcome + Tagline) */
+  .visual-hero-showcase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 440px;
+    margin: auto 0;
+  }
+
+  /* Logo Slot Target in Left Card */
+  .visual-logo-slot {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 1.25rem 0;
+    position: relative;
+    min-height: clamp(170px, 24vw, 220px);
+  }
+
+  .visual-logo-glow-aura {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.5) 0%, rgba(139, 92, 246, 0.25) 45%, transparent 70%);
+    filter: blur(32px);
+    z-index: 1;
+    border-radius: 50%;
+    opacity: 0.85;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  .visual-logo-glow-aura.active {
+    opacity: 1;
+  }
+
+  .final-logo-canvas {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+    display: block;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 14px 30px rgba(99, 102, 241, 0.45));
+  }
+
+  /* Visual Bottom Content */
+  .visual-bottom-content {
+    text-align: center;
+  }
+
+  .visual-welcome-heading {
+    font-family: var(--heading);
+    font-size: clamp(2.1rem, 3.2vw, 2.75rem);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.5rem 0;
+    text-align: center;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .visual-welcome-tagline {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: rgba(226, 232, 240, 0.75);
+    line-height: 1.5;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Bottom Anchor */
+  .visual-bottom-anchor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0;
+  }
+
+  .visual-anchor-text {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: rgba(148, 163, 184, 0.6);
+  }
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .master-split-card {
+      grid-template-columns: 1fr 1.15fr;
+      height: 100vh;
+    }
+    .portal-left-content {
+      padding: 2.5rem 1.8rem;
+    }
+    .auth-form-card {
+      padding: 2.5rem 2.2rem;
+    }
+    .visual-welcome-heading {
+      font-size: 1.95rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    html, body {
+      overflow-y: auto;
+      height: auto;
+    }
+    .school-portal-split-container {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    .master-split-card {
+      grid-template-columns: 1fr;
+      height: auto;
+      min-height: 100vh;
+    }
+    .portal-left-slide.visual-mesh-card {
+      height: auto;
+      min-height: auto;
+      padding: 2.2rem 1.6rem;
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .portal-right-slide {
+      height: auto;
+      min-height: auto;
+      padding: 2.5rem 1.5rem;
+    }
+    .auth-form-card {
+      padding: 1.5rem 0.5rem;
+      max-width: 100%;
+    }
+    .visual-welcome-heading {
+      font-size: 1.75rem;
+    }
+    .visual-welcome-tagline {
+      white-space: normal;
+    }
+  }
+
 </style>
 </head>
 <body>
-
-  <!-- AMBIENT BACKGROUND CANVAS -->
-  <div class="bg-mesh-canvas">
-    <canvas id="ambientCanvas"></canvas>
+  <!-- ══════════════════════════════════════════════════════════
+       INTRO LOADING PUTIH BERSIH (ANIMASI 69 FRAME, PLAY 1x NO LOOP)
+       ══════════════════════════════════════════════════════════ -->
+  <div id="fullscreenIntroLoading" class="fullscreen-intro-loading" aria-label="Layar Memuat Presensia">
+    <div class="intro-bg-backdrop" id="introBgBackdrop"></div>
+    <div class="intro-animation-wrapper" id="introAnimationWrapper">
+      <img id="introPosterImg" src="assets/animasi/ezgif-frame-001.jpg" alt="Logo Presensia" class="intro-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+      <canvas id="introCanvas" width="640" height="360" class="intro-canvas" aria-label="Animasi Logo Presensia"></canvas>
+    </div>
   </div>
 
-  <!-- FLOATING TOP-LEFT BRAND LOGO: ABSTRACT INFINITE CIRCUIT PORTAL -->
-  <header class="portal-top-brand" aria-label="Identitas Portal Resmi SMK Negeri 1 Sumedang">
-    <div class="portal-brand-pill">
-      <!-- Abstract Infinite Circuit SVG Icon -->
-      <div class="portal-brand-symbol" aria-hidden="true">
-        <svg viewBox="0 0 52 32" width="46" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" class="circuit-infinity-svg">
-          <defs>
-            <linearGradient id="infCircuitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#38bdf8"/>
-              <stop offset="50%" stop-color="#06b6d4"/>
-              <stop offset="100%" stop-color="#10b981"/>
-            </linearGradient>
-            <filter id="circuitGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2.2" result="blur"/>
-              <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          <!-- Outer subtle ambient glow path -->
-          <path d="M 26 16 C 20 9, 10 9, 6 16 C 10 23, 20 23, 26 16 C 32 9, 42 9, 46 16 C 42 23, 32 23, 26 16 Z" 
-                stroke="url(#infCircuitGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.32" filter="url(#circuitGlow)"/>
-          <!-- Primary Neon Circuit Infinity Loop Track -->
-          <path class="circuit-track" d="M 26 16 C 20 9, 10 9, 6 16 C 10 23, 20 23, 26 16 C 32 9, 42 9, 46 16 C 42 23, 32 23, 26 16 Z" 
-                stroke="url(#infCircuitGrad)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-          <!-- Digital Micro-Nodes / Pulses -->
-          <circle cx="6" cy="16" r="2.2" fill="#38bdf8" filter="url(#circuitGlow)"/>
-          <circle cx="6" cy="16" r="1.1" fill="#ffffff"/>
-          <circle cx="26" cy="16" r="2.5" fill="#06b6d4" filter="url(#circuitGlow)"/>
-          <circle cx="26" cy="16" r="1.2" fill="#ffffff"/>
-          <circle cx="46" cy="16" r="2.2" fill="#10b981" filter="url(#circuitGlow)"/>
-          <circle cx="46" cy="16" r="1.1" fill="#ffffff"/>
-          <!-- Digital Circuit Bus Nodes -->
-          <line x1="15" y1="11" x2="19" y2="7" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
-          <circle cx="19" cy="7" r="1.1" fill="#38bdf8"/>
-          <line x1="37" y1="21" x2="33" y2="25" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
-          <circle cx="33" cy="25" r="1.1" fill="#10b981"/>
-        </svg>
-      </div>
 
-      <!-- Brand Typography -->
-      <div class="portal-brand-meta">
-        <h1 class="portal-brand-title">SMK Negeri 1 Sumedang</h1>
-        <div class="portal-brand-badge-wrap">
-          <span class="portal-sub-badge">PORTAL PRESENSI DIGITAL</span>
-        </div>
-      </div>
-    </div>
-  </header>
+  
+
+  <!-- TOP-LEFT PRESENSI BRAND HIDDEN FROM VIEWPORT -->
 
   <!-- LOADING OVERLAY -->
   <div id="loadingBox">
@@ -1063,17 +1310,193 @@
   <!-- MAIN SPLIT SCREEN VIEWPORT CONTAINER (2 SLIDE / 2 KOLOM) -->
   <main class="school-portal-split-container school-portal-centered-container">
 
-    <!-- ══════════════════════════════════════════════════════════
-         SLIDE / KOLOM KIRI: PANGGUNG ROBOT MASKOT ROBO-NESAS (MURNI VISUAL)
-         ══════════════════════════════════════════════════════════ -->
-    <div class="portal-left-slide">
-      <div class="portal-left-content">
+    <!-- MASTER 2-COLUMN SPLIT-CARD -->
+    <div class="master-split-card" id="masterSplitCard">
 
-        <!-- ══════════════════════════════════════════════════════════
-             PANGGUNG MASKOT ROBOT INTERAKTIF: ROBO-NESAS
-             FULL ROBOTIC BODY CHASSIS (CLEAN WATCH & COVER EYES)
-             ══════════════════════════════════════════════════════════ -->
-        <div class="mascot-stage" id="mascotStage">
+      <!-- ══════════════════════════════════════════════════════════
+           SLIDE / KOLOM KIRI: VISUAL MESH CARD (DEEP GRADIENT INDIGO, VIOLET, SLATE)
+           ══════════════════════════════════════════════════════════ -->
+      <div class="portal-left-slide visual-mesh-card">
+        <div class="portal-left-content">
+          <!-- Top Badge: Minimalist, Refined School Identity -->
+          <div class="visual-brand-tag left-panel-stagger left-card-stagger">
+            <span class="visual-brand-dot"></span>
+            <span class="visual-brand-label">PRESENSIA • SMKN 1 SUMEDANG</span>
+          </div>
+
+          <!-- Center Hero Showcase: Logo + Welcome Back + Minimalist Tagline -->
+          <div class="visual-hero-showcase">
+            <div class="visual-logo-slot left-panel-stagger" id="logoSlotTarget">
+              <div class="visual-logo-glow-aura" id="visualLogoGlow"></div>
+              <canvas id="finalLogoCanvas" width="640" height="360" class="final-logo-canvas" aria-label="Logo Resmi Presensia"></canvas>
+            </div>
+
+            <div class="visual-bottom-content left-panel-stagger left-card-stagger">
+              <h2 class="visual-welcome-heading">Welcome Back!</h2>
+              <p class="visual-welcome-tagline">Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime</p>
+            </div>
+          </div>
+
+          <!-- Bottom Anchor: Official Department Identity -->
+          <div class="visual-bottom-anchor left-panel-stagger left-card-stagger">
+            <span class="visual-anchor-text">Rekayasa Perangkat Lunak (RPL IoT)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+     SLIDE / KOLOM KANAN: KARTU FORMULIR AUTENTIKASI SISWA & GURU
+     ══════════════════════════════════════════════════════════ -->
+<div class="portal-right-slide">
+  <section class="auth-form-card right-card-stagger" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
+      
+      <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
+      <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
+
+      <!-- Switch Tab Masuk / Daftar -->
+      <div class="auth-tab-switch" id="authTabSwitch">
+        <div class="auth-tab-glider" id="authTabGlider" aria-hidden="true"></div>
+        <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Masuk</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Daftar</button>
+      </div>
+
+      <!-- 1-Click Google Sign-In (Firebase Auth) -->
+      <button type="button" class="btn-google-glow" id="btnGoogleLogin" onclick="handleGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Masuk dengan Google</span>
+      </button>
+
+      <button type="button" class="btn-google-glow" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Daftar dengan Google</span>
+      </button>
+
+      <div class="auth-separator">
+        <span>ATAU DENGAN EMAIL</span>
+      </div>
+
+      <!-- ──────────────────────────────────────────────
+           CONTAINER TRANSISI FORMULIR (HORIZONTAL SLIDE)
+           ────────────────────────────────────────────── -->
+      <div class="auth-forms-stage" id="authFormsStage">
+        <!-- FORM 1: LOGIN SISWA & GURU -->
+        <form id="formLogin" onsubmit="handleLoginEmail(event)">
+          
+          <div class="auth-input-group">
+            <label for="loginEmail">Email Gmail</label>
+            <div class="auth-input-field">
+              <span class="auth-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </span>
+              <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="auth-input-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label for="loginPassword">Kata Sandi</label>
+              <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" style="font-size:12px;color:var(--brand-blue);text-decoration:none;">Lupa sandi?</a>
+            </div>
+            <div class="auth-input-field">
+              <span class="auth-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-card-submit" id="btnActionLogin">Masuk Sekarang</button>
+          <div id="notifBoxLogin" class="toast-alert"></div>
+        </form>
+
+        <!-- FORM 2: REGISTRASI AKUN BARU -->
+        <form id="formRegister" onsubmit="handleRegisterEmail(event)" style="display:none;">
+          
+          <div class="auth-input-group">
+            <label for="regNama">Nama Lengkap</label>
+            <div class="auth-input-field">
+              <span class="auth-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <input type="text" id="regNama" placeholder="Nama lengkap siswa" required autocomplete="name">
+            </div>
+          </div>
+
+          <div class="auth-input-group">
+            <label for="regEmail">Email Gmail</label>
+            <div class="auth-input-field">
+              <span class="auth-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </span>
+              <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="auth-input-group">
+            <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
+            <div class="auth-input-field">
+              <span class="auth-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
+              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun</button>
+          <div id="notifBoxRegister" class="toast-alert"></div>
+        </form>
+      </div>
+
+      <div class="card-footer-caption" id="authFooterSwitch">
+        Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>
+      </div>
+
+    </section>
+  </div>
+
+    </div> <!-- end master-split-card -->
+  </main>
+
+  <!-- Preserved Hidden Telemetry & Mascot Stage for 100% Test & Auth Invariants -->
+      <div class="portal-system-metadata sr-only" aria-hidden="true">
+<div class="mascot-stage" id="mascotStage">
           
           <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="380" height="450" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -1372,6 +1795,56 @@
 
         <!-- METADATA & TELEMETRI RESMI (TERSEMBUNYI UNTUK MENJAGA PANGGUNG MURNI ROBOT) -->
         <div class="portal-system-metadata sr-only" aria-hidden="true">
+        <!-- FLOATING TOP-LEFT BRAND LOGO: ABSTRACT INFINITE CIRCUIT PORTAL -->
+  <header class="portal-top-brand" aria-label="Identitas Portal Resmi SMK Negeri 1 Sumedang">
+    <div class="portal-brand-pill">
+      <!-- Abstract Infinite Circuit SVG Icon -->
+      <div class="portal-brand-symbol" aria-hidden="true">
+        <svg viewBox="0 0 52 32" width="46" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" class="circuit-infinity-svg">
+          <defs>
+            <linearGradient id="infCircuitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="50%" stop-color="#06b6d4"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+            <filter id="circuitGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <!-- Outer subtle ambient glow path -->
+          <path d="M 26 16 C 20 9, 10 9, 6 16 C 10 23, 20 23, 26 16 C 32 9, 42 9, 46 16 C 42 23, 32 23, 26 16 Z" 
+                stroke="url(#infCircuitGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.32" filter="url(#circuitGlow)"/>
+          <!-- Primary Neon Circuit Infinity Loop Track -->
+          <path class="circuit-track" d="M 26 16 C 20 9, 10 9, 6 16 C 10 23, 20 23, 26 16 C 32 9, 42 9, 46 16 C 42 23, 32 23, 26 16 Z" 
+                stroke="url(#infCircuitGrad)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Digital Micro-Nodes / Pulses -->
+          <circle cx="6" cy="16" r="2.2" fill="#38bdf8" filter="url(#circuitGlow)"/>
+          <circle cx="6" cy="16" r="1.1" fill="#ffffff"/>
+          <circle cx="26" cy="16" r="2.5" fill="#06b6d4" filter="url(#circuitGlow)"/>
+          <circle cx="26" cy="16" r="1.2" fill="#ffffff"/>
+          <circle cx="46" cy="16" r="2.2" fill="#10b981" filter="url(#circuitGlow)"/>
+          <circle cx="46" cy="16" r="1.1" fill="#ffffff"/>
+          <!-- Digital Circuit Bus Nodes -->
+          <line x1="15" y1="11" x2="19" y2="7" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
+          <circle cx="19" cy="7" r="1.1" fill="#38bdf8"/>
+          <line x1="37" y1="21" x2="33" y2="25" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
+          <circle cx="33" cy="25" r="1.1" fill="#10b981"/>
+        </svg>
+      </div>
+
+      <!-- Brand Typography -->
+      <div class="portal-brand-meta">
+        <h1 class="portal-brand-title">SMK Negeri 1 Sumedang</h1>
+        <div class="portal-brand-badge-wrap">
+          <span class="portal-sub-badge">PORTAL PRESENSI DIGITAL</span>
+        </div>
+      </div>
+    </div>
+  </header>
           <header class="school-portal-header">
             <div class="school-brand-row">
               <img src="assets/logo-nesas.png" alt="Logo SMKN 1 Sumedang" class="school-header-logo">
@@ -1409,156 +1882,6 @@
         </div>
 
       </div>
-    </div>
-
-<!-- ══════════════════════════════════════════════════════════
-     SLIDE / KOLOM KANAN: KARTU FORMULIR AUTENTIKASI SISWA & GURU
-     ══════════════════════════════════════════════════════════ -->
-<div class="portal-right-slide">
-  <section class="auth-form-card" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
-      
-      <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
-      <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
-
-      <!-- Switch Tab Masuk / Daftar -->
-      <div class="auth-tab-switch" id="authTabSwitch">
-        <div class="auth-tab-glider" id="authTabGlider" aria-hidden="true"></div>
-        <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Masuk</button>
-        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Daftar</button>
-      </div>
-
-      <!-- 1-Click Google Sign-In (Firebase Auth) -->
-      <button type="button" class="btn-google-glow" id="btnGoogleLogin" onclick="handleGoogleLogin()">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
-          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-        </svg>
-        <span>Masuk dengan Google</span>
-      </button>
-
-      <button type="button" class="btn-google-glow" id="btnGoogleRegister" onclick="handleGoogleLogin()" style="display:none;">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
-          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-        </svg>
-        <span>Daftar dengan Google</span>
-      </button>
-
-      <div class="auth-separator">
-        <span>ATAU DENGAN EMAIL</span>
-      </div>
-
-      <!-- ──────────────────────────────────────────────
-           CONTAINER TRANSISI FORMULIR (HORIZONTAL SLIDE)
-           ────────────────────────────────────────────── -->
-      <div class="auth-forms-stage" id="authFormsStage">
-        <!-- FORM 1: LOGIN SISWA & GURU -->
-        <form id="formLogin" onsubmit="handleLoginEmail(event)">
-          
-          <div class="auth-input-group">
-            <label for="loginEmail">Email Gmail</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-              </span>
-              <input type="email" id="loginEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <label for="loginPassword">Kata Sandi</label>
-              <a href="javascript:void(0)" onclick="bukaModalLupaPassword()" style="font-size:12px;color:var(--brand-blue);text-decoration:none;">Lupa sandi?</a>
-            </div>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </span>
-              <input type="password" id="loginPassword" placeholder="Masukkan kata sandi" required autocomplete="current-password">
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Lihat kata sandi">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-card-submit" id="btnActionLogin">Masuk Sekarang</button>
-          <div id="notifBoxLogin" class="toast-alert"></div>
-        </form>
-
-        <!-- FORM 2: REGISTRASI AKUN BARU -->
-        <form id="formRegister" onsubmit="handleRegisterEmail(event)" style="display:none;">
-          
-          <div class="auth-input-group">
-            <label for="regNama">Nama Lengkap</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </span>
-              <input type="text" id="regNama" placeholder="Nama lengkap siswa" required autocomplete="name">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <label for="regEmail">Email Gmail</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-              </span>
-              <input type="email" id="regEmail" placeholder="nama@gmail.com" required autocomplete="email">
-            </div>
-          </div>
-
-          <div class="auth-input-group">
-            <label for="regPassword">Kata Sandi (Min. 6 Karakter)</label>
-            <div class="auth-input-field">
-              <span class="auth-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </span>
-              <input type="password" id="regPassword" placeholder="Minimal 6 karakter" minlength="6" required autocomplete="new-password">
-              <button type="button" class="btn-eye-toggle" onclick="togglePassword('regPassword', this)" aria-label="Lihat kata sandi">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-card-submit emerald" id="btnActionRegister">Daftar Akun</button>
-          <div id="notifBoxRegister" class="toast-alert"></div>
-        </form>
-      </div>
-
-      <div class="card-footer-caption" id="authFooterSwitch">
-        Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Daftar akun di sini</a>
-      </div>
-
-    </section>
-  </div>
-
-</main>
 
   <!-- ══════════════════════════════════════════════════════════
        MODAL PEMULIHAN KATA SANDI (FORGOT PASSWORD)
@@ -1641,323 +1964,390 @@
     }
     setInterval(updateTelemetryPing, 4000);
 
-    // ===== 2. AMBIENT BACKGROUND PARTICLES (INTERACTIVE CONSTELLATION & CYBER NEBULA) =====
-    (function initAmbientCanvas() {
-      const canvas = document.getElementById('ambientCanvas');
-      if (!canvas || !canvas.getContext) return;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      if (!ctx) return;
+    // ===== 2. AMBIENT BACKGROUND PARTICLES (DINONAKTIFKAN MURNI) =====
+    // Background interaktif partikel dinonaktifkan total sesuai instruksi pengguna.
 
-      let width = 0;
-      let height = 0;
-      let dpr = 1;
+    // ===== 2. FULLSCREEN INTRO LOGO ANIMATION (69 FRAMES 1x NO LOOP) =====
+    const TOTAL_LOGO_FRAMES = 69;
+    let logoFrameImages = [];
+    let loadedLogoFrames = 0;
+    let currentLogoFrameIndex = 0;
+    let isIntroDone = false;
+    let introLoopRafId = null;
+    let lastFrameTimestamp = 0;
+    let hardFailsafeTimeout = null;
+    const TARGET_FPS = 40; // 40 FPS untuk pemutaran 69 frame cepat, mulus & bebas lag (~1.7 detik)
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
-      function resize() {
-        if (typeof window === 'undefined') return;
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cleanLogoImg = new Image();
+    cleanLogoImg.src = 'assets/animasi/ezgif-frame-069.png';
+
+    // Hard failsafe timer darurat (2.2 detik)
+    // Jika dalam 2.2 detik intro belum selesai karena kendala decode atau lag, otomatis buka UI langsung
+    hardFailsafeTimeout = setTimeout(() => {
+      if (!isIntroDone) {
+        console.warn('[Intro] Hard failsafe timer (2.2s) aktif: membuka antarmuka untuk mencegah freeze');
+        completeIntroAndRevealDirect();
       }
-      resize();
+    }, 2200);
 
-      if (typeof window !== 'undefined') {
-        window.addEventListener('resize', () => {
-          resize();
-          // Reposition stars that might be far outside
-          if (stars && stars.length > 0) {
-            for (let i = 0; i < stars.length; i++) {
-              if (stars[i].x > width) stars[i].x = Math.random() * width;
-              if (stars[i].y > height) stars[i].y = Math.random() * height;
-            }
-          }
-        }, { passive: true });
-      }
+    function renderFinalLogo(img) {
+      const finalCanvas = document.getElementById('finalLogoCanvas');
+      if (!finalCanvas) return;
+      const fCtx = finalCanvas.getContext('2d');
+      if (!fCtx) return;
 
-      // Multi-tier Star Constellation (95 stars)
-      // Aesthetic Palettes: Cyan #38bdf8, Diamond White #f8fafc, Emerald #10b981
-      const STAR_COUNT = 95;
-      const stars = [];
-      const starColors = [
-        { r: 56, g: 189, b: 248 }, // Cyan (~40%)
-        { r: 56, g: 189, b: 248 },
-        { r: 248, g: 250, b: 252 }, // Diamond White (~40%)
-        { r: 248, g: 250, b: 252 },
-        { r: 16, g: 185, b: 129 }   // Emerald (~20%)
-      ];
-
-      for (let i = 0; i < STAR_COUNT; i++) {
-        const tierRand = Math.random();
-        let radius, speedMult, baseAlpha;
-        if (tierRand < 0.55) {
-          // Tier 1: Distant subtle micro stars
-          radius = Math.random() * 0.4 + 0.8;
-          speedMult = 0.45;
-          baseAlpha = Math.random() * 0.25 + 0.25;
-        } else if (tierRand < 0.85) {
-          // Tier 2: Midground stars
-          radius = Math.random() * 0.5 + 1.2;
-          speedMult = 0.75;
-          baseAlpha = Math.random() * 0.3 + 0.45;
-        } else {
-          // Tier 3: Bright foreground anchor stars
-          radius = Math.random() * 0.7 + 1.8;
-          speedMult = 1.0;
-          baseAlpha = Math.random() * 0.3 + 0.65;
+      const drawLogoOnCanvas = (sourceImg) => {
+        try {
+          fCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
+          fCtx.drawImage(sourceImg, 0, 0, finalCanvas.width, finalCanvas.height);
+          const glow = document.getElementById('visualLogoGlow');
+          if (glow) glow.classList.add('active');
+        } catch (e) {
+          console.warn('drawLogoOnCanvas warning:', e);
         }
+      };
 
-        const colorObj = starColors[Math.floor(Math.random() * starColors.length)];
+      if (cleanLogoImg.complete && cleanLogoImg.naturalWidth) {
+        drawLogoOnCanvas(cleanLogoImg);
+      } else {
+        const fallbackSource = (logoFrameImages && logoFrameImages[TOTAL_LOGO_FRAMES - 1]) || img;
+        if (fallbackSource && (fallbackSource.complete || fallbackSource.naturalWidth)) {
+          drawLogoOnCanvas(fallbackSource);
+        }
+        cleanLogoImg.onload = () => drawLogoOnCanvas(cleanLogoImg);
+        cleanLogoImg.onerror = () => {
+          if (fallbackSource && (fallbackSource.complete || fallbackSource.naturalWidth)) {
+            drawLogoOnCanvas(fallbackSource);
+          }
+        };
+      }
+    }
 
-        stars.push({
-          x: Math.random() * (width || 1200),
-          y: Math.random() * (height || 800),
-          r: radius,
-          vx: (Math.random() - 0.5) * 0.32 * speedMult,
-          vy: (Math.random() - 0.5) * 0.32 * speedMult,
-          color: colorObj,
-          baseAlpha: baseAlpha,
-          twinkleSpeed: Math.random() * 0.026 + 0.014,
-          twinklePhase: Math.random() * Math.PI * 2,
-          currentAlpha: baseAlpha
+    function executeLogoGlide() {
+      if (isIntroDone) return;
+      isIntroDone = true;
+
+      if (hardFailsafeTimeout) {
+        clearTimeout(hardFailsafeTimeout);
+        hardFailsafeTimeout = null;
+      }
+      if (introLoopRafId) {
+        cancelAnimationFrame(introLoopRafId);
+        introLoopRafId = null;
+      }
+
+      const overlay = document.getElementById('fullscreenIntroLoading');
+      const introWrapper = document.getElementById('introAnimationWrapper');
+      const introCanvas = document.getElementById('introCanvas');
+      const finalCanvas = document.getElementById('finalLogoCanvas');
+      const backdrop = document.getElementById('introBgBackdrop');
+      const posterImg = document.getElementById('introPosterImg');
+
+      if (posterImg) posterImg.style.display = 'none';
+
+      if (!overlay || !introWrapper || !introCanvas || !finalCanvas) {
+        completeIntroAndRevealDirect();
+        return;
+      }
+
+      let introFinished = false;
+      const finishIntro = () => {
+        if (introFinished) return;
+        introFinished = true;
+        try {
+          renderFinalLogo(cleanLogoImg);
+        } catch (e) {
+          console.warn('renderFinalLogo warning:', e);
+        }
+        if (overlay) {
+          overlay.style.pointerEvents = 'none';
+          overlay.style.display = 'none';
+        }
+        document.querySelectorAll('.left-card-stagger, .right-card-stagger').forEach(el => {
+          el.style.opacity = '1';
+          el.style.transform = 'none';
         });
-      }
+      };
 
-      // Interactive Mouse & Touch Proximity & Cosmic Micro-gravity
-      let mouseX = null;
-      let mouseY = null;
+      // Failsafe timer durasi glide: pastikan overlay 100% lenyap max dalam 1600ms
+      const glideSafetyTimer = setTimeout(() => {
+        finishIntro();
+      }, 1600);
 
-      if (typeof window !== 'undefined') {
-        window.addEventListener('mousemove', (e) => {
-          mouseX = e.clientX;
-          mouseY = e.clientY;
-        }, { passive: true });
+      const safeFinish = () => {
+        clearTimeout(glideSafetyTimer);
+        finishIntro();
+      };
 
-        window.addEventListener('mouseleave', () => {
-          mouseX = null;
-          mouseY = null;
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-          if (e.touches && e.touches.length > 0) {
-            mouseX = e.touches[0].clientX;
-            mouseY = e.touches[0].clientY;
-          }
-        }, { passive: true });
-
-        window.addEventListener('touchend', () => {
-          mouseX = null;
-          mouseY = null;
-        }, { passive: true });
-
-        window.addEventListener('touchcancel', () => {
-          mouseX = null;
-          mouseY = null;
-        }, { passive: true });
-
-        window.addEventListener('blur', () => {
-          mouseX = null;
-          mouseY = null;
-        }, { passive: true });
-      }
-
-      // Meteor / Shooting Star System (Every 5-9 seconds)
-      const meteors = [];
-      let nextMeteorTime = Date.now() + 4500 + Math.random() * 3500;
-
-      function spawnMeteor() {
-        const safeWidth = width || (typeof window !== 'undefined' && window.innerWidth) || 1200;
-        const safeHeight = height || (typeof window !== 'undefined' && window.innerHeight) || 800;
-        const angle = (Math.PI / 6) + (Math.random() - 0.5) * 0.15; // Natural ~28-36 degree downward angle
-        const speed = Math.random() * 4.5 + 9.5;
-        const length = Math.random() * 45 + 75;
-        const startX = Math.random() * (safeWidth * 0.8) - 40;
-        const startY = Math.random() * (safeHeight * 0.35) - 30;
-
-        meteors.push({
-          x: startX,
-          y: startY,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          angle: angle,
-          length: length,
-          speed: speed,
-          life: 0,
-          maxLife: Math.floor(Math.random() * 20 + 38),
-          alpha: 0
-        });
-
-        // Next meteor scheduled between 5.0s and 9.0s
-        nextMeteorTime = Date.now() + 5000 + Math.random() * 4000;
-      }
-
-      // Constellation Connection Thresholds
-      const MAX_LINE_DIST = 105;
-      const MAX_LINE_DIST_SQ = MAX_LINE_DIST * MAX_LINE_DIST;
-      const MOUSE_DIST = 150;
-      const MOUSE_DIST_SQ = MOUSE_DIST * MOUSE_DIST;
-
-      function renderAmbient() {
-        ctx.clearRect(0, 0, width, height);
-
-        const now = Date.now();
-        if (now > nextMeteorTime && meteors.length < 2) {
-          spawnMeteor();
-        }
-
-        const safeW = width || (typeof window !== 'undefined' && window.innerWidth) || 1200;
-        const safeH = height || (typeof window !== 'undefined' && window.innerHeight) || 800;
-
-        // 1. Update and render stars with dynamic scintillation
-        for (let i = 0; i < STAR_COUNT; i++) {
-          const s = stars[i];
-
-          // Natural cosmic drift
-          s.x += s.vx;
-          s.y += s.vy;
-
-          // Wrap edges with 10px buffer
-          if (s.x < -10) s.x = safeW + 10;
-          if (s.x > safeW + 10) s.x = -10;
-          if (s.y < -10) s.y = safeH + 10;
-          if (s.y > safeH + 10) s.y = -10;
-
-          // Scintillation / Twinkle pulsasi
-          s.twinklePhase += s.twinkleSpeed;
-          s.currentAlpha = Math.max(0.12, Math.min(0.96, s.baseAlpha + Math.sin(s.twinklePhase) * 0.22));
-
-          // Cosmic micro-gravity towards mouse cursor
-          if (mouseX !== null && mouseY !== null) {
-            const mdx = mouseX - s.x;
-            const mdy = mouseY - s.y;
-            const mDistSq = mdx * mdx + mdy * mdy;
-            if (mDistSq < MOUSE_DIST_SQ && mDistSq > 225) {
-              const mDist = Math.sqrt(mDistSq);
-              const pull = (1 - mDist / MOUSE_DIST) * 0.035;
-              s.x += mdx * pull;
-              s.y += mdy * pull;
-            }
-          }
-
-          // Draw star node
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${s.color.r}, ${s.color.g}, ${s.color.b}, ${s.currentAlpha.toFixed(3)})`;
-          ctx.fill();
-
-          // Subtle ethereal glow aura for foreground stars
-          if (s.r >= 1.8 && s.currentAlpha > 0.58) {
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.r * 2.2, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${s.color.r}, ${s.color.g}, ${s.color.b}, ${(s.currentAlpha * 0.16).toFixed(3)})`;
-            ctx.fill();
-          }
-        }
-
-        // 2. Proximity Constellation Lines between nearby stars
-        ctx.lineWidth = 0.65;
-        for (let i = 0; i < STAR_COUNT; i++) {
-          const s1 = stars[i];
-          for (let j = i + 1; j < STAR_COUNT; j++) {
-            const s2 = stars[j];
-            const dx = s1.x - s2.x;
-            const dy = s1.y - s2.y;
-            const distSq = dx * dx + dy * dy;
-
-            if (distSq < MAX_LINE_DIST_SQ) {
-              const dist = Math.sqrt(distSq);
-              const lineAlpha = (1 - dist / MAX_LINE_DIST) * 0.18 * ((s1.currentAlpha + s2.currentAlpha) * 0.5);
-              ctx.beginPath();
-              ctx.moveTo(s1.x, s1.y);
-              ctx.lineTo(s2.x, s2.y);
-              ctx.strokeStyle = `rgba(56, 189, 248, ${lineAlpha.toFixed(3)})`;
-              ctx.stroke();
-            }
-          }
-
-          // Interactive constellation connection to mouse cursor
-          if (mouseX !== null && mouseY !== null) {
-            const mdx = s1.x - mouseX;
-            const mdy = s1.y - mouseY;
-            const mDistSq = mdx * mdx + mdy * mdy;
-            if (mDistSq < MOUSE_DIST_SQ) {
-              const mDist = Math.sqrt(mDistSq);
-              const mAlpha = (1 - mDist / MOUSE_DIST) * 0.35 * s1.currentAlpha;
-              ctx.beginPath();
-              ctx.moveTo(s1.x, s1.y);
-              ctx.lineTo(mouseX, mouseY);
-              ctx.strokeStyle = `rgba(56, 189, 248, ${mAlpha.toFixed(3)})`;
-              ctx.stroke();
-            }
-          }
-        }
-
-        // 3. Mouse cursor subtle cosmic halo
-        if (mouseX !== null && mouseY !== null) {
-          ctx.beginPath();
-          ctx.arc(mouseX, mouseY, 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.45)';
-          ctx.fill();
-        }
-
-        // 4. Meteor / Shooting Stars Rendering
-        for (let k = meteors.length - 1; k >= 0; k--) {
-          const m = meteors[k];
-          m.x += m.vx;
-          m.y += m.vy;
-          m.life++;
-
-          // Natural fade-in and smooth fade-out
-          const halfLife = m.maxLife * 0.35;
-          if (m.life < halfLife) {
-            m.alpha = (m.life / halfLife) * 0.85;
+      let animationDispatched = false;
+      try {
+        // Render logo bersih transparan eksterior pada intro canvas sebelum glide
+        const ctx = introCanvas.getContext('2d');
+        if (ctx) {
+          if (cleanLogoImg.complete && cleanLogoImg.naturalWidth) {
+            ctx.clearRect(0, 0, introCanvas.width, introCanvas.height);
+            ctx.drawImage(cleanLogoImg, 0, 0, introCanvas.width, introCanvas.height);
           } else {
-            m.alpha = Math.max(0, (1 - (m.life - halfLife) / (m.maxLife - halfLife)) * 0.85);
+            const finalImg = logoFrameImages && logoFrameImages[TOTAL_LOGO_FRAMES - 1];
+            if (finalImg && (finalImg.complete || finalImg.naturalWidth)) {
+              ctx.clearRect(0, 0, introCanvas.width, introCanvas.height);
+              ctx.drawImage(finalImg, 0, 0, introCanvas.width, introCanvas.height);
+            }
+          }
+        }
+        introCanvas.classList.add('gliding');
+
+        // Hitung koordinat presisi transisi dari posisi tengah layar ke slot logo panel kiri
+        const targetRect = finalCanvas.getBoundingClientRect();
+        const currentRect = introCanvas.getBoundingClientRect();
+
+        let deltaX = 0;
+        let deltaY = 0;
+        let targetScale = 1;
+
+        if (targetRect.width > 0 && currentRect.width > 0) {
+          const targetCenterX = targetRect.left + (targetRect.width / 2);
+          const targetCenterY = targetRect.top + (targetRect.height / 2);
+          const currentCenterX = currentRect.left + (currentRect.width / 2);
+          const currentCenterY = currentRect.top + (currentRect.height / 2);
+
+          deltaX = targetCenterX - currentCenterX;
+          deltaY = targetCenterY - currentCenterY;
+          targetScale = targetRect.width / currentRect.width;
+        }
+
+        if (typeof gsap !== 'undefined') {
+          animationDispatched = true;
+          const tl = gsap.timeline({ onComplete: safeFinish });
+          // 1. Logo pulse scale-up sejenak di tengah layar (scale: 1.07, ~250ms)
+          tl.to(introWrapper, {
+            scale: 1.07,
+            duration: 0.25,
+            ease: 'power2.out'
+          });
+          // 2. Meluncur mulus ke slot target panel kiri (~800ms)
+          tl.to(introWrapper, {
+            x: deltaX,
+            y: deltaY,
+            scale: targetScale,
+            duration: 0.8,
+            ease: 'power3.inOut'
+          }, '+=0.04');
+          // 3. Bersamaan dengan luncuran logo ke kiri, backdrop putih memudar mengungkap split 50/50
+          if (backdrop) {
+            tl.to(backdrop, {
+              opacity: 0,
+              duration: 0.65,
+              ease: 'power2.inOut'
+            }, '-=0.55');
+          } else {
+            tl.to(overlay, {
+              opacity: 0,
+              duration: 0.65,
+              ease: 'power2.inOut'
+            }, '-=0.55');
+          }
+          // 4. Stagger reveal konten panel kiri & formulir panel kanan
+          tl.fromTo('.left-card-stagger',
+            { opacity: 0, y: 16 },
+            { opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' },
+            '-=0.45'
+          );
+          tl.fromTo('.right-card-stagger',
+            { opacity: 0, y: 16 },
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.06, ease: 'power2.out', clearProps: 'transform,opacity' },
+            '-=0.5'
+          );
+        } else if (introWrapper.animate) {
+          animationDispatched = true;
+          // Native Web Animations API fallback
+          const pulse = introWrapper.animate(
+            [{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }],
+            { duration: 250, easing: 'ease-out', fill: 'forwards' }
+          );
+          pulse.onfinish = () => {
+            const glide = introWrapper.animate(
+              [
+                { transform: 'translate(0, 0) scale(1.07)' },
+                { transform: `translate(${deltaX}px, ${deltaY}px) scale(${targetScale})` }
+              ],
+              { duration: 800, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' }
+            );
+            if (backdrop && backdrop.animate) {
+              backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 650, delay: 180, fill: 'forwards' });
+            }
+            glide.onfinish = safeFinish;
+          };
+        } else {
+          safeFinish();
+        }
+      } catch (err) {
+        console.error('Error during executeLogoGlide:', err);
+        safeFinish();
+      } finally {
+        if (!animationDispatched) {
+          finishIntro();
+        }
+      }
+    }
+
+    function completeIntroAndRevealDirect() {
+      if (hardFailsafeTimeout) {
+        clearTimeout(hardFailsafeTimeout);
+        hardFailsafeTimeout = null;
+      }
+      if (introLoopRafId) {
+        cancelAnimationFrame(introLoopRafId);
+        introLoopRafId = null;
+      }
+      isIntroDone = true;
+
+      const posterImg = document.getElementById('introPosterImg');
+      if (posterImg) posterImg.style.display = 'none';
+
+      renderFinalLogo(cleanLogoImg);
+
+      const overlay = document.getElementById('fullscreenIntroLoading');
+      if (overlay) {
+        if (typeof gsap !== 'undefined') {
+          gsap.to(overlay, {
+            opacity: 0,
+            duration: 0.35,
+            ease: 'power2.out',
+            onComplete: () => {
+              overlay.style.pointerEvents = 'none';
+              overlay.style.display = 'none';
+            }
+          });
+        } else if (overlay.animate) {
+          const fade = overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, fill: 'forwards' });
+          fade.onfinish = () => {
+            overlay.style.pointerEvents = 'none';
+            overlay.style.display = 'none';
+          };
+        } else {
+          overlay.style.pointerEvents = 'none';
+          overlay.style.display = 'none';
+        }
+      }
+
+      document.querySelectorAll('.left-card-stagger, .right-card-stagger').forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+    }
+
+    function completeIntroAndReveal() {
+      executeLogoGlide();
+    }
+
+    function initLogoAnimationEngine() {
+      const introCanvas = document.getElementById('introCanvas');
+      const posterImg = document.getElementById('introPosterImg');
+      if (!introCanvas) {
+        completeIntroAndRevealDirect();
+        return;
+      }
+      const ctx = introCanvas.getContext('2d');
+
+      let animationStarted = false;
+      let hasDrawnFirstFrame = false;
+      logoFrameImages = new Array(TOTAL_LOGO_FRAMES);
+
+      // Preload seluruh 69 frame animasi (ezgif-frame-001.jpg s/d ezgif-frame-069.jpg)
+      for (let i = 1; i <= TOTAL_LOGO_FRAMES; i++) {
+        const img = new Image();
+        const numStr = String(i).padStart(3, '0');
+        const frameIdx = i - 1;
+        img.onload = () => {
+          loadedLogoFrames++;
+          if (frameIdx === 0 && ctx && currentLogoFrameIndex === 0 && !hasDrawnFirstFrame) {
+            ctx.drawImage(img, 0, 0, introCanvas.width, introCanvas.height);
+            hasDrawnFirstFrame = true;
+            if (posterImg) posterImg.style.display = 'none';
+          }
+          if (!animationStarted && (loadedLogoFrames >= 3 || loadedLogoFrames >= TOTAL_LOGO_FRAMES)) {
+            startPlayback();
+          }
+        };
+        img.onerror = () => {
+          loadedLogoFrames++;
+          if (!animationStarted) {
+            startPlayback();
+          }
+        };
+        img.src = `assets/animasi/ezgif-frame-${numStr}.jpg`;
+        logoFrameImages[frameIdx] = img;
+      }
+
+      function startPlayback() {
+        if (animationStarted || isIntroDone) return;
+        animationStarted = true;
+        // Poster tetap terlihat jika canvas belum selesai merender frame pertama (anti blank freeze)
+        if (hasDrawnFirstFrame && posterImg) {
+          posterImg.style.display = 'none';
+        }
+        lastFrameTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        introLoopRafId = requestAnimationFrame(stepAnimation);
+      }
+
+      // Safety start timer: segera putar animasi dalam 100ms
+      setTimeout(() => {
+        if (!animationStarted) startPlayback();
+      }, 100);
+
+      function stepAnimation(timestamp) {
+        if (isIntroDone) return;
+        if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
+        const delta = timestamp - lastFrameTimestamp;
+
+        if (delta >= FRAME_INTERVAL) {
+          lastFrameTimestamp = timestamp - (delta % FRAME_INTERVAL);
+          const currentImg = logoFrameImages[currentLogoFrameIndex];
+
+          // Jika frame saat ini siap, render ke canvas tanpa penahanan blocking
+          if (currentImg && ctx && (currentImg.complete || currentImg.naturalWidth)) {
+            ctx.drawImage(currentImg, 0, 0, introCanvas.width, introCanvas.height);
+            hasDrawnFirstFrame = true;
+            if (posterImg && posterImg.style.display !== 'none') {
+              posterImg.style.display = 'none';
+            }
           }
 
-          const tailX = m.x - Math.cos(m.angle) * m.length;
-          const tailY = m.y - Math.sin(m.angle) * m.length;
+          currentLogoFrameIndex++;
 
-          // Ethereal starlight gradient tail (white -> cyan -> emerald -> transparent)
-          const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
-          grad.addColorStop(0, `rgba(255, 255, 255, ${m.alpha.toFixed(3)})`);
-          grad.addColorStop(0.25, `rgba(56, 189, 248, ${(m.alpha * 0.8).toFixed(3)})`);
-          grad.addColorStop(0.7, `rgba(16, 185, 129, ${(m.alpha * 0.35).toFixed(3)})`);
-          grad.addColorStop(1, 'rgba(2, 132, 199, 0)');
-
-          ctx.beginPath();
-          ctx.moveTo(m.x, m.y);
-          ctx.lineTo(tailX, tailY);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 1.6;
-          ctx.stroke();
-
-          // Bright sparkling head dot
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, 1.4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 255, 255, ${m.alpha.toFixed(3)})`;
-          ctx.fill();
-
-          // Clean up completed meteors
-          if (m.life >= m.maxLife || m.x > width + 60 || m.y > height + 60) {
-            meteors.splice(k, 1);
+          // TEPAT 1 KALI SAJA (NO LOOP): Berhenti di frame ke-69
+          if (currentLogoFrameIndex >= TOTAL_LOGO_FRAMES) {
+            if (cleanLogoImg && cleanLogoImg.complete && cleanLogoImg.naturalWidth && ctx) {
+              ctx.clearRect(0, 0, introCanvas.width, introCanvas.height);
+              ctx.drawImage(cleanLogoImg, 0, 0, introCanvas.width, introCanvas.height);
+            } else {
+              const finalImg = logoFrameImages[TOTAL_LOGO_FRAMES - 1];
+              if (finalImg && ctx && (finalImg.complete || finalImg.naturalWidth)) {
+                ctx.drawImage(finalImg, 0, 0, introCanvas.width, introCanvas.height);
+              }
+            }
+            if (posterImg && posterImg.style.display !== 'none') {
+              posterImg.style.display = 'none';
+            }
+            // Meluncur mulus ke panel kiri
+            setTimeout(executeLogoGlide, 80);
+            return;
           }
         }
 
-        const raf = (typeof window !== 'undefined' && window.requestAnimationFrame)
-          ? window.requestAnimationFrame
-          : ((fn) => setTimeout(fn, 16));
-        raf(renderAmbient);
+        introLoopRafId = requestAnimationFrame(stepAnimation);
       }
+    }
 
-      const startRaf = (typeof window !== 'undefined' && window.requestAnimationFrame)
-        ? window.requestAnimationFrame
-        : ((fn) => setTimeout(fn, 16));
-      startRaf(renderAmbient);
-    })();
+    if (typeof window !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLogoAnimationEngine);
+      } else {
+        initLogoAnimationEngine();
+      }
+    }
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
     // Clean Closed Eyes (> <) on Password Focus & Clean One-Eye Peek (o <) on Password Visibility Toggle

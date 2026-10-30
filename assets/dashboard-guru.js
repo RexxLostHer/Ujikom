@@ -55,6 +55,7 @@ function jamSekarang() {
 let shouldHaltGuru = false;
 
 // Early synchronous guard: dashboard-guru.html is STRICTLY for Guru and Walas
+(function () {
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
   try {
     let rawSess = sessionStorage.getItem('user_aktif');
@@ -85,23 +86,17 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
               if (g && (g.role === 'guru' || g.role === 'walas')) akunGuru = g;
             }
           } catch (eG) {}
-          if (!akunGuru) {
-            akunGuru = {
-              role: 'walas',
-              nama: 'Muhammad Echa Putra, S.Kom.Gr',
-              email: 'ihsan33roblox@gmail.com',
-              nip: '199209142022211007',
-              mapel: 'Basis Data & Pemodelan RPL',
-              isWalas: true,
-              walasKelasId: 'XII RPL 2',
-              isVerified: true
-            };
+          if (akunGuru) {
+            try {
+              sessionStorage.setItem('user_aktif', JSON.stringify(akunGuru));
+              rawSess = JSON.stringify(akunGuru);
+            } catch (eSess) {}
+          } else {
+            // Pengguna bukan guru dan tidak memiliki sesi guru aktif
+            shouldHaltGuru = true;
+            window.location.replace('dashboard.html');
+            return;
           }
-          try {
-            sessionStorage.setItem('user_aktif', JSON.stringify(akunGuru));
-            localStorage.setItem('guru_aktif', JSON.stringify(akunGuru));
-            rawSess = JSON.stringify(akunGuru);
-          } catch (eSess) {}
         } else {
           rawSess = localSess;
         }
@@ -120,27 +115,10 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
       }
     }
     if (!rawSess) {
-      // Inisialisasi sesi Walas Pak Echa saat membuka portal guru agar tab Guru dapat berjalan mulus berdampingan dengan tab Siswa
-      const defaultPakEcha = {
-        role: 'walas',
-        nama: 'Muhammad Echa Putra, S.Kom.Gr',
-        email: 'ihsan33roblox@gmail.com',
-        nip: '199209142022211007',
-        mapel: 'Basis Data & Pemodelan RPL',
-        isWalas: true,
-        walasKelasId: 'XII RPL 2',
-        isVerified: true
-      };
-      try {
-        sessionStorage.setItem('user_aktif', JSON.stringify(defaultPakEcha));
-        localStorage.setItem('guru_aktif', JSON.stringify(defaultPakEcha));
-        rawSess = JSON.stringify(defaultPakEcha);
-      } catch (eSess) {}
-    }
-    if (!rawSess) {
-      // Tolak seketika pengguna anonim atau pengunjung yang belum login membuka dashboard-guru.html, arahkan ke portal utama (index.html)
+      // Wajib Login: Tolak seketika pengguna anonim yang belum login membuka dashboard-guru.html, arahkan ke portal utama (index.html)
       shouldHaltGuru = true;
       window.location.replace('index.html');
+      return;
     }
     if (rawSess) {
       const sessUser = JSON.parse(rawSess);
@@ -178,6 +156,7 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
     }
   } catch (e) {}
 }
+})();
 
 if (!shouldHaltGuru && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(async function(fbUser) {
@@ -319,8 +298,9 @@ function switchGuruTab(id, btn) {
       if (bMain) bMain.classList.add('active');
     }
   }
-  if (id === 'tabKendalaGuru' && typeof muatRiwayatKendalaGuru === 'function') {
-    muatRiwayatKendalaGuru();
+  if (id === 'tabKendalaGuru') {
+    if (typeof muatRiwayatKendalaGuru === 'function') muatRiwayatKendalaGuru();
+    if (typeof muatOpsiJadwalMengajarGuru === 'function') muatOpsiJadwalMengajarGuru();
   }
   if ((id === 'tabApprovalIzin' || id === 'tabValidasiIzin') && typeof muatPerizinanSiswaWalas === 'function') {
     muatPerizinanSiswaWalas();
@@ -523,8 +503,9 @@ async function initPortalGuru(user) {
   try { await muatStatusAbsenGuruHariIni(); } catch (e) {}
   try { muatRiwayatAbsenGuru(); } catch (e) {}
 
-  // 3. Muat riwayat kendala mengajar
+  // 3. Muat riwayat kendala mengajar & opsi jadwal
   try { muatRiwayatKendalaGuru(); } catch (e) {}
+  try { if (typeof muatOpsiJadwalMengajarGuru === 'function') muatOpsiJadwalMengajarGuru(); } catch (e) {}
 
   // Fitur khusus Walas: Verifikasi izin dan alert keterlambatan
   if (isWalas || isAdm) {
@@ -2835,6 +2816,205 @@ if (typeof window !== 'undefined') {
   } catch (eBc) {}
 }
 
+let hariKendalaAktif = 'senin';
+
+function gantiHariKendalaGuru(hari, btnEl) {
+  hariKendalaAktif = (hari || 'senin').toLowerCase();
+  if (typeof document !== 'undefined') {
+    document.querySelectorAll('.btn-hari-kendala').forEach(b => {
+      b.style.background = '#fff';
+      b.style.color = '#475569';
+      b.style.borderColor = '#cbd5e1';
+      b.classList.remove('active');
+    });
+    if (btnEl) {
+      btnEl.style.background = '#2563eb';
+      btnEl.style.color = '#fff';
+      btnEl.style.borderColor = '#2563eb';
+      btnEl.classList.add('active');
+    }
+  }
+  muatOpsiJadwalMengajarGuru(hariKendalaAktif);
+}
+
+function ambilDaftarJadwalGuru(guru, hariPilihan) {
+  const g = guru || (typeof guruAktif !== 'undefined' && guruAktif) || (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+  const gNama = (g.nama || '').toLowerCase().trim();
+  const gNip = String(g.nip || '').trim();
+  const hari = (hariPilihan || 'senin').toLowerCase().trim();
+
+  const jadwalSemua = (typeof MASTER_JADWAL_RESMI !== 'undefined' && MASTER_JADWAL_RESMI)
+    || (typeof global !== 'undefined' && global.MASTER_JADWAL_RESMI)
+    || (typeof window !== 'undefined' && window.MASTER_JADWAL_RESMI)
+    || ((typeof require !== 'undefined') ? (() => { try { return require('./jadwal-util.js').MASTER_JADWAL_RESMI; } catch(e){ return null; } })() : null)
+    || {};
+
+  const daftarKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const hasil = [];
+
+  daftarKelas.forEach(kelas => {
+    const jadwalKelas = jadwalSemua[kelas];
+    if (!jadwalKelas || !jadwalKelas[hari]) return;
+
+    const jadwalHari = jadwalKelas[hari];
+    const jamKeys = Object.keys(jadwalHari).sort((a, b) => Number(a) - Number(b));
+
+    let sesiAktif = null;
+
+    jamKeys.forEach(jamKe => {
+      const p = jadwalHari[jamKe];
+      if (!p) return;
+
+      const pGuru = (p.guru || '').toLowerCase().trim();
+      const isMatch = (gNama && (pGuru.includes(gNama) || gNama.includes(pGuru)))
+        || (gNip && pGuru.includes(gNip))
+        || (g.walasKelasId === kelas && (pGuru.includes('wali kelas') || pGuru.includes('bimbingan')));
+
+      if (isMatch) {
+        if (sesiAktif && sesiAktif.mapel === p.mapel && sesiAktif.kelas === kelas && Number(jamKe) === Number(sesiAktif.jamAkhir) + 1) {
+          sesiAktif.jamAkhir = jamKe;
+          sesiAktif.selesai = p.selesai;
+          sesiAktif.totalJam += 1;
+        } else {
+          if (sesiAktif) hasil.push(sesiAktif);
+          sesiAktif = {
+            kelas: kelas,
+            mapel: p.mapel,
+            guru: p.guru,
+            jamAwal: jamKe,
+            jamAkhir: jamKe,
+            mulai: p.mulai,
+            selesai: p.selesai,
+            totalJam: 1,
+            hari: hari
+          };
+        }
+      } else {
+        if (sesiAktif) {
+          hasil.push(sesiAktif);
+          sesiAktif = null;
+        }
+      }
+    });
+
+    if (sesiAktif) {
+      hasil.push(sesiAktif);
+    }
+  });
+
+  return hasil;
+}
+
+function muatOpsiJadwalMengajarGuru(hariPilihan) {
+  if (typeof document === 'undefined') return;
+  const container = document.getElementById('containerOpsiJadwalKendala');
+  if (!container) return;
+
+  const hariIniStr = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+  const namaHariIni = (typeof namaHariDariTanggal === 'function') ? namaHariDariTanggal(hariIniStr) : 'senin';
+  const targetHari = (hariPilihan || hariKendalaAktif || (['senin','selasa','rabu','kamis','jumat'].includes(namaHariIni) ? namaHariIni : 'senin')).toLowerCase();
+  hariKendalaAktif = targetHari;
+
+  // Set highlight tombol hari
+  const btnHari = document.querySelector(`.btn-hari-kendala[data-hari="${targetHari}"]`);
+  if (btnHari) {
+    document.querySelectorAll('.btn-hari-kendala').forEach(b => {
+      b.style.background = '#fff';
+      b.style.color = '#475569';
+      b.style.borderColor = '#cbd5e1';
+      b.classList.remove('active');
+    });
+    btnHari.style.background = '#2563eb';
+    btnHari.style.color = '#fff';
+    btnHari.style.borderColor = '#2563eb';
+    btnHari.classList.add('active');
+  }
+
+  const guru = (typeof guruAktif !== 'undefined' && guruAktif) ||
+               (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
+
+  const listJadwal = ambilDaftarJadwalGuru(guru, targetHari);
+
+  container.innerHTML = '';
+  if (listJadwal.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;background:#fff;border:1px dashed #cbd5e1;border-radius:10px;padding:14px;text-align:center;color:#64748b;font-size:12.5px;">
+        <span>Tidak ada jadwal mengajar tetap untuk Anda pada hari <strong>${targetHari.toUpperCase()}</strong>. Anda dapat memilih kelas dan mapel secara manual di formulir bawah.</span>
+      </div>`;
+    return;
+  }
+
+  listJadwal.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'kartu-opsi-jadwal-guru';
+    card.id = 'jadwalOpt_' + idx;
+    card.style.cssText = 'background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.15s ease;display:flex;flex-direction:column;justify-content:space-between;gap:6px;';
+    
+    const rentangJam = (item.jamAwal === item.jamAkhir) ? `Jam ke-${item.jamAwal}` : `Jam ke-${item.jamAwal} s/d ${item.jamAkhir}`;
+    const waktuLabel = `${item.mulai} - ${item.selesai}`;
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:800;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:6px;">${item.kelas}</span>
+        <span style="font-size:11.5px;font-weight:700;color:#059669;display:flex;align-items:center;gap:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          ${waktuLabel}
+        </span>
+      </div>
+      <div style="font-size:13.5px;font-weight:800;color:#0f172a;line-height:1.3;">${item.mapel}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#64748b;margin-top:2px;">
+        <span>${rentangJam} (${item.totalJam * 45} Menit)</span>
+        <span class="label-status-pilih" style="color:#2563eb;font-weight:700;">Klik untuk Pilih &rarr;</span>
+      </div>
+    `;
+
+    card.onclick = () => pilihJadwalKendalaGuru(item, card);
+    container.appendChild(card);
+  });
+}
+
+function pilihJadwalKendalaGuru(item, cardEl) {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.kartu-opsi-jadwal-guru').forEach(c => {
+    c.style.borderColor = '#e2e8f0';
+    c.style.background = '#ffffff';
+    const lbl = c.querySelector('.label-status-pilih');
+    if (lbl) {
+      lbl.innerHTML = 'Klik untuk Pilih &rarr;';
+      lbl.style.color = '#2563eb';
+    }
+  });
+
+  if (cardEl) {
+    cardEl.style.borderColor = '#2563eb';
+    cardEl.style.background = '#eff6ff';
+    const lbl = cardEl.querySelector('.label-status-pilih');
+    if (lbl) {
+      lbl.innerHTML = '&#10003; Terpilih';
+      lbl.style.color = '#15803d';
+    }
+  }
+
+  const kelasEl = document.getElementById('kendalaKelas');
+  const mapelEl = document.getElementById('kendalaMapel');
+  const jamPelajaranEl = document.getElementById('kendalaJamPelajaran');
+  const jamMulaiEl = document.getElementById('kendalaJamMulai');
+  const jamSelesaiEl = document.getElementById('kendalaJamSelesai');
+
+  if (kelasEl) {
+    kelasEl.value = item.kelas;
+  }
+  if (mapelEl) {
+    mapelEl.value = item.mapel;
+  }
+  const rentangJam = (item.jamAwal === item.jamAkhir) ? `Jam ke-${item.jamAwal}` : `Jam ke-${item.jamAwal} s/d ${item.jamAkhir}`;
+  if (jamPelajaranEl) {
+    jamPelajaranEl.value = `${rentangJam} (${item.mulai} - ${item.selesai})`;
+  }
+  if (jamMulaiEl) jamMulaiEl.value = item.mulai || '';
+  if (jamSelesaiEl) jamSelesaiEl.value = item.selesai || '';
+}
+
 async function submitKendalaGuru(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
   const btn = (typeof document !== 'undefined') ? document.getElementById('btnSubmitKendala') : null;
@@ -2842,6 +3022,9 @@ async function submitKendalaGuru(e) {
 
   const kelasEl = (typeof document !== 'undefined') ? document.getElementById('kendalaKelas') : null;
   const mapelEl = (typeof document !== 'undefined') ? document.getElementById('kendalaMapel') : null;
+  const jamPelajaranEl = (typeof document !== 'undefined') ? document.getElementById('kendalaJamPelajaran') : null;
+  const jamMulaiEl = (typeof document !== 'undefined') ? document.getElementById('kendalaJamMulai') : null;
+  const jamSelesaiEl = (typeof document !== 'undefined') ? document.getElementById('kendalaJamSelesai') : null;
   const tanggalEl = (typeof document !== 'undefined') ? document.getElementById('kendalaTanggal') : null;
   const jenisEl = (typeof document !== 'undefined') ? document.getElementById('kendalaJenis') : null;
   const alasanEl = (typeof document !== 'undefined') ? document.getElementById('kendalaAlasan') : null;
@@ -2849,6 +3032,9 @@ async function submitKendalaGuru(e) {
 
   const kelas = kelasEl ? kelasEl.value : 'XII RPL 2';
   const mapel = mapelEl ? mapelEl.value.trim() : '';
+  const jamPelajaran = jamPelajaranEl ? jamPelajaranEl.value.trim() : '';
+  const jamMulai = jamMulaiEl ? jamMulaiEl.value.trim() : '';
+  const jamSelesai = jamSelesaiEl ? jamSelesaiEl.value.trim() : '';
   let tanggal = tanggalEl ? tanggalEl.value : '';
   if (!tanggal && typeof tanggalHariIni === 'function') tanggal = tanggalHariIni();
   const jenis = jenisEl ? jenisEl.value : 'kendala_teknis';
@@ -2916,7 +3102,11 @@ async function submitKendalaGuru(e) {
       kelas: kelas,
       kelasId: kelas,
       mapel: mapel,
-      jam_ke: '1-8',
+      jam_ke: jamPelajaran || '1-8',
+      jamPelajaran: jamPelajaran || '',
+      jamMulai: jamMulai || '',
+      jamSelesai: jamSelesai || '',
+      hari: hariKendalaAktif || '',
       keterangan: alasan,
       deskripsi: alasan,
       dokumen_url: buktiKendala || '',
@@ -4367,6 +4557,10 @@ if (typeof window !== 'undefined') {
   window.setujuiIzinSiswa = function (idIzin) { return prosesApprovalIzin(idIzin, 'disetujui'); };
   window.verifikasiIzin = window.setujuiIzinSiswa;
   window.catatHadirManualWalas = catatHadirManualWalas;
+  window.ambilDaftarJadwalGuru = ambilDaftarJadwalGuru;
+  window.muatOpsiJadwalMengajarGuru = muatOpsiJadwalMengajarGuru;
+  window.gantiHariKendalaGuru = gantiHariKendalaGuru;
+  window.pilihJadwalKendalaGuru = pilihJadwalKendalaGuru;
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports.cekStatusKartuNfcGuru = cekStatusKartuNfcGuru;
@@ -4381,6 +4575,10 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports.submitKendalaGuru = submitKendalaGuru;
   module.exports.kirimKendalaMengajar = kirimKendalaMengajar;
   module.exports.muatRiwayatKendalaGuru = muatRiwayatKendalaGuru;
+  module.exports.ambilDaftarJadwalGuru = ambilDaftarJadwalGuru;
+  module.exports.muatOpsiJadwalMengajarGuru = muatOpsiJadwalMengajarGuru;
+  module.exports.gantiHariKendalaGuru = gantiHariKendalaGuru;
+  module.exports.pilihJadwalKendalaGuru = pilihJadwalKendalaGuru;
   module.exports.bukaLampiranAktifDiTabBaru = bukaLampiranAktifDiTabBaru;
   module.exports.bukaModalBuktiIzin = bukaModalBuktiIzin;
   module.exports.bukaModalBukti = bukaModalBukti;

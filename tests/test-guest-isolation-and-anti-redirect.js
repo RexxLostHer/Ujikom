@@ -15,30 +15,23 @@ const assert = require('assert');
 
 console.log('=== MEMULAI TEST ISOLASI TAMU & PENCEGAHAN AUTO-REDIRECT ADMIN ===\n');
 
-// 1. Verifikasi dashboard.js: Unauthenticated / Guest stays on dashboard.html
+// 1. Verifikasi dashboard.js: Unauthenticated visitor di-redirect ke index.html, logged-in user diproses aman
 const dashJs = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
 
 console.log('[Test 1] Evaluasi Penanganan Pengunjung / Unauthenticated di dashboard.js...');
 assert.ok(
-  dashJs.includes("role: 'pengunjung'") && dashJs.includes("nama: 'Pengunjung / Tamu Sekolah'"),
-  'dashboard.js harus membuat default session pengunjung untuk visitor tanpa auth'
+  dashJs.includes('window.location.replace(\x27index.html\x27)'),
+  'dashboard.js harus menolak visitor anonim tanpa sesi dan mengarahkan ke index.html'
 );
 assert.ok(
   dashJs.includes('initDashboard(currentUser)'),
-  'dashboard.js harus menginisialisasi dashboard untuk pengunjung tanpa melempar ke index.html'
-);
-// Pastikan tidak ada fallback `window.location.href = 'index.html'` di blok !fbUser
-const fbUserBlockMatch = dashJs.match(/if\s*\(!fbUser\)\s*\{([\s\S]*?)initDashboard\(currentUser\);/);
-assert.ok(fbUserBlockMatch, 'Blok !fbUser harus ada dan mengarah ke initDashboard');
-assert.ok(
-  !fbUserBlockMatch[1].includes("window.location.href = 'index.html'"),
-  'Visitor tanpa fbUser tidak boleh di-kick keluar ke index.html'
+  'dashboard.js harus menginisialisasi dashboard untuk user terautentikasi'
 );
 assert.ok(
-  !fbUserBlockMatch[1].includes("window.location.replace('admin.html')") || fbUserBlockMatch[1].includes("session.role === 'admin'"),
-  'Pengunjung tidak boleh dialihkan ke admin.html'
+  dashJs.includes('role === \x27admin\x27') && dashJs.includes('window.location.replace(\x27admin.html\x27)'),
+  'Role admin dialihkan ke admin.html'
 );
-console.log('✓ Pengunjung dan unauthenticated user dipastikan STAY di dashboard.html.\n');
+console.log('✓ Pengunjung tanpa login di-kick ke index.html dan user terotentikasi diproses dengan aman.\n');
 
 // 2. Verifikasi index.html: Tidak auto-redirect ke admin.html pada cold load
 const indexHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');

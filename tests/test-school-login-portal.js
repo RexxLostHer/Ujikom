@@ -433,6 +433,79 @@ assert.ok(indexHtml.includes('auth/popup-blocked'), 'Penanganan popup-blocked ha
 assert.ok(indexHtml.includes('file://'), 'Penjelasan protokol file:// harus disertakan');
 console.log('✓ Keamanan isolasi admin dan feedback error ramah pengguna terverifikasi');
 
+// TEST 6: Validasi Intro Animation Zero White Freeze, Hard Failsafe & Left Panel 3-Point Layout
+console.log('\n[Test 6] Validasi Intro Animation Zero White Freeze, Failsafe 2.2s & Balanced 3-Point Layout');
+// 6.1 Zero White Delay Poster Image
+assert.ok(indexHtml.includes('id="introPosterImg"'), 'index.html harus memuat elemen #introPosterImg');
+assert.ok(indexHtml.includes('assets/animasi/ezgif-frame-001.jpg'), 'introPosterImg harus memuat frame awal ezgif-frame-001.jpg');
+assert.ok(indexHtml.includes('class="intro-canvas"'), 'introPosterImg harus memiliki class intro-canvas');
+
+// 6.2 Overlay z-index & backdrop
+assert.ok(indexHtml.includes('z-index: 99999'), 'fullscreen-intro-loading harus memiliki z-index 99999');
+assert.ok(indexHtml.includes('id="introBgBackdrop"'), 'introBgBackdrop harus ada');
+
+// 6.3 Animation Pacing & Non-blocking Loop
+assert.ok(indexHtml.includes('TARGET_FPS'), 'Engine harus mendefinisikan TARGET_FPS');
+assert.ok(!indexHtml.includes('frameHoldCount < 25'), 'Loop blocking penahanan frameHoldCount < 25 harus dieliminasi');
+assert.ok(indexHtml.includes('TOTAL_LOGO_FRAMES = 69'), 'Total logo frames harus 69');
+
+// 6.4 Hard Failsafe Timer (2.2s) & Direct Reveal
+assert.ok(indexHtml.includes('2200'), 'Hard failsafe timer darurat 2200ms harus terdefinisi');
+assert.ok(indexHtml.includes('completeIntroAndRevealDirect'), 'Fungsi completeIntroAndRevealDirect harus ada untuk hard failsafe');
+assert.ok(indexHtml.includes('executeLogoGlide'), 'Fungsi executeLogoGlide harus ada');
+
+// 6.5 Balanced 3-Point Left Panel Layout
+assert.ok(indexHtml.includes('PRESENSIA • SMKN 1 SUMEDANG'), 'Left panel top badge harus memuat PRESENSIA • SMKN 1 SUMEDANG');
+assert.ok(indexHtml.includes('#10b981'), 'Left panel live pulse dot harus menggunakan aksen emerald #10b981');
+assert.ok(indexHtml.includes('id="logoSlotTarget"'), 'Left panel center harus memiliki id="logoSlotTarget"');
+assert.ok(indexHtml.includes('width: 220px') && indexHtml.includes('height: 220px'), 'Aura glow logo slot harus 220px x 220px');
+assert.ok(indexHtml.includes('Welcome Back!'), 'Left panel center harus memuat heading Welcome Back!');
+assert.ok(indexHtml.includes('Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime'), 'Left panel tagline harus memuat Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime');
+assert.ok(indexHtml.includes('white-space: nowrap'), 'Tagline harus satu baris di desktop dengan white-space: nowrap');
+assert.ok(indexHtml.includes('Rekayasa Perangkat Lunak (RPL IoT)'), 'Left panel bottom harus memuat Rekayasa Perangkat Lunak (RPL IoT)');
+assert.ok(indexHtml.includes('master-split-card'), 'Split card sejati master-split-card harus aktif');
+
+// 6.6 Functional Simulation of Intro Hard Failsafe in VM
+const overlayMock = { style: { display: 'flex', pointerEvents: 'auto', opacity: '1' } };
+const posterMock = { style: { display: 'block' } };
+const introSandbox = {
+  document: {
+    getElementById: (id) => {
+      if (id === 'fullscreenIntroLoading') {
+        return overlayMock;
+      }
+      if (id === 'introPosterImg') {
+        return posterMock;
+      }
+      if (id === 'finalLogoCanvas') {
+        return { getContext: () => ({ clearRect: () => {}, drawImage: () => {} }), width: 640, height: 360 };
+      }
+      return null;
+    },
+    querySelectorAll: () => []
+  },
+  setTimeout: (fn, ms) => {
+    if (ms === 2200) fn(); // Trigger failsafe immediately
+    return 1;
+  },
+  clearTimeout: () => {},
+  requestAnimationFrame: () => 1,
+  cancelAnimationFrame: () => {},
+  console: { warn: () => {}, error: () => {}, log: () => {} },
+  Image: function() { this.onload = null; this.onerror = null; this.src = ''; }
+};
+const introScriptMatch = indexHtml.match(/\/\/ ===== 2\. FULLSCREEN INTRO LOGO ANIMATION[\s\S]*?function completeIntroAndRevealDirect\(\) \{([\s\S]*?)\}/);
+assert.ok(introScriptMatch, 'Fungsi completeIntroAndRevealDirect harus ditemukan dalam script intro');
+const fullIntroCodeMatch = indexHtml.match(/\/\/ ===== 2\. FULLSCREEN INTRO LOGO ANIMATION[\s\S]*?(\/\/ ===== 3\. ROBO-NESAS)/);
+if (fullIntroCodeMatch) {
+  const introContext = vm.createContext(introSandbox);
+  vm.runInContext(fullIntroCodeMatch[0].replace('// ===== 3. ROBO-NESAS', ''), introContext);
+  assert.strictEqual(overlayMock.style.display, 'none', 'Hard failsafe 2.2s harus otomatis menyembunyikan overlay');
+  assert.strictEqual(overlayMock.style.pointerEvents, 'none', 'Hard failsafe 2.2s harus mematikan pointer events overlay');
+  assert.strictEqual(posterMock.style.display, 'none', 'Hard failsafe 2.2s harus menyembunyikan poster');
+}
+console.log('✓ Seluruh aspek Intro Animation Zero White Freeze, Failsafe 2.2s & Left Panel 3-Point Layout 100% valid');
+
 console.log('\n=======================================================');
-console.log('SEMUA PENGUJIAN PORTAL ROBO-NESAS BERHASIL! (5/5 PASSED)');
+console.log('SEMUA PENGUJIAN PORTAL ROBO-NESAS BERHASIL! (6/6 PASSED)');
 console.log('=======================================================');
