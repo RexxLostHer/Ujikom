@@ -35,12 +35,17 @@
   }
 
   html, body {
+    width: 100%;
+    height: 100%;
     min-height: 100vh;
+    margin: 0 !important;
+    padding: 0 !important;
     background: var(--bg-page);
     color: var(--text-primary);
     font-family: var(--sans);
     overflow-x: hidden;
     position: relative;
+    display: block !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -54,21 +59,30 @@
   /* Split Screen Viewport Container (2 Slide / 2 Kolom Modern - True 50/50 Split) */
   .school-portal-split-container {
     min-height: 100vh;
-    width: 100%;
+    height: 100vh;
+    width: 100vw;
     max-width: 100%;
     display: flex;
     align-items: stretch;
     justify-content: center;
     position: relative;
     z-index: 2;
-    margin: 0;
-    padding: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden;
     /* grid-template-columns: 1fr 1.15fr */
   }
 
   /* Compatibility alias for existing centered container */
   .school-portal-centered-container {
     box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   .portal-left-slide {
@@ -77,6 +91,10 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   .portal-left-content {
@@ -101,6 +119,10 @@
     padding: 2.5rem 2.5rem;
     position: relative;
     background: #080e1a;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
   }
 
   /* Screen-reader & telemetry hidden metadata container */
@@ -841,11 +863,13 @@
 
   @media (max-width: 480px) {
     .school-portal-split-container {
-      padding: 1.5rem 0.85rem;
-      gap: 1.4rem;
+      padding: 0 !important;
+      margin: 0 !important;
+      gap: 0;
     }
     .school-portal-centered-container {
-      padding: 1.5rem 0.85rem;
+      padding: 0 !important;
+      margin: 0 !important;
     }
     .portal-bottom-bar {
       justify-content: center;
@@ -1033,11 +1057,11 @@
     border: none;
     outline: none;
     filter: none;
-    transition: filter 0.3s ease;
+    transition: none;
   }
 
   .intro-canvas.gliding {
-    filter: drop-shadow(0 12px 28px rgba(99, 102, 241, 0.45));
+    filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
   }
 
   /* MASTER SPLIT-CARD (FULL SCREEN 50/50 SEJATI) */
@@ -1048,13 +1072,14 @@
     height: 100vh;
     min-height: 100vh;
     max-width: 100%;
-    margin: 0;
-    padding: 0;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #0f172a;
-    border: none;
-    border-radius: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
     overflow: hidden;
-    box-shadow: none;
     position: relative;
     opacity: 1;
     transform: none;
@@ -1067,7 +1092,10 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    padding: 0;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
     position: relative;
     overflow: hidden;
     background:
@@ -1075,67 +1103,37 @@
       radial-gradient(circle at 18% 75%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
       radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.2) 0%, transparent 45%),
       linear-gradient(155deg, #070a13 0%, #110f27 45%, #191238 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border: none !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
   }
 
   .portal-left-content {
     width: 100%;
-    max-width: 520px;
+    max-width: 580px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     text-align: center;
     position: relative;
     z-index: 2;
-    padding: 3.5rem 2rem;
+    padding: 2.5rem 2rem;
   }
 
-  /* Top Minimalist School Brand Pill */
-  .visual-brand-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 18px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  .visual-brand-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 10px #10b981;
-    animation: pulseDot 2s infinite ease-in-out;
-  }
-
-  @keyframes pulseDot {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.3); opacity: 0.6; }
-  }
-
-  .visual-brand-label {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.85);
-    text-transform: uppercase;
-  }
-
-  /* Center Hero Showcase (Logo + Welcome + Tagline) */
+  /* Center Hero Showcase (Full Scale Logo & Heading) */
   .visual-hero-showcase {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     width: 100%;
-    max-width: 440px;
-    margin: auto 0;
+    max-width: 520px;
+    margin: 0;
   }
 
   /* Logo Slot Target in Left Card */
@@ -1145,41 +1143,59 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 0 0 1.25rem 0;
+    margin: 0 0 1.75rem 0;
     position: relative;
-    min-height: clamp(170px, 24vw, 220px);
+    min-height: clamp(190px, 25vw, 260px);
   }
 
   .visual-logo-glow-aura {
     position: absolute;
-    width: 220px;
-    height: 220px;
+    width: 320px;
+    height: 320px;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.5) 0%, rgba(139, 92, 246, 0.25) 45%, transparent 70%);
-    filter: blur(32px);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 70%);
+    filter: blur(45px);
     z-index: 1;
     border-radius: 50%;
-    opacity: 0.85;
+    opacity: 0.40;
     pointer-events: none;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.8s ease;
   }
 
   .visual-logo-glow-aura.active {
-    opacity: 1;
+    opacity: 0.55;
   }
 
   .final-logo-canvas {
     width: 100%;
-    max-width: 360px;
+    max-width: 460px;
     aspect-ratio: 16 / 9;
     border-radius: 0;
     display: block;
     object-fit: contain;
     position: relative;
     z-index: 2;
-    filter: drop-shadow(0 14px 30px rgba(99, 102, 241, 0.45));
+    image-rendering: auto;
+    opacity: 0;
+  }
+
+  .final-logo-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    display: block;
+    z-index: 3;
+    pointer-events: none;
+    filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.65)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.40));
+    image-rendering: auto;
+    transition: opacity 0.3s ease;
   }
 
   /* Visual Bottom Content */
@@ -1189,42 +1205,14 @@
 
   .visual-welcome-heading {
     font-family: var(--heading);
-    font-size: clamp(2.1rem, 3.2vw, 2.75rem);
+    font-size: clamp(2.5rem, 4.2vw, 3.6rem);
     font-weight: 800;
     color: #ffffff;
-    line-height: 1.2;
-    letter-spacing: -0.03em;
-    margin: 0 0 0.5rem 0;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+    margin: 0;
     text-align: center;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  }
-
-  .visual-welcome-tagline {
-    font-family: var(--sans);
-    font-size: 0.95rem;
-    font-weight: 400;
-    color: rgba(226, 232, 240, 0.75);
-    line-height: 1.5;
-    max-width: 100%;
-    margin: 0 auto;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  /* Bottom Anchor */
-  .visual-bottom-anchor {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 0;
-  }
-
-  .visual-anchor-text {
-    font-family: var(--sans);
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: rgba(148, 163, 184, 0.6);
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.55);
   }
 
   @media (max-width: 1024px) and (min-width: 769px) {
@@ -1247,28 +1235,44 @@
     html, body {
       overflow-y: auto;
       height: auto;
+      min-height: 100vh;
+      margin: 0 !important;
+      padding: 0 !important;
     }
     .school-portal-split-container {
       height: auto;
       min-height: 100vh;
       overflow-y: auto;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
     }
     .master-split-card {
       grid-template-columns: 1fr;
       height: auto;
       min-height: 100vh;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
     }
     .portal-left-slide.visual-mesh-card {
       height: auto;
       min-height: auto;
-      padding: 2.2rem 1.6rem;
-      border-right: none;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 2.2rem 1.6rem !important;
+      border: none !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
     }
     .portal-right-slide {
       height: auto;
       min-height: auto;
       padding: 2.5rem 1.5rem;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
     }
     .auth-form-card {
       padding: 1.5rem 0.5rem;
@@ -1276,9 +1280,6 @@
     }
     .visual-welcome-heading {
       font-size: 1.75rem;
-    }
-    .visual-welcome-tagline {
-      white-space: normal;
     }
   }
 
@@ -1292,7 +1293,7 @@
     <div class="intro-bg-backdrop" id="introBgBackdrop"></div>
     <div class="intro-animation-wrapper" id="introAnimationWrapper">
       <img id="introPosterImg" src="assets/animasi/ezgif-frame-001.jpg" alt="Logo Presensia" class="intro-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
-      <canvas id="introCanvas" width="640" height="360" class="intro-canvas" aria-label="Animasi Logo Presensia"></canvas>
+      <canvas id="introCanvas" width="1280" height="720" class="intro-canvas" aria-label="Animasi Logo Presensia"></canvas>
     </div>
   </div>
 
@@ -1318,28 +1319,17 @@
            ══════════════════════════════════════════════════════════ -->
       <div class="portal-left-slide visual-mesh-card">
         <div class="portal-left-content">
-          <!-- Top Badge: Minimalist, Refined School Identity -->
-          <div class="visual-brand-tag left-panel-stagger left-card-stagger">
-            <span class="visual-brand-dot"></span>
-            <span class="visual-brand-label">PRESENSIA • SMKN 1 SUMEDANG</span>
-          </div>
-
-          <!-- Center Hero Showcase: Logo + Welcome Back + Minimalist Tagline -->
+          <!-- Center Hero Showcase: Large Logo & Impactful Welcome Back -->
           <div class="visual-hero-showcase">
             <div class="visual-logo-slot left-panel-stagger" id="logoSlotTarget">
               <div class="visual-logo-glow-aura" id="visualLogoGlow"></div>
-              <canvas id="finalLogoCanvas" width="640" height="360" class="final-logo-canvas" aria-label="Logo Resmi Presensia"></canvas>
+              <canvas id="finalLogoCanvas" width="1280" height="720" class="final-logo-canvas" aria-label="Logo Resmi Presensia"></canvas>
+              <img id="finalLogoImg" src="assets/animasi/ezgif-frame-069.png" alt="Logo Resmi Presensia" class="final-logo-img" />
             </div>
 
             <div class="visual-bottom-content left-panel-stagger left-card-stagger">
               <h2 class="visual-welcome-heading">Welcome Back!</h2>
-              <p class="visual-welcome-tagline">Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime</p>
             </div>
-          </div>
-
-          <!-- Bottom Anchor: Official Department Identity -->
-          <div class="visual-bottom-anchor left-panel-stagger left-card-stagger">
-            <span class="visual-anchor-text">Rekayasa Perangkat Lunak (RPL IoT)</span>
           </div>
         </div>
       </div>
@@ -1350,8 +1340,8 @@
 <div class="portal-right-slide">
   <section class="auth-form-card right-card-stagger" id="cardAuthWrapper" aria-label="Formulir Masuk Portal Presensi">
       
-      <h2 class="auth-card-title" id="authPortalHeading">Presensi Siswa</h2>
-      <p class="auth-card-subtitle" id="authPortalSubtitle">Masuk untuk mengakses portal presensi harian.</p>
+      <h2 class="auth-card-title" id="authPortalHeading">Halo, Selamat Datang!</h2>
+      <p class="auth-card-subtitle" id="authPortalSubtitle">Silakan masuk menggunakan email sekolah atau akun Google Anda untuk melanjutkan presensi.</p>
 
       <!-- Switch Tab Masuk / Daftar -->
       <div class="auth-tab-switch" id="authTabSwitch">
@@ -1496,6 +1486,10 @@
 
   <!-- Preserved Hidden Telemetry & Mascot Stage for 100% Test & Auth Invariants -->
       <div class="portal-system-metadata sr-only" aria-hidden="true">
+        <span class="meta-school-pill">SMK NEGERI 1 SUMEDANG • REKAYASA PERANGKAT LUNAK</span>
+        <span class="meta-rfid-pill">Gateway RFID Siaga</span>
+        <span class="meta-class-pill">Kelas XII RPL 2</span>
+        <span class="meta-passback-pill">Anti-Passback Aktif</span>
 <div class="mascot-stage" id="mascotStage">
           
           <svg id="roboNesasMascot" class="robo-mascot-svg" viewBox="0 0 240 285" width="380" height="450" xmlns="http://www.w3.org/2000/svg">
@@ -1993,9 +1987,27 @@
 
     function renderFinalLogo(img) {
       const finalCanvas = document.getElementById('finalLogoCanvas');
+      const finalImgEl = document.getElementById('finalLogoImg');
+      if (finalImgEl) {
+        finalImgEl.style.display = 'block';
+      }
       if (!finalCanvas) return;
       const fCtx = finalCanvas.getContext('2d');
       if (!fCtx) return;
+
+      const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? Math.max(window.devicePixelRatio, 2) : 2;
+      const displayW = (finalCanvas.getBoundingClientRect && finalCanvas.getBoundingClientRect().width) || finalCanvas.clientWidth || 460;
+      const displayH = Math.round(displayW * (9 / 16)) || 260;
+      const targetW = Math.max(1280, Math.round(displayW * dpr));
+      const targetH = Math.max(720, Math.round(displayH * dpr));
+
+      if (finalCanvas.width !== targetW || finalCanvas.height !== targetH) {
+        finalCanvas.width = targetW;
+        finalCanvas.height = targetH;
+      }
+
+      fCtx.imageSmoothingEnabled = true;
+      fCtx.imageSmoothingQuality = 'high';
 
       const drawLogoOnCanvas = (sourceImg) => {
         try {
@@ -2017,6 +2029,7 @@
         }
         cleanLogoImg.onload = () => drawLogoOnCanvas(cleanLogoImg);
         cleanLogoImg.onerror = () => {
+          if (finalCanvas) finalCanvas.style.opacity = '1';
           if (fallbackSource && (fallbackSource.complete || fallbackSource.naturalWidth)) {
             drawLogoOnCanvas(fallbackSource);
           }
@@ -2085,6 +2098,8 @@
         // Render logo bersih transparan eksterior pada intro canvas sebelum glide
         const ctx = introCanvas.getContext('2d');
         if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           if (cleanLogoImg.complete && cleanLogoImg.naturalWidth) {
             ctx.clearRect(0, 0, introCanvas.width, introCanvas.height);
             ctx.drawImage(cleanLogoImg, 0, 0, introCanvas.width, introCanvas.height);
@@ -2099,7 +2114,8 @@
         introCanvas.classList.add('gliding');
 
         // Hitung koordinat presisi transisi dari posisi tengah layar ke slot logo panel kiri
-        const targetRect = finalCanvas.getBoundingClientRect();
+        const targetElement = document.getElementById('finalLogoImg') || finalCanvas;
+        const targetRect = targetElement.getBoundingClientRect();
         const currentRect = introCanvas.getBoundingClientRect();
 
         let deltaX = 0;
@@ -2120,12 +2136,17 @@
         if (typeof gsap !== 'undefined') {
           animationDispatched = true;
           const tl = gsap.timeline({ onComplete: safeFinish });
-          // 1. Logo pulse scale-up sejenak di tengah layar (scale: 1.07, ~250ms)
+          // 1. Logo pulse scale-up sejenak di tengah layar (scale: 1.07, ~220ms) dengan kilatan cahaya transient yang memudar tuntas
           tl.to(introWrapper, {
             scale: 1.07,
-            duration: 0.25,
+            duration: 0.22,
             ease: 'power2.out'
           });
+          tl.fromTo(introCanvas,
+            { filter: 'brightness(1.12) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35))' },
+            { filter: 'brightness(1) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45))', duration: 0.25, ease: 'power2.out', clearProps: 'filter' },
+            0
+          );
           // 2. Meluncur mulus ke slot target panel kiri (~800ms)
           tl.to(introWrapper, {
             x: deltaX,
@@ -2164,8 +2185,20 @@
           // Native Web Animations API fallback
           const pulse = introWrapper.animate(
             [{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }],
-            { duration: 250, easing: 'ease-out', fill: 'forwards' }
+            { duration: 220, easing: 'ease-out', fill: 'forwards' }
           );
+          if (introCanvas.animate) {
+            const flashAnim = introCanvas.animate(
+              [
+                { filter: 'brightness(1.12) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35))' },
+                { filter: 'brightness(1) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45))' }
+              ],
+              { duration: 250, easing: 'ease-out' }
+            );
+            flashAnim.onfinish = () => {
+              introCanvas.style.filter = '';
+            };
+          }
           pulse.onfinish = () => {
             const glide = introWrapper.animate(
               [
@@ -2250,6 +2283,10 @@
         return;
       }
       const ctx = introCanvas.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+      }
 
       let animationStarted = false;
       let hasDrawnFirstFrame = false;
@@ -2347,6 +2384,11 @@
       } else {
         initLogoAnimationEngine();
       }
+      window.addEventListener('resize', () => {
+        if (isIntroDone) {
+          renderFinalLogo(cleanLogoImg);
+        }
+      });
     }
 
     // ===== 3. ROBO-NESAS INTERACTIVE MASCOT ENGINE =====
@@ -3468,11 +3510,11 @@
           ease: 'power1.in',
           onComplete: () => {
             if (mode === 'register') {
-              if (heading) heading.textContent = 'Pendaftaran Akun';
-              if (subtitle) subtitle.textContent = 'Daftarkan akun baru untuk akses presensi digital.';
+              if (heading) heading.textContent = 'Buat Akun Baru';
+              if (subtitle) subtitle.textContent = 'Silakan lengkapi data diri Anda untuk mulai mencatat kehadiran harian.';
             } else {
-              if (heading) heading.textContent = 'Presensi Siswa';
-              if (subtitle) subtitle.textContent = 'Masuk untuk mengakses portal presensi harian.';
+              if (heading) heading.textContent = 'Halo, Selamat Datang!';
+              if (subtitle) subtitle.textContent = 'Silakan masuk menggunakan email sekolah atau akun Google Anda untuk melanjutkan presensi.';
             }
             gsap.to([heading, subtitle], {
               opacity: 1,
@@ -3566,15 +3608,15 @@
       } else {
         // Fallback without GSAP
         if (mode === 'register') {
-          if (heading) heading.textContent = 'Pendaftaran Akun';
-          if (subtitle) subtitle.textContent = 'Daftarkan akun baru untuk akses presensi digital.';
+          if (heading) heading.textContent = 'Buat Akun Baru';
+          if (subtitle) subtitle.textContent = 'Silakan lengkapi data diri Anda untuk mulai mencatat kehadiran harian.';
           if (formLogin) { formLogin.style.display = 'none'; formLogin.style.opacity = '1'; formLogin.style.transform = 'none'; }
           if (formReg) { formReg.style.display = 'block'; formReg.style.opacity = '1'; formReg.style.transform = 'none'; }
           if (btnGoogleLogin) { btnGoogleLogin.style.display = 'none'; btnGoogleLogin.style.opacity = '1'; btnGoogleLogin.style.transform = 'none'; }
           if (btnGoogleRegister) { btnGoogleRegister.style.display = 'flex'; btnGoogleRegister.style.opacity = '1'; btnGoogleRegister.style.transform = 'none'; }
         } else {
-          if (heading) heading.textContent = 'Presensi Siswa';
-          if (subtitle) subtitle.textContent = 'Masuk untuk mengakses portal presensi harian.';
+          if (heading) heading.textContent = 'Halo, Selamat Datang!';
+          if (subtitle) subtitle.textContent = 'Silakan masuk menggunakan email sekolah atau akun Google Anda untuk melanjutkan presensi.';
           if (formReg) { formReg.style.display = 'none'; formReg.style.opacity = '1'; formReg.style.transform = 'none'; }
           if (formLogin) { formLogin.style.display = 'block'; formLogin.style.opacity = '1'; formLogin.style.transform = 'none'; }
           if (btnGoogleRegister) { btnGoogleRegister.style.display = 'none'; btnGoogleRegister.style.opacity = '1'; btnGoogleRegister.style.transform = 'none'; }

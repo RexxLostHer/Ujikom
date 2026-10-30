@@ -454,20 +454,22 @@ assert.ok(indexHtml.includes('2200'), 'Hard failsafe timer darurat 2200ms harus 
 assert.ok(indexHtml.includes('completeIntroAndRevealDirect'), 'Fungsi completeIntroAndRevealDirect harus ada untuk hard failsafe');
 assert.ok(indexHtml.includes('executeLogoGlide'), 'Fungsi executeLogoGlide harus ada');
 
-// 6.5 Balanced 3-Point Left Panel Layout
-assert.ok(indexHtml.includes('PRESENSIA • SMKN 1 SUMEDANG'), 'Left panel top badge harus memuat PRESENSIA • SMKN 1 SUMEDANG');
-assert.ok(indexHtml.includes('#10b981'), 'Left panel live pulse dot harus menggunakan aksen emerald #10b981');
+// 6.5 Full-Scale Clean Left Panel Layout (User request: hapus badge presensi, tagline sistem presensi, dan rekayasa perangkat lunak)
 assert.ok(indexHtml.includes('id="logoSlotTarget"'), 'Left panel center harus memiliki id="logoSlotTarget"');
-assert.ok(indexHtml.includes('width: 220px') && indexHtml.includes('height: 220px'), 'Aura glow logo slot harus 220px x 220px');
+assert.ok(indexHtml.includes('width: 320px') && indexHtml.includes('height: 320px'), 'Aura glow logo slot diperbesar ke 320px x 320px untuk tampilan penuh');
 assert.ok(indexHtml.includes('Welcome Back!'), 'Left panel center harus memuat heading Welcome Back!');
-assert.ok(indexHtml.includes('Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime'), 'Left panel tagline harus memuat Sistem Presensi Cerdas Berbasis IoT & Cloud Realtime');
-assert.ok(indexHtml.includes('white-space: nowrap'), 'Tagline harus satu baris di desktop dengan white-space: nowrap');
-assert.ok(indexHtml.includes('Rekayasa Perangkat Lunak (RPL IoT)'), 'Left panel bottom harus memuat Rekayasa Perangkat Lunak (RPL IoT)');
+assert.ok(indexHtml.includes('id="finalLogoImg"'), 'Elemen #finalLogoImg harus ada untuk rendering HD tajam tanpa blur');
+assert.ok(indexHtml.includes('id="finalLogoCanvas"'), 'Elemen #finalLogoCanvas harus ada');
+assert.ok(indexHtml.includes('portal-system-metadata'), 'Container portal-system-metadata harus ada');
+assert.ok(!indexHtml.includes('visual-brand-tag'), 'Elemen visual-brand-tag harus dihapus dari panel kiri sesuai instruksi pengguna');
+assert.ok(!indexHtml.includes('visual-welcome-tagline'), 'Elemen visual-welcome-tagline harus dihapus dari panel kiri sesuai instruksi pengguna');
+assert.ok(!indexHtml.includes('visual-bottom-anchor'), 'Elemen visual-bottom-anchor harus dihapus dari panel kiri sesuai instruksi pengguna');
 assert.ok(indexHtml.includes('master-split-card'), 'Split card sejati master-split-card harus aktif');
 
 // 6.6 Functional Simulation of Intro Hard Failsafe in VM
 const overlayMock = { style: { display: 'flex', pointerEvents: 'auto', opacity: '1' } };
 const posterMock = { style: { display: 'block' } };
+const finalLogoImgMock = { style: {} };
 const introSandbox = {
   document: {
     getElementById: (id) => {
@@ -476,6 +478,9 @@ const introSandbox = {
       }
       if (id === 'introPosterImg') {
         return posterMock;
+      }
+      if (id === 'finalLogoImg') {
+        return finalLogoImgMock;
       }
       if (id === 'finalLogoCanvas') {
         return { getContext: () => ({ clearRect: () => {}, drawImage: () => {} }), width: 640, height: 360 };
