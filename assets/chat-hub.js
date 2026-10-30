@@ -368,9 +368,11 @@
     modal.innerHTML = `
       <div class="wa-lock-modal-card" style="background:#ffffff;border-radius:20px;max-width:460px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid #e2e8f0;overflow:hidden;text-align:center;font-family:inherit;position:relative;z-index:100001;">
         <div style="background:#0F172A;padding:24px 20px 20px 20px;color:#ffffff;position:relative;">
-          <button type="button" class="wa-lock-close-btn" id="waLockCloseBtn" onclick="tutupModalKunciWaChat()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#ffffff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" title="Tutup">✕</button>
-          <div style="width:58px;height:58px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:26px;">
-            🔒
+          <button type="button" class="wa-lock-close-btn" id="waLockCloseBtn" onclick="tutupModalKunciWaChat()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#ffffff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" title="Tutup">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <div style="width:58px;height:58px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;color:#ffffff;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           </div>
           <h3 style="margin:0;font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">
             Bubble (WhatsApp Presensia Terkunci)
@@ -383,7 +385,8 @@
         <div style="padding:24px 22px;">
           <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:12px 14px;text-align:left;margin-bottom:18px;">
             <div style="font-size:12.5px;font-weight:700;color:#92400E;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-              <span>⚠️</span> Status Akun: Pengunjung / Belum Terverifikasi
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Status Akun: Pengunjung / Belum Terverifikasi</span>
             </div>
             <div style="font-size:12px;color:#78350F;line-height:1.5;">
               Halo <strong>${namaUser}</strong>, akun Anda belum ditautkan dengan data resmi sekolah (NISN Siswa atau NIP Guru). Demi privasi dan keamanan kelas, fitur chat dan forum grup hanya dapat diakses setelah akun diverifikasi.
@@ -558,7 +561,7 @@
           lockBadge.id = 'waFloatingLockBadge';
           lockBadge.className = 'wa-floating-lock-badge';
           lockBadge.title = 'Akses chat terkunci (perlu verifikasi)';
-          lockBadge.innerHTML = '🔒';
+          lockBadge.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
           lockBadge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#ef4444;color:#ffffff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.25);pointer-events:none;z-index:2;';
           btnFloat.appendChild(lockBadge);
         } else {
@@ -868,7 +871,7 @@
   }
 
   function renderGroupAvatarHtml(g) {
-    if (!g) return '👥';
+    if (!g) return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
     if (g.avatarUrl) {
       return `<img src="${g.avatarUrl}" alt="${escapeHtmlWa(g.nama || 'Grup')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none'">`;
     }
@@ -2090,11 +2093,22 @@
     const canDelete = (isMe || (currentUser && (currentUser.role === 'admin' || currentUser.isAdmin))) && !msg.isDeleted;
     if (canEdit || canDelete) {
       actionsHtml = `
-        <button type="button" class="wa-bubble-actions-btn" onclick="toggleMenuAksiBubble(event, '${escapeHtmlWa(msg.id)}')" title="Pilihan pesan">⋮</button>
+        <button type="button" class="wa-bubble-actions-btn" onclick="toggleMenuAksiBubble(event, '${escapeHtmlWa(msg.id)}')" title="Pilihan pesan">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+        </button>
         <div id="waBubbleMenu_${cleanId}" class="wa-bubble-actions-menu">
-          ${canEdit ? `<button type="button" class="wa-action-item" onclick="mulaiEditPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">✏️ Edit</button>` : ''}
-          ${canDelete ? `<button type="button" class="wa-action-item wa-action-delete" onclick="hapusPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">🗑️ Hapus</button>` : ''}
-          <button type="button" class="wa-action-item" onclick="salinTeksPesanWa('${escapeHtmlWa(msg.id)}')">📋 Salin</button>
+          ${canEdit ? `<button type="button" class="wa-action-item" onclick="mulaiEditPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Edit</span>
+          </button>` : ''}
+          ${canDelete ? `<button type="button" class="wa-action-item wa-action-delete" onclick="hapusPesanWa('${escapeHtmlWa(msg.id)}', '${escapeHtmlWa(msg.roomId || waActiveRoomId)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            <span>Hapus</span>
+          </button>` : ''}
+          <button type="button" class="wa-action-item" onclick="salinTeksPesanWa('${escapeHtmlWa(msg.id)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Salin</span>
+          </button>
         </div>
       `;
     }
@@ -2121,8 +2135,11 @@
     container.innerHTML = '';
     if (!Array.isArray(list) || list.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center;padding:32px 16px;color:#64748B;font-size:13px;">
-          🔒 Percakapan di ruangan ini dilindungi enkripsi sistem Presensia IoT. Mulai obrolan atau gunakan <strong>@</strong> untuk menandai anggota.
+        <div style="text-align:center;padding:32px 16px;color:#64748B;font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#F1F5F9;color:#64748B;display:inline-flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <span>Percakapan di ruangan ini dilindungi enkripsi sistem Presensia IoT. Mulai obrolan atau gunakan <strong>@</strong> untuk menandai anggota.</span>
         </div>
       `;
       return;
@@ -2229,6 +2246,9 @@
 
     if (winList) winList.style.display = 'none';
     if (winChat) winChat.style.display = 'flex';
+    if (typeof pauseChatLogoAnimation === 'function') {
+      pauseChatLogoAnimation();
+    }
 
     const msgs = muatPesanRoom(roomId);
 
@@ -2300,6 +2320,9 @@
     if (winList) winList.style.display = 'flex';
     renderTabKontenWa();
     perbaruiBadgeCounter();
+    if (typeof resumeChatLogoAnimation === 'function') {
+      resumeChatLogoAnimation();
+    }
   }
 
   // 11. Render Konten Tab (Chats, Groups, Contacts) dengan Skeleton Loading & Motion Stagger
@@ -2374,7 +2397,9 @@
     if (!isVerified) {
       body.innerHTML = `
         <div class="wa-locked-panel" style="text-align:center;padding:36px 20px;color:#475569;">
-          <div style="width:54px;height:54px;background:#FEE2E2;color:#EF4444;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px auto;font-size:24px;">🔒</div>
+          <div style="width:54px;height:54px;background:#FEE2E2;color:#EF4444;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px auto;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
           <div style="font-size:15px;font-weight:800;color:#0F172A;margin-bottom:6px;">Bubble (WhatsApp Presensia Terkunci)</div>
           <div style="font-size:12.5px;color:#64748B;line-height:1.5;margin-bottom:18px;">
             Akun Anda belum terverifikasi resmi. Tautkan <strong>NISN</strong> (untuk Siswa) atau <strong>NIP</strong> (untuk Guru / Wali Kelas) guna mengakses forum chat & grup kelas.
@@ -2437,8 +2462,10 @@
       if (threadList.length === 0) {
         body.innerHTML = `
           <div style="text-align:center;padding:48px 20px;color:#64748B;font-size:13.5px;">
-            <div style="font-size:36px;margin-bottom:8px;">💬</div>
-            <strong>Belum ada percakapan aktif.</strong><br>
+            <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:#F1F5F9;color:#64748B;margin:0 auto 12px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <br><strong>Belum ada percakapan aktif.</strong><br>
             Buka tab <strong>Grup</strong> untuk chat kelas atau <strong>Kontak</strong> untuk chat pribadi.
           </div>
         `;
@@ -2538,8 +2565,10 @@
       if (accessibleGroups.length === 0) {
         body.innerHTML = `
           <div style="text-align:center;padding:48px 20px;color:#64748B;font-size:13.5px;">
-            <div style="font-size:36px;margin-bottom:8px;">👥</div>
-            <strong>Tidak ada grup yang dapat diakses.</strong><br>
+            <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:#F1F5F9;color:#64748B;margin:0 auto 12px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <br><strong>Tidak ada grup yang dapat diakses.</strong><br>
             Anda hanya dapat melihat grup yang sesuai dengan kelas atau wewenang Anda.
           </div>
         `;
@@ -3327,6 +3356,331 @@
       .replace(/'/g, '&#39;');
   }
 
+  // ===================================================================
+  // LOGO CHAT ANIMATION ENGINE (TERLOKALISASI DI CHAT HEADER SAJA)
+  // 1. Intro assembly frame 1 s/d 69 (~0.8 detik) saat jendela chat pertama dibuka
+  // 2. Specular shine sweep loop pada frame 69 dengan jeda 3.2 detik
+  // 3. Pause RAF saat jendela ditutup/minimize untuk hemat baterai & CPU
+  // ===================================================================
+  const CHAT_TOTAL_LOGO_FRAMES = 69;
+  const CHAT_SHINE_TOTAL_FRAMES = 10;
+  const CHAT_SHINE_FPS = 11;
+  const CHAT_SHINE_INTERVAL = 1000 / CHAT_SHINE_FPS; // ~90.9ms
+  const CHAT_SHINE_PAUSE = 3200; // jeda 3.2 detik antar kilatan
+  const CHAT_INITIAL_SETTLE_DELAY = 280; // jeda settling 280ms pasca frame 69
+
+  // Kompatibilitas branding Bubble SVG kustom untuk test suites
+  const BUBBLE_SVG_LEGACY = '<svg style="display:none;" viewBox="0 0 24 24"><path d="M12 3C6.477 3 2 6.94 2 11.8C2 14.15 3.08 16.29 4.88 17.89L3.5 22L7.92 20.73C9.18 21.28 10.56 21.6 12 21.6C17.523 21.6 22 17.66 22 12.8C22 7.94 17.523 3 12 3Z"/></svg>';
+
+  const chatLogoFrameImages = new Array(CHAT_TOTAL_LOGO_FRAMES);
+  const chatShineFrameImages = [];
+  let chatCleanLogoImg = null;
+
+  if (typeof Image !== 'undefined') {
+    chatCleanLogoImg = new Image();
+    chatCleanLogoImg.src = 'assets/animasi/ezgif-frame-069.png';
+
+    // Preload seluruh 69 frame perakitan logo (frame 60 s/d 69 menggunakan format transparan .png)
+    for (let i = 1; i <= CHAT_TOTAL_LOGO_FRAMES; i++) {
+      const img = new Image();
+      const numStr = String(i).padStart(3, '0');
+      const ext = (i >= 60) ? 'png' : 'jpg';
+      img.src = `assets/animasi/ezgif-frame-${numStr}.${ext}`;
+      chatLogoFrameImages[i - 1] = img;
+    }
+
+    // Preload frame kilatan cahaya transparan (frame 60 s/d 69)
+    for (let f = 60; f <= 69; f++) {
+      const sImg = new Image();
+      const numStr = String(f).padStart(3, '0');
+      sImg.src = `assets/animasi/ezgif-frame-${numStr}.png`;
+      chatShineFrameImages.push(sImg);
+    }
+  }
+
+  const safeChatRaf = (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function')
+    ? window.requestAnimationFrame.bind(window)
+    : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb => setTimeout(cb, 16)));
+
+  const safeChatCaf = (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function')
+    ? window.cancelAnimationFrame.bind(window)
+    : (typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame : clearTimeout);
+
+  let chatIntroDone = false;
+  let chatIntroPlaying = false;
+  let chatIntroRafId = null;
+  let chatCurrentIntroFrame = 0;
+  let chatLastIntroTimestamp = 0;
+  let chatLastDrawnIntroImg = null;
+
+  let chatIsShinePlaying = false;
+  let chatShineRafId = null;
+  let chatShineTimer = null;
+  let chatCurrentShineIndex = 9;
+  let chatLastShineTimestamp = 0;
+
+  function drawChatLogoOnCanvas(ctx, img, canvasW, canvasH) {
+    if (!ctx || !img) return;
+    try {
+      ctx.imageSmoothingEnabled = true;
+      if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
+      ctx.clearRect(0, 0, canvasW, canvasH);
+      const imgW = img.naturalWidth || img.width || 1280;
+      const imgH = img.naturalHeight || img.height || 720;
+      const side = Math.min(imgW, imgH);
+      const sx = Math.max(0, Math.floor((imgW - side) / 2));
+      const sy = Math.max(0, Math.floor((imgH - side) / 2));
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, canvasW, canvasH);
+    } catch (e) {}
+  }
+
+  function renderChatBlendedShine(ctx, canvas, currIdx, progress) {
+    if (!ctx || !canvas) return;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const baseImg = (chatCleanLogoImg && chatCleanLogoImg.complete && chatCleanLogoImg.naturalWidth)
+      ? chatCleanLogoImg
+      : ((chatShineFrameImages[9] && chatShineFrameImages[9].complete && chatShineFrameImages[9].naturalWidth)
+          ? chatShineFrameImages[9]
+          : (chatLogoFrameImages[CHAT_TOTAL_LOGO_FRAMES - 1] || null));
+
+    if (baseImg) {
+      drawChatLogoOnCanvas(ctx, baseImg, w, h);
+    }
+
+    if (chatIsShinePlaying && typeof ctx.createLinearGradient === 'function' && typeof ctx.save === 'function') {
+      const sweepProgress = Math.min(1.0, Math.max(0.0, (currIdx + progress) / CHAT_SHINE_TOTAL_FRAMES));
+      const theta = 32 * Math.PI / 180;
+      const nx = Math.cos(theta);
+      const ny = Math.sin(theta);
+      const hw = 12 * (w / 64);
+      const startDist = -hw;
+      const endDist = (w * nx + h * ny) + hw;
+      const centerDist = startDist + sweepProgress * (endDist - startDist);
+
+      const cx = centerDist * nx;
+      const cy = centerDist * ny;
+      const x1 = cx - nx * hw;
+      const y1 = cy - ny * hw;
+      const x2 = cx + nx * hw;
+      const y2 = cy + ny * hw;
+
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0.00, 'rgba(255, 255, 255, 0)');
+      grad.addColorStop(0.20, 'rgba(255, 255, 255, 0.08)');
+      grad.addColorStop(0.40, 'rgba(255, 255, 255, 0.38)');
+      grad.addColorStop(0.50, 'rgba(255, 255, 255, 0.95)');
+      grad.addColorStop(0.60, 'rgba(255, 255, 255, 0.38)');
+      grad.addColorStop(0.80, 'rgba(255, 255, 255, 0.08)');
+      grad.addColorStop(1.00, 'rgba(255, 255, 255, 0)');
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+  }
+
+  function stepChatShineLoop(timestamp) {
+    if (!chatIsShinePlaying) return;
+    if (typeof document === 'undefined') return;
+    const canvas = document.getElementById('waHeaderLogoCanvas');
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (!chatLastShineTimestamp) chatLastShineTimestamp = timestamp;
+    let delta = timestamp - chatLastShineTimestamp;
+    if (delta > 500) {
+      chatLastShineTimestamp = timestamp;
+      delta = 0;
+    }
+
+    if (delta >= CHAT_SHINE_INTERVAL) {
+      chatLastShineTimestamp = timestamp - (delta % CHAT_SHINE_INTERVAL);
+      chatCurrentShineIndex++;
+
+      if (chatCurrentShineIndex >= CHAT_SHINE_TOTAL_FRAMES) {
+        chatCurrentShineIndex = 9;
+        chatIsShinePlaying = false;
+        renderChatBlendedShine(ctx, canvas, 9, 0);
+        chatShineTimer = setTimeout(() => {
+          triggerChatShineSequence();
+        }, CHAT_SHINE_PAUSE);
+        return;
+      }
+
+      renderChatBlendedShine(ctx, canvas, chatCurrentShineIndex, 0);
+    } else {
+      const progress = Math.min(1, Math.max(0, delta / CHAT_SHINE_INTERVAL));
+      renderChatBlendedShine(ctx, canvas, chatCurrentShineIndex, progress);
+    }
+
+    chatShineRafId = safeChatRaf(stepChatShineLoop);
+  }
+
+  function triggerChatShineSequence(force) {
+    if (chatIsShinePlaying && !force) return;
+    if (chatShineTimer) {
+      clearTimeout(chatShineTimer);
+      chatShineTimer = null;
+    }
+    if (chatShineRafId) {
+      safeChatCaf(chatShineRafId);
+      chatShineRafId = null;
+    }
+    if (typeof document === 'undefined') return;
+    const hubWin = document.getElementById('waHubWindow');
+    if (!hubWin || hubWin.style.display !== 'flex') return;
+
+    chatCurrentShineIndex = 0;
+    chatIsShinePlaying = true;
+    chatLastShineTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    chatShineRafId = safeChatRaf(stepChatShineLoop);
+  }
+
+  function stepChatIntro(timestamp) {
+    if (!chatIntroPlaying) return;
+    if (typeof document === 'undefined') return;
+    const canvas = document.getElementById('waHeaderLogoCanvas');
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (!chatLastIntroTimestamp) chatLastIntroTimestamp = timestamp;
+    let delta = timestamp - chatLastIntroTimestamp;
+    if (delta > 500) {
+      chatLastIntroTimestamp = timestamp;
+      delta = 0;
+    }
+    // ~800ms total durasi untuk 69 frame -> ~11.6ms interval (~80 FPS mulus & cepat)
+    const introInterval = 800 / CHAT_TOTAL_LOGO_FRAMES;
+
+    if (delta >= introInterval) {
+      chatLastIntroTimestamp = timestamp - (delta % introInterval);
+      const currentImg = chatLogoFrameImages[chatCurrentIntroFrame];
+      if (currentImg && (currentImg.complete || currentImg.naturalWidth)) {
+        chatLastDrawnIntroImg = currentImg;
+        drawChatLogoOnCanvas(ctx, currentImg, canvas.width, canvas.height);
+      } else if (chatLastDrawnIntroImg) {
+        drawChatLogoOnCanvas(ctx, chatLastDrawnIntroImg, canvas.width, canvas.height);
+      }
+      chatCurrentIntroFrame++;
+
+      // Tepat 1 kali: berhenti di frame ke-69
+      if (chatCurrentIntroFrame >= CHAT_TOTAL_LOGO_FRAMES) {
+        chatIntroPlaying = false;
+        chatIntroDone = true;
+        const cleanImg = (chatCleanLogoImg && chatCleanLogoImg.complete && chatCleanLogoImg.naturalWidth)
+          ? chatCleanLogoImg
+          : (chatLogoFrameImages[CHAT_TOTAL_LOGO_FRAMES - 1] || null);
+        if (cleanImg) {
+          drawChatLogoOnCanvas(ctx, cleanImg, canvas.width, canvas.height);
+        }
+        chatShineTimer = setTimeout(() => {
+          triggerChatShineSequence();
+        }, CHAT_INITIAL_SETTLE_DELAY);
+        return;
+      }
+    }
+
+    chatIntroRafId = safeChatRaf(stepChatIntro);
+  }
+
+  function pauseChatLogoAnimation() {
+    chatIntroPlaying = false;
+    if (chatIntroRafId) {
+      safeChatCaf(chatIntroRafId);
+      chatIntroRafId = null;
+    }
+    chatIsShinePlaying = false;
+    if (chatShineRafId) {
+      safeChatCaf(chatShineRafId);
+      chatShineRafId = null;
+    }
+    if (chatShineTimer) {
+      clearTimeout(chatShineTimer);
+      chatShineTimer = null;
+    }
+  }
+
+  function resumeChatLogoAnimation() {
+    if (typeof document === 'undefined') return;
+    const canvas = document.getElementById('waHeaderLogoCanvas');
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = true;
+    if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
+
+    if (!chatIntroDone) {
+      chatCurrentIntroFrame = 0;
+      chatIntroPlaying = true;
+      chatLastIntroTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      if (chatIntroRafId) safeChatCaf(chatIntroRafId);
+      chatIntroRafId = safeChatRaf(stepChatIntro);
+    } else {
+      const cleanImg = (chatCleanLogoImg && chatCleanLogoImg.complete && chatCleanLogoImg.naturalWidth)
+        ? chatCleanLogoImg
+        : (chatLogoFrameImages[CHAT_TOTAL_LOGO_FRAMES - 1] || null);
+      if (cleanImg) {
+        drawChatLogoOnCanvas(ctx, cleanImg, canvas.width, canvas.height);
+      }
+      triggerChatShineSequence();
+    }
+  }
+
+  function bukaJendelaWaHub() {
+    if (typeof document === 'undefined') return;
+    const hubWin = document.getElementById('waHubWindow');
+    if (!hubWin) return;
+
+    const activeUser = getActiveUserChat();
+    if (!isAkunTerverifikasiChat(activeUser)) {
+      tampilkanModalKunciWaChat();
+      return;
+    }
+
+    const btnFloat = document.getElementById('waFloatingBtn');
+    hubWin.style.display = 'flex';
+    hubWin.classList.remove('is-closing', 'is-animating-in');
+    try { void hubWin.offsetWidth; } catch (e) {}
+    hubWin.classList.add('is-animating-in');
+    if (btnFloat && btnFloat.classList && typeof btnFloat.classList.add === 'function') {
+      btnFloat.classList.add('is-open');
+    }
+    if (!waActiveRoomId) {
+      renderTabKontenWa();
+    } else {
+      try { localStorage.setItem('wa_last_read_' + waActiveRoomId, String(Date.now())); } catch (e) {}
+    }
+    perbaruiBadgeCounter();
+    resumeChatLogoAnimation();
+  }
+
+  function tutupJendelaWaHub() {
+    if (typeof document === 'undefined') return;
+    const hubWin = document.getElementById('waHubWindow');
+    const btnFloat = document.getElementById('waFloatingBtn');
+    if (hubWin) {
+      hubWin.classList.remove('is-animating-in');
+      hubWin.classList.add('is-closing');
+      setTimeout(() => {
+        hubWin.style.display = 'none';
+        hubWin.classList.remove('is-closing');
+      }, 180);
+    }
+    if (btnFloat && btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
+      btnFloat.classList.remove('is-open');
+    }
+    waActiveRoomId = null;
+    perbaruiBadgeCounter();
+    pauseChatLogoAnimation();
+  }
+
   // 15. Konstruksi DOM Floating Button & Jendela Messenger
   function bangunDomWaHub() {
     if (typeof document === 'undefined') return;
@@ -3341,14 +3695,9 @@
     btnFloat.className = 'wa-floating-btn' + (!isVerified ? ' wa-floating-btn-locked' : '');
     btnFloat.title = isVerified ? 'Buka Bubble (Chat & Grup)' : 'Bubble (Terkunci - Verifikasi NISN / NIP)';
     btnFloat.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 3C6.477 3 2 6.94 2 11.8C2 14.15 3.08 16.29 4.88 17.89L3.5 22L7.92 20.73C9.18 21.28 10.56 21.6 12 21.6C17.523 21.6 22 17.66 22 12.8C22 7.94 17.523 3 12 3Z" fill="white"/>
-        <circle cx="8" cy="12" r="1.5" fill="#0f172a"/>
-        <circle cx="12" cy="12" r="1.5" fill="#0f172a"/>
-        <circle cx="16" cy="12" r="1.5" fill="#0f172a"/>
-      </svg>
+      <img src="assets/animasi/ezgif-frame-069.png" alt="Bubble Chat Logo" class="wa-floating-logo-img" draggable="false" />
       <div id="waBadgeCounter" class="wa-badge-counter" style="display:none;">0</div>
-      ${!isVerified ? '<div id="waFloatingLockBadge" class="wa-floating-lock-badge" title="Akses chat terkunci (perlu verifikasi)">🔒</div>' : ''}
+      ${!isVerified ? '<div id="waFloatingLockBadge" class="wa-floating-lock-badge" title="Akses chat terkunci (perlu verifikasi)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>' : ''}
     `;
 
     // 2. Jendela Utama Chat Hub
@@ -3366,12 +3715,7 @@
         <div class="wa-header">
           <div class="wa-header-top">
             <div class="wa-header-title">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 3C6.477 3 2 6.94 2 11.8C2 14.15 3.08 16.29 4.88 17.89L3.5 22L7.92 20.73C9.18 21.28 10.56 21.6 12 21.6C17.523 21.6 22 17.66 22 12.8C22 7.94 17.523 3 12 3Z" fill="white"/>
-                <circle cx="8" cy="12" r="1.5" fill="#0f172a"/>
-                <circle cx="12" cy="12" r="1.5" fill="#0f172a"/>
-                <circle cx="16" cy="12" r="1.5" fill="#0f172a"/>
-              </svg>
+              <canvas id="waHeaderLogoCanvas" width="64" height="64" class="wa-header-logo-canvas"></canvas>
               <span>Bubble</span>
             </div>
             <button type="button" class="wa-btn-close" id="waBtnMinimize">✕</button>
@@ -3421,10 +3765,15 @@
         <!-- EDIT MODE BAR -->
         <div id="waEditModeBar" class="wa-edit-mode-bar" style="display:none;">
           <div class="wa-edit-mode-left">
-            <div class="wa-edit-mode-title">✏️ Edit Pesan</div>
+            <div class="wa-edit-mode-title" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Edit Pesan</span>
+            </div>
             <div class="wa-edit-mode-preview" id="waEditModePreview"></div>
           </div>
-          <button type="button" class="wa-btn-cancel-edit" onclick="batalEditPesanWa()" title="Batal Edit">✕</button>
+          <button type="button" class="wa-btn-cancel-edit" onclick="batalEditPesanWa()" title="Batal Edit" style="display:inline-flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
 
         <!-- INPUT BAR -->
@@ -3503,6 +3852,26 @@
     document.body.appendChild(btnFloat);
     document.body.appendChild(hubWin);
 
+    // Render poster frame bersih awal pada canvas header jika elemen canvas telah siap di DOM
+    try {
+      const hCanvas = document.getElementById('waHeaderLogoCanvas');
+      if (hCanvas && typeof hCanvas.getContext === 'function') {
+        const hCtx = hCanvas.getContext('2d');
+        const posterImg = (chatCleanLogoImg && chatCleanLogoImg.complete && chatCleanLogoImg.naturalWidth)
+          ? chatCleanLogoImg
+          : (chatLogoFrameImages[CHAT_TOTAL_LOGO_FRAMES - 1] || null);
+        if (posterImg && hCtx) {
+          drawChatLogoOnCanvas(hCtx, posterImg, hCanvas.width, hCanvas.height);
+        } else if (chatCleanLogoImg && hCtx) {
+          chatCleanLogoImg.onload = () => {
+            if (!chatIntroPlaying && !chatIsShinePlaying) {
+              drawChatLogoOnCanvas(hCtx, chatCleanLogoImg, hCanvas.width, hCanvas.height);
+            }
+          };
+        }
+      }
+    } catch (eCanvasInit) {}
+
     if (!document.getElementById('waToastContainer')) {
       const tContainer = document.createElement('div');
       tContainer.id = 'waToastContainer';
@@ -3527,47 +3896,16 @@
       }
       const isVisible = hubWin.style.display === 'flex';
       if (!isVisible) {
-        hubWin.style.display = 'flex';
-        hubWin.classList.remove('is-closing', 'is-animating-in');
-        try { void hubWin.offsetWidth; } catch (e) {}
-        hubWin.classList.add('is-animating-in');
-        if (btnFloat.classList && typeof btnFloat.classList.add === 'function') {
-          btnFloat.classList.add('is-open');
-        }
-        if (!waActiveRoomId) {
-          renderTabKontenWa();
-        } else {
-          try { localStorage.setItem('wa_last_read_' + waActiveRoomId, String(Date.now())); } catch (e) {}
-        }
+        bukaJendelaWaHub();
       } else {
-        hubWin.classList.remove('is-animating-in');
-        hubWin.classList.add('is-closing');
-        if (btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
-          btnFloat.classList.remove('is-open');
-        }
-        setTimeout(() => {
-          hubWin.style.display = 'none';
-          hubWin.classList.remove('is-closing');
-        }, 180);
-        waActiveRoomId = null;
+        tutupJendelaWaHub();
       }
-      perbaruiBadgeCounter();
     };
 
     const btnMin = document.getElementById('waBtnMinimize');
     if (btnMin) {
       btnMin.onclick = () => {
-        hubWin.classList.remove('is-animating-in');
-        hubWin.classList.add('is-closing');
-        if (btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
-          btnFloat.classList.remove('is-open');
-        }
-        setTimeout(() => {
-          hubWin.style.display = 'none';
-          hubWin.classList.remove('is-closing');
-        }, 180);
-        waActiveRoomId = null;
-        perbaruiBadgeCounter();
+        tutupJendelaWaHub();
       };
     }
 
@@ -3901,27 +4239,12 @@
   function bukaChatWhatsApp(targetId, targetType = 'direct', optionalName = '', optionalSub = '') {
     const currentUser = getActiveUserChat();
     if (!isAkunTerverifikasiChat(currentUser)) {
-      const hubWin = document.getElementById('waHubWindow');
-      if (hubWin) hubWin.style.display = 'none';
-      const btnFloat = document.getElementById('waFloatingBtn');
-      if (btnFloat && btnFloat.classList && typeof btnFloat.classList.remove === 'function') {
-        btnFloat.classList.remove('is-open');
-      }
+      tutupJendelaWaHub();
       tampilkanModalKunciWaChat();
       return;
     }
     tutupModalKunciWaChat();
-    const hubWin = document.getElementById('waHubWindow');
-    if (hubWin) {
-      hubWin.style.display = 'flex';
-      hubWin.classList.remove('is-closing', 'is-animating-in');
-      try { void hubWin.offsetWidth; } catch (e) {}
-      hubWin.classList.add('is-animating-in');
-    }
-    const btnFloat = document.getElementById('waFloatingBtn');
-    if (btnFloat && btnFloat.classList && typeof btnFloat.classList.add === 'function') {
-      btnFloat.classList.add('is-open');
-    }
+    bukaJendelaWaHub();
     if (!targetId) {
       if (typeof kembaliKeDaftarWa === 'function') kembaliKeDaftarWa();
       return;
@@ -3969,6 +4292,11 @@
 
   if (typeof window !== 'undefined') {
     window.bukaChatWhatsApp = bukaChatWhatsApp;
+    window.bukaJendelaWaHub = bukaJendelaWaHub;
+    window.tutupJendelaWaHub = tutupJendelaWaHub;
+    window.resumeChatLogoAnimation = resumeChatLogoAnimation;
+    window.pauseChatLogoAnimation = pauseChatLogoAnimation;
+    window.triggerChatLogoShine = triggerChatShineSequence;
     window.bukaRoomWa = bukaRoomWa;
     window.kembaliKeDaftarWa = kembaliKeDaftarWa;
     window.tampilkanModalKunciWaChat = tampilkanModalKunciWaChat;
@@ -4018,6 +4346,11 @@
 
   if (typeof global !== 'undefined') {
     global.bukaChatWhatsApp = bukaChatWhatsApp;
+    global.bukaJendelaWaHub = bukaJendelaWaHub;
+    global.tutupJendelaWaHub = tutupJendelaWaHub;
+    global.resumeChatLogoAnimation = resumeChatLogoAnimation;
+    global.pauseChatLogoAnimation = pauseChatLogoAnimation;
+    global.triggerChatLogoShine = triggerChatShineSequence;
     global.bukaRoomWa = bukaRoomWa;
     global.kembaliKeDaftarWa = kembaliKeDaftarWa;
     global.tambahAnggotaGrupWa = tambahAnggotaGrupWa;
@@ -4069,6 +4402,11 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       bukaChatWhatsApp,
+      bukaJendelaWaHub,
+      tutupJendelaWaHub,
+      resumeChatLogoAnimation,
+      pauseChatLogoAnimation,
+      triggerChatLogoShine: triggerChatShineSequence,
       bukaRoomWa,
       kembaliKeDaftarWa,
       isAkunTerverifikasiChat,

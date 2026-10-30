@@ -2391,7 +2391,9 @@ function bukaModalBukti(fotoUrl, nama, namaFile) {
         currentBuktiUrlForTab = null;
         if (btnTab) btnTab.style.display = 'none';
         txt.innerHTML = '<div style="padding:24px 16px;color:#64748b;font-size:13.5px;line-height:1.6;text-align:center;">' +
-          '<div style="font-size:32px;margin-bottom:8px;">📎</div>' +
+          '<div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;margin:0 auto 10px;">' +
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>' +
+          '</div>' +
           '<p style="font-weight:700;color:#0f172a;margin-bottom:6px;">' + (namaFile || fotoUrl) + '</p>' +
           '<p style="color:#64748b;font-size:12.5px;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju (' + (nama || 'Pengaju') + ').</p>' +
         '</div>';

@@ -298,6 +298,10 @@
     <!-- Hero Profile Greeting & Smart Student ID Card RFID -->
     <div class="hero-welcome">
       <div class="hero-welcome-left">
+        <div class="hero-welcome-badge">
+          <span class="pulsing-dot" style="width:6px;height:6px;background:#10B981;"></span>
+          <span>Portal Siswa Terpadu</span>
+        </div>
         <h2 id="greetingText">Selamat Datang!</h2>
         <p id="greetingSubtext">Portal Terpadu Presensi Siswa & Informasi Akademik SMK.</p>
         <div class="hero-clock" id="liveClockWidget">
@@ -347,9 +351,9 @@
         </div>
 
         <!-- WIDGET STATUS KARTU / NFC SISWA MANDIRI -->
-        <div id="widgetNfcSiswa" class="nfc-widget-card" style="margin-top:14px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:12px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div id="iconNfcStatusSiswa" style="width:38px;height:38px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#0f172a;flex-shrink:0;">
+        <div id="widgetNfcSiswa" class="nfc-widget-card">
+          <div class="nfc-widget-left">
+            <div id="iconNfcStatusSiswa" class="nfc-widget-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
                 <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
@@ -357,24 +361,24 @@
                 <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
               </svg>
             </div>
-            <div>
-              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Status Verifikasi NFC HP / Kartu</div>
-              <div id="badgeStatusNfcSiswa" style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;">
-                <span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  NFC HP / Kartu Belum Ditautkan
+            <div class="nfc-widget-text-col">
+              <div class="nfc-widget-title">Status NFC / Kartu</div>
+              <div id="badgeStatusNfcSiswa" class="nfc-widget-badge">
+                <span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Belum Ditautkan
                 </span>
               </div>
             </div>
           </div>
-          <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,0.12);transition:all 0.2s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" style="display:inline-flex;align-items:center;gap:5px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:10px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,0.12);transition:all 0.2s;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
               <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
               <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
               <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
             </svg>
-            Verifikasi NFC HP / Kartu
+            Tautkan Kartu
           </button>
         </div>
 

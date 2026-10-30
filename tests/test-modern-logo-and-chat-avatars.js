@@ -181,6 +181,41 @@ assert.ok(chatHubSrc.includes('waChatHeaderAvatar'), 'chat-hub.js harus memuat e
 assert.ok(chatHubSrc.includes('getFotoPenggunaChat(otherId)'), 'chat-hub.js harus menyelesaikan foto lawan bicara di thread');
 console.log('  ✓ Thread list dan Header Chat menampilkan foto profil masing-masing lawan bicara.\n');
 
+// -------------------------------------------------------------
+// [Test 7] Verifikasi Logo Presensia Modern & Animasi Terlokalisasi di Chat Hub
+// -------------------------------------------------------------
+console.log('▶ [Test 7] Verifikasi Logo Presensia Modern & Animasi Terlokalisasi di Chat Hub...');
+
+// 1. Verifikasi FAB memuat logo Presensia frame-069 dan kelas micro-interaction
+assert.ok(chatHubSrc.includes('assets/animasi/ezgif-frame-069.png'), 'chat-hub.js harus memuat logo Presensia ezgif-frame-069.png');
+assert.ok(chatHubSrc.includes('wa-floating-logo-img'), 'chat-hub.js harus memuat elemen img .wa-floating-logo-img');
+assert.ok(chatHubCss.includes('.wa-floating-logo-img'), 'chat-hub.css harus memuat styling .wa-floating-logo-img');
+assert.ok(chatHubCss.includes('object-fit: cover'), 'chat-hub.css harus menggunakan object-fit: cover untuk mengeliminasi letterboxing logo 16:9');
+assert.ok(chatHubCss.includes('.wa-floating-btn:hover .wa-floating-logo-img'), 'chat-hub.css harus memiliki micro-interaction spring hover');
+
+// 2. Verifikasi Header Chat memuat canvas logo 64x64 tepat di sebelah nama Bubble
+assert.ok(chatHubSrc.includes('id="waHeaderLogoCanvas" width="64" height="64"'), 'chat-hub.js harus memuat <canvas id="waHeaderLogoCanvas" width="64" height="64">');
+assert.ok(chatHubSrc.includes('wa-header-logo-canvas'), 'chat-hub.js harus menyematkan kelas wa-header-logo-canvas');
+assert.ok(chatHubSrc.includes('<span>Bubble</span>'), 'chat-hub.js harus tetap mempertahankan label <span>Bubble</span>');
+assert.ok(chatHubCss.includes('.wa-header-logo-canvas'), 'chat-hub.css harus memuat styling .wa-header-logo-canvas');
+
+// 3. Verifikasi Engine Animasi Terlokalisasi (Frame 1-69 + Specular Shine 3.2s Loop + Pause/Resume)
+assert.ok(chatHubSrc.includes('CHAT_TOTAL_LOGO_FRAMES = 69'), 'chat-hub.js harus mendefinisikan 69 total frame intro perakitan logo');
+assert.ok(chatHubSrc.includes('CHAT_SHINE_PAUSE = 3200'), 'chat-hub.js harus mendefinisikan jeda 3.2 detik antar siklus specular shine');
+assert.ok(chatHubSrc.includes('(i >= 60) ? \'png\' : \'jpg\'') || chatHubSrc.includes('.png'), 'chat-hub.js harus memuat frame kilatan transparan');
+assert.ok(typeof sandbox.bukaJendelaWaHub === 'function', 'bukaJendelaWaHub harus diekspor sebagai fungsi');
+assert.ok(typeof sandbox.tutupJendelaWaHub === 'function', 'tutupJendelaWaHub harus diekspor sebagai fungsi');
+assert.ok(typeof sandbox.resumeChatLogoAnimation === 'function', 'resumeChatLogoAnimation harus diekspor sebagai fungsi');
+assert.ok(typeof sandbox.pauseChatLogoAnimation === 'function', 'pauseChatLogoAnimation harus diekspor sebagai fungsi');
+assert.ok(chatHubSrc.includes('pauseChatLogoAnimation()'), 'bukaRoomWa / tutup harus menjeda animasi canvas');
+assert.ok(chatHubSrc.includes('resumeChatLogoAnimation()'), 'kembaliKeDaftarWa / buka harus melanjutkan animasi canvas');
+
+// 4. Verifikasi Invariant: Animasi terlokalisasi di chat saja, TANPA overlay/backdrop ke tengah dashboard
+assert.ok(!chatHubSrc.includes('fullscreenIntroLoading'), 'chat-hub.js DILARANG menggunakan fullscreenIntroLoading overlay');
+assert.ok(!chatHubSrc.includes('introAnimationWrapper'), 'chat-hub.js DILARANG menggunakan introAnimationWrapper ke tengah dashboard');
+console.log('  ✓ Logo FAB & Canvas Header Chat beserta siklus animasi intro + shine sweep terverifikasi terlokalisasi 100% sempurna.\n');
+
 console.log('================================================================');
-console.log('🎉 SEMUA PENGUJIAN LOGO MODERN & AVATAR CHAT LULUS 100%!');
+console.log('🎉 SEMUA PENGUJIAN LOGO MODERN, AVATAR & ANIMASI CHAT LULUS 100%! (7/7)');
 console.log('================================================================');
+

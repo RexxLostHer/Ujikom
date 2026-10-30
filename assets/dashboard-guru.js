@@ -411,6 +411,14 @@ async function initPortalGuru(user) {
   if (rTgl) rTgl.value = tanggalHariIni();
   const kendalaTgl = document.getElementById('kendalaTanggal');
   if (kendalaTgl) kendalaTgl.value = tanggalHariIni();
+  const selKendalaKelas = document.getElementById('kendalaKelas');
+  if (selKendalaKelas && walasKelas) {
+    selKendalaKelas.value = walasKelas;
+  }
+  const inpKendalaMapel = document.getElementById('kendalaMapel');
+  if (inpKendalaMapel && user && user.mapel && !inpKendalaMapel.value) {
+    inpKendalaMapel.value = user.mapel;
+  }
 
   const selWalas = document.getElementById('selectKelasWalasPilihan');
   const btnRekap = document.getElementById('btnTabRekapGuru');
@@ -1853,18 +1861,19 @@ function renderListApprovalIzin() {
 
       let extraButtons = '';
       if (hasAnyRejected) {
-        extraButtons += `<button type="button" onclick="filterIzinGuru('ditolak')" class="btn-mini-action" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;">📂 Lihat Tab Izin Ditolak</button>`;
+        extraButtons += `<button type="button" onclick="filterIzinGuru('ditolak')" class="btn-mini-action" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg><span>Lihat Tab Izin Ditolak</span></button>`;
       }
       if (hasAnyApproved) {
-        extraButtons += `<button type="button" onclick="filterIzinGuru('disetujui')" class="btn-mini-action" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;">✓ Lihat Tab Izin Disetujui</button>`;
+        extraButtons += `<button type="button" onclick="filterIzinGuru('disetujui')" class="btn-mini-action" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Lihat Tab Izin Disetujui</span></button>`;
       }
 
       container.innerHTML = `
         <div style="text-align:center;padding:36px;color:#64748b;background:#fff;border-radius:16px;border:1px solid #e2e8f0;">
           <p style="margin-bottom:14px;font-size:14px;font-weight:600;">${emptyMsg}</p>
           <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-            <button type="button" onclick="segarkanPerizinanWalasManual()" class="btn-mini-action" style="background:#4f46e5;color:#fff;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;border:none;">
-              🔄 Segarkan Data Izin
+            <button type="button" onclick="segarkanPerizinanWalasManual()" class="btn-mini-action" style="background:#4f46e5;color:#fff;padding:8px 16px;font-weight:700;border-radius:10px;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              <span>Segarkan Data Izin</span>
             </button>
             ${extraButtons}
           </div>
@@ -2556,7 +2565,9 @@ function bukaModalBukti(fotoUrl, nama, namaFile) {
         currentBuktiUrlForTabGuru = null;
         if (btnTab) btnTab.style.display = 'none';
         txt.innerHTML = `<div style="padding:24px 16px;color:#64748b;font-size:13.5px;line-height:1.6;text-align:center;">
-          <div style="font-size:32px;margin-bottom:8px;">📎</div>
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;margin:0 auto 10px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          </div>
           <p style="font-weight:700;color:#0f172a;margin-bottom:6px;">${namaFile || fotoUrl}</p>
           <p style="color:#64748b;font-size:12.5px;">Lampiran tersimpan di penyimpanan lokal perangkat pengaju (${nama || 'Pengaju'}).</p>
         </div>`;
@@ -3149,8 +3160,11 @@ async function submitKendalaGuru(e) {
       statusKonfirmasi: 'Menunggu Konfirmasi'
     };
 
-    // 1. Simpan ke local storage
+    // 1. Simpan ke local storage dan memori modul
     try {
+      if (typeof cacheRiwayatKendalaGuruSemua !== 'undefined') {
+        cacheRiwayatKendalaGuruSemua[id] = payload;
+      }
       if (typeof localStorage !== 'undefined') {
         let list = JSON.parse(localStorage.getItem('local_kendala_guru') || '[]');
         if (!Array.isArray(list)) list = [];
@@ -3165,7 +3179,7 @@ async function submitKendalaGuru(e) {
       }
     } catch (eLocal) {}
 
-    // 2. Simpan ke Firebase RTDB: kendala_mengajar, laporan_kendala, kendala_guru, permits
+    // 2. Simpan ke Firebase RTDB: kendala_mengajar, laporan_kendala, kendala_guru, permits, perijinan, perizinan
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const p1 = db.ref('kendala_mengajar/' + id).set(payload).catch(err => {
         console.warn('[Firebase RTDB] kendala_mengajar set warning:', err);
@@ -3180,9 +3194,11 @@ async function submitKendalaGuru(e) {
         return null;
       });
       const p4 = db.ref('permits/' + id).set(payload).catch(() => null);
+      const p5 = db.ref('perijinan/' + id).set(payload).catch(() => null);
+      const p6 = db.ref('perizinan/' + id).set(payload).catch(() => null);
 
       await Promise.race([
-        Promise.all([p1, p2, p3, p4]),
+        Promise.all([p1, p2, p3, p4, p5, p6]),
         new Promise(res => setTimeout(res, 2500))
       ]);
     }
@@ -3309,69 +3325,8 @@ function kirimKendalaMengajar(dataPayload) {
   return submitKendalaGuru(dataPayload);
 }
 
-async function muatRiwayatKendalaGuru() {
-  if (typeof document === 'undefined') return;
-  const container = document.getElementById('listRiwayatKendalaGuru');
-  if (!container) return;
+// Implementasi utama muatRiwayatKendalaGuru terpadu & realtime didefinisikan di modul Fitur Guru di bawah
 
-  let local = [];
-  try {
-    local = JSON.parse(localStorage.getItem('local_kendala_guru') || '[]');
-  } catch (e) {}
-
-  const merged = {};
-  if (Array.isArray(local)) {
-    local.forEach(k => { if (k && k.id) merged[k.id] = k; });
-  }
-
-  // Fetch dari Firebase RTDB
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-    try {
-      const [snap1, snap2, snap3] = await Promise.all([
-        db.ref('kendala_mengajar').once('value').catch(() => null),
-        db.ref('laporan_kendala').once('value').catch(() => null),
-        db.ref('kendala_guru').once('value').catch(() => null)
-      ]);
-      [snap1, snap2, snap3].forEach(snap => {
-        if (snap && snap.val()) {
-          Object.entries(snap.val()).forEach(([id, val]) => {
-            if (val && typeof val === 'object') merged[id] = Object.assign({}, merged[id] || {}, val);
-          });
-        }
-      });
-    } catch (e) {}
-  }
-
-  const entries = Object.values(merged).sort((a, b) => new Date(b.createdAt || b.waktuLaporMs || 0) - new Date(a.createdAt || a.waktuLaporMs || 0));
-
-  if (entries.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8;font-size:13.5px;padding:24px 0;text-align:center;">Belum ada riwayat laporan izin.</div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  entries.forEach(k => {
-    const card = document.createElement('div');
-    card.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px;';
-    const isApproved = k.status === 'approved' || k.status === 'disetujui' || k.statusKonfirmasi === 'Disetujui';
-    const isRejected = k.status === 'rejected' || k.status === 'ditolak' || k.statusKonfirmasi === 'Ditolak';
-    const stBadge = isApproved
-      ? '<span style="background:#dcfce7;color:#166534;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:6px;">✓ Disetujui (Jamkos Aktif)</span>'
-      : (isRejected
-        ? '<span style="background:#fee2e2;color:#991b1b;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:6px;">✗ Ditolak</span>'
-        : '<span style="background:#fef3c7;color:#92400e;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:6px;">⏳ Menunggu Konfirmasi</span>');
-
-    const mapelTxt = (typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.mataPelajaran || k.mapel || 'Mapel') : (k.mataPelajaran || k.mapel || 'Mapel'));
-    const alasanTxt = (typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.deskripsiKendala || k.alasan || '-') : (k.deskripsiKendala || k.alasan || '-'));
-    card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-      '<span style="font-size:13.5px;font-weight:800;color:#0f172a;">' + mapelTxt + ' (' + (k.kelas || k.kelasId || '-') + ')</span>' +
-      stBadge +
-      '</div>' +
-      '<div style="font-size:12.5px;color:#475569;margin-bottom:4px;">' + alasanTxt + '</div>' +
-      '<div style="font-size:11.5px;color:#94a3b8;">Tanggal: ' + (k.tanggal || '-') + ' • ID: ' + k.id + '</div>';
-    container.appendChild(card);
-  });
-}
 
 if (typeof window !== 'undefined') {
   window.generateDigitalSuratDokterDataUrl = generateDigitalSuratDokterDataUrl;
@@ -4021,11 +3976,12 @@ async function catatHadirManualWalas(nisn, kelas, nama) {
 // ===== FITUR GURU: LAPOR KENDALA KBM (Menggunakan implementasi submitKendalaGuru utama di atas) =====
 
 
-function muatRiwayatKendalaGuru() {
+// Cache modul persisten untuk riwayat kendala guru agar data tidak pernah hilang/tereset
+let cacheRiwayatKendalaGuruSemua = {};
+
+function muatRiwayatKendalaGuru(fetchCloud = true) {
   const container = document.getElementById('listRiwayatKendalaGuru');
   if (!container) return;
-
-  const g = guruAktif || (typeof getSessionUser === 'function' ? getSessionUser() : null);
 
   const renderItems = (items) => {
     container.innerHTML = '';
@@ -4035,31 +3991,39 @@ function muatRiwayatKendalaGuru() {
     }
 
     items.forEach(k => {
-      const isApproved = k.status === 'approved' || k.status === 'disetujui';
-      const isRejected = k.status === 'rejected' || k.status === 'ditolak';
+      const isApproved = k.status === 'approved' || k.status === 'disetujui' || k.statusKonfirmasi === 'Disetujui';
+      const isRejected = k.status === 'rejected' || k.status === 'ditolak' || k.statusKonfirmasi === 'Ditolak';
       const badgeText = isApproved ? 'Disetujui Admin (Jamkos)' : isRejected ? 'Ditolak' : 'Menunggu Persetujuan';
       const badgeStyle = isApproved ? 'background:#dcfce7;color:#15803d;' : isRejected ? 'background:#fee2e2;color:#b91c1c;' : 'background:#fef3c7;color:#b45309;';
-      const jenisClean = (k.jenis || '').replace(/_/g, ' ');
+      const jenisClean = (k.jenis || k.kategoriKendala || '').replace(/_/g, ' ');
 
       const kid = k.id || k.kid || k.permitId || '';
       const hasLampiran = Boolean(
         k.buktiKendala || k.lampiranUrl || k.dokumen_url || k.foto_bukti || k.lampiran || k.lampiranNama ||
         (typeof localStorage !== 'undefined' && (localStorage.getItem('lampiran_kendala_' + kid) || localStorage.getItem('lampiran_foto_' + kid)))
       );
-      const namaLampiran = k.lampiranNama || (typeof k.lampiran === 'string' && !k.lampiran.startsWith('data:') && !k.lampiran.startsWith('http') ? k.lampiran : 'Dokumen');
+      const rawLamp = k.lampiranNama || (typeof k.lampiran === 'string' && !k.lampiran.startsWith('data:') && !k.lampiran.startsWith('http') ? k.lampiran : 'Dokumen');
+      const namaLampiran = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(rawLamp) : rawLamp;
 
       const card = document.createElement('div');
       card.style.cssText = 'border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:12px;background:#f8fafc;';
+      
+      const mapelTxt = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.mapel || k.mataPelajaran || 'Mata Pelajaran') : (k.mapel || k.mataPelajaran || 'Mata Pelajaran');
+      const kelasTxt = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.kelasId || k.kelas || '-') : (k.kelasId || k.kelas || '-');
+      const alasanTxt = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.alasan || k.deskripsiKendala || k.keterangan || '-') : (k.alasan || k.deskripsiKendala || k.keterangan || '-');
+      const tanggalTxt = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(k.tanggal || '-') : (k.tanggal || '-');
+      const jenisTxt = typeof escapeHtmlGuru === 'function' ? escapeHtmlGuru(jenisClean || '-') : (jenisClean || '-');
+
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-          <div style="font-size:14.5px;font-weight:800;color:#0f172a;">${k.mapel || 'Mata Pelajaran'} — Kelas ${k.kelasId || k.kelas || '-'}</div>
+          <div style="font-size:14.5px;font-weight:800;color:#0f172a;">${mapelTxt} — Kelas ${kelasTxt}</div>
           <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;${badgeStyle}">${badgeText}</span>
         </div>
         <div style="font-size:12.5px;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span>Tanggal: ${k.tanggal || '-'} • Alasan: ${jenisClean || '-'}</span>
+          <span>Tanggal: ${tanggalTxt} • Alasan: ${jenisTxt}</span>
         </div>
-        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;">${k.alasan || '-'}</div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;">${alasanTxt}</div>
         ${hasLampiran ? `
         <div style="margin-top:10px;display:flex;justify-content:flex-end;">
           <button onclick="bukaModalBuktiIzin('${kid}')" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
@@ -4072,68 +4036,110 @@ function muatRiwayatKendalaGuru() {
     });
   };
 
-  // 1. Ambil data lokal terlebih dahulu untuk render instan tanpa jeda memuat
+  const filterForUser = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    const currentG = guruAktif || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+    if (!currentG || currentG.role === 'admin' || currentG.prevRole === 'admin') {
+      return arr.slice().sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.waktuLaporMs || a.tanggal || 0).getTime() || 0;
+        const timeB = new Date(b.createdAt || b.waktuLaporMs || b.tanggal || 0).getTime() || 0;
+        return timeB - timeA;
+      });
+    }
+
+    const gNip = String(currentG.nip || currentG.id || '').trim();
+    const gUid = String(currentG.uid || '').trim();
+    const gNama = String(currentG.nama || '').toLowerCase().trim();
+    const gEmail = String(currentG.email || '').toLowerCase().trim();
+
+    return arr.filter(k => {
+      if (!k) return false;
+      const kNip = String(k.guruNip || k.guru_nip || k.nip || k.guruId || '').trim();
+      const kUid = String(k.guruUid || k.guru_uid || k.userId || k.pengajuId || '').trim();
+      const kNama = String(k.guruNama || k.guru_nama || k.namaGuru || k.nama || '').toLowerCase().trim();
+      const kEmail = String(k.guruEmail || k.email || '').toLowerCase().trim();
+
+      if (gNip && kNip && (gNip === kNip)) return true;
+      if (gUid && kUid && (gUid === kUid)) return true;
+      if (gEmail && kEmail && (gEmail === kEmail)) return true;
+      if (gNama && kNama && (gNama === kNama || gNama.includes(kNama) || kNama.includes(gNama))) return true;
+      if (!kNip && !kUid) return true;
+      return false;
+    }).sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.waktuLaporMs || a.tanggal || 0).getTime() || 0;
+      const timeB = new Date(b.createdAt || b.waktuLaporMs || b.tanggal || 0).getTime() || 0;
+      return timeB - timeA;
+    });
+  };
+
+  // 1. Ambil data lokal terlebih dahulu untuk render instan
   let localList = [];
   try {
     localList = JSON.parse(localStorage.getItem('local_kendala_guru') || '[]');
   } catch (e) {}
-  if (localList.length === 0) {
+  if (!Array.isArray(localList) || localList.length === 0) {
     try {
       localList = JSON.parse(localStorage.getItem('local_izin_guru') || '[]');
     } catch (e) {}
   }
+  if (Array.isArray(localList)) {
+    localList.forEach(item => {
+      if (item && (item.id || item.kid || item.pid)) {
+        const id = item.id || item.kid || item.pid;
+        cacheRiwayatKendalaGuruSemua[id] = Object.assign({}, cacheRiwayatKendalaGuruSemua[id] || {}, item);
+      }
+    });
+  }
 
-  const filterForUser = (arr) => {
-    if (!Array.isArray(arr)) return [];
-    return arr.filter(k => {
-      if (!k) return false;
-      if (!g || g.role === 'admin' || g.prevRole === 'admin') return true;
-      return (g.uid && k.guruUid === g.uid) ||
-             (g.nip && k.guruNip === g.nip) ||
-             (g.email && k.guruEmail === g.email) ||
-             (g.nama && k.guruNama === g.nama) ||
-             (!k.guruNip && !k.guruUid);
-    }).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
-  };
-
-  // Tampilkan data lokal segera (jika kosong, langsung tampilkan 'Belum ada riwayat laporan izin.')
-  renderItems(filterForUser(localList));
+  // Tampilkan data lokal segera
+  if (fetchCloud === false) {
+    renderItems(filterForUser(localList));
+  } else {
+    renderItems(filterForUser(Object.values(cacheRiwayatKendalaGuruSemua)));
+  }
 
   // 2. Dengarkan perubahan realtime dari Firebase
-  try {
-    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  if (fetchCloud !== false && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (typeof window !== 'undefined' && !window._kendalaGuruListenerBound) {
+      window._kendalaGuruListenerBound = true;
+
       const updateFromSnap = (snapshot) => {
         const data = snapshot.val() || {};
-        const fbItems = Object.values(data);
-        const map = new Map();
-        localList.forEach(item => { if (item && item.id) map.set(item.id, item); });
-        fbItems.forEach(cloudItem => {
-          if (!cloudItem || !cloudItem.id) return;
-          const locItem = map.get(cloudItem.id);
-          if (locItem) {
-            const locIsResolved = locItem.status === 'approved' || locItem.status === 'disetujui' || locItem.status === 'rejected' || locItem.status === 'ditolak';
-            const cloudIsResolved = cloudItem.status === 'approved' || cloudItem.status === 'disetujui' || cloudItem.status === 'rejected' || cloudItem.status === 'ditolak';
-            if (locIsResolved && !cloudIsResolved) {
-              // Pertahankan status resolved dari local agar tidak ter-overwrite status pending cloud yang tertunda
-              map.set(cloudItem.id, { ...cloudItem, ...locItem });
-            } else {
-              map.set(cloudItem.id, { ...locItem, ...cloudItem });
-            }
-          } else {
-            map.set(cloudItem.id, cloudItem);
-          }
+        Object.entries(data).forEach(([key, cloudItem]) => {
+          if (!cloudItem || typeof cloudItem !== 'object') return;
+          const id = cloudItem.id || cloudItem.kid || cloudItem.pid || key;
+          const existing = cacheRiwayatKendalaGuruSemua[id] || {};
+          const isResolvedLocal = existing.status === 'approved' || existing.status === 'disetujui' || existing.status === 'rejected' || existing.status === 'ditolak';
+          const isResolvedCloud = cloudItem.status === 'approved' || cloudItem.status === 'disetujui' || cloudItem.status === 'rejected' || cloudItem.status === 'ditolak';
+
+          cacheRiwayatKendalaGuruSemua[id] = Object.assign({}, existing, cloudItem, {
+            id: id,
+            kid: id,
+            pid: id,
+            guruNama: cloudItem.guruNama || cloudItem.namaGuru || cloudItem.guru_nama || cloudItem.nama || existing.guruNama || existing.nama,
+            guruNip: cloudItem.guruNip || cloudItem.guru_nip || cloudItem.nip || cloudItem.guruId || existing.guruNip || existing.nip,
+            status: (isResolvedLocal && !isResolvedCloud) ? existing.status : (cloudItem.status || existing.status || 'pending'),
+            statusKonfirmasi: (isResolvedLocal && !isResolvedCloud) ? (existing.statusKonfirmasi || existing.status) : (cloudItem.statusKonfirmasi || cloudItem.status || 'Menunggu Konfirmasi')
+          });
         });
-        const merged = Array.from(map.values());
+
+        const merged = Object.values(cacheRiwayatKendalaGuruSemua);
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('local_kendala_guru', JSON.stringify(merged));
+          }
+        } catch (e) {}
+
         renderItems(filterForUser(merged));
       };
 
-      db.ref('kendala_guru').on('value', updateFromSnap, () => {});
       try {
+        db.ref('kendala_guru').on('value', updateFromSnap, err => console.warn('[Kendala Guru] Listener warning:', err));
+        db.ref('laporan_kendala').on('value', updateFromSnap, () => {});
+        db.ref('kendala_mengajar').on('value', updateFromSnap, () => {});
         db.ref('perizinan_guru').on('value', updateFromSnap, () => {});
       } catch (e) {}
     }
-  } catch (err) {
-    console.warn('[Kendala Guru] Firebase listener error:', err);
   }
 }
 

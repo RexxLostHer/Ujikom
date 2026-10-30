@@ -1483,11 +1483,13 @@ async function cekStatusKartuNfcSiswa(nisn) {
 
   const targetNisn = nisn || (typeof getSessionUser === 'function' && getSessionUser() ? getSessionUser().nisn : null);
   if (!targetNisn) {
-    badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Akun Siswa Belum Terverifikasi NISN</span>';
-    btnEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
+    badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Belum Ditautkan</span>';
+    btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Tautkan Kartu';
     btnEl.style.background = '#0f172a';
+    btnEl.style.padding = '6px 11px';
+    btnEl.style.fontSize = '11.5px';
     if (headerBtn) {
-      headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Hubungkan Kartu / HP</span>';
+      headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Tautkan Kartu</span>';
     }
     return;
   }
@@ -1509,9 +1511,11 @@ async function cekStatusKartuNfcSiswa(nisn) {
     }
 
     if (card && card.uid) {
-      badgeEl.innerHTML = `<span class="badge-nfc-linked" style="display:inline-flex;align-items:center;gap:5px;color:#15803d;background:#f0fdf4;border:1px solid #dcfce7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kartu / HP Terhubung (UID: ${card.uid})</span>`;
-      btnEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>Ganti Kartu / HP`;
+      badgeEl.innerHTML = `<span class="badge-nfc-linked" style="display:inline-flex;align-items:center;gap:4px;color:#15803d;background:#f0fdf4;border:1px solid #dcfce7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Terhubung (${card.uid})</span>`;
+      btnEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>Ganti Kartu / HP`;
       btnEl.style.background = '#059669';
+      btnEl.style.padding = '6px 11px';
+      btnEl.style.fontSize = '11.5px';
       if (cardUidEl) cardUidEl.textContent = card.uid;
       if (headerBtn) {
         headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Kartu / HP Aktif (${card.uid})</span>`;
@@ -1520,9 +1524,11 @@ async function cekStatusKartuNfcSiswa(nisn) {
         headerBtn.style.background = '#ecfdf5';
       }
     } else {
-      badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:5px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Kartu / HP Belum Terhubung</span>';
-      btnEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
+      badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Belum Ditautkan</span>';
+      btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
       btnEl.style.background = '#0f172a';
+      btnEl.style.padding = '6px 11px';
+      btnEl.style.fontSize = '11.5px';
       if (cardUidEl) cardUidEl.textContent = '- (Belum Ada)';
       if (headerBtn) {
         headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Hubungkan Kartu / HP</span>';
@@ -2831,7 +2837,7 @@ if (typeof window !== 'undefined') {
 }
 
 function initBerandaOverview(user) {
-  if (user && user.nisn) { cekStatusKartuNfcSiswa(user.nisn); }
+  if (user) { cekStatusKartuNfcSiswa(user.nisn || null); }
 
   const isPengunjung = user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa';
   const isAdminIdentity = (user && user.nama && /admin/i.test(user.nama)) || (user && user.role === 'admin');
@@ -2865,12 +2871,28 @@ function initBerandaOverview(user) {
   const greetingEl = document.getElementById('greetingText');
   const subtextEl = document.getElementById('greetingSubtext');
 
+  function ekstrakNamaPanggilan(namaLengkap) {
+    if (!namaLengkap || typeof namaLengkap !== 'string') return 'Siswa';
+    const parts = namaLengkap.trim().split(/\s+/);
+    if (!parts.length) return 'Siswa';
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+    }
+    const firstClean = parts[0].replace(/\.$/, '').toLowerCase();
+    const honorifics = ['m', 'moh', 'muh', 'moch', 'st', 'rd', 'tb', 'dr', 'drs'];
+    if (parts[0].endsWith('.') || parts[0].length <= 2 || honorifics.includes(firstClean)) {
+      const second = parts[1];
+      return second.charAt(0).toUpperCase() + second.slice(1).toLowerCase();
+    }
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+  }
+
   if (isPengunjung) {
-    const sapaNama = isAdminIdentity ? 'Pengunjung' : (user.nama ? user.nama.split(' ')[0] : 'Pengunjung');
+    const sapaNama = isAdminIdentity ? 'Pengunjung' : (user.nama ? ekstrakNamaPanggilan(user.nama) : 'Pengunjung');
     if (greetingEl) greetingEl.textContent = `Selamat Datang, ${sapaNama}!`;
     if (subtextEl) subtextEl.textContent = `Status Akun: Pengunjung / Tamu Sekolah (Belum Terverifikasi)`;
   } else {
-    const namaPanggilan = (user.nama || 'Siswa').split(' ')[0];
+    const namaPanggilan = ekstrakNamaPanggilan(user.nama);
     if (greetingEl) greetingEl.textContent = `${salam}, ${namaPanggilan}!`;
     if (subtextEl) subtextEl.textContent = `Siswa Kelas ${user.kelas || 'XII RPL 2'} • NISN: ${user.nisn || '-'}`;
   }

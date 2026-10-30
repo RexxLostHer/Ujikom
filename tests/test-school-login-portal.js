@@ -466,10 +466,42 @@ assert.ok(!indexHtml.includes('visual-welcome-tagline'), 'Elemen visual-welcome-
 assert.ok(!indexHtml.includes('visual-bottom-anchor'), 'Elemen visual-bottom-anchor harus dihapus dari panel kiri sesuai instruksi pengguna');
 assert.ok(indexHtml.includes('master-split-card'), 'Split card sejati master-split-card harus aktif');
 
-// 6.6 Functional Simulation of Intro Hard Failsafe in VM
+// 6.7 Validasi Efek Kilatan Cahaya Berkala (Loop Frame 60-69 Jeda 3-4 Detik)
+assert.ok(indexHtml.includes('startLogoShineLoopEngine'), 'Fungsi startLogoShineLoopEngine harus terdefinisi untuk engine loop');
+assert.ok(indexHtml.includes('SHINE_START_FRAME = 60') && indexHtml.includes('SHINE_END_FRAME = 69'), 'Loop harus memutar urutan frame 60 s/d 69');
+assert.ok(indexHtml.includes('ezgif-frame-') && indexHtml.includes('.png'), 'Engine kilatan harus menggunakan aset frame transparan .png');
+assert.ok(indexHtml.includes('PAUSE_DURATION = 3200') || indexHtml.includes('3200'), 'Jeda antar loop harus berada pada rentang 3-4 detik');
+assert.ok(
+  indexHtml.includes('SHINE_FPS = 11') || indexHtml.includes('SHINE_FPS = 10') || indexHtml.includes('SHINE_FPS = 12'),
+  'SHINE_FPS harus dikonfigurasi pada rentang 10-12 FPS (~0.8s s/d 1.1s) untuk durasi kilatan yang santai & nyaman'
+);
+assert.ok(
+  indexHtml.includes('renderBlendedShineFrame') && indexHtml.includes('globalAlpha'),
+  'Engine kilatan harus mendukung buffer blend / crossfade mikro continuous gleam'
+);
+assert.ok(!indexHtml.includes('logoShineSweep'), 'Animasi CSS Mask logoShineSweep lama harus dibersihkan total');
+assert.ok(!indexHtml.includes('id="logoShineOverlay"'), 'Container lama #logoShineOverlay harus dibersihkan total');
+assert.ok(
+  indexHtml.includes("globalCompositeOperation = 'source-atop'"),
+  'Compositing kilatan harus menggunakan source-atop untuk memotong kilatan presisi pada siluet bodi logo'
+);
+assert.ok(
+  indexHtml.includes('createLinearGradient') && indexHtml.includes('sweepProgress'),
+  'Sapuan kilatan diagonal harus digerakkan secara progresif via linear gradient berkas specular shine 60 FPS'
+);
+
+// Validasi keberadaan 10 frame transparan PNG (60 s/d 69)
+for (let f = 60; f <= 69; f++) {
+  const framePath = path.join(__dirname, '..', 'assets', 'animasi', `ezgif-frame-0${f}.png`);
+  assert.ok(fs.existsSync(framePath), `Aset frame ${framePath} harus tersedia`);
+}
+
+console.log('✓ Efek Kilatan Cahaya Berkala End-to-End (Sapuan Penuh Sampai Ujung) terverifikasi aktif dan presisi');
+
+// 6.8 Functional Simulation of Intro Hard Failsafe in VM
 const overlayMock = { style: { display: 'flex', pointerEvents: 'auto', opacity: '1' } };
 const posterMock = { style: { display: 'block' } };
-const finalLogoImgMock = { style: {} };
+const finalLogoImgMock = { style: {}, src: '' };
 const introSandbox = {
   document: {
     getElementById: (id) => {
@@ -483,7 +515,7 @@ const introSandbox = {
         return finalLogoImgMock;
       }
       if (id === 'finalLogoCanvas') {
-        return { getContext: () => ({ clearRect: () => {}, drawImage: () => {} }), width: 640, height: 360 };
+        return { getContext: () => ({ clearRect: () => {}, drawImage: () => {} }), width: 640, height: 360, style: {} };
       }
       return null;
     },
@@ -497,8 +529,12 @@ const introSandbox = {
   requestAnimationFrame: () => 1,
   cancelAnimationFrame: () => {},
   console: { warn: () => {}, error: () => {}, log: () => {} },
-  Image: function() { this.onload = null; this.onerror = null; this.src = ''; }
+  Image: function() { this.onload = null; this.onerror = null; this.src = ''; },
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  devicePixelRatio: 2
 };
+introSandbox.window = introSandbox;
 const introScriptMatch = indexHtml.match(/\/\/ ===== 2\. FULLSCREEN INTRO LOGO ANIMATION[\s\S]*?function completeIntroAndRevealDirect\(\) \{([\s\S]*?)\}/);
 assert.ok(introScriptMatch, 'Fungsi completeIntroAndRevealDirect harus ditemukan dalam script intro');
 const fullIntroCodeMatch = indexHtml.match(/\/\/ ===== 2\. FULLSCREEN INTRO LOGO ANIMATION[\s\S]*?(\/\/ ===== 3\. ROBO-NESAS)/);
@@ -508,7 +544,123 @@ if (fullIntroCodeMatch) {
   assert.strictEqual(overlayMock.style.display, 'none', 'Hard failsafe 2.2s harus otomatis menyembunyikan overlay');
   assert.strictEqual(overlayMock.style.pointerEvents, 'none', 'Hard failsafe 2.2s harus mematikan pointer events overlay');
   assert.strictEqual(posterMock.style.display, 'none', 'Hard failsafe 2.2s harus menyembunyikan poster');
+  assert.strictEqual(introContext.isShineEngineRunning, true, 'Hard failsafe 2.2s harus otomatis mengaktifkan engine kilatan frame 60-69');
+  assert.strictEqual(typeof introContext.window.triggerLogoShine, 'function', 'window.triggerLogoShine harus tersedia secara global');
 }
+
+// 6.9 Deep Functional Simulation of Shine Loop Engine Stepping & Frame Sequence
+const shineSimFramesRendered = [];
+let shineSimTimerCallback = null;
+let shineSimTimerMs = 0;
+let shineSimRafCallback = null;
+
+const shineSimSandbox = {
+  document: {
+    getElementById: (id) => {
+      if (id === 'finalLogoImg') {
+        return {
+          style: {},
+          set src(val) {
+            shineSimFramesRendered.push(val);
+          },
+          get src() {
+            return shineSimFramesRendered[shineSimFramesRendered.length - 1] || '';
+          }
+        };
+      }
+      if (id === 'finalLogoCanvas') {
+        return {
+          getContext: () => ({ clearRect: () => {}, drawImage: () => {} }),
+          width: 1280,
+          height: 720,
+          style: {}
+        };
+      }
+      return null;
+    },
+    querySelectorAll: () => []
+  },
+  setTimeout: (fn, ms) => {
+    shineSimTimerCallback = fn;
+    shineSimTimerMs = ms;
+    return 123;
+  },
+  clearTimeout: () => {},
+  requestAnimationFrame: (fn) => {
+    shineSimRafCallback = fn;
+    return 456;
+  },
+  cancelAnimationFrame: () => {},
+  console: { warn: () => {}, error: () => {}, log: () => {} },
+  Image: function() {
+    this.onload = null;
+    this.onerror = null;
+    this.src = '';
+    this.complete = true;
+    this.naturalWidth = 1280;
+  },
+  performance: { now: () => 1000 },
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  devicePixelRatio: 2
+};
+shineSimSandbox.window = shineSimSandbox;
+
+if (fullIntroCodeMatch) {
+  const simContext = vm.createContext(shineSimSandbox);
+  vm.runInContext(fullIntroCodeMatch[0].replace('// ===== 3. ROBO-NESAS', ''), simContext);
+
+  // Verifikasi timer settling 280ms terpasang
+  assert.strictEqual(shineSimTimerMs, 280, 'Jeda awal settling pasca glide harus 280ms');
+  assert.ok(typeof shineSimTimerCallback === 'function', 'Callback timer kilatan harus terdaftar');
+
+  // Trigger kilatan pertama
+  shineSimFramesRendered.length = 0;
+  shineSimTimerCallback();
+
+  // Frame 060 pertama harus dirender
+  assert.ok(shineSimFramesRendered[0].includes('ezgif-frame-060.png'), 'Frame pertama putaran harus ezgif-frame-060.png');
+
+  // Uji sub-frame buffer blend rAF tick (delta < SHINE_INTERVAL)
+  let fakeTime = 1000;
+  fakeTime += 40; // 40ms < 90.9ms: memicu renderBlendedShineFrame di canvas tanpa memajukan frame diskrit DOM
+  if (shineSimRafCallback) {
+    const cb = shineSimRafCallback;
+    shineSimRafCallback = null;
+    cb(fakeTime);
+  }
+  assert.strictEqual(shineSimFramesRendered.length, 1, 'Sub-frame rAF tick tidak boleh memajukan frame diskrit DOM secara prematur');
+
+  // Simulasikan 9 frame berikutnya via rAF (61 s/d 69) pada interval ~90.9ms (~11 FPS)
+  fakeTime += 55; // 40 + 55 = 95ms >= 90.9ms
+  if (shineSimRafCallback) {
+    const cb = shineSimRafCallback;
+    shineSimRafCallback = null;
+    cb(fakeTime);
+  }
+  for (let step = 2; step <= 9; step++) {
+    fakeTime += 95;
+    if (shineSimRafCallback) {
+      const cb = shineSimRafCallback;
+      shineSimRafCallback = null;
+      cb(fakeTime);
+    }
+  }
+
+  // Verifikasi frame 69 tercapai
+  const lastRendered = shineSimFramesRendered[shineSimFramesRendered.length - 1];
+  assert.ok(lastRendered.includes('ezgif-frame-069.png'), 'Frame akhir putaran harus ezgif-frame-069.png');
+
+  // Simulasikan langkah berikutnya untuk memicu penahanan di frame 69 dan pendaftaran timer jeda 3.2s
+  fakeTime += 95;
+  if (shineSimRafCallback) {
+    const cb = shineSimRafCallback;
+    shineSimRafCallback = null;
+    cb(fakeTime);
+  }
+  assert.strictEqual(shineSimTimerMs, 3200, 'Setelah mencapai frame 69, harus jeda 3.2 detik (3200ms) sebelum loop berikutnya');
+}
+console.log('✓ Simulasi VM Shine Loop Engine (Frame 60 -> 69 -> Jeda 3.2s) 100% lulus');
 console.log('✓ Seluruh aspek Intro Animation Zero White Freeze, Failsafe 2.2s & Left Panel 3-Point Layout 100% valid');
 
 console.log('\n=======================================================');

@@ -604,10 +604,10 @@ async function muatRekapPresensi() {
 
     const formatBadgeJam = (val) => {
       if (val === '-') return '<span style="color:#94a3b8;">-</span>';
-      if (val === 'hadir') return '<span style="color:#059669; font-weight:700;">✓ Hadir</span>';
-      if (val === 'sakit') return '<span style="color:#2563eb; font-weight:700;">🤒 Sakit</span>';
-      if (val === 'dispensasi' || val === 'ijin_kegiatan') return '<span style="color:#d97706; font-weight:700;">📄 Izin</span>';
-      return '<span style="color:#dc2626; font-weight:700;">✗ ' + val + '</span>';
+      if (val === 'hadir') return '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Hadir</span>';
+      if (val === 'sakit') return '<span style="color:#2563eb; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Sakit</span>';
+      if (val === 'dispensasi' || val === 'ijin_kegiatan') return '<span style="color:#d97706; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Izin</span>';
+      return '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' + val + '</span>';
     };
 
     const tr = document.createElement('tr');
@@ -740,7 +740,7 @@ function editSiswa(keyOrNisn) {
   document.getElementById('siswaKelas').value = data.kelas || '';
   document.getElementById('siswaEmail').value = data.email || '';
   document.getElementById('siswaFormTitle').textContent = 'Edit Data Siswa';
-  document.getElementById('siswaSubmitBtn').textContent = '💾 Simpan Perubahan';
+  document.getElementById('siswaSubmitBtn').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Simpan Perubahan';
   document.getElementById('siswaCancelBtn').classList.remove('hidden');
   switchToTab('siswa');
   document.querySelector('.admin-content').scrollTop = 0;
@@ -1107,7 +1107,7 @@ function renderPelajaranTable(kelas, data) {
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td><strong>Jam ke-' + jamKe + '</strong> <span style="font-size:11px;color:#64748b;">(' + namaHariCap + ')</span></td>' +
-      '<td>' + (p.mapel || '') + (p.guru ? '<div style="font-size:11.5px;color:#64748b;">👨‍🏫 ' + p.guru + '</div>' : '') + '</td>' +
+      '<td>' + (p.mapel || '') + (p.guru ? '<div style="font-size:11.5px;color:#64748b;display:inline-flex;align-items:center;gap:4px;margin-top:2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + p.guru + '</div>' : '') + '</td>' +
       '<td>' + (p.mulai || '') + '</td>' +
       '<td>' + (p.selesai || '') + '</td>' +
       '<td></td>';
@@ -1327,7 +1327,7 @@ function loadUsers() {
       // Tombol Lepas Tautan NISN jika user memiliki NISN
       if (u.nisn) {
         const unlinkBtn = document.createElement('button');
-        unlinkBtn.textContent = '🔓 Lepas NISN';
+        unlinkBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NISN</span>';
         unlinkBtn.className = 'btn-row-edit';
         unlinkBtn.style.background = '#fffbeb';
         unlinkBtn.style.color = '#b45309';
@@ -1692,6 +1692,14 @@ async function adminApproveKendala(id) {
     cacheSemuaPerizinanAdmin[id].status = 'disetujui';
     cacheSemuaPerizinanAdmin[id].rawStatus = 'approved';
   }
+  if (typeof DEFAULT_STATUS_KELAS !== 'undefined' && targetKelas && DEFAULT_STATUS_KELAS[targetKelas]) {
+    DEFAULT_STATUS_KELAS[targetKelas].status = 'jamkos';
+    DEFAULT_STATUS_KELAS[targetKelas].activeTeacherNama = k.guruNama || k.nama || '-';
+    DEFAULT_STATUS_KELAS[targetKelas].activeMapel = k.mapel || 'Jam Kosong';
+    if (typeof renderStatusKelasControls === 'function') {
+      renderStatusKelasControls(DEFAULT_STATUS_KELAS);
+    }
+  }
 
   // 3. Update UI
   updateBadgeKendalaGuru();
@@ -1753,12 +1761,26 @@ async function adminApproveKendala(id) {
         activeDb.ref('perijinan/' + id).update({
           status: 'disetujui',
           approvedBy: adminNama,
-          approvedAt: new Date().toISOString()
+          approvedAt: new Date().toISOString(),
+          tipe: 'guru',
+          isGuru: true,
+          nama: k.guruNama || k.nama || 'Guru Pengajar',
+          guruNama: k.guruNama || k.nama || 'Guru Pengajar',
+          guruNip: k.guruNip || k.nip || '',
+          kelas: targetKelas,
+          mapel: k.mapel || ''
         }).catch(() => null),
         activeDb.ref('perizinan/' + id).update({
           status: 'disetujui',
           approvedBy: adminNama,
-          approvedAt: new Date().toISOString()
+          approvedAt: new Date().toISOString(),
+          tipe: 'guru',
+          isGuru: true,
+          nama: k.guruNama || k.nama || 'Guru Pengajar',
+          guruNama: k.guruNama || k.nama || 'Guru Pengajar',
+          guruNip: k.guruNip || k.nip || '',
+          kelas: targetKelas,
+          mapel: k.mapel || ''
         }).catch(() => null),
         activeDb.ref('permits/' + id).update({
           status: 'approved',
@@ -1969,18 +1991,24 @@ function renderStatusKelasControls(dataKelas) {
     card.style.padding = '14px';
     card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
 
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <strong style="font-size:14px;color:#0f172a;">${cls}</strong>
-        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:${stBg};color:${stColor};border:1px solid ${stBorder};">
-          ${stIcon}
-          <span>${stLabel}</span>
-        </span>
-      </div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5;">
-        <div>Mapel: <strong style="color:#334155;">${item.activeMapel || '-'}</strong></div>
-        <div>Guru / Walas: <strong style="color:#334155;">${item.walasNama || item.activeTeacherNama || '-'}</strong></div>
-      </div>
+      const isJamkos = st === 'jamkos';
+      const guruPengajar = item.activeTeacherNama || (isJamkos ? 'Guru Berhalangan' : (item.walasNama || '-'));
+      const walasDef = (cls === 'XII RPL 1' ? 'Rijal Nur Rahmat, S.T' : (cls === 'XII RPL 2' ? 'Muhammad Echa Putra, S.Kom.Gr' : 'Heri Anggara, S.Kom'));
+      const walasNama = item.walasNama || walasDef;
+
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:14px;color:#0f172a;">${cls}</strong>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:${stBg};color:${stColor};border:1px solid ${stBorder};">
+            ${stIcon}
+            <span>${stLabel}</span>
+          </span>
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5;">
+          <div>Mapel: <strong style="color:#334155;">${item.activeMapel || '-'}</strong></div>
+          <div>Guru Pengajar: <strong style="color:${isJamkos ? '#dc2626' : '#334155'};">${guruPengajar}${isJamkos ? ' (Jamkos)' : ''}</strong></div>
+          <div>Wali Kelas: <strong style="color:#64748b;">${walasNama}</strong></div>
+        </div>
       <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;">
         <button onclick="ubahStatusKelasManual('${cls}', 'belajar')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'belajar' ? '#10b981' : '#e2e8f0'};background:${st === 'belajar' ? '#10b981' : '#ffffff'};color:${st === 'belajar' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Belajar
