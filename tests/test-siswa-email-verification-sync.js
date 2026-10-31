@@ -11,7 +11,8 @@ const adminJsCode = fs.readFileSync(adminJsPath, 'utf8');
 assert(adminJsCode.includes('emailMappingCache'), 'admin.js must declare and manage emailMappingCache');
 assert(adminJsCode.includes("db.ref('email_mapping').on('value'"), 'admin.js must listen to email_mapping in realtime');
 assert(adminJsCode.includes('resolvedEmail'), 'renderSiswaTable must resolve email with fallback to emailMappingCache');
-console.log('✓ PASS: admin.js contains emailMappingCache and realtime fallback resolver.');
+assert(adminJsCode.includes('mapVal.isVerified !== true'), 'admin.js must only resolve verified accounts, leaving unverified empty');
+console.log('✓ PASS: admin.js contains emailMappingCache and verified-only fallback resolver.');
 
 // 2. Verify assets/auth.js updates /siswa on verification
 const authJsPath = path.join(__dirname, '..', 'assets', 'auth.js');
@@ -43,11 +44,19 @@ const mockDoc = {
 };
 
 const emailMappingCache = {
+  '7dosabesar557(at)gmail,com': {
+    email: '7dosabesar557@gmail.com',
+    nisn: '0098263610',
+    nama: 'M. IHSAN ATHALLAH',
+    kelas: 'XII RPL 2',
+    isVerified: true
+  },
   'abhiprayasamboga(at)gmail,com': {
     email: 'abhiprayasamboga@gmail.com',
     nisn: '0081782494',
     nama: 'ABHIPRAYA SAMBOGA',
-    kelas: 'XII RPL 2'
+    kelas: 'XII RPL 2',
+    isVerified: false // belum verifikasi!
   }
 };
 
@@ -58,7 +67,7 @@ function resolveSiswaEmail(displayNisn, s) {
     const cleanDigits = cleanN.replace(/\D/g, '');
     const cleanNama = String(s.nama || '').toLowerCase().trim();
     for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
-      if (!mapVal) continue;
+      if (!mapVal || mapVal.isVerified !== true) continue; // HANYA jika terverifikasi
       const mapN = String(mapVal.nisn || '').trim();
       const mapDigits = mapN.replace(/\D/g, '');
       const mapNama = String(mapVal.nama || '').toLowerCase().trim();
@@ -73,20 +82,20 @@ function resolveSiswaEmail(displayNisn, s) {
   return resolvedEmail || s.email || '-';
 }
 
-// Test Case A: Data with direct s.email
-const emailA = resolveSiswaEmail('00082109', { nisn: '00082109', nama: 'TIFANI ADISYA', email: 'tifaniadisya@gmail.com' });
-assert.strictEqual(emailA, 'tifaniadisya@gmail.com', 'Must return direct s.email');
-console.log('✓ PASS: Direct s.email correctly prioritized.');
+// Test Case A: Data with direct s.email (Ihsan Athallah)
+const emailA = resolveSiswaEmail('0098263610', { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', email: '7dosabesar557@gmail.com' });
+assert.strictEqual(emailA, '7dosabesar557@gmail.com', 'Must return direct s.email for Ihsan');
+console.log('✓ PASS: Direct s.email (7dosabesar557@gmail.com) correctly prioritized.');
 
-// Test Case B: Data without s.email, but in emailMappingCache (Fallback)
+// Test Case B: Unverified student with dummy mapping in emailMappingCache MUST remain '-'
 const emailB = resolveSiswaEmail('0081782494', { nisn: '0081782494', nama: 'ABHIPRAYA SAMBOGA' });
-assert.strictEqual(emailB, 'abhiprayasamboga@gmail.com', 'Must fallback to emailMappingCache email');
-console.log('✓ PASS: Fallback to emailMappingCache by NISN works.');
+assert.strictEqual(emailB, '-', 'Unverified student MUST remain "-" even if dummy mapping exists');
+console.log('✓ PASS: Unverified student correctly remains "-" without leaking dummy email.');
 
-// Test Case C: Fallback by Nama
-const emailC = resolveSiswaEmail('RANDOM_KEY', { nisn: '', nama: 'Abhipraya Samboga' });
-assert.strictEqual(emailC, 'abhiprayasamboga@gmail.com', 'Must fallback to emailMappingCache by nama');
-console.log('✓ PASS: Fallback to emailMappingCache by student name works.');
+// Test Case C: Verified student in emailMappingCache (Fallback)
+const emailC = resolveSiswaEmail('0098263610', { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH' });
+assert.strictEqual(emailC, '7dosabesar557@gmail.com', 'Must resolve verified account via emailMappingCache');
+console.log('✓ PASS: Verified student in emailMappingCache resolves correctly.');
 
 // Test Case D: Unknown student returns '-'
 const emailD = resolveSiswaEmail('99999999', { nisn: '99999999', nama: 'UNKNOWN STUDENT' });

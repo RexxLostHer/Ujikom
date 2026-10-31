@@ -762,7 +762,7 @@ function bukaModalEditSiswa(keyOrNisn) {
     const cleanDigits = cleanN.replace(/\D/g, '');
     const cleanNama = String(data.nama || '').toLowerCase().trim();
     for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
-      if (!mapVal) continue;
+      if (!mapVal || mapVal.isVerified !== true) continue;
       const mapN = String(mapVal.nisn || '').trim();
       const mapDigits = mapN.replace(/\D/g, '');
       const mapNama = String(mapVal.nama || '').toLowerCase().trim();
@@ -985,7 +985,7 @@ function renderSiswaTable(data) {
         const cleanDigits = cleanN.replace(/\D/g, '');
         const cleanNama = String(s.nama || '').toLowerCase().trim();
         for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
-          if (!mapVal) continue;
+          if (!mapVal || mapVal.isVerified !== true) continue;
           const mapN = String(mapVal.nisn || '').trim();
           const mapDigits = mapN.replace(/\D/g, '');
           const mapNama = String(mapVal.nama || '').toLowerCase().trim();
