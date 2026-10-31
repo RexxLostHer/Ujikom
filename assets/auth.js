@@ -780,6 +780,14 @@ async function konfirmasiTautkanNisn(nisn) {
         });
       } catch (e) {}
     }
+
+    // Invariansi: Selalu sinkronkan email ke record /siswa agar tabel master siswa konsisten
+    if (dataSiswa && (dataSiswa.nisn || dataSiswa._key) && email) {
+      try {
+        if (dataSiswa.nisn) await db.ref('siswa/' + dataSiswa.nisn).update({ email: email }).catch(() => null);
+        if (dataSiswa._key && dataSiswa._key !== dataSiswa.nisn) await db.ref('siswa/' + dataSiswa._key).update({ email: email }).catch(() => null);
+      } catch (e) {}
+    }
   }
 
   // Simpan klaim dan akun terhubung ke LocalStorage untuk persistensi offline & reload

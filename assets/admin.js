@@ -26,6 +26,7 @@ if (typeof require !== 'undefined' && typeof tampilkanAnimasiCeklis === 'undefin
 let adminSessionUser = null;
 let siswaCache = {};
 let kartuCache = {};
+let emailMappingCache = {};
 
 let shouldHaltAdmin = false;
 
@@ -183,6 +184,13 @@ function initAdmin() {
           .then(loc => perbaruiSiswaAdmin(parseSiswaSnapshot(loc)))
           .catch(function() {});
       }
+    }
+  });
+
+  db.ref('email_mapping').on('value', function (snapshot) {
+    emailMappingCache = snapshot.val() || {};
+    if (siswaCache && Object.keys(siswaCache).length > 0) {
+      renderSiswaTable(siswaCache);
     }
   });
 
@@ -747,7 +755,26 @@ function bukaModalEditSiswa(keyOrNisn) {
   if (elNisn) elNisn.value = data.nisn || keyOrNisn;
   if (elNama) elNama.value = data.nama || '';
   if (elKelas) elKelas.value = (typeof normalisasiKelas === 'function') ? normalisasiKelas(data.kelas) : (data.kelas || 'XII RPL 1');
-  if (elEmail) elEmail.value = data.email || '';
+
+  let modalEmail = (data.email && data.email !== '-') ? data.email : '';
+  if (!modalEmail && typeof emailMappingCache === 'object' && emailMappingCache) {
+    const cleanN = String(data.nisn || keyOrNisn || '').trim();
+    const cleanDigits = cleanN.replace(/\D/g, '');
+    const cleanNama = String(data.nama || '').toLowerCase().trim();
+    for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
+      if (!mapVal) continue;
+      const mapN = String(mapVal.nisn || '').trim();
+      const mapDigits = mapN.replace(/\D/g, '');
+      const mapNama = String(mapVal.nama || '').toLowerCase().trim();
+      if ((cleanN && mapN && cleanN === mapN) ||
+          (cleanDigits && mapDigits && cleanDigits === mapDigits) ||
+          (cleanNama && mapNama && cleanNama === mapNama)) {
+        modalEmail = mapVal.email || '';
+        break;
+      }
+    }
+  }
+  if (elEmail) elEmail.value = modalEmail;
   if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
 
   modal.style.display = 'flex';
@@ -951,6 +978,26 @@ function renderSiswaTable(data) {
       const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
       const fotoUrl = s.foto || ('assets/foto/' + displayNisn + '.jpg');
 
+      // Ambil email dari data siswa atau fallback ke emailMappingCache
+      let resolvedEmail = (s.email && s.email !== '-') ? s.email : '';
+      if (!resolvedEmail && typeof emailMappingCache === 'object' && emailMappingCache) {
+        const cleanN = String(displayNisn).trim();
+        const cleanDigits = cleanN.replace(/\D/g, '');
+        const cleanNama = String(s.nama || '').toLowerCase().trim();
+        for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
+          if (!mapVal) continue;
+          const mapN = String(mapVal.nisn || '').trim();
+          const mapDigits = mapN.replace(/\D/g, '');
+          const mapNama = String(mapVal.nama || '').toLowerCase().trim();
+          if ((cleanN && mapN && cleanN === mapN) ||
+              (cleanDigits && mapDigits && cleanDigits === mapDigits) ||
+              (cleanNama && mapNama && cleanNama === mapNama)) {
+            resolvedEmail = mapVal.email || '';
+            break;
+          }
+        }
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td style="font-family:var(--font-mono, monospace);font-weight:600;">' + displayNisn + '</td>' +
@@ -966,7 +1013,7 @@ function renderSiswaTable(data) {
           '</div>' +
         '</td>' +
         '<td>' + (s.kelas || '') + '</td>' +
-        '<td style="font-size:12px;color:#64748b;">' + (s.email || '-') + '</td>' +
+        '<td style="font-size:12px;color:#64748b;">' + (resolvedEmail || s.email || '-') + '</td>' +
         '<td></td>';
 
       const actionsTd = tr.cells[4];
