@@ -327,8 +327,8 @@ assert(typeof dashboardGuru.submitKendalaGuru === 'function', 'submitKendalaGuru
 
   assert.ok(adminHtml.includes('assets/chat-hub.css'), 'admin.html harus menyertakan assets/chat-hub.css');
   assert.ok(adminHtml.includes('assets/chat-hub.js'), 'admin.html harus menyertakan assets/chat-hub.js');
-  assert.ok(adminHtml.includes('id="btnWaHubAdmin"'), 'admin.html harus memiliki tombol #btnWaHubAdmin di appbar');
-  assert.ok(adminHtml.includes('id="sidebarBtnWaHub"'), 'admin.html harus memiliki tombol #sidebarBtnWaHub di sidebar');
+  assert.ok(!adminHtml.includes('id="btnWaHubAdmin"'), 'admin.html tidak boleh lagi memuat tombol #btnWaHubAdmin di appbar (dibersihkan demi clean UI)');
+  assert.ok(!adminHtml.includes('id="sidebarBtnWaHub"'), 'admin.html tidak boleh lagi memuat tombol #sidebarBtnWaHub di sidebar (dibersihkan demi clean UI)');
   assert.ok(adminHtml.includes('id="modalBuktiIzin"'), 'admin.html harus memiliki modal pratinjau #modalBuktiIzin');
   assert.ok(adminHtml.includes('id="modalBuktiImg"'), 'admin.html harus memiliki elemen #modalBuktiImg');
   assert.ok(adminHtml.includes('id="modalBuktiText"'), 'admin.html harus memiliki elemen #modalBuktiText');

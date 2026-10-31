@@ -57,14 +57,45 @@ function setSessionUser(data) {
   } else {
     try { localStorage.setItem('user_aktif', JSON.stringify(data)); } catch (e) {}
   }
+
+  // Sanitasi kredensial: Jika sesi adalah tamu/pengunjung yang belum terverifikasi,
+  // bersihkan sisa identitas siswa/guru agar chat hub tidak mengalami kebocoran data
+  if (data.role === 'pengunjung' || data.isVerified === false) {
+    try { localStorage.removeItem('siswa_aktif'); } catch (e) {}
+    try { localStorage.removeItem('guru_aktif'); } catch (e) {}
+    try { localStorage.removeItem('admin_aktif'); } catch (e) {}
+    try { localStorage.removeItem('nisn_aktif'); } catch (e) {}
+    try { sessionStorage.removeItem('siswa_aktif'); } catch (e) {}
+    try { sessionStorage.removeItem('guru_aktif'); } catch (e) {}
+    try { sessionStorage.removeItem('admin_aktif'); } catch (e) {}
+    try { sessionStorage.removeItem('nisn_aktif'); } catch (e) {}
+  }
 }
 
 function clearSession() {
   try { sessionStorage.removeItem('user_aktif'); } catch (e) {}
   try { localStorage.removeItem('user_aktif'); } catch (e) {}
+  try { sessionStorage.removeItem('siswa_aktif'); } catch (e) {}
+  try { localStorage.removeItem('siswa_aktif'); } catch (e) {}
+  try { sessionStorage.removeItem('guru_aktif'); } catch (e) {}
+  try { localStorage.removeItem('guru_aktif'); } catch (e) {}
+  try { sessionStorage.removeItem('admin_aktif'); } catch (e) {}
+  try { localStorage.removeItem('admin_aktif'); } catch (e) {}
   try { sessionStorage.removeItem('isRoleSwitched'); } catch (e) {}
   try { localStorage.removeItem('isRoleSwitched'); } catch (e) {}
+  try { sessionStorage.removeItem('nisn_aktif'); } catch (e) {}
   try { localStorage.removeItem('nisn_aktif'); } catch (e) {}
+
+  // Reset visual badge counter di DOM saat logout
+  if (typeof document !== 'undefined') {
+    try {
+      const bFloat = document.getElementById('waBadgeCounter');
+      if (bFloat) {
+        bFloat.textContent = '0';
+        bFloat.style.display = 'none';
+      }
+    } catch (e) {}
+  }
 }
 
 // 1. Google Sign-In
@@ -1282,6 +1313,9 @@ function verifikasiAksesHalaman(allowedRoles) {
 }
 
 if (typeof window !== 'undefined') {
+  window.getSessionUser = getSessionUser;
+  window.setSessionUser = setSessionUser;
+  window.clearSession = clearSession;
   window.getDashboardUrlByRole = getDashboardUrlByRole;
   window.gantiRoleSesi = gantiRoleSesi;
   window.verifikasiAksesHalaman = verifikasiAksesHalaman;
@@ -1294,6 +1328,9 @@ if (typeof window !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    getSessionUser,
+    setSessionUser,
+    clearSession,
     cariSiswaByEmail,
     cariGuruByEmail,
     isEmailAdmin,

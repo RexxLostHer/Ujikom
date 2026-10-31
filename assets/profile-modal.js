@@ -154,6 +154,54 @@ function bukaModalProfil() {
         </div>
         ` : '')}
 
+        ${user.role === 'admin' ? `
+        <!-- Panel Khusus Administrator Sistem: Hak Akses, Otoritas & Status Operasional Realtime -->
+        <div style="padding:16px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.02);margin-top:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;justify-content:center;color:#2563eb;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 style="color:#0f172a;margin:0;font-size:13.5px;font-weight:700;">Hak Akses & Otoritas Sistem</h3>
+                <p style="font-size:11.5px;color:#64748b;margin:1px 0 0 0;">Kredensial Super Administrator SMKN 1 Sumedang</p>
+              </div>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:9999px;background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe;display:inline-flex;align-items:center;gap:5px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;"></span> Level 1 (Tertinggi)
+            </span>
+          </div>
+
+          <!-- Grid Otoritas & Keamanan Root -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;margin-bottom:12px;">
+            <div style="padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+              <div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;">Tingkat Otoritas</div>
+              <div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:2px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Root / Super Admin
+              </div>
+            </div>
+            <div style="padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+              <div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;">Hak Kontrol</div>
+              <div style="font-size:13px;font-weight:800;color:#059669;margin-top:2px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Akses Penuh (Full Control)
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Operasional Realtime -->
+          <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(34,197,94,0.2);display:inline-block;"></span>
+              <span style="font-size:12px;font-weight:700;color:#166534;">Database Firebase Realtime: Terhubung</span>
+            </div>
+            <span style="font-size:11.5px;color:#15803d;font-weight:600;">Zona Waktu: WIB (UTC+7)</span>
+          </div>
+        </div>
+        ` : `
         <!-- Section: Verifikasi & Penautan NFC Smartphone / Kartu Pelajar (PRD Bab 4.3 & 7) -->
         <div style="padding:16px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.02);margin-top:12px;margin-bottom:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
@@ -190,6 +238,7 @@ function bukaModalProfil() {
             </button>
           </div>
         </div>
+        `}
 
         <!-- Keamanan & Kata Sandi (Unified) -->
         <div style="padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;">
@@ -251,8 +300,9 @@ function bukaModalProfil() {
 
   overlay.style.display = 'flex';
 
-  // Periksa & sinkronkan status kartu/NFC pengguna di modal profil
+  // Periksa & sinkronkan status kartu/NFC pengguna di modal profil (khusus non-admin)
   setTimeout(async () => {
+    if (user.role === 'admin') return;
     const badgeEl = document.getElementById('profilBadgeNfcStatus');
     const uidEl = document.getElementById('profilNfcUidText');
     const btnText = document.getElementById('profilBtnTautkanNfcText');

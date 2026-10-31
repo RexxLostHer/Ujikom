@@ -729,21 +729,145 @@ function resetFormSiswa() {
   document.getElementById('siswaCancelBtn').classList.add('hidden');
 }
 
+function bukaModalEditSiswa(keyOrNisn) {
+  const data = siswaCache[keyOrNisn] || Object.values(siswaCache).find(s => s._key === keyOrNisn || s.nisn === keyOrNisn);
+  if (!data) return;
+  const modal = document.getElementById('modalEditSiswaAdmin');
+  if (!modal) return;
+
+  const targetKey = data._key || data.nisn || keyOrNisn;
+  const elKey = document.getElementById('modalEditSiswaKey');
+  const elNisn = document.getElementById('modalEditSiswaNisn');
+  const elNama = document.getElementById('modalEditSiswaNama');
+  const elKelas = document.getElementById('modalEditSiswaKelas');
+  const elEmail = document.getElementById('modalEditSiswaEmail');
+  const elMsg = document.getElementById('modalEditSiswaMsg');
+
+  if (elKey) elKey.value = targetKey;
+  if (elNisn) elNisn.value = data.nisn || keyOrNisn;
+  if (elNama) elNama.value = data.nama || '';
+  if (elKelas) elKelas.value = (typeof normalisasiKelas === 'function') ? normalisasiKelas(data.kelas) : (data.kelas || 'XII RPL 1');
+  if (elEmail) elEmail.value = data.email || '';
+  if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
+
+  modal.style.display = 'flex';
+  setTimeout(() => { if (elNama) elNama.focus(); }, 100);
+}
+
+function tutupModalEditSiswa() {
+  const modal = document.getElementById('modalEditSiswaAdmin');
+  if (modal) modal.style.display = 'none';
+}
+
+async function simpanModalEditSiswa() {
+  const elKey = document.getElementById('modalEditSiswaKey');
+  const elNisn = document.getElementById('modalEditSiswaNisn');
+  const elNama = document.getElementById('modalEditSiswaNama');
+  const elKelas = document.getElementById('modalEditSiswaKelas');
+  const elEmail = document.getElementById('modalEditSiswaEmail');
+  const elMsg = document.getElementById('modalEditSiswaMsg');
+  const btn = document.getElementById('btnSimpanModalEditSiswa');
+
+  const key = elKey ? elKey.value.trim() : '';
+  const nisn = elNisn ? elNisn.value.trim() : '';
+  const nama = elNama ? elNama.value.trim() : '';
+  const kelas = elKelas ? elKelas.value.trim() : '';
+  const email = elEmail ? elEmail.value.trim().toLowerCase() : '';
+
+  if (!nisn || !nama || !kelas) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Nama dan Kelas wajib diisi.';
+    }
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '<span>Menyimpan...</span>';
+  }
+
+  const payload = { nisn, nama, kelas };
+  if (email) payload.email = email;
+
+  try {
+    const targetKey = key || nisn;
+    if (typeof db !== 'undefined' && db.ref) {
+      await db.ref('siswa/' + targetKey).update(payload);
+      if (email) {
+        const encoded = email.replace(/\./g, ',').replace(/@/g, '(at)');
+        await db.ref('email_mapping/' + encoded).update({ nisn: targetKey, nama, kelas, email }).catch(() => {});
+      }
+    }
+
+    // Update cache lokal langsung & re-render tabel siswa
+    if (siswaCache[nisn]) {
+      siswaCache[nisn] = Object.assign({}, siswaCache[nisn], payload);
+    }
+    if (siswaCache[targetKey]) {
+      siswaCache[targetKey] = Object.assign({}, siswaCache[targetKey], payload);
+    }
+    renderSiswaTable(siswaCache);
+
+    tutupModalEditSiswa();
+    if (typeof tampilkanPopUpAcc === 'function') {
+      tampilkanPopUpAcc('Data Siswa Diperbarui', `Data ${nama} (${kelas}) berhasil disimpan.`);
+    } else {
+      showMsg('siswaMsg', `Data siswa ${nama} berhasil diperbarui.`, 'success');
+    }
+  } catch (err) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Gagal menyimpan: ' + err.message;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Perubahan</span>';
+    }
+  }
+}
+
 function editSiswa(keyOrNisn) {
   const data = siswaCache[keyOrNisn] || Object.values(siswaCache).find(s => s._key === keyOrNisn || s.nisn === keyOrNisn);
   if (!data) return;
   const targetKey = data._key || data.nisn || keyOrNisn;
-  document.getElementById('siswaEditingKey').value = targetKey;
-  document.getElementById('siswaNisn').value = data.nisn || keyOrNisn;
-  document.getElementById('siswaNisn').disabled = true;
-  document.getElementById('siswaNama').value = data.nama || '';
-  document.getElementById('siswaKelas').value = data.kelas || '';
-  document.getElementById('siswaEmail').value = data.email || '';
-  document.getElementById('siswaFormTitle').textContent = 'Edit Data Siswa';
-  document.getElementById('siswaSubmitBtn').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Simpan Perubahan';
-  document.getElementById('siswaCancelBtn').classList.remove('hidden');
-  switchToTab('siswa');
-  document.querySelector('.admin-content').scrollTop = 0;
+
+  // 1. Buka Modal Popup Edit Siswa langsung di depan mata pengguna
+  bukaModalEditSiswa(keyOrNisn);
+
+  // 2. Sinkronkan form atas untuk backward compatibility
+  const elEditKey = document.getElementById('siswaEditingKey');
+  const elNisn = document.getElementById('siswaNisn');
+  const elNama = document.getElementById('siswaNama');
+  const elKelas = document.getElementById('siswaKelas');
+  const elEmail = document.getElementById('siswaEmail');
+  const elTitle = document.getElementById('siswaFormTitle');
+  const elBtn = document.getElementById('siswaSubmitBtn');
+  const elCancel = document.getElementById('siswaCancelBtn');
+
+  if (elEditKey) elEditKey.value = targetKey;
+  if (elNisn) { elNisn.value = data.nisn || keyOrNisn; elNisn.disabled = true; }
+  if (elNama) elNama.value = data.nama || '';
+  if (elKelas) elKelas.value = data.kelas || '';
+  if (elEmail) elEmail.value = data.email || '';
+  if (elTitle) elTitle.textContent = 'Edit Data Siswa';
+  if (elBtn) elBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Simpan Perubahan';
+  if (elCancel) elCancel.classList.remove('hidden');
+
+  // 3. Fallback visual & smooth scroll ke form atas
+  const formCard = document.querySelector('#tab-siswa .admin-form-card');
+  if (formCard) {
+    formCard.style.transition = 'box-shadow 0.3s ease';
+    formCard.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.3)';
+    setTimeout(() => { formCard.style.boxShadow = ''; }, 3000);
+  }
 }
 
 function hapusSiswa(keyOrNisn) {
@@ -752,8 +876,22 @@ function hapusSiswa(keyOrNisn) {
   const targetKey = (data && data._key) || keyOrNisn;
   const nama = (data && data.nama) || nisn;
   if (!confirm('Hapus siswa ' + nama + ' (NISN: ' + nisn + ')?\nMapping kartu tidak otomatis terhapus.')) return;
-  db.ref('siswa/' + targetKey).remove()
-    .then(function () { showMsg('siswaMsg', 'Siswa dihapus.', 'success'); })
+
+  const p1 = (typeof db !== 'undefined' && db.ref) ? db.ref('siswa/' + targetKey).remove() : Promise.resolve();
+  const p2 = (typeof db !== 'undefined' && db.ref && targetKey !== nisn) ? db.ref('siswa/' + nisn).remove().catch(() => {}) : Promise.resolve();
+
+  Promise.all([p1, p2])
+    .then(function () {
+      delete siswaCache[nisn];
+      if (targetKey) delete siswaCache[targetKey];
+      renderSiswaTable(siswaCache);
+
+      if (typeof tampilkanPopUpAcc === 'function') {
+        tampilkanPopUpAcc('Siswa Dihapus', `Data ${nama} (NISN: ${nisn}) telah dihapus.`);
+      } else {
+        showMsg('siswaMsg', 'Siswa ' + nama + ' berhasil dihapus.', 'success');
+      }
+    })
     .catch(function (err) { showMsg('siswaMsg', 'Gagal: ' + err.message, 'error'); });
 }
 

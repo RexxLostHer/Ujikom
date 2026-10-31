@@ -349,6 +349,27 @@ async function initPortalGuru(user) {
     return;
   }
 
+  // Sinkronisasi identitas guru ke window & localStorage agar WhatsApp Chat Hub membaca kredensial akurat
+  if (typeof window !== 'undefined') {
+    window.guruAktif = user;
+  }
+  if (typeof global !== 'undefined') {
+    global.guruAktif = user;
+  }
+  try {
+    if (typeof localStorage !== 'undefined' && user && (user.role === 'guru' || user.role === 'walas' || user.nip)) {
+      localStorage.setItem('guru_aktif', JSON.stringify(user));
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('siswa_aktif');
+    }
+  } catch (e) {}
+
+  // Panggil sinkronisasi chat hub saat sesi guru siap
+  if (typeof window !== 'undefined' && typeof window.perbaruiStatusWaChatHub === 'function') {
+    try { window.perbaruiStatusWaChatHub(); } catch (e) {}
+  }
+
   const isWalas = (!isAdm && (user.role === 'walas' || !!user.isWalas || (user.nip && mg[user.nip] && mg[user.nip].isWalas))) || isAdm;
   const walasKelas = (typeof normalisasiKelas === 'function') ? (normalisasiKelas(user.walasKelasId || (gFound && gFound.walasKelasId) || 'XII RPL 2')) : (user.walasKelasId || 'XII RPL 2');
 
@@ -530,6 +551,11 @@ async function initPortalGuru(user) {
       if (typeof muatRadarMengajarRealtime === 'function') muatRadarMengajarRealtime();
       if (typeof muatStatistikWalas === 'function') muatStatistikWalas();
     }, 60000);
+  }
+
+  // Sinkronisasi status WhatsApp Chat Hub setelah seluruh inisialisasi portal selesai
+  if (typeof window !== 'undefined' && typeof window.perbaruiStatusWaChatHub === 'function') {
+    try { window.perbaruiStatusWaChatHub(); } catch (e) {}
   }
 }
 
@@ -4552,6 +4578,8 @@ async function lakukanSimulasiTapGuru(uidSimulasi) {
 
 
 if (typeof window !== 'undefined') {
+  window.initPortalGuru = initPortalGuru;
+  window.guruAktif = guruAktif;
   window.cekStatusKartuNfcGuru = cekStatusKartuNfcGuru;
   window.bukaModalPairingNfcGuru = bukaModalPairingNfcGuru;
   window.tutupModalPairingNfcGuru = tutupModalPairingNfcGuru;
@@ -4569,6 +4597,7 @@ if (typeof window !== 'undefined') {
   window.pilihJadwalKendalaGuru = pilihJadwalKendalaGuru;
 }
 if (typeof module !== 'undefined' && module.exports) {
+  module.exports.initPortalGuru = initPortalGuru;
   module.exports.cekStatusKartuNfcGuru = cekStatusKartuNfcGuru;
   module.exports.bukaModalPairingNfcGuru = bukaModalPairingNfcGuru;
   module.exports.tutupModalPairingNfcGuru = tutupModalPairingNfcGuru;

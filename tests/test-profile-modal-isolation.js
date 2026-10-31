@@ -134,7 +134,15 @@ assert.ok(!adminModalHtml.includes('sectionPresetAdmin'), 'Modal admin di admin.
 assert.ok(!adminModalHtml.includes('1-Click Preset'), 'Modal admin di admin.html TIDAK boleh memuat 1-Click Preset');
 assert.ok(!adminModalHtml.includes('pilihPresetRole'), 'Modal admin di admin.html TIDAK boleh menyediakan preset role switcher');
 assert.ok(!adminModalHtml.includes('Beralih Peran & Mode Pengujian UJIKOM'), 'Modal admin di admin.html TIDAK boleh memuat judul switcher peran');
-console.log('✓ Modal profil Administrator pada admin.html terbukti 100% bersih tanpa quick role preset.\n');
+
+// Verifikasi modal profil admin bebas dari kartu presensi/NFC siswa dan memuat hak akses Super Admin
+assert.ok(!adminModalHtml.includes('Kartu Presensi & NFC HP'), 'Modal Admin TIDAK boleh memuat Kartu Presensi & NFC HP');
+assert.ok(!adminModalHtml.includes('Tautkan NISN/NIP terlebih dahulu'), 'Modal Admin TIDAK boleh meminta Tautkan NISN/NIP');
+assert.ok(!adminModalHtml.includes('Belum Verifikasi Identitas'), 'Modal Admin TIDAK boleh berstatus Belum Verifikasi Identitas');
+assert.ok(adminModalHtml.includes('Hak Akses & Otoritas Sistem'), 'Modal Admin HARUS memuat Hak Akses & Otoritas Sistem');
+assert.ok(adminModalHtml.includes('Root / Super Admin'), 'Modal Admin HARUS menampilkan tingkat Root / Super Admin');
+assert.ok(adminModalHtml.includes('Database Firebase Realtime: Terhubung'), 'Modal Admin HARUS menampilkan status operasional Realtime Database');
+console.log('✓ Modal profil Administrator pada admin.html terbukti 100% layak Super Admin & bebas kartu presensi siswa.\n');
 
 // 5. Evaluasi Penolakan gantiRoleSesi pada Halaman Publik
 console.log('[Test 5] Evaluasi Proteksi Eksekusi gantiRoleSesi di Lingkungan dashboard.html...');
