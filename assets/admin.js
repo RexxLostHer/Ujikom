@@ -1094,24 +1094,6 @@ function hapusKartu(idKartu) {
     .catch(function (err) { showMsg('kartuMsg', 'Gagal: ' + err.message, 'error'); });
 }
 
-function pilihSiswaQuick(nisn) {
-  const sel = document.getElementById('kartuNisn');
-  if (sel) {
-    sel.value = nisn;
-    if (!sel.value && siswaCache[nisn]) {
-      const opt = document.createElement('option');
-      opt.value = nisn;
-      opt.textContent = nisn + ' — ' + (siswaCache[nisn].nama || '');
-      sel.appendChild(opt);
-      sel.value = nisn;
-    }
-  }
-  const kartuInput = document.getElementById('kartuId');
-  if (kartuInput) {
-    kartuInput.focus();
-    kartuInput.placeholder = 'Tempelkan kartu RFID sekarang...';
-  }
-}
 
 function renderKartuTable(data) {
   const tbody = document.getElementById('kartuTableBody');
@@ -1363,53 +1345,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-// ===================================================================
-// TAB: SIMULASI ABSEN
-// ===================================================================
-function submitSimulasi() {
-  const nisn   = document.getElementById('simulasiNisn').value;
-  const status = document.getElementById('simulasiStatus').value;
-  const msgEl  = document.getElementById('simulasiMsg');
 
-  if (!nisn) { showMsg('simulasiMsg', 'Pilih siswa dulu.', 'error'); return; }
-
-  const siswa = siswaCache[nisn];
-  const kelas = siswa && siswa.kelas;
-
-  const pad = n => String(n).padStart(2, '0');
-  const now = new Date();
-  const tanggal = tanggalHariIni();
-  const waktu   = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-
-  const tulis = function (jamKeInfo) {
-    const entry = { tanggal, waktu, status };
-    if (jamKeInfo) entry.jam_ke = jamKeInfo.jam_ke;
-
-    const tugas = [db.ref('absensi/' + nisn).push(entry)];
-    if (kelas && jamKeInfo) {
-      tugas.push(
-        db.ref('presensi_jam/' + kelas + '/' + tanggal + '/' + jamKeInfo.jam_ke + '/' + nisn)
-          .set({ waktu, status })
-      );
-    }
-
-    Promise.all(tugas)
-      .then(function () {
-        showMsg('simulasiMsg',
-          '✅ Absen ' + (siswa ? siswa.nama : nisn) + ' berhasil (' + status + ', ' + waktu + ').' +
-          (jamKeInfo ? ' Jam ke-' + jamKeInfo.jam_ke + ' — ' + jamKeInfo.mapel + '.' : ''),
-          'success');
-      })
-      .catch(function (err) { showMsg('simulasiMsg', 'Gagal: ' + err.message, 'error'); });
-  };
-
-  if (!kelas) { tulis(null); return; }
-
-  db.ref('jadwal_pelajaran/' + kelas).once('value').then(function (snapshot) {
-    const jamKeInfo = cariJamKeAktif(snapshot.val(), jamSekarang());
-    tulis(jamKeInfo);
-  }).catch(function () { tulis(null); });
-}
 
 // ===================================================================
 // TAB: KELOLA AKUN / GURU

@@ -3865,35 +3865,7 @@ function initClassChipsSelector(user) {
   muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
 }
 
-// ===== HELPER ACTIONS DARI SERVICE GRID =====
-function pilihTabCekJadwal() {
-  const target = document.getElementById('sectionJadwalHome');
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth' });
-  }
-}
 
-function bukaModalJadwalPulang() {
-  db.ref('jadwal').once('value').then(snap => {
-    const data = snap.val() || {};
-    let info = 'Jadwal Kepulangan Resmi Sekolah:\n\n';
-    Object.entries(data).forEach(([kls, val]) => {
-      const jam = typeof val === 'string' ? val : '15:15';
-      info += `• ${kls}: Pukul ${jam} WIB\n`;
-    });
-    alert(info || 'Jam pulang resmi seluruh kelas: 15:15 WIB.');
-  });
-}
-
-function bukaModalTataTertib() {
-  alert(
-    "TATA TERTIB PRESENSI KELAS MANDIRI:\n\n" +
-    "1. Siswa wajib hadir di dalam ruangan kelas sebelum jam pelajaran dimulai.\n" +
-    "2. Jika guru berhalangan hadir, siswa melakukan tap kartu RFID pada scanner kelas.\n" +
-    "3. Titip absen menggunakan kartu teman dinyatakan pelanggaran disiplin berat.\n" +
-    "4. Izin sakit/dispensasi harus diajukan melalui menu 'Ajukan Izin' disertai surat keterangan resmi."
-  );
-}
 
 function inisialisasiPantauAwal() {
   if (typeof document === 'undefined') return;
