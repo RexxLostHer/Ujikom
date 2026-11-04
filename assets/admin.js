@@ -27,6 +27,20 @@ let adminSessionUser = null;
 let siswaCache = {};
 let kartuCache = {};
 let emailMappingCache = {};
+let guruCache = {};
+let guruClaimedCache = {};
+let usersCache = {};
+
+if (typeof window !== 'undefined') {
+  window.guruCache = guruCache;
+  window.guruClaimedCache = guruClaimedCache;
+  window.usersCache = usersCache;
+}
+if (typeof global !== 'undefined') {
+  global.guruCache = guruCache;
+  global.guruClaimedCache = guruClaimedCache;
+  global.usersCache = usersCache;
+}
 
 let shouldHaltAdmin = false;
 
@@ -191,6 +205,23 @@ function initAdmin() {
     emailMappingCache = snapshot.val() || {};
     if (siswaCache && Object.keys(siswaCache).length > 0) {
       renderSiswaTable(siswaCache);
+    }
+    if (guruCache && Object.keys(guruCache).length > 0) {
+      renderGuruTable(guruCache);
+    }
+  });
+
+  db.ref('guru').on('value', function (snapshot) {
+    const val = snapshot.val() || {};
+    const masterList = (typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : {});
+    guruCache = Object.assign({}, masterList, val);
+    renderGuruTable(guruCache);
+  });
+
+  db.ref('guru_claimed').on('value', function (snapshot) {
+    guruClaimedCache = snapshot.val() || {};
+    if (guruCache && Object.keys(guruCache).length > 0) {
+      renderGuruTable(guruCache);
     }
   });
 
@@ -1348,48 +1379,460 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // ===================================================================
-// TAB: KELOLA AKUN / GURU
+// TAB: MASTER DATA GURU & KELOLA AKUN
 // ===================================================================
-function submitGuru() {
-  const email = document.getElementById('guruEmail').value.trim().toLowerCase();
-  const nama  = document.getElementById('guruNama').value.trim();
-  const nip   = document.getElementById('guruNip') ? document.getElementById('guruNip').value.trim() : '';
-  const mapel = document.getElementById('guruMapel') ? document.getElementById('guruMapel').value.trim() : '';
 
-  if (!email || !nama) {
-    showMsg('guruMsg', 'Email dan nama guru wajib diisi.', 'error');
+function resolveGuruEmail(nip, g) {
+  let resolvedEmail = (g && g.email && g.email !== '-') ? g.email : '';
+  const cleanN = String(nip || (g && g.nip) || '').trim();
+  const cleanDigits = cleanN.replace(/\D/g, '');
+  const cleanNama = String((g && g.nama) || '').toLowerCase().trim();
+
+  // 1. Cek dari guru_claimed (klaim akun terverifikasi)
+  if (!resolvedEmail && typeof guruClaimedCache === 'object' && guruClaimedCache) {
+    if (cleanN && guruClaimedCache[cleanN] && guruClaimedCache[cleanN].email) {
+      resolvedEmail = guruClaimedCache[cleanN].email;
+    } else if (cleanDigits && guruClaimedCache[cleanDigits] && guruClaimedCache[cleanDigits].email) {
+      resolvedEmail = guruClaimedCache[cleanDigits].email;
+    } else {
+      for (const [k, cVal] of Object.entries(guruClaimedCache)) {
+        if (!cVal) continue;
+        const cNip = String(cVal.nip || k).trim();
+        const cDigits = cNip.replace(/\D/g, '');
+        const cNama = String(cVal.nama || '').toLowerCase().trim();
+        if ((cleanN && cNip && cleanN === cNip) ||
+            (cleanDigits && cDigits && cleanDigits === cDigits) ||
+            (cleanNama && cNama && cleanNama === cNama)) {
+          if (cVal.email) {
+            resolvedEmail = cVal.email;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Cek dari emailMappingCache (HANYA jika terverifikasi isVerified === true)
+  if (!resolvedEmail && typeof emailMappingCache === 'object' && emailMappingCache) {
+    for (const [emKey, mapVal] of Object.entries(emailMappingCache)) {
+      if (!mapVal || mapVal.isVerified !== true) continue;
+      const mapN = String(mapVal.nip || '').trim();
+      const mapDigits = mapN.replace(/\D/g, '');
+      const mapNama = String(mapVal.nama || '').toLowerCase().trim();
+      if ((cleanN && mapN && cleanN === mapN) ||
+          (cleanDigits && mapDigits && cleanDigits === mapDigits) ||
+          (cleanNama && mapNama && cleanNama === mapNama)) {
+        resolvedEmail = mapVal.email || emKey.replace(/\(at\)/g, '@').replace(/,/g, '.');
+        break;
+      }
+    }
+  }
+
+  // 3. Cek dari usersCache (HANYA jika isVerified === true dan NIP/nama cocok)
+  if (!resolvedEmail && typeof usersCache === 'object' && usersCache) {
+    for (const [uid, u] of Object.entries(usersCache)) {
+      if (!u || u.isVerified !== true) continue;
+      const uNip = String(u.nip || '').trim();
+      const uDigits = uNip.replace(/\D/g, '');
+      const uNama = String(u.nama || '').toLowerCase().trim();
+      if ((cleanN && uNip && cleanN === uNip) ||
+          (cleanDigits && uDigits && cleanDigits === uDigits) ||
+          (cleanNama && uNama && cleanNama === uNama)) {
+        if (u.email && u.email !== '-') {
+          resolvedEmail = u.email;
+          break;
+        }
+      }
+    }
+  }
+
+  return resolvedEmail || (g && g.email) || '-';
+}
+
+function renderGuruTable(data) {
+  const tbody = document.getElementById('guruTableBody');
+  const statEl = document.getElementById('statTotalGuru');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  const masterList = (typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : {});
+  const merged = Object.assign({}, masterList, data || {});
+  const items = Object.entries(merged).sort((a, b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
+
+  if (statEl) statEl.textContent = 'Total Guru: ' + items.length;
+
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada data guru.</p></td></tr>';
     return;
   }
 
-  const encoded = email.replace(/\./g, ',').replace(/@/g, '(at)');
-  const payloadGuru = {
-    nisn: null,
-    nama,
-    kelas: null,
-    role: 'guru',
-    email,
-    nip: nip || null,
-    mapel: mapel || null
-  };
+  items.forEach(function ([nip, g]) {
+    const displayNip = g.nip || nip;
+    const keyTarget = displayNip;
+    const inisial = (g.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fotoUrl = g.foto || ('assets/foto/guru_' + displayNip + '.jpg');
+    const resolvedEmail = resolveGuruEmail(displayNip, g);
 
-  db.ref('email_mapping/' + encoded).set(payloadGuru)
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="font-family:var(--font-mono, monospace);font-weight:600;">' + displayNip + '</td>' +
+      '<td>' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<div style="width:38px;height:38px;border-radius:10px;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;border:1.5px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.06);flex-shrink:0;">' +
+            '<img src="' + fotoUrl + '" alt="' + (g.nama || '') + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.textContent=\'' + inisial + '\';">' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-weight:700;color:#0f172a;display:inline-flex;align-items:center;gap:6px;">' +
+              (g.nama || '') +
+              (g.isWalas ? '<span class="status-pill disetujui" style="font-size:10px;padding:1px 6px;">Walas ' + (g.walasKelasId || '') + '</span>' : '') +
+            '</div>' +
+            (g.foto_karakter ? '<div style="font-size:11px;color:#6366f1;font-weight:600;">CotE: ' + g.foto_karakter + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+      '</td>' +
+      '<td>' + (g.mapel || '-') + '</td>' +
+      '<td style="font-size:12px;color:#64748b;">' + (resolvedEmail !== '-' ? ('<span style="font-weight:600;color:#0f172a;">' + resolvedEmail + '</span>') : '-') + '</td>' +
+      '<td></td>';
+
+    const actionsTd = tr.cells[4];
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit';
+    editBtn.className = 'btn-row-edit';
+    editBtn.onclick = function () { editGuru(keyTarget); };
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Hapus';
+    delBtn.className = 'btn-row-delete';
+    delBtn.onclick = function () { hapusGuru(keyTarget); };
+
+    actionsTd.appendChild(editBtn);
+    actionsTd.appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+}
+
+function submitGuru() {
+  const editingKey = document.getElementById('guruEditingKey') ? document.getElementById('guruEditingKey').value : '';
+  const nip   = document.getElementById('guruNip') ? document.getElementById('guruNip').value.trim() : '';
+  const nama  = document.getElementById('guruNama') ? document.getElementById('guruNama').value.trim() : '';
+  const mapel = document.getElementById('guruMapel') ? document.getElementById('guruMapel').value.trim() : '';
+  const email = document.getElementById('guruEmail') ? document.getElementById('guruEmail').value.trim().toLowerCase() : '';
+  const walasSel = document.getElementById('guruWalasKelas');
+  const walasKelas = walasSel ? walasSel.value.trim() : '';
+  const isWalas = !!walasKelas;
+
+  if (!nip || !nama) {
+    showMsg('guruMsg', 'NIP dan Nama Guru wajib diisi.', 'error');
+    return;
+  }
+
+  const payload = {
+    nip: nip,
+    nama: nama,
+    mapel: mapel || '-',
+    isWalas: isWalas,
+    walasKelasId: isWalas ? walasKelas : null,
+    role: isWalas ? 'walas' : 'guru'
+  };
+  if (email) payload.email = email;
+
+  const key = editingKey || nip;
+  const p1 = (typeof db !== 'undefined' && db.ref) ? db.ref('guru/' + key).update(payload) : Promise.resolve();
+  const p2 = (email && typeof db !== 'undefined' && db.ref) ? (() => {
+    const encoded = email.replace(/\./g, ',').replace(/@/g, '(at)');
+    return db.ref('email_mapping/' + encoded).update({
+      nip: key,
+      nama: nama,
+      role: isWalas ? 'walas' : 'guru',
+      isWalas: isWalas,
+      walasKelasId: isWalas ? walasKelas : null,
+      isVerified: true,
+      email: email
+    });
+  })() : Promise.resolve();
+
+  Promise.all([p1, p2])
     .then(function () {
-      showMsg('guruMsg', '✅ ' + nama + ' berhasil didaftarkan sebagai Guru.', 'success');
-      document.getElementById('guruEmail').value = '';
-      document.getElementById('guruNama').value = '';
-      if (document.getElementById('guruNip')) document.getElementById('guruNip').value = '';
-      if (document.getElementById('guruMapel')) document.getElementById('guruMapel').value = '';
+      if (typeof tampilkanPopUpAcc === 'function') {
+        tampilkanPopUpAcc(editingKey ? 'Data Guru Diperbarui' : 'Guru Ditambahkan', 'Data ' + nama + ' berhasil disimpan.');
+      } else {
+        showMsg('guruMsg', editingKey ? 'Data guru diperbarui.' : 'Guru berhasil didaftarkan.', 'success');
+      }
+      if (guruCache) {
+        guruCache[key] = Object.assign({}, guruCache[key] || {}, payload);
+        renderGuruTable(guruCache);
+      }
+      resetFormGuru();
     })
     .catch(function (err) { showMsg('guruMsg', 'Gagal: ' + err.message, 'error'); });
+}
+
+function editGuru(nip) {
+  const g = (guruCache && guruCache[nip]) || (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI[nip]) || null;
+  if (!g) return;
+
+  bukaModalEditGuru(nip);
+
+  // Juga sinkronkan form inline atas
+  const elKey = document.getElementById('guruEditingKey');
+  const elNip = document.getElementById('guruNip');
+  const elNama = document.getElementById('guruNama');
+  const elMapel = document.getElementById('guruMapel');
+  const elEmail = document.getElementById('guruEmail');
+  const elWalas = document.getElementById('guruWalasKelas');
+  const elTitle = document.getElementById('guruFormTitle');
+  const elSubmitBtn = document.getElementById('guruSubmitBtn');
+  const elCancelBtn = document.getElementById('guruCancelBtn');
+
+  if (elKey) elKey.value = nip;
+  if (elNip) elNip.value = g.nip || nip;
+  if (elNama) elNama.value = g.nama || '';
+  if (elMapel) elMapel.value = g.mapel || '';
+
+  const resolved = resolveGuruEmail(nip, g);
+  if (elEmail) elEmail.value = (resolved && resolved !== '-') ? resolved : '';
+
+  if (elWalas) {
+    elWalas.value = g.walasKelasId || (g.isWalas && g.kelas) || '';
+  }
+
+  if (elTitle) elTitle.textContent = 'Edit Data Guru';
+  if (elSubmitBtn) elSubmitBtn.textContent = 'Simpan Perubahan';
+  if (elCancelBtn) elCancelBtn.classList.remove('hidden');
+}
+
+function resetFormGuru() {
+  const elKey = document.getElementById('guruEditingKey');
+  const elNip = document.getElementById('guruNip');
+  const elNama = document.getElementById('guruNama');
+  const elMapel = document.getElementById('guruMapel');
+  const elEmail = document.getElementById('guruEmail');
+  const elWalas = document.getElementById('guruWalasKelas');
+  const elTitle = document.getElementById('guruFormTitle');
+  const elSubmitBtn = document.getElementById('guruSubmitBtn');
+  const elCancelBtn = document.getElementById('guruCancelBtn');
+
+  if (elKey) elKey.value = '';
+  if (elNip) elNip.value = '';
+  if (elNama) elNama.value = '';
+  if (elMapel) elMapel.value = '';
+  if (elEmail) elEmail.value = '';
+  if (elWalas) elWalas.value = '';
+
+  if (elTitle) elTitle.textContent = 'Tambah Guru';
+  if (elSubmitBtn) elSubmitBtn.textContent = '+ Tambah Guru';
+  if (elCancelBtn) elCancelBtn.classList.add('hidden');
+}
+
+function hapusGuru(nip) {
+  const g = (guruCache && guruCache[nip]) || (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI[nip]) || { nama: nip };
+  const nama = g.nama || nip;
+  if (!confirm('Hapus guru ' + nama + ' (NIP: ' + nip + ')?\nRiwayat mengajar tidak otomatis terhapus.')) return;
+
+  const p1 = (typeof db !== 'undefined' && db.ref) ? db.ref('guru/' + nip).remove() : Promise.resolve();
+  const p2 = (typeof db !== 'undefined' && db.ref) ? db.ref('guru_claimed/' + nip).remove().catch(() => {}) : Promise.resolve();
+
+  Promise.all([p1, p2])
+    .then(function () {
+      if (guruCache) delete guruCache[nip];
+      renderGuruTable(guruCache);
+
+      if (typeof tampilkanPopUpAcc === 'function') {
+        tampilkanPopUpAcc('Guru Dihapus', 'Data guru ' + nama + ' telah dihapus.');
+      } else {
+        showMsg('guruMsg', 'Guru ' + nama + ' berhasil dihapus.', 'success');
+      }
+      resetFormGuru();
+    })
+    .catch(function (err) { showMsg('guruMsg', 'Gagal: ' + err.message, 'error'); });
+}
+
+function bukaModalEditGuru(nip) {
+  const g = (guruCache && guruCache[nip]) || (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI[nip]) || null;
+  if (!g) return;
+
+  const modal = document.getElementById('modalEditGuruAdmin');
+  const elKey = document.getElementById('modalEditGuruKey');
+  const elNip = document.getElementById('modalEditGuruNip');
+  const elNama = document.getElementById('modalEditGuruNama');
+  const elMapel = document.getElementById('modalEditGuruMapel');
+  const elWalas = document.getElementById('modalEditGuruWalas');
+  const elEmail = document.getElementById('modalEditGuruEmail');
+  const elMsg = document.getElementById('modalEditGuruMsg');
+
+  if (elKey) elKey.value = nip;
+  if (elNip) elNip.value = g.nip || nip;
+  if (elNama) elNama.value = g.nama || '';
+  if (elMapel) elMapel.value = g.mapel || '';
+  if (elWalas) elWalas.value = g.walasKelasId || (g.isWalas && g.kelas) || '';
+
+  const resolved = resolveGuruEmail(nip, g);
+  if (elEmail) elEmail.value = (resolved && resolved !== '-') ? resolved : '';
+  if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function tutupModalEditGuru() {
+  const modal = document.getElementById('modalEditGuruAdmin');
+  if (modal) modal.style.display = 'none';
+}
+
+async function simpanModalEditGuru() {
+  const key = document.getElementById('modalEditGuruKey')?.value;
+  const nip = document.getElementById('modalEditGuruNip')?.value?.trim();
+  const nama = document.getElementById('modalEditGuruNama')?.value?.trim();
+  const mapel = document.getElementById('modalEditGuruMapel')?.value?.trim();
+  const walasKelas = document.getElementById('modalEditGuruWalas')?.value?.trim();
+  const email = document.getElementById('modalEditGuruEmail')?.value?.trim().toLowerCase();
+  const btn = document.getElementById('btnSimpanModalEditGuru');
+  const elMsg = document.getElementById('modalEditGuruMsg');
+
+  if (!nip || !nama) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'NIP dan Nama Guru wajib diisi.';
+    }
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '<span>Menyimpan...</span>';
+  }
+
+  const isWalas = !!walasKelas;
+  const payload = {
+    nip: nip,
+    nama: nama,
+    mapel: mapel || '-',
+    isWalas: isWalas,
+    walasKelasId: isWalas ? walasKelas : null,
+    role: isWalas ? 'walas' : 'guru'
+  };
+  if (email) payload.email = email;
+
+  try {
+    const targetKey = key || nip;
+    if (typeof db !== 'undefined' && db.ref) {
+      await db.ref('guru/' + targetKey).update(payload);
+      if (email) {
+        const encoded = email.replace(/\./g, ',').replace(/@/g, '(at)');
+        await db.ref('email_mapping/' + encoded).update({
+          nip: targetKey,
+          nama: nama,
+          role: isWalas ? 'walas' : 'guru',
+          isWalas: isWalas,
+          walasKelasId: isWalas ? walasKelas : null,
+          isVerified: true,
+          email: email
+        }).catch(() => {});
+        await db.ref('guru_claimed/' + targetKey).update({
+          email: email,
+          nama: nama,
+          nip: targetKey,
+          role: isWalas ? 'walas' : 'guru'
+        }).catch(() => {});
+      }
+    }
+
+    if (guruCache) {
+      guruCache[targetKey] = Object.assign({}, guruCache[targetKey] || {}, payload);
+      renderGuruTable(guruCache);
+    }
+
+    tutupModalEditGuru();
+    if (typeof tampilkanPopUpAcc === 'function') {
+      tampilkanPopUpAcc('Data Guru Diperbarui', 'Data ' + nama + ' berhasil disimpan.');
+    } else {
+      showMsg('guruMsg', 'Data guru ' + nama + ' berhasil diperbarui.', 'success');
+    }
+  } catch (err) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Gagal menyimpan: ' + err.message;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Perubahan</span>';
+    }
+  }
+}
+
+function lepasTautanNipAdmin(uid, nip, email) {
+  if (!confirm('Lepas tautan NIP (' + nip + ') dari akun ini?\nSetelah dilepas, akun akan menjadi pengunjung dan NIP dapat ditautkan ke akun lain.')) return;
+
+  const updates = {
+    role: 'pengunjung',
+    nip: null,
+    isVerified: false,
+    mapel: null,
+    isWalas: null,
+    walasKelasId: null
+  };
+
+  const p1 = db.ref('users/' + uid).update(updates);
+  const p2 = nip ? db.ref('guru_claimed/' + nip).remove().catch(() => {}) : Promise.resolve();
+  const p3 = (email) ? db.ref('email_mapping/' + email.replace(/\./g, ',').replace(/@/g, '(at)')).remove().catch(() => {}) : Promise.resolve();
+
+  Promise.all([p1, p2, p3])
+    .then(function () {
+      if (typeof tampilkanPopUpAcc === 'function') {
+        tampilkanPopUpAcc('Tautan NIP Dilepas', 'NIP ' + nip + ' berhasil dilepas.');
+      } else {
+        alert('Tautan NIP berhasil dilepas.');
+      }
+      loadUsers();
+      if (guruCache) renderGuruTable(guruCache);
+    })
+    .catch(function (err) { alert('Gagal melepas NIP: ' + err.message); });
+}
+
+if (typeof window !== 'undefined') {
+  window.resolveGuruEmail = resolveGuruEmail;
+  window.renderGuruTable = renderGuruTable;
+  window.submitGuru = submitGuru;
+  window.editGuru = editGuru;
+  window.hapusGuru = hapusGuru;
+  window.resetFormGuru = resetFormGuru;
+  window.bukaModalEditGuru = bukaModalEditGuru;
+  window.tutupModalEditGuru = tutupModalEditGuru;
+  window.simpanModalEditGuru = simpanModalEditGuru;
+  window.lepasTautanNipAdmin = lepasTautanNipAdmin;
+}
+if (typeof global !== 'undefined') {
+  global.resolveGuruEmail = resolveGuruEmail;
+  global.renderGuruTable = renderGuruTable;
+  global.submitGuru = submitGuru;
+  global.editGuru = editGuru;
+  global.hapusGuru = hapusGuru;
+  global.resetFormGuru = resetFormGuru;
+  global.bukaModalEditGuru = bukaModalEditGuru;
+  global.tutupModalEditGuru = tutupModalEditGuru;
+  global.simpanModalEditGuru = simpanModalEditGuru;
+  global.lepasTautanNipAdmin = lepasTautanNipAdmin;
 }
 
 function loadUsers() {
   db.ref('users').on('value', function (snap) {
     const tbody = document.getElementById('userTableBody');
+    const data = snap.val() || {};
+    usersCache = data;
+    if (guruCache && Object.keys(guruCache).length > 0) {
+      renderGuruTable(guruCache);
+    }
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const data = snap.val() || {};
     const entries = Object.entries(data);
 
     if (entries.length === 0) {
@@ -1436,7 +1879,10 @@ function loadUsers() {
       tdRole.appendChild(select);
 
       if (u.nisn) {
-        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;">✓ ' + u.nisn + ' (' + (u.kelas || '-') + ')</span>';
+        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;">✓ NISN: ' + u.nisn + ' (' + (u.kelas || '-') + ')</span>';
+      } else if (u.nip) {
+        const walasBadge = u.isWalas ? 'Walas ' + (u.walasKelasId || '') : 'Guru';
+        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;background:#e0f2fe;color:#0369a1;border:1.5px solid #bae6fd;">✓ NIP: ' + u.nip + ' (' + walasBadge + ')</span>';
       } else {
         tdNisn.innerHTML = '<span style="color:#94a3b8;font-size:12px;">- Belum Tertaut</span>';
       }
@@ -1445,7 +1891,7 @@ function loadUsers() {
       tdAksi.style.gap = '6px';
       tdAksi.style.alignItems = 'center';
 
-      // Tombol Lepas Tautan NISN jika user memiliki NISN
+      // Tombol Lepas Tautan NISN / NIP
       if (u.nisn) {
         const unlinkBtn = document.createElement('button');
         unlinkBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NISN</span>';
@@ -1456,6 +1902,16 @@ function loadUsers() {
         unlinkBtn.title = 'Lepas tautan NISN agar dapat dipindahkan ke akun lain';
         unlinkBtn.onclick = function () { lepasTautanNisnAdmin(uid, u.nisn, u.email); };
         tdAksi.appendChild(unlinkBtn);
+      } else if (u.nip) {
+        const unlinkNipBtn = document.createElement('button');
+        unlinkNipBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NIP</span>';
+        unlinkNipBtn.className = 'btn-row-edit';
+        unlinkNipBtn.style.background = '#fffbeb';
+        unlinkNipBtn.style.color = '#b45309';
+        unlinkNipBtn.style.borderColor = '#fde68a';
+        unlinkNipBtn.title = 'Lepas tautan NIP agar dapat dipindahkan ke akun lain';
+        unlinkNipBtn.onclick = function () { lepasTautanNipAdmin(uid, u.nip, u.email); };
+        tdAksi.appendChild(unlinkNipBtn);
       }
 
       // Hapus button

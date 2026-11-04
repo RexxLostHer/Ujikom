@@ -956,6 +956,12 @@ async function konfirmasiTautkanGuru(nip) {
         });
       } catch (e) {}
     }
+
+    if (dataGuru.nip && email) {
+      try {
+        await db.ref('guru/' + dataGuru.nip).update({ email: email }).catch(() => null);
+      } catch (e) {}
+    }
   }
 
   // Simpan klaim dan akun terhubung ke LocalStorage untuk persistensi offline & reload
