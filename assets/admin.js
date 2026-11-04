@@ -29,6 +29,7 @@ let kartuCache = {};
 let emailMappingCache = {};
 let guruCache = {};
 let guruClaimedCache = {};
+let jadwalCache = {};
 let usersCache = {};
 
 if (typeof window !== 'undefined') {
@@ -231,7 +232,8 @@ function initAdmin() {
   });
 
   db.ref('jadwal').on('value', function (snapshot) {
-    renderJadwalTable(snapshot.val() || {});
+    jadwalCache = snapshot.val() || {};
+    renderJadwalTable(jadwalCache);
   });
 
   listenPendingCount();
@@ -240,6 +242,7 @@ function initAdmin() {
   listenKendalaGuruAdmin();
   initStatusKelasControls();
   populateVirtualSiswaSimulasi();
+  populateJadwalKelasOptions();
 }
 
 // ===== TAB NAVIGATION =====
@@ -1159,62 +1162,350 @@ function renderKartuTable(data) {
 }
 
 // ===================================================================
-// TAB: JADWAL PULANG
+// TAB: JADWAL PULANG KELAS (HARIAN LENGKAP 3 KELAS RESMI)
 // ===================================================================
-function submitJadwal() {
-  const kelas = document.getElementById('jadwalKelas').value.trim();
-  const jam   = document.getElementById('jadwalJam').value;
+
+function populateJadwalKelasOptions() {
+  const sel = document.getElementById('jadwalKelas');
+  if (!sel) return;
+  const official = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const curVal = sel.value;
+  sel.innerHTML = '';
+  official.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k;
+    if (k === curVal || (!curVal && k === 'XII RPL 2')) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function gantiHariJadwalPulang() {
+  const selHari = document.getElementById('jadwalHari');
+  const inputJam = document.getElementById('jadwalJam');
+  if (!selHari || !inputJam) return;
+  const h = selHari.value;
+  if (h === 'jumat') {
+    inputJam.value = '11:45';
+  } else {
+    inputJam.value = '15:30';
+  }
+}
+
+async function terapkanPresetStandarJadwal() {
+  const standardSchedule = {
+    'senin': '15:30',
+    'selasa': '15:30',
+    'rabu': '15:30',
+    'kamis': '15:30',
+    'jumat': '11:45'
+  };
+  const officialClasses = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+
+  try {
+    const promises = officialClasses.map(cls => db.ref('jadwal/' + cls).set(standardSchedule));
+    // Purge non-official classes (e.g. XII TKJ 2)
+    promises.push(db.ref('jadwal/XII TKJ 2').remove().catch(() => null));
+    await Promise.all(promises);
+
+    if (typeof tampilkanPopUpAcc === 'function') {
+      tampilkanPopUpAcc('Jadwal Standar Diterapkan', 'Jam pulang 3 kelas resmi berhasil disetel ke 15:30 (Senin-Kamis) & 11:45 (Jumat).');
+    } else {
+      showMsg('jadwalMsg', 'Jadwal standar SMKN 1 Sumedang berhasil diterapkan untuk 3 kelas resmi.', 'success');
+    }
+  } catch (err) {
+    showMsg('jadwalMsg', 'Gagal menerapkan preset: ' + err.message, 'error');
+  }
+}
+
+async function submitJadwal() {
+  const selKelas = document.getElementById('jadwalKelas');
+  const selHari = document.getElementById('jadwalHari');
+  const inputJam = document.getElementById('jadwalJam');
+
+  const kelas = selKelas ? selKelas.value.trim() : '';
+  const hari = selHari ? selHari.value.trim() : 'semua';
+  const jam = inputJam ? inputJam.value : '';
 
   if (!kelas || !jam) {
-    showMsg('jadwalMsg', 'Isi kelas dan jam pulang.', 'error');
+    showMsg('jadwalMsg', 'Pilih kelas dan tentukan jam pulang.', 'error');
     return;
   }
 
-  db.ref('jadwal/' + kelas).set(jam)
-    .then(function () {
-      showMsg('jadwalMsg', 'Jadwal ' + kelas + ' → ' + jam + ' disimpan.', 'success');
-      document.getElementById('jadwalKelas').value = '';
-      document.getElementById('jadwalJam').value = '';
-    })
+  try {
+    let currentVal = (jadwalCache && jadwalCache[kelas]) || {};
+    if (typeof currentVal === 'string') {
+      currentVal = {
+        'senin': currentVal,
+        'selasa': currentVal,
+        'rabu': currentVal,
+        'kamis': currentVal,
+        'jumat': '11:45'
+      };
+    } else {
+      currentVal = Object.assign({}, currentVal);
+    }
+
+    if (hari === 'semua') {
+      currentVal = {
+        'senin': jam,
+        'selasa': jam,
+        'rabu': jam,
+        'kamis': jam,
+        'jumat': (jam === '15:30' ? '11:45' : jam)
+      };
+    } else if (hari === 'senin_kamis') {
+      currentVal['senin'] = jam;
+      currentVal['selasa'] = jam;
+      currentVal['rabu'] = jam;
+      currentVal['kamis'] = jam;
+      if (!currentVal['jumat']) currentVal['jumat'] = '11:45';
+    } else {
+      currentVal[hari] = jam;
+    }
+
+    await db.ref('jadwal/' + kelas).set(currentVal);
+
+    if (typeof tampilkanPopUpAcc === 'function') {
+      tampilkanPopUpAcc('Jadwal Disimpan', 'Jam pulang ' + kelas + ' berhasil diperbarui.');
+    } else {
+      showMsg('jadwalMsg', 'Jadwal pulang ' + kelas + ' (' + hari + ') → ' + jam + ' disimpan.', 'success');
+    }
+  } catch (err) {
+    showMsg('jadwalMsg', 'Gagal: ' + err.message, 'error');
+  }
+}
+
+function hapusJadwal(kelas, hari) {
+  if (hari) {
+    if (!confirm('Reset jam pulang ' + kelas + ' hari ' + hari.toUpperCase() + ' ke default?')) return;
+    const defaultJam = (hari === 'jumat') ? '11:45' : '15:30';
+    db.ref('jadwal/' + kelas + '/' + hari).set(defaultJam)
+      .then(function () {
+        showMsg('jadwalMsg', 'Jam pulang ' + kelas + ' hari ' + hari + ' direset ke ' + defaultJam + '.', 'success');
+      })
+      .catch(function (err) { showMsg('jadwalMsg', 'Gagal: ' + err.message, 'error'); });
+    return;
+  }
+
+  // Jika kelas tidak resmi (seperti XII TKJ 2), hapus total
+  const officialClasses = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  if (!officialClasses.includes(kelas)) {
+    if (!confirm('Hapus kelas tidak resmi ' + kelas + ' dari jadwal?')) return;
+    db.ref('jadwal/' + kelas).remove()
+      .then(function () { showMsg('jadwalMsg', 'Kelas ' + kelas + ' dihapus dari jadwal.', 'success'); })
+      .catch(function (err) { showMsg('jadwalMsg', 'Gagal: ' + err.message, 'error'); });
+    return;
+  }
+
+  // Jika kelas resmi, reset ke jadwal standar lengkap
+  if (!confirm('Reset jadwal ' + kelas + ' ke standar resmi sekolah (Senin-Kamis 15:30 & Jumat 11:45)?')) return;
+  const standardSchedule = {
+    'senin': '15:30',
+    'selasa': '15:30',
+    'rabu': '15:30',
+    'kamis': '15:30',
+    'jumat': '11:45'
+  };
+  db.ref('jadwal/' + kelas).set(standardSchedule)
+    .then(function () { showMsg('jadwalMsg', 'Jadwal ' + kelas + ' direset ke standar sekolah.', 'success'); })
     .catch(function (err) { showMsg('jadwalMsg', 'Gagal: ' + err.message, 'error'); });
 }
 
-function hapusJadwal(kelas) {
-  if (!confirm('Hapus jadwal kelas ' + kelas + '?')) return;
-  db.ref('jadwal/' + kelas).remove()
-    .then(function () { showMsg('jadwalMsg', 'Jadwal dihapus.', 'success'); })
-    .catch(function (err) { showMsg('jadwalMsg', 'Gagal: ' + err.message, 'error'); });
+function bukaModalEditJadwal(kelas, hari, jam) {
+  const modal = document.getElementById('modalEditJadwalPulang');
+  const elKelas = document.getElementById('modalEditJadwalKelas');
+  const elHari = document.getElementById('modalEditJadwalHari');
+  const elJam = document.getElementById('modalEditJadwalJam');
+  const elMsg = document.getElementById('modalEditJadwalMsg');
+  const elSub = document.getElementById('modalEditJadwalSub');
+
+  if (elKelas) elKelas.value = kelas;
+  if (elHari) elHari.value = hari;
+  if (elJam) elJam.value = jam || (hari === 'jumat' ? '11:45' : '15:30');
+  if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
+  if (elSub) elSub.textContent = 'Perbarui jam kepulangan resmi ' + kelas + ' (' + hari.toUpperCase() + ')';
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function tutupModalEditJadwal() {
+  const modal = document.getElementById('modalEditJadwalPulang');
+  if (modal) modal.style.display = 'none';
+}
+
+async function simpanModalEditJadwal() {
+  const kelas = document.getElementById('modalEditJadwalKelas')?.value?.trim();
+  const hari = document.getElementById('modalEditJadwalHari')?.value?.trim()?.toLowerCase();
+  const jam = document.getElementById('modalEditJadwalJam')?.value?.trim();
+  const btn = document.getElementById('btnSimpanModalEditJadwal');
+  const elMsg = document.getElementById('modalEditJadwalMsg');
+
+  if (!kelas || !hari || !jam) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Jam pulang wajib diisi.';
+    }
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '<span>Menyimpan...</span>';
+  }
+
+  try {
+    await db.ref('jadwal/' + kelas + '/' + hari).set(jam);
+    tutupModalEditJadwal();
+
+    if (typeof tampilkanPopUpAcc === 'function') {
+      tampilkanPopUpAcc('Jam Pulang Diperbarui', 'Jam pulang ' + kelas + ' hari ' + hari.toUpperCase() + ' menjadi ' + jam + ' WIB.');
+    } else {
+      showMsg('jadwalMsg', 'Jam pulang ' + kelas + ' (' + hari + ') → ' + jam + ' berhasil disimpan.', 'success');
+    }
+  } catch (err) {
+    if (elMsg) {
+      elMsg.style.display = 'block';
+      elMsg.style.background = '#fef2f2';
+      elMsg.style.color = '#dc2626';
+      elMsg.textContent = 'Gagal menyimpan: ' + err.message;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Perubahan</span>';
+    }
+  }
 }
 
 function renderJadwalTable(data) {
   const tbody = document.getElementById('jadwalTableBody');
+  const statEl = document.getElementById('statTotalJadwal');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const kelasList = Object.keys(data).sort();
-  if (kelasList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><p>Belum ada jadwal pulang.</p></div></td></tr>';
+  const officialClasses = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
+  const allDays = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+  const dataObj = data || {};
+
+  // Cek apakah ada kelas tidak resmi (seperti XII TKJ 2) untuk auto-purge
+  Object.keys(dataObj).forEach(k => {
+    if (!officialClasses.includes(k) && (k.includes('TKJ 2') || k.includes('PPLG') || k.includes('9A'))) {
+      if (typeof db !== 'undefined' && db.ref) {
+        db.ref('jadwal/' + k).remove().catch(() => null);
+      }
+    }
+  });
+
+  const mergedClasses = Array.from(new Set([...officialClasses, ...Object.keys(dataObj).filter(k => officialClasses.includes(k))])).sort();
+  if (statEl) statEl.textContent = mergedClasses.length + ' Kelas Resmi Terkonfigurasi';
+
+  if (mergedClasses.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><p>Belum ada jadwal pulang kelas.</p></td></tr>';
     return;
   }
 
-  kelasList.forEach(function (kelas) {
-    const nilai = data[kelas];
-    // Format lama: string langsung
-    const jam = typeof nilai === 'string' ? nilai : JSON.stringify(nilai);
+  mergedClasses.forEach(function (kelas) {
+    const rawVal = dataObj[kelas];
+    let schedulePerDay = {};
 
-    const tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td>' + kelas + '</td>' +
-      '<td><strong>' + jam + '</strong></td>' +
-      '<td></td>';
+    if (typeof rawVal === 'string') {
+      schedulePerDay = {
+        'senin': rawVal,
+        'selasa': rawVal,
+        'rabu': rawVal,
+        'kamis': rawVal,
+        'jumat': '11:45'
+      };
+    } else if (rawVal && typeof rawVal === 'object') {
+      schedulePerDay = Object.assign({
+        'senin': '15:30',
+        'selasa': '15:30',
+        'rabu': '15:30',
+        'kamis': '15:30',
+        'jumat': '11:45'
+      }, rawVal);
+    } else {
+      schedulePerDay = {
+        'senin': '15:30',
+        'selasa': '15:30',
+        'rabu': '15:30',
+        'kamis': '15:30',
+        'jumat': '11:45'
+      };
+    }
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = 'Hapus';
-    delBtn.className = 'btn-row-delete';
-    delBtn.onclick = function () { hapusJadwal(kelas); };
-    tr.cells[2].appendChild(delBtn);
-    tbody.appendChild(tr);
+    allDays.forEach(function (hari, dayIdx) {
+      const jam = schedulePerDay[hari] || (hari === 'jumat' ? '11:45' : '15:30');
+      const isJumat = (hari === 'jumat');
+      const hariCap = hari.charAt(0).toUpperCase() + hari.slice(1);
+      const ketText = isJumat
+        ? '<span style="color:#0284c7;font-weight:600;font-size:12px;">KBM Singkat (Shalat Jumat)</span>'
+        : '<span style="color:#475569;font-size:12px;">KBM Reguler (9 Jam Pelajaran)</span>';
+      const badgeColor = isJumat ? 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;' : 'background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;';
+
+      const tr = document.createElement('tr');
+      if (dayIdx === 0) {
+        tr.style.borderTop = '2px solid #e2e8f0';
+      }
+
+      tr.innerHTML =
+        '<td style="font-weight:800;color:#0f172a;font-family:var(--font-mono, monospace);">' + (dayIdx === 0 ? ('<span class="status-pill" style="font-size:12px;background:#f8fafc;color:#1e293b;border:1.5px solid #cbd5e1;padding:3px 8px;">' + kelas + '</span>') : '<span style="color:#94a3b8;font-size:11px;">↳ ' + kelas + '</span>') + '</td>' +
+        '<td><span class="status-pill" style="font-size:11.5px;padding:2px 8px;' + badgeColor + '">' + hariCap + '</span></td>' +
+        '<td><strong style="font-size:13.5px;color:#0f172a;font-family:var(--font-mono, monospace);">' + jam + ' WIB</strong></td>' +
+        '<td>' + ketText + '</td>' +
+        '<td style="display:flex;gap:6px;align-items:center;"></td>';
+
+      const actionsTd = tr.cells[4];
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.className = 'btn-row-edit';
+      editBtn.title = 'Edit jam pulang ' + kelas + ' hari ' + hariCap;
+      editBtn.onclick = function () { bukaModalEditJadwal(kelas, hari, jam); };
+
+      const resetBtn = document.createElement('button');
+      resetBtn.textContent = 'Reset';
+      resetBtn.className = 'btn-row-delete';
+      resetBtn.style.color = '#64748b';
+      resetBtn.style.borderColor = '#cbd5e1';
+      resetBtn.title = 'Reset jam pulang hari ini ke standar';
+      resetBtn.onclick = function () { hapusJadwal(kelas, hari); };
+
+      actionsTd.appendChild(editBtn);
+      actionsTd.appendChild(resetBtn);
+      tbody.appendChild(tr);
+    });
   });
+}
+
+if (typeof window !== 'undefined') {
+  window.jadwalCache = jadwalCache;
+  window.populateJadwalKelasOptions = populateJadwalKelasOptions;
+  window.gantiHariJadwalPulang = gantiHariJadwalPulang;
+  window.terapkanPresetStandarJadwal = terapkanPresetStandarJadwal;
+  window.submitJadwal = submitJadwal;
+  window.hapusJadwal = hapusJadwal;
+  window.bukaModalEditJadwal = bukaModalEditJadwal;
+  window.tutupModalEditJadwal = tutupModalEditJadwal;
+  window.simpanModalEditJadwal = simpanModalEditJadwal;
+  window.renderJadwalTable = renderJadwalTable;
+}
+if (typeof global !== 'undefined') {
+  global.jadwalCache = jadwalCache;
+  global.populateJadwalKelasOptions = populateJadwalKelasOptions;
+  global.gantiHariJadwalPulang = gantiHariJadwalPulang;
+  global.terapkanPresetStandarJadwal = terapkanPresetStandarJadwal;
+  global.submitJadwal = submitJadwal;
+  global.hapusJadwal = hapusJadwal;
+  global.bukaModalEditJadwal = bukaModalEditJadwal;
+  global.tutupModalEditJadwal = tutupModalEditJadwal;
+  global.simpanModalEditJadwal = simpanModalEditJadwal;
+  global.renderJadwalTable = renderJadwalTable;
 }
 
 // ===================================================================

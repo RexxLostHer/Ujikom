@@ -459,26 +459,55 @@
       <div id="tab-jadwal" class="tab-panel">
         <div class="content-header">
           <h2>Jam Pulang Kelas</h2>
-          <p>Atur jam kepulangan resmi untuk setiap kelas.</p>
+          <p>Atur jam kepulangan resmi harian (Senin s.d. Jumat) untuk 3 kelas resmi SMKN 1 Sumedang.</p>
         </div>
         <div class="admin-form-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+            <h3 style="margin:0;font-size:15px;font-weight:800;color:var(--text);">Atur Jam Pulang Resmi</h3>
+            <button type="button" class="btn-secondary" onclick="terapkanPresetStandarJadwal()" style="font-size:12.5px;padding:7px 14px;background:#f0fdf4;color:#166534;border-color:#bbf7d0;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>Terapkan Standar SMKN 1 Sumedang (15:30 / 11:45)</span>
+            </button>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
-              <label>Kelas</label>
-              <input type="text" id="jadwalKelas" placeholder="Contoh: XII RPL 2">
+              <label>Pilih Kelas Resmi</label>
+              <select id="jadwalKelas">
+                <option value="XII RPL 1">XII RPL 1</option>
+                <option value="XII RPL 2" selected>XII RPL 2</option>
+                <option value="XII TKJ 1">XII TKJ 1</option>
+              </select>
             </div>
             <div class="form-group">
-              <label>Jam Pulang</label>
-              <input type="time" id="jadwalJam">
+              <label>Hari Pembelajaran</label>
+              <select id="jadwalHari" onchange="gantiHariJadwalPulang()">
+                <option value="semua" selected>Semua Hari (Senin - Jumat)</option>
+                <option value="senin_kamis">Senin s/d Kamis (Reguler - 15:30)</option>
+                <option value="senin">Senin</option>
+                <option value="selasa">Selasa</option>
+                <option value="rabu">Rabu</option>
+                <option value="kamis">Kamis</option>
+                <option value="jumat">Jumat (KBM Khusus - 11:45)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Jam Pulang (WIB)</label>
+              <input type="time" id="jadwalJam" value="15:30">
             </div>
           </div>
-          <div class="form-actions">
-            <button class="btn-primary" onclick="submitJadwal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Jadwal</span></button>
+          <div class="form-actions" style="margin-top:10px;">
+            <button class="btn-primary" onclick="submitJadwal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Jam Pulang</span></button>
           </div>
           <div class="msg" id="jadwalMsg"></div>
         </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px 0;">
+          <h3 style="font-size:15px;font-weight:800;color:var(--text);margin:0;">Matriks Jam Pulang Resmi 3 Kelas Pilot</h3>
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600;" id="statTotalJadwal">3 Kelas Resmi Terkonfigurasi</span>
+        </div>
         <table class="data-table">
-          <thead><tr><th>Kelas</th><th>Jam Pulang</th><th></th></tr></thead>
+          <thead><tr><th>Kelas</th><th>Hari KBM</th><th>Jam Pulang Resmi</th><th>Keterangan KBM</th><th>Aksi</th></tr></thead>
           <tbody id="jadwalTableBody"></tbody>
         </table>
       </div>
@@ -888,6 +917,51 @@
     <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
       <button type="button" onclick="tutupModalEditGuru()" style="padding:9px 16px;border-radius:10px;border:1px solid #cbd5e1;background:#ffffff;color:#475569;font-weight:700;font-size:13px;cursor:pointer;">Batal</button>
       <button type="button" id="btnSimpanModalEditGuru" onclick="simpanModalEditGuru()" style="padding:9px 18px;border-radius:10px;border:none;background:#2563eb;color:#ffffff;font-weight:800;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 4px rgba(37,99,235,0.25);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span>Simpan Perubahan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT JAM PULANG KELAS -->
+<div class="modal-preview" id="modalEditJadwalPulang" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:99999;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div class="modal-preview-content" style="background:#fff;border-radius:20px;max-width:440px;width:100%;box-shadow:0 20px 40px -10px rgba(0,0,0,0.25);overflow:hidden;border:1px solid #e2e8f0;animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);">
+    <div style="padding:16px 22px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;border-radius:10px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;">Edit Jam Pulang</h3>
+          <p style="font-size:11.5px;color:#64748b;margin:0;" id="modalEditJadwalSub">Perbarui jam kepulangan resmi kelas</p>
+        </div>
+      </div>
+      <button type="button" onclick="tutupModalEditJadwal()" style="background:transparent;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:6px;transition:0.15s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">&times;</button>
+    </div>
+
+    <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Kelas</label>
+        <input type="text" id="modalEditJadwalKelas" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Hari Pembelajaran</label>
+        <input type="text" id="modalEditJadwalHari" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;box-sizing:border-box;text-transform:capitalize;">
+      </div>
+
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Jam Pulang Resmi (WIB)</label>
+        <input type="time" id="modalEditJadwalJam" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:14px;font-weight:700;color:#0f172a;box-sizing:border-box;">
+      </div>
+
+      <div id="modalEditJadwalMsg" style="display:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;"></div>
+    </div>
+
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="tutupModalEditJadwal()" style="padding:9px 16px;border-radius:10px;border:1px solid #cbd5e1;background:#ffffff;color:#475569;font-weight:700;font-size:13px;cursor:pointer;">Batal</button>
+      <button type="button" id="btnSimpanModalEditJadwal" onclick="simpanModalEditJadwal()" style="padding:9px 18px;border-radius:10px;border:none;background:#2563eb;color:#ffffff;font-weight:800;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 4px rgba(37,99,235,0.25);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         <span>Simpan Perubahan</span>
       </button>

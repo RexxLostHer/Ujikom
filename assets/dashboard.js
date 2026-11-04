@@ -363,8 +363,28 @@ async function initDashboard(user) {
     staffBanner.style.display = 'none';
   }
 
-  // Set tanggal default ijin
-  document.getElementById('perijinanTanggal').value = tanggalHariIni();
+  // Set tanggal default ijin & pasang listener reset harian
+  const inputTgl = document.getElementById('perijinanTanggal');
+  if (inputTgl) {
+    if (typeof tanggalHariIni === 'function') {
+      inputTgl.value = tanggalHariIni();
+    }
+    if (!inputTgl._hasPermitDateListener) {
+      inputTgl._hasPermitDateListener = true;
+      const onDateChange = () => {
+        if (typeof populateDropdownSiswa === 'function') {
+          populateDropdownSiswa(user || currentUser);
+        }
+      };
+      inputTgl.addEventListener('change', onDateChange);
+      inputTgl.addEventListener('input', onDateChange);
+    }
+  }
+
+  // Reset status izin harian jika sudah berganti hari
+  if (user && user.nisn) {
+    resetStatusIzinHarianJikaPerlu(user.nisn);
+  }
 
   // Inisialisasi Beranda Overview
   initBerandaOverview(user);
@@ -401,6 +421,76 @@ async function initDashboard(user) {
       window._kbmLiveInterval.unref();
     }
   }
+}
+
+// Helper: Normalisasi format tanggal YYYY-MM-DD
+function normalisasiTanggalDashboard(tgl) {
+  if (!tgl || typeof tgl !== 'string') return tgl || '';
+  if (typeof normalisasiFormatTanggal === 'function') {
+    return normalisasiFormatTanggal(tgl);
+  }
+  const clean = tgl.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+  const slashMatch = clean.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const p1 = slashMatch[1].padStart(2, '0');
+    const p2 = slashMatch[2].padStart(2, '0');
+    const year = slashMatch[3];
+    if (parseInt(p1, 10) > 12) return `${year}-${p2}-${p1}`;
+    return `${year}-${p1}-${p2}`;
+  }
+  return clean;
+}
+
+// Helper: Reset harian otomatis jika izin yang tercatat berasal dari hari lampau (>12 jam lalu & tanggal < today)
+function resetStatusIzinHarianJikaPerlu(targetNisn) {
+  if (typeof localStorage === 'undefined' || !targetNisn) return false;
+  try {
+    const today = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+    const lastSubStr = localStorage.getItem('last_submission_' + targetNisn);
+    let subDate = '';
+    let subTime = 0;
+
+    if (lastSubStr) {
+      try {
+        const p = JSON.parse(lastSubStr);
+        if (p) {
+          subDate = normalisasiTanggalDashboard(p.tanggal || p.tanggal_norm || '');
+          subTime = p.timestamp || p.dibuat_pada || p.createdAt || (p.created_at ? Date.parse(p.created_at) : 0) || (subDate ? Date.parse(subDate) : 0) || 0;
+        }
+      } catch (eP) {}
+    }
+
+    const isPastDate = subDate && (subDate < today);
+    const isOldTimestamp = subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000);
+
+    if (isPastDate && isOldTimestamp) {
+      const currentFlag = localStorage.getItem('status_izin_' + targetNisn);
+      if (currentFlag === 'disetujui' || currentFlag === 'approved' || currentFlag === 'pending' || !currentFlag) {
+        console.log(`[DailyPermitReset] Tanggal izin (${subDate}) telah berlalu dari hari ini (${today}). Me-reset form izin.`);
+        localStorage.removeItem('status_izin_' + targetNisn);
+        localStorage.removeItem('last_submission_' + targetNisn);
+        localStorage.setItem('status_izin_last_reset_' + targetNisn, today);
+
+        const btnSubmit = (typeof document !== 'undefined') ? document.getElementById('btnSubmitPerijinan') : null;
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.style.opacity = '1';
+          btnSubmit.style.cursor = 'pointer';
+          btnSubmit.textContent = 'Kirim Pengajuan Izin';
+          btnSubmit.title = '';
+        }
+        const msg = (typeof document !== 'undefined') ? document.getElementById('perijinanMsg') : null;
+        if (msg) {
+          msg.textContent = '';
+          msg.innerHTML = '';
+          msg.style.display = 'none';
+        }
+        return true;
+      }
+    }
+  } catch (e) {}
+  return false;
 }
 
 // Helper: Kelola status dan kunci form pengajuan perizinan siswa dengan pesan informatif
@@ -443,6 +533,26 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
   const jenis = itemInfo ? (itemInfo.jenis || itemInfo.tipe || 'Izin').toUpperCase() : 'IZIN';
   const tgl = itemInfo ? (itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
   const catatan = itemInfo ? (itemInfo.catatan_guru || itemInfo.catatan || itemInfo.alasanTolak || itemInfo.alasan || '') : '';
+
+  const todayNow = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+  const infoDate = itemInfo ? normalisasiTanggalDashboard(itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
+  const infoTime = itemInfo ? (itemInfo.dibuat_pada || itemInfo.createdAt || (itemInfo.created_at ? Date.parse(itemInfo.created_at) : 0) || 0) : 0;
+  if (isApproved && infoDate && infoDate < todayNow && infoTime > 0 && (Date.now() - infoTime > 12 * 3600 * 1000)) {
+    // Izin lama dari hari kemarin, form hari ini harus tetap terbuka
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = 'Kirim Pengajuan Izin';
+      btnSubmit.title = '';
+    }
+    if (msg) {
+      msg.textContent = '';
+      msg.innerHTML = '';
+      msg.style.display = 'none';
+    }
+    return;
+  }
 
   if (isApproved) {
     // KETENTUAN USER: Jika sudah di-ACC, maka tombol submit TERKUNCI (tidak bisa kirim lagi)
@@ -650,8 +760,34 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
           }
         } catch (eStorage) {}
 
-        // Buka form submit siswa seketika jika status sudah resolved dan tidak ada permohonan pending baru
-        if (!anyPending) {
+        const todaySync = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+        const resolvedDate = normalisasiTanggalDashboard(latestResolved.tanggal || latestResolved.tanggal_norm || '');
+        const resolvedTime = (latestResolved.updated_at ? Date.parse(latestResolved.updated_at) : 0) || latestResolved.dibuat_pada || latestResolved.createdAt || 0;
+        const isPastDayApproved = (statusNorm === 'disetujui') && resolvedDate && (resolvedDate < todaySync) && resolvedTime > 0 && (Date.now() - resolvedTime > 12 * 3600 * 1000);
+
+        if (isPastDayApproved) {
+          // Status izin lama di-reset untuk hari ini agar siswa bisa membuat izin baru
+          try {
+            if (typeof localStorage !== 'undefined' && targetNisn) {
+              localStorage.removeItem('status_izin_' + targetNisn);
+            }
+          } catch(e) {}
+          const btnSubmit = document.getElementById('btnSubmitPerijinan');
+          if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = '1';
+            btnSubmit.style.cursor = 'pointer';
+            btnSubmit.textContent = 'Kirim Pengajuan Izin';
+            btnSubmit.title = '';
+          }
+          const msg = document.getElementById('perijinanMsg');
+          if (msg) {
+            msg.textContent = '';
+            msg.innerHTML = '';
+            msg.style.display = 'none';
+          }
+        } else if (!anyPending) {
+          // Buka form submit siswa seketika jika status sudah resolved dan tidak ada permohonan pending baru
           bukaKunciFormPengajuanSiswa(latestResolved, user);
         }
       }
@@ -812,6 +948,11 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   pendingItems.sort((a, b) => ambilWaktuSubmit(b) - ambilWaktuSubmit(a));
   const latestPending = pendingItems[0];
   const tPending = ambilWaktuSubmit(latestPending);
+  const todayPend = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+  const pDate = normalisasiTanggalDashboard(latestPending.tanggal || latestPending.tanggal_norm || '');
+  if (pDate && pDate < todayPend && tPending > 0 && (Date.now() - tPending > 12 * 3600 * 1000)) {
+    return null;
+  }
 
   // Jika izin siswa pernah ditolak/disetujui Walas, dan pending item ini dibuat SEBELUM waktu review tersebut,
   // maka pending ini adalah entri usang sebelum review
@@ -843,6 +984,13 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
           try {
             const parsed = JSON.parse(lastSubStr);
             if (parsed) {
+              const todaySt = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+              const subDate = normalisasiTanggalDashboard(parsed.tanggal || parsed.tanggal_norm || '');
+              const subTime = parsed.dibuat_pada || parsed.createdAt || 0;
+              if (subDate && subDate < todaySt && subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000)) {
+                localStorage.removeItem('status_izin_' + targetNisn);
+                return null;
+              }
               return Object.assign({}, parsed, { status: 'disetujui' });
             }
           } catch (eP) {}
@@ -891,6 +1039,13 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
   const latestItem = rawStudentItems[0];
   const st = String(latestItem.status || '').toLowerCase().trim();
   if (st === 'disetujui' || st === 'approved') {
+    const todayDisetujui = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+    const itemDate = normalisasiTanggalDashboard(latestItem.tanggal || latestItem.tanggal_norm || '');
+    const itemTime = ambilWaktuSubmit(latestItem);
+    // Jika izin disetujui dibuat pada hari lampau (>12 jam lalu & itemDate < today), reset harian
+    if (itemDate && itemDate < todayDisetujui && itemTime > 0 && (Date.now() - itemTime > 12 * 3600 * 1000)) {
+      return null;
+    }
     return latestItem;
   }
   return null;
