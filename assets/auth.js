@@ -596,6 +596,15 @@ async function prosesLoginUser(firebaseUser) {
         await db.ref('users/' + uid).update({ role: 'admin', isVerified: true, nama: userData.nama });
       } catch (e) {}
     } else {
+      // ISOLASI KETAT: Akun yang BUKAN email admin dilarang keras memegang role admin
+      if (userData.role === 'admin') {
+        delete userData.nip;
+        delete userData.mapel;
+        delete userData.isWalas;
+        delete userData.walasKelasId;
+        userData.role = sisMatch ? 'siswa' : (guruMatch ? (guruMatch.isWalas ? 'walas' : 'guru') : 'pengunjung');
+      }
+
       const isSwitched = !!userData.isRoleSwitched || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('isRoleSwitched') === 'true');
       if (isSwitched) {
         if (activeSess && activeSess.role) {
@@ -616,13 +625,19 @@ async function prosesLoginUser(firebaseUser) {
           userData.isVerified = true;
           try { await db.ref('users/' + uid).set(userData); } catch (e) {}
         }
-      } else if (sisMatch && !userData.nip) {
-        if (userData.role !== 'siswa' || userData.nisn !== sisMatch.nisn || !userData.isVerified) {
+      } else if (sisMatch) {
+        // Siswa resmi DILARANG memiliki NIP atau role admin/guru
+        delete userData.nip;
+        delete userData.mapel;
+        delete userData.isWalas;
+        delete userData.walasKelasId;
+        if (userData.role !== 'siswa' || userData.nisn !== sisMatch.nisn || !userData.isVerified || userData.email !== email) {
           userData.role = 'siswa';
           userData.nama = sisMatch.nama;
           userData.nisn = sisMatch.nisn;
           userData.kelas = sisMatch.kelas;
           userData.isVerified = true;
+          userData.email = email;
           try { await db.ref('users/' + uid).update(userData); } catch (e) {}
         }
       } else if (userData.role === 'pengunjung' || !userData.isVerified) {

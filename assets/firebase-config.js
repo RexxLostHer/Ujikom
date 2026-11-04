@@ -570,7 +570,7 @@ var MASTER_DATA_SISWA_RESMI = {
     "nama": "M. IHSAN ATHALLAH",
     "kelas": "XII RPL 2",
     "nis": "24.25.X.663",
-    "email": "zemapk15@gmail.com",
+    "email": "7dosabesar557@gmail.com",
     "foto": "assets/foto/0098263610.jpg",
     "foto_karakter": "Kiyotaka Ayanokouji"
   },
