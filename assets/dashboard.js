@@ -986,7 +986,7 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
             if (parsed) {
               const todaySt = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
               const subDate = normalisasiTanggalDashboard(parsed.tanggal || parsed.tanggal_norm || '');
-              const subTime = parsed.dibuat_pada || parsed.createdAt || 0;
+              const subTime = parsed.timestamp || parsed.dibuat_pada || parsed.createdAt || 0;
               if (subDate && subDate < todaySt && subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000)) {
                 localStorage.removeItem('status_izin_' + targetNisn);
                 return null;
@@ -1012,6 +1012,21 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
     }
   }
 
+  // Kumpulkan juga dari cache realtime RTDB jika tersedia
+  try {
+    const rtCache = (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) ||
+                    (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) || null;
+    if (rtCache) {
+      Object.values(rtCache).forEach(item => {
+        if (!item) return;
+        const itemNisn = String(item.nisn || item.siswaId || item.pengajuId || '').trim();
+        if (itemNisn === targetNisn || (targetNisn === '0098263610' && item.nama && String(item.nama).toLowerCase().includes('ihsan'))) {
+          rawStudentItems.push(item);
+        }
+      });
+    }
+  } catch (eRt) {}
+
   try {
     if (typeof localStorage !== 'undefined') {
       const lastSub = localStorage.getItem('last_submission_' + targetNisn);
@@ -1026,6 +1041,7 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
 
   function ambilWaktuSubmit(it) {
     if (!it) return 0;
+    if (typeof it.timestamp === 'number') return it.timestamp;
     if (typeof it.dibuat_pada === 'number') return it.dibuat_pada;
     if (typeof it.createdAt === 'number') return it.createdAt;
     if (typeof it.created_at === 'number') return it.created_at;
@@ -1043,7 +1059,16 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
     const itemDate = normalisasiTanggalDashboard(latestItem.tanggal || latestItem.tanggal_norm || '');
     const itemTime = ambilWaktuSubmit(latestItem);
     // Jika izin disetujui dibuat pada hari lampau (>12 jam lalu & itemDate < today), reset harian
-    if (itemDate && itemDate < todayDisetujui && itemTime > 0 && (Date.now() - itemTime > 12 * 3600 * 1000)) {
+    if (itemDate && itemDate < todayDisetujui && (itemTime === 0 || (Date.now() - itemTime > 12 * 3600 * 1000))) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('status_izin_' + targetNisn);
+          localStorage.removeItem('last_submission_' + targetNisn);
+        }
+      } catch (e) {}
+      return null;
+    }
+    if (!itemDate && itemTime > 0 && (Date.now() - itemTime > 12 * 3600 * 1000)) {
       return null;
     }
     return latestItem;

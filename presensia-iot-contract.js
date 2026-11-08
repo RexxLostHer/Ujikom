@@ -25,49 +25,28 @@ const FIREBASE_IOT_CONFIG = {
   appId: "1:632114437491:web:4b0c90ec78669e7cc0b906"
 };
 
-// 2. Daftar Kartu Fisik & Virtual Terdaftar (Default / Baseline)
+// 2. Daftar Kartu RFID Sintetis / Mock untuk Pengujian Lokal & Simulator
 const DAFTAR_KARTU_RFID_RESMI = {
-  '006787337': {
-    nisn: '0098263610',
-    nama: 'M. IHSAN ATHALLAH',
+  'TEST_UID_0001': {
+    nisn: '9999999991',
+    nama: 'Siswa Uji 01',
     kelas: 'XII RPL 2',
     tipe: 'siswa',
-    device_id: 'rpi-gateway-01'
+    device_id: 'rpi-gateway-test'
   },
-  '1058384422': {
-    nisn: '0082104129',
-    nama: 'RIZKY RAMADANI',
+  'TEST_UID_0002': {
+    nisn: '9999999992',
+    nama: 'Siswa Uji 02',
     kelas: 'XII RPL 2',
     tipe: 'siswa',
-    device_id: 'rpi-gateway-01'
+    device_id: 'rpi-gateway-test'
   },
-  'A1B2C3D4': {
-    nisn: '0091113849',
-    nama: 'AHSAN MAHMUD FAUZI YUSRY',
-    kelas: 'XII RPL 1',
-    tipe: 'siswa',
-    device_id: 'esp32-gate-01'
-  },
-  'E5F6A7B8': {
-    nip: '198109012009022003',
-    nama: 'Hani Hanifah, S.Si',
+  'TEST_UID_GURU': {
+    nip: '199001012020011001',
+    nama: 'Guru Uji',
     tipe: 'guru',
     mapel: 'Pemrograman Web & Perangkat Bergerak',
-    device_id: 'esp32-gate-01'
-  },
-  '04A1B2C3': {
-    nisn: '0098263610',
-    nama: 'M. IHSAN ATHALLAH',
-    kelas: 'XII RPL 2',
-    tipe: 'siswa',
-    device_id: 'rc522-tester'
-  },
-  '04D4E5F6': {
-    nisn: '0082104129',
-    nama: 'RIZKY RAMADANI',
-    kelas: 'XII RPL 2',
-    tipe: 'siswa',
-    device_id: 'rc522-tester'
+    device_id: 'esp32-gate-test'
   }
 };
 
@@ -111,7 +90,7 @@ const _lastTapMemory = new Map();
 /**
  * Evaluasi Tap Kartu RFID / NFC oleh IoT Gateway
  * 
- * @param {string} cardUid UID Kartu RFID (misal: "006787337" atau "04A1B2C3")
+ * @param {string} cardUid UID Kartu RFID (misal: "TEST_UID_0001" atau "04A1B2C3")
  * @param {object} options Opsi proses { deviceId, timestamp, mockDb, permitList }
  * @returns {object} Hasil evaluasi dan payload Firebase yang harus di-update
  */
@@ -143,8 +122,8 @@ function processCardTap(cardUid, options = {}) {
     _lastTapMemory.set(cleanUid, nowSec);
   }
 
-  // 2. Pencarian Data Kartu di Database / Cache
-  const dbCards = options.mockDb && options.mockDb.kartu ? options.mockDb.kartu : DAFTAR_KARTU_RFID_RESMI;
+  // 2. Pencarian Data Kartu di Database / Cache / Parameter rfidMap
+  const dbCards = options.rfidMap || (options.mockDb && (options.mockDb.rfid_map || options.mockDb.kartu)) || DAFTAR_KARTU_RFID_RESMI;
   const cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
 
   if (!cardData) {
@@ -252,10 +231,11 @@ function processCardTap(cardUid, options = {}) {
  *   http.begin(client, restInfo.url);
  *   http.PATCH(restInfo.body);
  */
-function getEsp32RestEndpoint(userIdentifier, tanggal, recordPayload) {
+function getEsp32RestEndpoint(userIdentifier, tanggal, recordPayload, idToken = '') {
   const baseUrl = FIREBASE_IOT_CONFIG.databaseURL;
+  const authParam = idToken ? `?auth=${idToken}` : '';
   return {
-    url: `${baseUrl}/absensi/${userIdentifier}/${tanggal}.json`,
+    url: `${baseUrl}/absensi/${userIdentifier}/${tanggal}.json${authParam}`,
     body: JSON.stringify(recordPayload),
     method: 'PATCH'
   };

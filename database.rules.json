@@ -2,79 +2,129 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "perizinan": {
-      ".read": true,
-      ".write": true
-    },
-    "perijinan": {
-      ".read": true,
-      ".write": true
-    },
-    "chat_perijinan": {
-      ".read": true,
-      ".write": true
-    },
-    "chat_rooms": {
-      ".read": true,
-      ".write": true
-    },
-    "perijinan_chats": {
-      ".read": true,
-      ".write": true
-    },
+
     "users": {
-      ".read": true,
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')",
       "$uid": {
-        ".write": true
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $uid && !data.exists() && newData.child('role').val() === 'siswa') || (auth.uid === $uid && data.exists() && (!newData.child('role').exists() || newData.child('role').val() === data.child('role').val())))"
       }
     },
+
     "siswa": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')",
+      "$nisn": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('nisn').val() === $nisn",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+      }
     },
-    "kartu": {
-      ".read": true,
-      ".write": true
+
+    "guru": {
+      ".read": "auth != null",
+      "$nip": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('nip').val() === $nip)"
+      }
     },
-    "pairing_request": {
-      ".read": true,
-      ".write": true
+
+    "rfid_map": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
-    "presensi_jam": {
-      ".read": true,
-      ".write": true
+
+    "riwayat": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')",
+      "$tanggal": {
+        "$nisn": {
+          ".read": "auth != null && root.child('users').child(auth.uid).child('nisn').val() === $nisn",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+        }
+      }
     },
-    "presensi_guru": {
-      ".read": true,
-      ".write": true
+
+    "stats": {
+      ".read": "auth != null",
+      "$tanggal": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+      }
     },
+
+    "perizinan": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')",
+      "$id": {
+        ".read": "auth != null && (data.child('uid').val() === auth.uid || (data.child('nisn').val() !== null && root.child('users').child(auth.uid).child('nisn').val() === data.child('nisn').val()))",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || (!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && data.child('status').val() === 'pending'))"
+      }
+    },
+
+    "chat_rooms": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')",
+      "$roomId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || (root.child('users').child(auth.uid).child('nisn').val() !== null && ($roomId.beginsWith(root.child('users').child(auth.uid).child('nisn').val()) || $roomId.contains(root.child('users').child(auth.uid).child('nisn').val()))))",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || (root.child('users').child(auth.uid).child('nisn').val() !== null && ($roomId.beginsWith(root.child('users').child(auth.uid).child('nisn').val()) || $roomId.contains(root.child('users').child(auth.uid).child('nisn').val()))))"
+      }
+    },
+
     "absensi": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      "$nisn": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('nisn').val() === $nisn)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+      }
     },
+
+    "kartu": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
+    "pairing_request": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "presensi_jam": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+    },
+
+    "presensi_guru": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
+    },
+
     "kelas": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
     },
+
     "status_kelas": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
     },
+
     "perizinan_guru": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
     },
-    "kendala_mengajar": {
-      ".read": true,
-      ".write": true
-    },
-    "laporan_kendala": {
-      ".read": true,
-      ".write": true
-    },
+
     "kendala_guru": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
+    },
+
+    "kendala_mengajar": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
+    },
+
+    "laporan_kendala": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
+    },
+
+    "jadwal_pelajaran": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
     }
   }
 }

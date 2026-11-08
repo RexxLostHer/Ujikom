@@ -29,18 +29,25 @@ let kartuCache = {};
 let emailMappingCache = {};
 let guruCache = {};
 let guruClaimedCache = {};
+let nisnClaimedCache = {};
 let jadwalCache = {};
 let usersCache = {};
+
+const PERMITTED_ROLES = ['pengunjung', 'guru', 'siswa', 'walas'];
 
 if (typeof window !== 'undefined') {
   window.guruCache = guruCache;
   window.guruClaimedCache = guruClaimedCache;
+  window.nisnClaimedCache = nisnClaimedCache;
   window.usersCache = usersCache;
+  window.PERMITTED_ROLES = PERMITTED_ROLES;
 }
 if (typeof global !== 'undefined') {
   global.guruCache = guruCache;
   global.guruClaimedCache = guruClaimedCache;
+  global.nisnClaimedCache = nisnClaimedCache;
   global.usersCache = usersCache;
+  global.PERMITTED_ROLES = PERMITTED_ROLES;
 }
 
 let shouldHaltAdmin = false;
@@ -178,6 +185,9 @@ function initAdmin() {
     renderKartuTable(kartuCache);
     populatePresensiKelas();
     populateVirtualSiswaSimulasi();
+    if (typeof renderTabelPengguna === 'function' && usersCache && Object.keys(usersCache).length > 0) {
+      renderTabelPengguna(usersCache);
+    }
   }
 
   db.ref('siswa').on('value', function (snapshot) {
@@ -210,6 +220,9 @@ function initAdmin() {
     if (guruCache && Object.keys(guruCache).length > 0) {
       renderGuruTable(guruCache);
     }
+    if (typeof renderTabelPengguna === 'function' && usersCache && Object.keys(usersCache).length > 0) {
+      renderTabelPengguna(usersCache);
+    }
   });
 
   db.ref('guru').on('value', function (snapshot) {
@@ -217,12 +230,25 @@ function initAdmin() {
     const masterList = (typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : {});
     guruCache = Object.assign({}, masterList, val);
     renderGuruTable(guruCache);
+    if (typeof renderTabelPengguna === 'function' && usersCache && Object.keys(usersCache).length > 0) {
+      renderTabelPengguna(usersCache);
+    }
   });
 
   db.ref('guru_claimed').on('value', function (snapshot) {
     guruClaimedCache = snapshot.val() || {};
     if (guruCache && Object.keys(guruCache).length > 0) {
       renderGuruTable(guruCache);
+    }
+    if (typeof renderTabelPengguna === 'function' && usersCache && Object.keys(usersCache).length > 0) {
+      renderTabelPengguna(usersCache);
+    }
+  });
+
+  db.ref('nisn_claimed').on('value', function (snapshot) {
+    nisnClaimedCache = snapshot.val() || {};
+    if (typeof renderTabelPengguna === 'function' && usersCache && Object.keys(usersCache).length > 0) {
+      renderTabelPengguna(usersCache);
     }
   });
 
@@ -314,7 +340,7 @@ function listenPendingCount() {
   }
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
     try {
-      db.ref('perijinan').orderByChild('status').equalTo('pending').on('value', function (snap) {
+      const updateBadgeFromSnap = function (snap) {
         if (typeof updatePendingBadgeDanBanner === 'function') {
           updatePendingBadgeDanBanner();
         } else {
@@ -331,7 +357,9 @@ function listenPendingCount() {
             if (badge) badge.style.display = 'none';
           }
         }
-      });
+      };
+      db.ref('perizinan').orderByChild('status').equalTo('pending').on('value', updateBadgeFromSnap);
+      db.ref('perijinan').orderByChild('status').equalTo('pending').on('value', updateBadgeFromSnap);
       db.ref('kendala_guru').orderByChild('status').equalTo('pending').on('value', function () {
         if (typeof updatePendingBadgeDanBanner === 'function') {
           updatePendingBadgeDanBanner();
@@ -1319,12 +1347,56 @@ function bukaModalEditJadwal(kelas, hari, jam) {
   const elJam = document.getElementById('modalEditJadwalJam');
   const elMsg = document.getElementById('modalEditJadwalMsg');
   const elSub = document.getElementById('modalEditJadwalSub');
+  const singleContainer = document.getElementById('modalEditJadwalSingleDayContainer');
+  const multiContainer = document.getElementById('modalEditJadwalMultiDayContainer');
 
-  if (elKelas) elKelas.value = kelas;
-  if (elHari) elHari.value = hari;
-  if (elJam) elJam.value = jam || (hari === 'jumat' ? '11:45' : '15:30');
+  if (elKelas) elKelas.value = kelas || 'XII RPL 2';
   if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
-  if (elSub) elSub.textContent = 'Perbarui jam kepulangan resmi ' + kelas + ' (' + hari.toUpperCase() + ')';
+
+  const curData = (typeof jadwalCache !== 'undefined' && jadwalCache[kelas]) ? jadwalCache[kelas] : null;
+  let curSchedule = {
+    'senin': '15:30',
+    'selasa': '15:30',
+    'rabu': '15:30',
+    'kamis': '15:30',
+    'jumat': '11:45'
+  };
+  if (typeof curData === 'string') {
+    curSchedule.senin = curSchedule.selasa = curSchedule.rabu = curSchedule.kamis = curData;
+  } else if (curData && typeof curData === 'object') {
+    curSchedule = Object.assign(curSchedule, curData);
+  }
+
+  if (hari && hari !== 'semua') {
+    // Mode hari tunggal (legacy / test-compatible)
+    if (singleContainer) singleContainer.style.display = 'block';
+    if (multiContainer) multiContainer.style.display = 'none';
+    if (elHari) elHari.value = hari;
+    if (elJam) elJam.value = jam || curSchedule[hari] || (hari === 'jumat' ? '11:45' : '15:30');
+    if (elSub) elSub.textContent = 'Perbarui jam kepulangan ' + kelas + ' (' + hari.toUpperCase() + ')';
+  } else {
+    // Mode modern per kelas
+    if (singleContainer) singleContainer.style.display = 'none';
+    if (multiContainer) multiContainer.style.display = 'block';
+    if (elHari) elHari.value = 'semua';
+    if (elJam) elJam.value = curSchedule.senin || '15:30';
+
+    const elJamReg = document.getElementById('modalEditJadwalJamReguler');
+    const elJamJum = document.getElementById('modalEditJadwalJamJumat');
+    if (elJamReg) elJamReg.value = curSchedule.senin || '15:30';
+    if (elJamJum) elJamJum.value = curSchedule.jumat || '11:45';
+
+    const elSen = document.getElementById('modalEditHariSenin');
+    const elSel = document.getElementById('modalEditHariSelasa');
+    const elRab = document.getElementById('modalEditHariRabu');
+    const elKam = document.getElementById('modalEditHariKamis');
+    if (elSen) elSen.value = curSchedule.senin || '15:30';
+    if (elSel) elSel.value = curSchedule.selasa || '15:30';
+    if (elRab) elRab.value = curSchedule.rabu || '15:30';
+    if (elKam) elKam.value = curSchedule.kamis || '15:30';
+
+    if (elSub) elSub.textContent = 'Atur jam kepulangan resmi ' + kelas;
+  }
 
   if (modal) modal.style.display = 'flex';
 }
@@ -1334,22 +1406,34 @@ function tutupModalEditJadwal() {
   if (modal) modal.style.display = 'none';
 }
 
+function setPresetStandarDiModal() {
+  const elJamReg = document.getElementById('modalEditJadwalJamReguler');
+  const elJamJum = document.getElementById('modalEditJadwalJamJumat');
+  const elJam = document.getElementById('modalEditJadwalJam');
+  const elSen = document.getElementById('modalEditHariSenin');
+  const elSel = document.getElementById('modalEditHariSelasa');
+  const elRab = document.getElementById('modalEditHariRabu');
+  const elKam = document.getElementById('modalEditHariKamis');
+
+  if (elJamReg) elJamReg.value = '15:30';
+  if (elJamJum) elJamJum.value = '11:45';
+  if (elJam) elJam.value = '15:30';
+  if (elSen) elSen.value = '15:30';
+  if (elSel) elSel.value = '15:30';
+  if (elRab) elRab.value = '15:30';
+  if (elKam) elKam.value = '15:30';
+}
+
 async function simpanModalEditJadwal() {
   const kelas = document.getElementById('modalEditJadwalKelas')?.value?.trim();
   const hari = document.getElementById('modalEditJadwalHari')?.value?.trim()?.toLowerCase();
   const jam = document.getElementById('modalEditJadwalJam')?.value?.trim();
+  const singleContainer = document.getElementById('modalEditJadwalSingleDayContainer');
+  const isSingle = (singleContainer && singleContainer.style.display !== 'none');
   const btn = document.getElementById('btnSimpanModalEditJadwal');
   const elMsg = document.getElementById('modalEditJadwalMsg');
 
-  if (!kelas || !hari || !jam) {
-    if (elMsg) {
-      elMsg.style.display = 'block';
-      elMsg.style.background = '#fef2f2';
-      elMsg.style.color = '#dc2626';
-      elMsg.textContent = 'Jam pulang wajib diisi.';
-    }
-    return;
-  }
+  if (!kelas) return;
 
   if (btn) {
     btn.disabled = true;
@@ -1358,13 +1442,33 @@ async function simpanModalEditJadwal() {
   }
 
   try {
-    await db.ref('jadwal/' + kelas + '/' + hari).set(jam);
+    if (isSingle && hari && hari !== 'semua') {
+      if (!jam) throw new Error('Jam pulang wajib diisi');
+      await db.ref('jadwal/' + kelas + '/' + hari).set(jam);
+    } else {
+      const jamReg = document.getElementById('modalEditJadwalJamReguler')?.value?.trim() || '15:30';
+      const jamJum = document.getElementById('modalEditJadwalJamJumat')?.value?.trim() || '11:45';
+      const elSen = document.getElementById('modalEditHariSenin')?.value?.trim() || jamReg;
+      const elSel = document.getElementById('modalEditHariSelasa')?.value?.trim() || jamReg;
+      const elRab = document.getElementById('modalEditHariRabu')?.value?.trim() || jamReg;
+      const elKam = document.getElementById('modalEditHariKamis')?.value?.trim() || jamReg;
+
+      const newSchedule = {
+        senin: elSen,
+        selasa: elSel,
+        rabu: elRab,
+        kamis: elKam,
+        jumat: jamJum
+      };
+      await db.ref('jadwal/' + kelas).set(newSchedule);
+    }
+
     tutupModalEditJadwal();
 
     if (typeof tampilkanPopUpAcc === 'function') {
-      tampilkanPopUpAcc('Jam Pulang Diperbarui', 'Jam pulang ' + kelas + ' hari ' + hari.toUpperCase() + ' menjadi ' + jam + ' WIB.');
+      tampilkanPopUpAcc('Jadwal Tersimpan', 'Jam pulang ' + kelas + ' berhasil diperbarui.');
     } else {
-      showMsg('jadwalMsg', 'Jam pulang ' + kelas + ' (' + hari + ') → ' + jam + ' berhasil disimpan.', 'success');
+      showMsg('jadwalMsg', 'Jam pulang ' + kelas + ' berhasil diperbarui.', 'success');
     }
   } catch (err) {
     if (elMsg) {
@@ -1382,17 +1486,38 @@ async function simpanModalEditJadwal() {
   }
 }
 
+function resetJadwalKelas(kelas) {
+  if (!confirm('Kembalikan jam pulang kelas ' + kelas + ' ke standar SMKN 1 Sumedang (15:30 / 11:45)?')) return;
+  const standardSchedule = {
+    senin: '15:30',
+    selasa: '15:30',
+    rabu: '15:30',
+    kamis: '15:30',
+    jumat: '11:45'
+  };
+  db.ref('jadwal/' + kelas).set(standardSchedule)
+    .then(function () {
+      if (typeof tampilkanPopUpAcc === 'function') {
+        tampilkanPopUpAcc('Jadwal Direset', 'Jadwal ' + kelas + ' telah dikembalikan ke standar sekolah.');
+      } else {
+        showMsg('jadwalMsg', 'Jadwal ' + kelas + ' direset ke standar sekolah.', 'success');
+      }
+    })
+    .catch(function (err) {
+      showMsg('jadwalMsg', 'Gagal reset: ' + err.message, 'error');
+    });
+}
+
 function renderJadwalTable(data) {
   const tbody = document.getElementById('jadwalTableBody');
+  const cardsGrid = document.getElementById('jadwalCardsGrid');
   const statEl = document.getElementById('statTotalJadwal');
-  if (!tbody) return;
-  tbody.innerHTML = '';
 
   const officialClasses = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
   const allDays = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
   const dataObj = data || {};
 
-  // Cek apakah ada kelas tidak resmi (seperti XII TKJ 2) untuk auto-purge
+  // Auto-purge non-official classes (like XII TKJ 2) from RTDB
   Object.keys(dataObj).forEach(k => {
     if (!officialClasses.includes(k) && (k.includes('TKJ 2') || k.includes('PPLG') || k.includes('9A'))) {
       if (typeof db !== 'undefined' && db.ref) {
@@ -1404,83 +1529,169 @@ function renderJadwalTable(data) {
   const mergedClasses = Array.from(new Set([...officialClasses, ...Object.keys(dataObj).filter(k => officialClasses.includes(k))])).sort();
   if (statEl) statEl.textContent = mergedClasses.length + ' Kelas Resmi Terkonfigurasi';
 
-  if (mergedClasses.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><p>Belum ada jadwal pulang kelas.</p></td></tr>';
-    return;
-  }
-
-  mergedClasses.forEach(function (kelas) {
-    const rawVal = dataObj[kelas];
-    let schedulePerDay = {};
-
-    if (typeof rawVal === 'string') {
-      schedulePerDay = {
-        'senin': rawVal,
-        'selasa': rawVal,
-        'rabu': rawVal,
-        'kamis': rawVal,
-        'jumat': '11:45'
-      };
-    } else if (rawVal && typeof rawVal === 'object') {
-      schedulePerDay = Object.assign({
-        'senin': '15:30',
-        'selasa': '15:30',
-        'rabu': '15:30',
-        'kamis': '15:30',
-        'jumat': '11:45'
-      }, rawVal);
-    } else {
-      schedulePerDay = {
+  // 1. RENDER HERO CARDS GRID
+  if (cardsGrid) {
+    cardsGrid.innerHTML = '';
+    mergedClasses.forEach(function (kelas) {
+      const rawVal = dataObj[kelas];
+      let schedulePerDay = {
         'senin': '15:30',
         'selasa': '15:30',
         'rabu': '15:30',
         'kamis': '15:30',
         'jumat': '11:45'
       };
-    }
 
-    allDays.forEach(function (hari, dayIdx) {
-      const jam = schedulePerDay[hari] || (hari === 'jumat' ? '11:45' : '15:30');
-      const isJumat = (hari === 'jumat');
-      const hariCap = hari.charAt(0).toUpperCase() + hari.slice(1);
-      const ketText = isJumat
-        ? '<span style="color:#0284c7;font-weight:600;font-size:12px;">KBM Singkat (Shalat Jumat)</span>'
-        : '<span style="color:#475569;font-size:12px;">KBM Reguler (9 Jam Pelajaran)</span>';
-      const badgeColor = isJumat ? 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;' : 'background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;';
-
-      const tr = document.createElement('tr');
-      if (dayIdx === 0) {
-        tr.style.borderTop = '2px solid #e2e8f0';
+      if (typeof rawVal === 'string') {
+        schedulePerDay = {
+          'senin': rawVal,
+          'selasa': rawVal,
+          'rabu': rawVal,
+          'kamis': rawVal,
+          'jumat': '11:45'
+        };
+      } else if (rawVal && typeof rawVal === 'object') {
+        schedulePerDay = Object.assign(schedulePerDay, rawVal);
       }
 
+      const jamSeninKamis = schedulePerDay.senin || '15:30';
+      const jamJumat = schedulePerDay.jumat || '11:45';
+      const isRPL = kelas.toUpperCase().includes('RPL');
+      const iconClass = isRPL ? 'rpl' : 'tkj';
+      const deptName = isRPL ? 'Rekayasa Perangkat Lunak' : 'Teknik Komputer & Jaringan';
+
+      const iconSvg = isRPL
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>';
+
+      const dayChipsHtml = allDays.map(function(d) {
+        const dName = d.slice(0, 3).toUpperCase();
+        const dTime = schedulePerDay[d] || (d === 'jumat' ? '11:45' : '15:30');
+        const isFri = (d === 'jumat');
+        return '<div class="jadwal-day-chip' + (isFri ? ' friday' : '') + '">' +
+                 '<span class="day-name">' + dName + '</span>' +
+                 '<span class="day-time">' + dTime + '</span>' +
+               '</div>';
+      }).join('');
+
+      const card = document.createElement('div');
+      card.className = 'jadwal-card';
+      card.innerHTML =
+        '<div class="jadwal-card-header">' +
+          '<div class="jadwal-card-brand">' +
+            '<div class="jadwal-class-icon ' + iconClass + '">' + iconSvg + '</div>' +
+            '<div>' +
+              '<h3 class="jadwal-card-title">' + kelas + '</h3>' +
+              '<p class="jadwal-card-dept">' + deptName + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<span class="jadwal-badge-active"><span class="dot"></span>Aktif</span>' +
+        '</div>' +
+
+        '<div class="jadwal-schedule-block">' +
+          '<div class="jadwal-time-row">' +
+            '<span class="jadwal-time-label">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+              '<span>Senin – Kamis (Reguler)</span>' +
+            '</span>' +
+            '<span class="jadwal-time-pill">' + jamSeninKamis + ' <small>WIB</small></span>' +
+          '</div>' +
+          '<div class="jadwal-time-row">' +
+            '<span class="jadwal-time-label">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+              '<span>Jumat (KBM Khusus)</span>' +
+            '</span>' +
+            '<span class="jadwal-time-pill friday">' + jamJumat + ' <small>WIB</small></span>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="jadwal-days-strip">' + dayChipsHtml + '</div>' +
+
+        '<div class="jadwal-card-footer">' +
+          '<button type="button" class="btn-card-edit" onclick="bukaModalEditJadwal(\'' + kelas + '\')">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+            '<span>Atur Jam Pulang</span>' +
+          '</button>' +
+          '<button type="button" class="btn-card-reset" onclick="resetJadwalKelas(\'' + kelas + '\')" title="Reset ke standar sekolah 15:30 / 11:45">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>' +
+          '</button>' +
+        '</div>';
+
+      cardsGrid.appendChild(card);
+    });
+  }
+
+  // 2. RENDER COMPACT SUMMARY TABLE
+  if (tbody) {
+    tbody.innerHTML = '';
+    if (mergedClasses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><p>Belum ada jadwal pulang kelas.</p></td></tr>';
+      return;
+    }
+
+    mergedClasses.forEach(function (kelas) {
+      const rawVal = dataObj[kelas];
+      let schedulePerDay = {
+        'senin': '15:30',
+        'selasa': '15:30',
+        'rabu': '15:30',
+        'kamis': '15:30',
+        'jumat': '11:45'
+      };
+
+      if (typeof rawVal === 'string') {
+        schedulePerDay = {
+          'senin': rawVal,
+          'selasa': rawVal,
+          'rabu': rawVal,
+          'kamis': rawVal,
+          'jumat': '11:45'
+        };
+      } else if (rawVal && typeof rawVal === 'object') {
+        schedulePerDay = Object.assign(schedulePerDay, rawVal);
+      }
+
+      const jamSeninKamis = schedulePerDay.senin || '15:30';
+      const jamJumat = schedulePerDay.jumat || '11:45';
+      const isRPL = kelas.toUpperCase().includes('RPL');
+      const badgeDept = isRPL ? 'background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;' : 'background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;';
+
+      const miniDayChips = allDays.map(function(d) {
+        const dName = d.slice(0, 3).toUpperCase();
+        const dTime = schedulePerDay[d] || (d === 'jumat' ? '11:45' : '15:30');
+        return '<span style="font-size:10px;font-family:var(--font-mono);font-weight:600;background:#f1f5f9;border:1px solid #e2e8f0;padding:2px 5px;border-radius:5px;color:#334155;">' + dName + ': ' + dTime + '</span>';
+      }).join(' ');
+
+      const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td style="font-weight:800;color:#0f172a;font-family:var(--font-mono, monospace);">' + (dayIdx === 0 ? ('<span class="status-pill" style="font-size:12px;background:#f8fafc;color:#1e293b;border:1.5px solid #cbd5e1;padding:3px 8px;">' + kelas + '</span>') : '<span style="color:#94a3b8;font-size:11px;">↳ ' + kelas + '</span>') + '</td>' +
-        '<td><span class="status-pill" style="font-size:11.5px;padding:2px 8px;' + badgeColor + '">' + hariCap + '</span></td>' +
-        '<td><strong style="font-size:13.5px;color:#0f172a;font-family:var(--font-mono, monospace);">' + jam + ' WIB</strong></td>' +
-        '<td>' + ketText + '</td>' +
-        '<td style="display:flex;gap:6px;align-items:center;"></td>';
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span class="status-pill" style="font-weight:800;font-size:12px;padding:3px 9px;' + badgeDept + '">' + kelas + '</span>' +
+          '</div>' +
+        '</td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<span class="jadwal-time-pill" style="font-size:12px;padding:3px 8px;">' + jamSeninKamis + ' <small>WIB</small></span>' +
+            '<span style="font-size:11.5px;color:#64748b;font-weight:500;">(9 Jam Pelajaran)</span>' +
+          '</div>' +
+        '</td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<span class="jadwal-time-pill friday" style="font-size:12px;padding:3px 8px;">' + jamJumat + ' <small>WIB</small></span>' +
+            '<span style="font-size:11.5px;color:#0284c7;font-weight:500;">(KBM Singkat)</span>' +
+          '</div>' +
+        '</td>' +
+        '<td>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + miniDayChips + '</div>' +
+        '</td>' +
+        '<td style="text-align:right;">' +
+          '<button type="button" class="btn-row-edit" onclick="bukaModalEditJadwal(\'' + kelas + '\')" style="margin-right:4px;">Atur</button>' +
+          '<button type="button" class="btn-row-delete" onclick="resetJadwalKelas(\'' + kelas + '\')" style="color:#64748b;border-color:#cbd5e1;" title="Reset ke default">Reset</button>' +
+        '</td>';
 
-      const actionsTd = tr.cells[4];
-
-      const editBtn = document.createElement('button');
-      editBtn.textContent = 'Edit';
-      editBtn.className = 'btn-row-edit';
-      editBtn.title = 'Edit jam pulang ' + kelas + ' hari ' + hariCap;
-      editBtn.onclick = function () { bukaModalEditJadwal(kelas, hari, jam); };
-
-      const resetBtn = document.createElement('button');
-      resetBtn.textContent = 'Reset';
-      resetBtn.className = 'btn-row-delete';
-      resetBtn.style.color = '#64748b';
-      resetBtn.style.borderColor = '#cbd5e1';
-      resetBtn.title = 'Reset jam pulang hari ini ke standar';
-      resetBtn.onclick = function () { hapusJadwal(kelas, hari); };
-
-      actionsTd.appendChild(editBtn);
-      actionsTd.appendChild(resetBtn);
       tbody.appendChild(tr);
     });
-  });
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -2113,112 +2324,411 @@ if (typeof global !== 'undefined') {
   global.lepasTautanNipAdmin = lepasTautanNipAdmin;
 }
 
+function cariGuruByEmailAdmin(email) {
+  if (!email) return null;
+  const clean = email.toLowerCase().trim();
+  if (typeof cariGuruByEmail === 'function') {
+    const res = cariGuruByEmail(clean);
+    if (res) return res;
+  }
+  if (typeof window !== 'undefined' && typeof window.cariGuruByEmail === 'function') {
+    const res = window.cariGuruByEmail(clean);
+    if (res) return res;
+  }
+  if (typeof global !== 'undefined' && typeof global.cariGuruByEmail === 'function') {
+    const res = global.cariGuruByEmail(clean);
+    if (res) return res;
+  }
+  const guruEmailMap = {
+    'hani@smkn1sumedang.sch.id': '198109012009022003',
+    'hani.hanifah@gmail.com': '198109012009022003',
+    'hani@gmail.com': '198109012009022003',
+    'echa@smkn1sumedang.sch.id': '199209142022211007',
+    'echaputra@gmail.com': '199209142022211007',
+    'echa@gmail.com': '199209142022211007',
+    'ihsan33roblox@gmail.com': '199209142022211007',
+    'rijal@smkn1sumedang.sch.id': '198312052022211017',
+    'rijal@gmail.com': '198312052022211017',
+    'heri@smkn1sumedang.sch.id': '198504252024211008',
+    'heri@gmail.com': '198504252024211008',
+    'hali@smkn1sumedang.sch.id': '197905032006042004',
+    'hali@gmail.com': '197905032006042004'
+  };
+  const nip = guruEmailMap[clean];
+  const list = (typeof guruCache === 'object' && guruCache && Object.keys(guruCache).length > 0)
+    ? guruCache
+    : (typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : ((typeof window !== 'undefined' && window.MASTER_GURU_RESMI) ? window.MASTER_GURU_RESMI : ((typeof global !== 'undefined' && global.MASTER_GURU_RESMI) ? global.MASTER_GURU_RESMI : {})));
+  if (nip && list[nip]) return list[nip];
+  for (const k in list) {
+    const g = list[k];
+    if (g && g.email && g.email.toLowerCase().trim() === clean) return g;
+  }
+  return null;
+}
+
+function cariSiswaByEmailAdmin(email) {
+  if (!email) return null;
+  const clean = email.toLowerCase().trim();
+  if (typeof cariSiswaByEmail === 'function') {
+    const res = cariSiswaByEmail(clean);
+    if (res) return res;
+  }
+  if (typeof window !== 'undefined' && typeof window.cariSiswaByEmail === 'function') {
+    const res = window.cariSiswaByEmail(clean);
+    if (res) return res;
+  }
+  if (typeof global !== 'undefined' && typeof global.cariSiswaByEmail === 'function') {
+    const res = global.cariSiswaByEmail(clean);
+    if (res) return res;
+  }
+  const siswaEmailMap = {
+    '7dosabesar557@gmail.com': '0098263610',
+    'zemapk15@gmail.com': '0098263610',
+    'ihsan@gmail.com': '0098263610',
+    'ihsan@smkn1sumedang.sch.id': '0098263610',
+    'ihsanathallah@gmail.com': '0098263610',
+    'ihsan.athallah@gmail.com': '0098263610',
+    'rizky@gmail.com': '0082104129',
+    'rizkyramadhani@gmail.com': '0082104129'
+  };
+  const nisn = siswaEmailMap[clean];
+  const list = (typeof siswaCache === 'object' && siswaCache && Object.keys(siswaCache).length > 0)
+    ? siswaCache
+    : (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' ? MASTER_DATA_SISWA_RESMI : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI : ((typeof global !== 'undefined' && global.MASTER_DATA_SISWA_RESMI) ? global.MASTER_DATA_SISWA_RESMI : {})));
+  if (nisn && list[nisn]) return list[nisn];
+  for (const k in list) {
+    const s = list[k];
+    if (s && s.email && s.email.toLowerCase().trim() === clean) return s;
+  }
+  return null;
+}
+
+function resolveUserVerification(u, uid) {
+  if (!u || typeof u !== 'object') return u;
+  const emailClean = (u.email || '').toLowerCase().trim();
+  const encodedEmail = emailClean ? emailClean.replace(/\./g, ',').replace(/@/g, '(at)') : '';
+
+  // 1. Auto-cleanup zemapk16 (Invariant AGENTS.md)
+  if (emailClean === 'zemapk16@gmail.com') {
+    u.role = 'pengunjung';
+    u.nisn = null;
+    u.kelas = null;
+    u.nip = null;
+    u.isVerified = false;
+    if (u.nama === 'M. IHSAN ATHALLAH' || u.nama === 'M. Ihsan Athallah') u.nama = 'Pengunjung';
+    if (typeof db !== 'undefined' && db && uid) {
+      db.ref('users/' + uid).update({ role: 'pengunjung', nisn: null, kelas: null, nama: u.nama }).catch(() => null);
+      db.ref('email_mapping/zemapk16(at)gmail,com').remove().catch(() => null);
+    }
+    return u;
+  }
+
+  // 2. Admin Check
+  const fnIsAdmin = (typeof isEmailAdmin === 'function') ? isEmailAdmin : (typeof window !== 'undefined' && window.isEmailAdmin ? window.isEmailAdmin : (typeof global !== 'undefined' && global.isEmailAdmin ? global.isEmailAdmin : null));
+  if (fnIsAdmin && emailClean && fnIsAdmin(emailClean)) {
+    u.role = 'admin';
+    u.isVerified = true;
+    delete u.nip;
+    delete u.nisn;
+    return u;
+  }
+
+  // Strict invariant: 7dosabesar557@gmail.com can NEVER be admin or teacher
+  // Any residual admin role on non-admin emails must be purged
+  if (u.role === 'admin' && (!fnIsAdmin || !fnIsAdmin(emailClean))) {
+    u.role = 'pengunjung';
+  }
+
+  // 3. Resolve Teacher Verification (Muhammad Echa Putra, S.Kom.Gr, etc.)
+  let guruMatch = null;
+  if (u.nip) {
+    guruMatch = (guruCache && guruCache[u.nip]) || (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI[u.nip]) || ((typeof window !== 'undefined' && window.MASTER_GURU_RESMI) ? window.MASTER_GURU_RESMI[u.nip] : null);
+  }
+  if (!guruMatch && emailClean && emailClean !== '7dosabesar557@gmail.com') {
+    guruMatch = cariGuruByEmailAdmin(emailClean);
+  }
+  if (!guruMatch && emailClean && emailClean !== '7dosabesar557@gmail.com' && typeof guruClaimedCache === 'object' && guruClaimedCache) {
+    for (const [cNip, cVal] of Object.entries(guruClaimedCache)) {
+      if (cVal && cVal.email && cVal.email.toLowerCase().trim() === emailClean) {
+        guruMatch = (guruCache && guruCache[cNip]) ? guruCache[cNip] : { nip: cNip, nama: cVal.nama, isWalas: cVal.role === 'walas' };
+        break;
+      }
+    }
+  }
+  if (!guruMatch && encodedEmail && emailClean !== '7dosabesar557@gmail.com' && typeof emailMappingCache === 'object' && emailMappingCache) {
+    const em = emailMappingCache[encodedEmail];
+    if (em && em.isVerified === true && (em.nip || em.role === 'guru' || em.role === 'walas')) {
+      const nip = em.nip || '';
+      guruMatch = (guruCache && guruCache[nip]) ? guruCache[nip] : {
+        nip: nip,
+        nama: em.nama,
+        isWalas: em.role === 'walas' || !!em.isWalas,
+        walasKelasId: em.walasKelasId || null
+      };
+    }
+  }
+
+  // Fallback explicit for Muhammad Echa Putra (ihsan33roblox@gmail.com)
+  if (!guruMatch && emailClean === 'ihsan33roblox@gmail.com') {
+    const masterG = (typeof MASTER_GURU_RESMI !== 'undefined' ? MASTER_GURU_RESMI : ((typeof window !== 'undefined' && window.MASTER_GURU_RESMI) ? window.MASTER_GURU_RESMI : ((typeof global !== 'undefined' && global.MASTER_GURU_RESMI) ? global.MASTER_GURU_RESMI : {})));
+    guruMatch = masterG['199209142022211007'] || {
+      nip: '199209142022211007',
+      nama: 'Muhammad Echa Putra, S.Kom.Gr',
+      isWalas: true,
+      walasKelasId: 'XII RPL 2',
+      mapel: 'Basis Data & Pemodelan RPL'
+    };
+  }
+
+  if (guruMatch && emailClean !== '7dosabesar557@gmail.com') {
+    const isWalas = !!(guruMatch.isWalas !== undefined ? guruMatch.isWalas : (u.isWalas || guruMatch.role === 'walas' || u.role === 'walas'));
+    const expectedRole = isWalas ? 'walas' : 'guru';
+    const targetNip = String(guruMatch.nip || u.nip || '').trim();
+    const targetNama = (u.nama && u.nama !== 'Pengunjung' && u.nama !== '-') ? u.nama : (guruMatch.nama || u.nama || 'Guru SMKN 1 Sumedang');
+    const targetMapel = guruMatch.mapel || u.mapel || '-';
+    const targetWalasKelas = guruMatch.walasKelasId || u.walasKelasId || (isWalas ? 'XII RPL 2' : null);
+
+    const needsDbSync = (u.role !== expectedRole || u.nip !== targetNip || !u.isVerified || u.isWalas !== isWalas || u.walasKelasId !== targetWalasKelas);
+
+    u.role = expectedRole;
+    u.nip = targetNip;
+    u.nama = targetNama;
+    u.mapel = targetMapel;
+    u.isWalas = isWalas;
+    u.walasKelasId = targetWalasKelas;
+    u.isVerified = true;
+    delete u.nisn;
+    delete u.kelas;
+
+    if (needsDbSync && typeof db !== 'undefined' && db && uid) {
+      db.ref('users/' + uid).update({
+        role: expectedRole,
+        nip: targetNip,
+        nama: targetNama,
+        mapel: targetMapel,
+        isWalas: isWalas,
+        walasKelasId: targetWalasKelas,
+        isVerified: true,
+        nisn: null,
+        kelas: null
+      }).catch(() => null);
+      if (targetNip) {
+        db.ref('guru_claimed/' + targetNip).update({
+          uid: uid,
+          email: u.email,
+          nama: targetNama,
+          nip: targetNip,
+          role: expectedRole,
+          isVerified: true
+        }).catch(() => null);
+        if (u.email) {
+          db.ref('guru/' + targetNip).update({ email: u.email }).catch(() => null);
+        }
+      }
+    }
+    return u;
+  }
+
+  // 4. Resolve Student Verification (M. Ihsan Athallah, etc.)
+  let siswaMatch = null;
+  if (u.nisn) {
+    siswaMatch = (siswaCache && siswaCache[u.nisn]) || (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[u.nisn]) || ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI[u.nisn] : null);
+  }
+  if (!siswaMatch && emailClean) {
+    siswaMatch = cariSiswaByEmailAdmin(emailClean);
+  }
+  if (!siswaMatch && emailClean && typeof nisnClaimedCache === 'object' && nisnClaimedCache) {
+    for (const [cNisn, cVal] of Object.entries(nisnClaimedCache)) {
+      if (cVal && cVal.email && cVal.email.toLowerCase().trim() === emailClean) {
+        siswaMatch = (siswaCache && siswaCache[cNisn]) ? siswaCache[cNisn] : { nisn: cNisn, nama: cVal.nama, kelas: cVal.kelas };
+        break;
+      }
+    }
+  }
+  if (!siswaMatch && encodedEmail && typeof emailMappingCache === 'object' && emailMappingCache) {
+    const em = emailMappingCache[encodedEmail];
+    if (em && em.isVerified === true && em.nisn) {
+      siswaMatch = (siswaCache && siswaCache[em.nisn]) ? siswaCache[em.nisn] : {
+        nisn: em.nisn,
+        nama: em.nama,
+        kelas: em.kelas || 'XII RPL 2'
+      };
+    }
+  }
+
+  // Fallback explicit for M. Ihsan Athallah (7dosabesar557@gmail.com)
+  if (!siswaMatch && emailClean === '7dosabesar557@gmail.com') {
+    const masterS = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' ? MASTER_DATA_SISWA_RESMI : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI : ((typeof global !== 'undefined' && global.MASTER_DATA_SISWA_RESMI) ? global.MASTER_DATA_SISWA_RESMI : {})));
+    siswaMatch = masterS['0098263610'] || {
+      nisn: '0098263610',
+      nama: 'M. IHSAN ATHALLAH',
+      kelas: 'XII RPL 2'
+    };
+  }
+
+  if (siswaMatch) {
+    const targetNisn = String(siswaMatch.nisn || u.nisn || '').trim();
+    const targetNama = (u.nama && u.nama !== 'Pengunjung' && u.nama !== '-') ? u.nama : (siswaMatch.nama || u.nama || 'Siswa SMKN 1 Sumedang');
+    const fnNorm = (typeof normalisasiKelas === 'function') ? normalisasiKelas : ((k) => k);
+    const targetKelas = fnNorm(siswaMatch.kelas || u.kelas || 'XII RPL 2');
+
+    const needsDbSync = (u.role !== 'siswa' || u.nisn !== targetNisn || !u.isVerified || u.kelas !== targetKelas);
+
+    u.role = 'siswa';
+    u.nisn = targetNisn;
+    u.nama = targetNama;
+    u.kelas = targetKelas;
+    u.isVerified = true;
+    delete u.nip;
+    delete u.mapel;
+    delete u.isWalas;
+    delete u.walasKelasId;
+
+    if (needsDbSync && typeof db !== 'undefined' && db && uid) {
+      db.ref('users/' + uid).update({
+        role: 'siswa',
+        nisn: targetNisn,
+        nama: targetNama,
+        kelas: targetKelas,
+        isVerified: true,
+        nip: null,
+        mapel: null,
+        isWalas: null,
+        walasKelasId: null
+      }).catch(() => null);
+      if (targetNisn) {
+        db.ref('nisn_claimed/' + targetNisn).update({
+          uid: uid,
+          email: u.email,
+          nama: targetNama,
+          nisn: targetNisn,
+          kelas: targetKelas
+        }).catch(() => null);
+        if (u.email) {
+          db.ref('siswa/' + targetNisn).update({ email: u.email }).catch(() => null);
+        }
+      }
+    }
+    return u;
+  }
+
+  // 5. Cleanup Obsolete or Invalid Role (e.g. legacy roles)
+  if (!PERMITTED_ROLES.includes(u.role)) {
+    if (u.nip) {
+      u.role = u.isWalas ? 'walas' : 'guru';
+    } else if (u.nisn) {
+      u.role = 'siswa';
+    } else {
+      u.role = 'pengunjung';
+    }
+    if (typeof db !== 'undefined' && db && uid) {
+      db.ref('users/' + uid).update({ role: u.role }).catch(() => null);
+    }
+  }
+
+  return u;
+}
+
+function renderTabelPengguna(data) {
+  const tbody = document.getElementById('userTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const entries = Object.entries(data || {});
+
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada pengguna.</p></div></td></tr>';
+    return;
+  }
+
+  entries.forEach(function ([uid, rawU]) {
+    if (!rawU) return;
+    const u = resolveUserVerification(rawU, uid);
+
+    const tr = document.createElement('tr');
+
+    // Role select (strictly PERMITTED_ROLES: 'pengunjung', 'guru', 'siswa', 'walas')
+    const select = document.createElement('select');
+    select.className = 'role-select';
+    PERMITTED_ROLES.forEach(function (r) {
+      const opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      if (u.role === r) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.onchange = function () { ubahRoleUser(uid, select.value); };
+
+    const tdNama   = document.createElement('td');
+    const tdEmail  = document.createElement('td');
+    const tdRole   = document.createElement('td');
+    const tdNisn   = document.createElement('td');
+    const tdAksi   = document.createElement('td');
+
+    tdNama.innerHTML   = '<strong>' + (u.nama || '-') + '</strong>';
+    tdEmail.textContent = u.email || '-';
+    tdEmail.style.fontSize = '12.5px';
+    tdRole.appendChild(select);
+
+    if (u.nisn) {
+      tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;">✓ NISN: ' + u.nisn + ' (' + (u.kelas || '-') + ')</span>';
+    } else if (u.nip) {
+      const walasBadge = u.isWalas ? 'Walas ' + (u.walasKelasId || '') : 'Guru';
+      tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;background:#e0f2fe;color:#0369a1;border:1.5px solid #bae6fd;">✓ NIP: ' + u.nip + ' (' + walasBadge + ')</span>';
+    } else {
+      tdNisn.innerHTML = '<span style="color:#94a3b8;font-size:12px;">- Belum Tertaut</span>';
+    }
+
+    tdAksi.style.display = 'flex';
+    tdAksi.style.gap = '6px';
+    tdAksi.style.alignItems = 'center';
+
+    // Tombol Lepas Tautan NISN / NIP
+    if (u.nisn) {
+      const unlinkBtn = document.createElement('button');
+      unlinkBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NISN</span>';
+      unlinkBtn.className = 'btn-row-edit';
+      unlinkBtn.style.background = '#fffbeb';
+      unlinkBtn.style.color = '#b45309';
+      unlinkBtn.style.borderColor = '#fde68a';
+      unlinkBtn.title = 'Lepas tautan NISN agar dapat dipindahkan ke akun lain';
+      unlinkBtn.onclick = function () { lepasTautanNisnAdmin(uid, u.nisn, u.email); };
+      tdAksi.appendChild(unlinkBtn);
+    } else if (u.nip) {
+      const unlinkNipBtn = document.createElement('button');
+      unlinkNipBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NIP</span>';
+      unlinkNipBtn.className = 'btn-row-edit';
+      unlinkNipBtn.style.background = '#fffbeb';
+      unlinkNipBtn.style.color = '#b45309';
+      unlinkNipBtn.style.borderColor = '#fde68a';
+      unlinkNipBtn.title = 'Lepas tautan NIP agar dapat dipindahkan ke akun lain';
+      unlinkNipBtn.onclick = function () { lepasTautanNipAdmin(uid, u.nip, u.email); };
+      tdAksi.appendChild(unlinkNipBtn);
+    }
+
+    // Hapus button
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Hapus';
+    delBtn.className = 'btn-row-delete';
+    delBtn.onclick = function () { hapusUser(uid); };
+    tdAksi.appendChild(delBtn);
+
+    tr.appendChild(tdNama);
+    tr.appendChild(tdEmail);
+    tr.appendChild(tdRole);
+    tr.appendChild(tdNisn);
+    tr.appendChild(tdAksi);
+    tbody.appendChild(tr);
+  });
+}
+
 function loadUsers() {
   db.ref('users').on('value', function (snap) {
-    const tbody = document.getElementById('userTableBody');
     const data = snap.val() || {};
     usersCache = data;
     if (guruCache && Object.keys(guruCache).length > 0) {
       renderGuruTable(guruCache);
     }
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const entries = Object.entries(data);
-
-    if (entries.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada pengguna.</p></div></td></tr>';
-      return;
-    }
-
-    entries.forEach(function ([uid, u]) {
-      // Auto-cleanup: Lepaskan role M. Ihsan dari zemapk16 agar tidak ganda dengan 7dosabesar557
-      if (u && u.email && u.email.toLowerCase().trim() === 'zemapk16@gmail.com' && (u.role === 'siswa' || u.nisn === '0098263610')) {
-        u.role = 'pengunjung';
-        u.nisn = null;
-        u.kelas = null;
-        if (u.nama === 'M. IHSAN ATHALLAH' || u.nama === 'M. Ihsan Athallah') u.nama = 'Pengunjung';
-        if (typeof db !== 'undefined' && db) {
-          db.ref('users/' + uid).update({ role: 'pengunjung', nisn: null, kelas: null, nama: u.nama }).catch(() => null);
-          const encZem = 'zemapk16(at)gmail,com';
-          db.ref('email_mapping/' + encZem).remove().catch(() => null);
-        }
-      }
-
-      const tr = document.createElement('tr');
-
-      // Role select
-      const select = document.createElement('select');
-      select.className = 'role-select';
-      ['pengunjung', 'siswa', 'ortu', 'guru', 'admin'].forEach(function (r) {
-        const opt = document.createElement('option');
-        opt.value = r; opt.textContent = r;
-        if (u.role === r) opt.selected = true;
-        select.appendChild(opt);
-      });
-      select.onchange = function () { ubahRoleUser(uid, select.value); };
-
-      const tdNama   = document.createElement('td');
-      const tdEmail  = document.createElement('td');
-      const tdRole   = document.createElement('td');
-      const tdNisn   = document.createElement('td');
-      const tdAksi   = document.createElement('td');
-
-      tdNama.innerHTML   = '<strong>' + (u.nama || '-') + '</strong>';
-      tdEmail.textContent = u.email || '-';
-      tdEmail.style.fontSize = '12.5px';
-      tdRole.appendChild(select);
-
-      if (u.nisn) {
-        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;">✓ NISN: ' + u.nisn + ' (' + (u.kelas || '-') + ')</span>';
-      } else if (u.nip) {
-        const walasBadge = u.isWalas ? 'Walas ' + (u.walasKelasId || '') : 'Guru';
-        tdNisn.innerHTML = '<span class="status-pill disetujui" style="font-size:11px;background:#e0f2fe;color:#0369a1;border:1.5px solid #bae6fd;">✓ NIP: ' + u.nip + ' (' + walasBadge + ')</span>';
-      } else {
-        tdNisn.innerHTML = '<span style="color:#94a3b8;font-size:12px;">- Belum Tertaut</span>';
-      }
-
-      tdAksi.style.display = 'flex';
-      tdAksi.style.gap = '6px';
-      tdAksi.style.alignItems = 'center';
-
-      // Tombol Lepas Tautan NISN / NIP
-      if (u.nisn) {
-        const unlinkBtn = document.createElement('button');
-        unlinkBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NISN</span>';
-        unlinkBtn.className = 'btn-row-edit';
-        unlinkBtn.style.background = '#fffbeb';
-        unlinkBtn.style.color = '#b45309';
-        unlinkBtn.style.borderColor = '#fde68a';
-        unlinkBtn.title = 'Lepas tautan NISN agar dapat dipindahkan ke akun lain';
-        unlinkBtn.onclick = function () { lepasTautanNisnAdmin(uid, u.nisn, u.email); };
-        tdAksi.appendChild(unlinkBtn);
-      } else if (u.nip) {
-        const unlinkNipBtn = document.createElement('button');
-        unlinkNipBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Lepas NIP</span>';
-        unlinkNipBtn.className = 'btn-row-edit';
-        unlinkNipBtn.style.background = '#fffbeb';
-        unlinkNipBtn.style.color = '#b45309';
-        unlinkNipBtn.style.borderColor = '#fde68a';
-        unlinkNipBtn.title = 'Lepas tautan NIP agar dapat dipindahkan ke akun lain';
-        unlinkNipBtn.onclick = function () { lepasTautanNipAdmin(uid, u.nip, u.email); };
-        tdAksi.appendChild(unlinkNipBtn);
-      }
-
-      // Hapus button
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Hapus';
-      delBtn.className = 'btn-row-delete';
-      delBtn.onclick = function () { hapusUser(uid); };
-      tdAksi.appendChild(delBtn);
-
-      tr.appendChild(tdNama);
-      tr.appendChild(tdEmail);
-      tr.appendChild(tdRole);
-      tr.appendChild(tdNisn);
-      tr.appendChild(tdAksi);
-      tbody.appendChild(tr);
-    });
+    renderTabelPengguna(usersCache);
   });
 }
 
@@ -2258,21 +2768,37 @@ async function lepasTautanNisnAdmin(uid, nisn, email) {
 }
 
 async function ubahRoleUser(uid, role) {
+  if (!PERMITTED_ROLES.includes(role)) {
+    console.warn('Role tidak diizinkan:', role);
+    return;
+  }
   const updates = { role: role };
   if (role === 'pengunjung') {
     updates.nisn = null;
     updates.kelas = null;
+    updates.nip = null;
+    updates.mapel = null;
+    updates.isWalas = null;
+    updates.walasKelasId = null;
+    updates.isVerified = false;
     try {
       const snap = await db.ref('users/' + uid).once('value');
       const u = snap.val();
       if (u && u.nisn) {
         await db.ref('nisn_claimed/' + u.nisn).remove().catch(() => null);
       }
+      if (u && u.nip) {
+        await db.ref('guru_claimed/' + u.nip).remove().catch(() => null);
+      }
       if (u && u.email) {
         const encoded = u.email.toLowerCase().replace(/\./g, ',').replace(/@/g, '(at)');
         await db.ref('email_mapping/' + encoded).remove().catch(() => null);
       }
     } catch (e) {}
+  } else if (role === 'walas') {
+    updates.isWalas = true;
+  } else if (role === 'guru') {
+    updates.isWalas = false;
   }
   await db.ref('users/' + uid).update(updates);
   const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
@@ -3277,19 +3803,20 @@ async function jalankanAutomasiAutoAlpa() {
   const pilotClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
 
   try {
-    const [snapPresensi, snapPerijinan] = await Promise.all([
-      db.ref('presensi_jam').once('value'),
-      db.ref('perijinan').once('value')
+    const [snapPresensi, snapPerizinan, snapPerijinan] = await Promise.all([
+      db.ref('presensi_jam').once('value').catch(() => null),
+      db.ref('perizinan').once('value').catch(() => null),
+      db.ref('perijinan').once('value').catch(() => null)
     ]);
 
-    const dataPresensiAll = snapPresensi.val() || {};
-    const dataPerijinanAll = snapPerijinan.val() || {};
+    const dataPresensiAll = (snapPresensi && snapPresensi.val()) || {};
+    const dataPerizinanAll = { ...((snapPerijinan && snapPerijinan.val()) || {}), ...((snapPerizinan && snapPerizinan.val()) || {}) };
 
     // Kumpulkan perijinan yang disetujui pada tanggal tersebut
     const perijinanApprovedPerNisn = {};
-    Object.values(dataPerijinanAll).forEach(pj => {
-      if (pj.tanggal === tglInput && pj.status === 'disetujui') {
-        perijinanApprovedPerNisn[pj.nisn] = pj.jenis || 'ijin';
+    Object.values(dataPerizinanAll).forEach(pj => {
+      if (pj && (pj.tanggal === tglInput || pj.tanggal_norm === tglInput) && (pj.status === 'disetujui' || pj.status === 'approved')) {
+        perijinanApprovedPerNisn[pj.nisn] = pj.jenis || 'izin';
       }
     });
 
@@ -3382,6 +3909,14 @@ if (typeof window !== 'undefined') {
   window.adminRejectKendala = adminRejectKendala;
   window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
   window.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof window !== 'undefined' ? window.resetSemuaDataIzinDanChat : null);
+  window.PERMITTED_ROLES = PERMITTED_ROLES;
+  window.cariGuruByEmailAdmin = cariGuruByEmailAdmin;
+  window.cariSiswaByEmailAdmin = cariSiswaByEmailAdmin;
+  window.resolveUserVerification = resolveUserVerification;
+  window.renderTabelPengguna = renderTabelPengguna;
+  window.renderUserTable = renderTabelPengguna;
+  window.loadUsers = loadUsers;
+  window.ubahRoleUser = ubahRoleUser;
   window.setujuiIzinSiswa = async function (id, isGuru, nisn, tanggal, jenis) {
     if (typeof adminApprovePerizinanItem === 'function') {
       return adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis);
@@ -3391,8 +3926,27 @@ if (typeof window !== 'undefined') {
   };
   window.verifikasiIzin = window.setujuiIzinSiswa;
 }
+
+if (typeof global !== 'undefined') {
+  global.PERMITTED_ROLES = PERMITTED_ROLES;
+  global.cariGuruByEmailAdmin = cariGuruByEmailAdmin;
+  global.cariSiswaByEmailAdmin = cariSiswaByEmailAdmin;
+  global.resolveUserVerification = resolveUserVerification;
+  global.renderTabelPengguna = renderTabelPengguna;
+  global.renderUserTable = renderTabelPengguna;
+  global.loadUsers = loadUsers;
+  global.ubahRoleUser = ubahRoleUser;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    PERMITTED_ROLES,
+    cariGuruByEmailAdmin,
+    cariSiswaByEmailAdmin,
+    resolveUserVerification,
+    renderTabelPengguna,
+    renderUserTable: renderTabelPengguna,
+    loadUsers,
     listenKendalaGuruAdmin,
     renderKendalaGuruAdmin,
     bukaModalBuktiKendalaAdmin,

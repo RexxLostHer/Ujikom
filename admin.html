@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/admin.css?v=20261104_1400">
 <link rel="stylesheet" href="assets/chat-hub.css?v=20261029_06">
 <link rel="stylesheet" href="assets/ceklis-popup.css?v=20261029_08">
 <style>
@@ -455,59 +455,94 @@
         </table>
       </div>
 
-      <!-- ===== JADWAL PULANG ===== -->
+      <!-- ===== JADWAL PULANG (MODERN & MINIMALIS 2026) ===== -->
       <div id="tab-jadwal" class="tab-panel">
-        <div class="content-header">
-          <h2>Jam Pulang Kelas</h2>
-          <p>Atur jam kepulangan resmi harian (Senin s.d. Jumat) untuk 3 kelas resmi SMKN 1 Sumedang.</p>
-        </div>
-        <div class="admin-form-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-            <h3 style="margin:0;font-size:15px;font-weight:800;color:var(--text);">Atur Jam Pulang Resmi</h3>
-            <button type="button" class="btn-secondary" onclick="terapkanPresetStandarJadwal()" style="font-size:12.5px;padding:7px 14px;background:#f0fdf4;color:#166534;border-color:#bbf7d0;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <div class="content-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px;">
+          <div>
+            <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#4f46e5;background:#eef2ff;padding:3px 10px;border-radius:20px;margin-bottom:6px;border:1px solid #c7d2fe;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Monitoring IoT Jam Pulang</span>
+            </div>
+            <h2 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 4px 0;">Jam Pulang Kelas</h2>
+            <p style="font-size:13.5px;color:#64748b;margin:0;">Konfigurasi kepulangan resmi untuk 3 kelas binaan SMKN 1 Sumedang.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn-preset-minimal" onclick="terapkanPresetStandarJadwal()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               <span>Terapkan Standar SMKN 1 Sumedang (15:30 / 11:45)</span>
             </button>
           </div>
+        </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Pilih Kelas Resmi</label>
-              <select id="jadwalKelas">
+        <!-- 3 HERO CLASS CARDS (MODERN MINIMALIST GRID) -->
+        <div class="jadwal-cards-grid" id="jadwalCardsGrid">
+          <!-- Populated dynamically by renderJadwalTable -->
+        </div>
+
+        <!-- QUICK EDIT FORM CARD (CLEAN & COMPACT) -->
+        <div class="admin-form-card" style="margin-top:16px;border-radius:16px;border:1px solid #e2e8f0;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.03);padding:18px 22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#334155;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <h3 style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">Penyetelan Cepat Jadwal Kepulangan</h3>
+            </div>
+            <span style="font-size:11.5px;color:#64748b;font-weight:600;">Sinkronisasi Realtime IoT Gateway</span>
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;gap:14px;">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">Kelas Resmi</label>
+              <select id="jadwalKelas" style="font-size:13px;font-weight:600;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;width:100%;">
                 <option value="XII RPL 1">XII RPL 1</option>
                 <option value="XII RPL 2" selected>XII RPL 2</option>
                 <option value="XII TKJ 1">XII TKJ 1</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Hari Pembelajaran</label>
-              <select id="jadwalHari" onchange="gantiHariJadwalPulang()">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">Hari Pembelajaran</label>
+              <select id="jadwalHari" onchange="gantiHariJadwalPulang()" style="font-size:13px;font-weight:600;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;width:100%;">
                 <option value="semua" selected>Semua Hari (Senin - Jumat)</option>
-                <option value="senin_kamis">Senin s/d Kamis (Reguler - 15:30)</option>
+                <option value="senin_kamis">Senin s/d Kamis (Reguler)</option>
                 <option value="senin">Senin</option>
                 <option value="selasa">Selasa</option>
                 <option value="rabu">Rabu</option>
                 <option value="kamis">Kamis</option>
-                <option value="jumat">Jumat (KBM Khusus - 11:45)</option>
+                <option value="jumat">Jumat (KBM Khusus)</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Jam Pulang (WIB)</label>
-              <input type="time" id="jadwalJam" value="15:30">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">Jam Pulang (WIB)</label>
+              <input type="time" id="jadwalJam" value="15:30" style="font-size:13px;font-weight:700;font-family:var(--font-mono);padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;width:100%;">
             </div>
           </div>
-          <div class="form-actions" style="margin-top:10px;">
-            <button class="btn-primary" onclick="submitJadwal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Simpan Jam Pulang</span></button>
+          <div class="form-actions" style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn-primary" onclick="submitJadwal()" style="font-size:12.5px;padding:8px 18px;border-radius:9px;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              <span>Simpan Jam Pulang</span>
+            </button>
           </div>
           <div class="msg" id="jadwalMsg"></div>
         </div>
 
+        <!-- RINGKASAN MATRIKS TABEL (3 BARIS MINIMALIS) -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px 0;">
-          <h3 style="font-size:15px;font-weight:800;color:var(--text);margin:0;">Matriks Jam Pulang Resmi 3 Kelas Pilot</h3>
-          <span style="font-size:12px;color:var(--text-muted);font-weight:600;" id="statTotalJadwal">3 Kelas Resmi Terkonfigurasi</span>
+          <h3 style="font-size:14.5px;font-weight:800;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>Matriks Ringkasan Jam Kepulangan</span>
+          </h3>
+          <span style="font-size:12px;color:#64748b;font-weight:600;" id="statTotalJadwal">3 Kelas Resmi Terkonfigurasi</span>
         </div>
         <table class="data-table">
-          <thead><tr><th>Kelas</th><th>Hari KBM</th><th>Jam Pulang Resmi</th><th>Keterangan KBM</th><th>Aksi</th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width:22%;">Kelas Resmi</th>
+              <th style="width:24%;">Senin – Kamis (Reguler)</th>
+              <th style="width:22%;">Jumat (Singkat)</th>
+              <th style="width:20%;">Rincian Harian</th>
+              <th style="width:12%;text-align:right;">Aksi</th>
+            </tr>
+          </thead>
           <tbody id="jadwalTableBody"></tbody>
         </table>
       </div>
@@ -924,47 +959,91 @@
   </div>
 </div>
 
-<!-- MODAL EDIT JAM PULANG KELAS -->
-<div class="modal-preview" id="modalEditJadwalPulang" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:99999;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
-  <div class="modal-preview-content" style="background:#fff;border-radius:20px;max-width:440px;width:100%;box-shadow:0 20px 40px -10px rgba(0,0,0,0.25);overflow:hidden;border:1px solid #e2e8f0;animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);">
+<!-- MODAL EDIT JAM PULANG KELAS (MODERN & MINIMALIS) -->
+<div class="modal-preview" id="modalEditJadwalPulang" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:99999;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;">
+  <div class="modal-preview-content" style="background:#fff;border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 48px -12px rgba(15,23,42,0.25);overflow:hidden;border:1px solid #e2e8f0;animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);">
     <div style="padding:16px 22px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:10px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div>
-          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;">Edit Jam Pulang</h3>
-          <p style="font-size:11.5px;color:#64748b;margin:0;" id="modalEditJadwalSub">Perbarui jam kepulangan resmi kelas</p>
+          <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;" id="modalEditJadwalTitle">Atur Jam Pulang</h3>
+          <p style="font-size:11.5px;color:#64748b;margin:0;" id="modalEditJadwalSub">Konfigurasi jadwal kepulangan resmi kelas</p>
         </div>
       </div>
-      <button type="button" onclick="tutupModalEditJadwal()" style="background:transparent;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:6px;transition:0.15s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">&times;</button>
+      <button type="button" onclick="tutupModalEditJadwal()" style="background:transparent;border:none;font-size:20px;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:6px;transition:0.15s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">&times;</button>
     </div>
 
     <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
       <div>
         <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Kelas</label>
-        <input type="text" id="modalEditJadwalKelas" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;box-sizing:border-box;">
+        <input type="text" id="modalEditJadwalKelas" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#1e293b;font-weight:800;font-size:13.5px;box-sizing:border-box;">
       </div>
 
-      <div>
-        <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Hari Pembelajaran</label>
-        <input type="text" id="modalEditJadwalHari" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;box-sizing:border-box;text-transform:capitalize;">
+      <!-- Single day container (if hari is passed) -->
+      <div id="modalEditJadwalSingleDayContainer" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Hari Pembelajaran</label>
+          <input type="text" id="modalEditJadwalHari" disabled style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;box-sizing:border-box;text-transform:capitalize;">
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Jam Pulang Resmi (WIB)</label>
+          <input type="time" id="modalEditJadwalJam" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:14px;font-weight:700;color:#0f172a;box-sizing:border-box;font-family:var(--font-mono);">
+        </div>
       </div>
 
-      <div>
-        <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Jam Pulang Resmi (WIB)</label>
-        <input type="time" id="modalEditJadwalJam" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:14px;font-weight:700;color:#0f172a;box-sizing:border-box;">
+      <!-- Multi day / Class mode container (Modern & Minimalis) -->
+      <div id="modalEditJadwalMultiDayContainer">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:5px;">Senin – Kamis (Reguler)</label>
+            <input type="time" id="modalEditJadwalJamReguler" value="15:30" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #cbd5e1;font-size:13.5px;font-weight:700;color:#0f172a;box-sizing:border-box;font-family:var(--font-mono);">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:#0284c7;margin-bottom:5px;">Jumat (KBM Khusus)</label>
+            <input type="time" id="modalEditJadwalJamJumat" value="11:45" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #bae6fd;background:#f0f9ff;font-size:13.5px;font-weight:700;color:#0369a1;box-sizing:border-box;font-family:var(--font-mono);">
+          </div>
+        </div>
+
+        <details style="margin-top:6px;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;background:#f8fafc;">
+          <summary style="font-size:11.5px;font-weight:700;color:#475569;cursor:pointer;outline:none;">Sesuaikan Jam Spesifik per Hari (Opsional)</summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+            <div>
+              <span style="font-size:11px;font-weight:600;color:#64748b;">Senin:</span>
+              <input type="time" id="modalEditHariSenin" value="15:30" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;box-sizing:border-box;">
+            </div>
+            <div>
+              <span style="font-size:11px;font-weight:600;color:#64748b;">Selasa:</span>
+              <input type="time" id="modalEditHariSelasa" value="15:30" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;box-sizing:border-box;">
+            </div>
+            <div>
+              <span style="font-size:11px;font-weight:600;color:#64748b;">Rabu:</span>
+              <input type="time" id="modalEditHariRabu" value="15:30" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;box-sizing:border-box;">
+            </div>
+            <div>
+              <span style="font-size:11px;font-weight:600;color:#64748b;">Kamis:</span>
+              <input type="time" id="modalEditHariKamis" value="15:30" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;box-sizing:border-box;">
+            </div>
+          </div>
+        </details>
       </div>
 
       <div id="modalEditJadwalMsg" style="display:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;"></div>
     </div>
 
-    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
-      <button type="button" onclick="tutupModalEditJadwal()" style="padding:9px 16px;border-radius:10px;border:1px solid #cbd5e1;background:#ffffff;color:#475569;font-weight:700;font-size:13px;cursor:pointer;">Batal</button>
-      <button type="button" id="btnSimpanModalEditJadwal" onclick="simpanModalEditJadwal()" style="padding:9px 18px;border-radius:10px;border:none;background:#2563eb;color:#ffffff;font-weight:800;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 4px rgba(37,99,235,0.25);">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        <span>Simpan Perubahan</span>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <button type="button" onclick="setPresetStandarDiModal()" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>Standar SMKN 1</span>
       </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="tutupModalEditJadwal()" style="padding:8px 15px;border-radius:9px;border:1px solid #cbd5e1;background:#ffffff;color:#475569;font-weight:700;font-size:12.5px;cursor:pointer;">Batal</button>
+        <button type="button" id="btnSimpanModalEditJadwal" onclick="simpanModalEditJadwal()" style="padding:8px 18px;border-radius:9px;border:none;background:#4f46e5;color:#ffffff;font-weight:800;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 5px rgba(79,70,229,0.25);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>Simpan Perubahan</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -981,7 +1060,7 @@
 <script src="assets/auth.js?v=20261001_10"></script>
 <script src="assets/ceklis-popup.js?v=20261029_08"></script>
 <script src="assets/perijinan.js?v=20261029_09"></script>
-<script src="assets/admin.js?v=20261029_07"></script>
+<script src="assets/admin.js?v=20261104_1400"></script>
 <script src="assets/chat-hub.js?v=20261029_06"></script>
 <script src="assets/profile-modal.js?v=20261001_10"></script>
 

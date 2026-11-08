@@ -2,12 +2,14 @@
 """
 ABSENSI RFID GATEWAY — RASPBERRY PI / LINUX / IOT
 SMK NEGERI 1 SUMEDANG (NESAS RPL) — UJIKOM 2026
+Keamanan Terotentikasi REST API (SEC-03 & PRD Bab 5.2)
 
 Fitur Utama:
 1. Baca scan kartu RFID (RC522 SPI / USB Reader / Simulasi Stdin).
-2. Deteksi Kartu A (Siswa Fisik) & Kartu B (Guru Pengajar).
-3. Evaluasi ambang batas waktu presensi PRD (06.30 Hadir, 06.31-08.00 Terlambat).
-4. Offline Resilience: SQLite Queue (offline_queue.db) & auto-sync background worker saat online.
+2. Deteksi Kartu Siswa & Guru Pengajar via Node Terproteksi /rfid_map & /kartu.
+3. Otentikasi Perangkat Resmi via Firebase Auth REST API (idToken) & Auto-Refresh loop 50 menit.
+4. Evaluasi ambang batas waktu presensi PRD (06.30 Hadir, 06.31-08.00 Terlambat).
+5. Offline Resilience: SQLite Queue (offline_queue.db) & auto-sync background worker saat online.
 """
 
 import sys
@@ -20,32 +22,129 @@ from datetime import datetime
 import urllib.request
 import urllib.error
 
+# ===== LOAD ENVIRONMENT VARIABLES (.env) =====
+def load_dotenv(dotenv_path=None):
+    if not dotenv_path:
+        dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+    if os.path.exists(dotenv_path):
+        try:
+            with open(dotenv_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+load_dotenv()
+
 # ===== KONFIGURASI FIREBASE & DEVICE =====
-DATABASE_URL = "https://absensi-6e385-default-rtdb.asia-southeast1.firebasedatabase.app"
-DEVICE_ID = "gateway-rpi-01"
-DEFAULT_KELAS = "XII RPL 1"
+FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY", "AIzaSyBOQFp5SOvBTMpA_FEaMQyp0G4mmHfFa_c")
+DATABASE_URL = os.environ.get("FIREBASE_DATABASE_URL", "https://absensi-6e385-default-rtdb.asia-southeast1.firebasedatabase.app")
+IOT_DEVICE_EMAIL = os.environ.get("IOT_DEVICE_EMAIL", "gateway-rpi-01@iot.smkn1sumedang.sch.id")
+IOT_DEVICE_PASSWORD = os.environ.get("IOT_DEVICE_PASSWORD", "nesas_gateway_secure_pass_2026")
+DEVICE_ID = os.environ.get("IOT_DEVICE_ID", "gateway-rpi-01")
+DEFAULT_KELAS = os.environ.get("DEFAULT_KELAS", "XII RPL 2")
 OFFLINE_DB_PATH = os.path.join(os.path.dirname(__file__), "offline_queue.db")
 
 # Cooldown anti-double tap (detik)
 COOLDOWN_SECONDS = 5
 riwayat_tap = {}
 
-# Prototipe Kartu Hardcoded Fallback (PRD Bab 5.2)
+# Prototipe Kartu Dummy untuk Pengujian Lokal & Simulator (PRD Bab 5.1)
 KARTU_PRESET = {
-    "A1B2C3D4": {
+    "TEST_UID_0001": {
         "tipe": "siswa",
-        "nisn": "0091113849",
-        "nama": "AHSAN MAHMUD FAUZI YUSRY",
-        "kelas": "XII RPL 1"
+        "nisn": "9999999991",
+        "nama": "Siswa Uji 01",
+        "kelas": "XII RPL 2"
     },
-    "E5F6A7B8": {
+    "TEST_UID_0002": {
+        "tipe": "siswa",
+        "nisn": "9999999992",
+        "nama": "Siswa Uji 02",
+        "kelas": "XII RPL 2"
+    },
+    "TEST_UID_GURU": {
         "tipe": "guru",
-        "nip": "198109012009022003",
-        "nama": "Hani Hanifah, S.Si",
+        "nip": "199001012020011001",
+        "nama": "Guru Uji",
         "mapel": "Pemrograman Web & Perangkat Bergerak",
-        "kelas": "XII RPL 1"
+        "kelas": "XII RPL 2"
     }
 }
+
+# ===== AUTENTIKASI PERANGKAT IOT (FIREBASE AUTH REST API) =====
+device_auth = {
+    "idToken": None,
+    "refreshToken": None,
+    "expiresAt": 0
+}
+
+def authenticate_device():
+    """Melakukan login IoT Gateway ke Firebase Auth REST API untuk memperoleh idToken & refreshToken."""
+    if not FIREBASE_API_KEY or not IOT_DEVICE_EMAIL:
+        return None
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    payload = json.dumps({
+        "email": IOT_DEVICE_EMAIL,
+        "password": IOT_DEVICE_PASSWORD,
+        "returnSecureToken": True
+    }).encode("utf-8")
+    try:
+        req = urllib.request.Request(url, data=payload, method="POST", headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            res_data = json.loads(res.read().decode("utf-8"))
+            device_auth["idToken"] = res_data.get("idToken")
+            device_auth["refreshToken"] = res_data.get("refreshToken")
+            expires_in = int(res_data.get("expiresIn", 3600))
+            device_auth["expiresAt"] = time.time() + expires_in
+            print(f"[AUTH DEVICE] ✓ Berhasil login perangkat sebagai {IOT_DEVICE_EMAIL} (Token aktif).")
+            return device_auth["idToken"]
+    except Exception as e:
+        print(f"[AUTH DEVICE INFO] Login Firebase Auth REST gagal/offline (Mode resilience antrean SQLite aktif): {e}")
+        return None
+
+def refresh_auth_token():
+    """Memperbarui idToken secara otomatis setiap 50 menit menggunakan Secure Token API."""
+    if not device_auth.get("refreshToken") or not FIREBASE_API_KEY:
+        return authenticate_device()
+    url = f"https://securetoken.googleapis.com/v1/token?key={FIREBASE_API_KEY}"
+    payload = f"grant_type=refresh_token&refresh_token={device_auth['refreshToken']}".encode("utf-8")
+    try:
+        req = urllib.request.Request(url, data=payload, method="POST", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            res_data = json.loads(res.read().decode("utf-8"))
+            device_auth["idToken"] = res_data.get("id_token")
+            device_auth["refreshToken"] = res_data.get("refresh_token")
+            expires_in = int(res_data.get("expires_in", 3600))
+            device_auth["expiresAt"] = time.time() + expires_in
+            print("[AUTH REFRESH] 🔄 idToken IoT Gateway diperbarui.")
+            return device_auth["idToken"]
+    except Exception as e:
+        print(f"[AUTH REFRESH WARN] Refresh token gagal, mencoba login ulang: {e}")
+        return authenticate_device()
+
+def worker_token_refresher():
+    """Background daemon thread untuk auto-refresh idToken setiap 50 menit (3000 detik)."""
+    while True:
+        time.sleep(3000)
+        try:
+            refresh_auth_token()
+        except Exception:
+            pass
+
+def build_firebase_url(path):
+    """Menambahkan parameter autentikasi ?auth={idToken} ke URL REST API RTDB."""
+    token = device_auth.get("idToken")
+    if token:
+        sep = "&" if "?" in path else "?"
+        return f"{DATABASE_URL}/{path}.json{sep}auth={token}"
+    return f"{DATABASE_URL}/{path}.json"
 
 # ===== OFFLINE SQLITE QUEUE RESILIENCE (PRD Bab 3.2 & 5.1) =====
 def init_offline_db():
@@ -109,10 +208,8 @@ def worker_flush_offline_queue():
                 if sukses:
                     ids_sukses.append(row_id)
                 else:
-                    # Increment retry_count jika gagal
                     c.execute("UPDATE offline_queue SET retry_count = retry_count + 1 WHERE id = ?", (row_id,))
                     conn.commit()
-                    # Hentikan batch jika koneksi offline
                     break
 
             if ids_sukses:
@@ -121,22 +218,21 @@ def worker_flush_offline_queue():
                 print(f"[OFFLINE SYNC] 🔄 Berhasil menyinkronkan {len(ids_sukses)} rekaman dari SQLite ke Firebase!")
 
             conn.close()
-        except Exception as e:
-            # Diamkan jika koneksi masih offline
+        except Exception:
             pass
 
-# ===== HTTP FIREBASE CLIENT =====
+# ===== HTTP FIREBASE CLIENT (TERAUTENTIKASI) =====
 def get_firebase(path):
-    url = f"{DATABASE_URL}/{path}.json"
+    url = build_firebase_url(path)
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Nesas-RFID-Gateway/2.0'})
         with urllib.request.urlopen(req, timeout=4) as response:
             return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
+    except Exception:
         return None
 
 def put_firebase(path, data, fallback_queue=True):
-    url = f"{DATABASE_URL}/{path}.json"
+    url = build_firebase_url(path)
     try:
         body = json.dumps(data).encode('utf-8')
         req = urllib.request.Request(url, data=body, method='PUT', headers={'Content-Type': 'application/json', 'User-Agent': 'Nesas-RFID-Gateway/2.0'})
@@ -149,7 +245,7 @@ def put_firebase(path, data, fallback_queue=True):
         return False
 
 def post_firebase(path, data, fallback_queue=True):
-    url = f"{DATABASE_URL}/{path}.json"
+    url = build_firebase_url(path)
     try:
         body = json.dumps(data).encode('utf-8')
         req = urllib.request.Request(url, data=body, method='POST', headers={'Content-Type': 'application/json', 'User-Agent': 'Nesas-RFID-Gateway/2.0'})
@@ -162,7 +258,7 @@ def post_firebase(path, data, fallback_queue=True):
         return False
 
 def delete_firebase(path):
-    url = f"{DATABASE_URL}/{path}.json"
+    url = build_firebase_url(path)
     try:
         req = urllib.request.Request(url, method='DELETE', headers={'User-Agent': 'Nesas-RFID-Gateway/2.0'})
         with urllib.request.urlopen(req, timeout=4) as response:
@@ -209,7 +305,6 @@ def proses_kartu(uid_kartu):
     if pairing_req and isinstance(pairing_req, dict) and pairing_req.get("active") is True and pairing_req.get("status") == "waiting":
         req_ts = pairing_req.get("timestamp", 0)
         req_ts_sec = (req_ts / 1000.0) if req_ts > 1e11 else req_ts
-        # Batas waktu timeout 30 detik
         if (now_ts - req_ts_sec) <= 30.0:
             user_id = str(pairing_req.get("userId") or pairing_req.get("nisn") or pairing_req.get("nip") or "").strip()
             role = str(pairing_req.get("role", "siswa")).lower()
@@ -250,8 +345,9 @@ def proses_kartu(uid_kartu):
                             delete_firebase(f"kartu/{old_uid}")
                             print(f"[RE-ENROLLMENT] Kartu lama {old_uid} milik {user_id} telah dihapus/digantikan.")
 
-            # 1. Simpan ke /kartu/{uid_kartu}
+            # 1. Simpan ke /kartu/{uid_kartu} dan /rfid_map/{uid_kartu}
             put_firebase(f"kartu/{uid_kartu}", card_data)
+            put_firebase(f"rfid_map/{uid_kartu}", card_data)
 
             # 2. Update /pairing_request
             req_update = dict(pairing_req)
@@ -262,15 +358,16 @@ def proses_kartu(uid_kartu):
             put_firebase("pairing_request", req_update)
 
             print(f"🎉 [PAIRING SUKSES] Kartu {uid_kartu} berhasil diikat ke {nama} ({user_id})!")
-            print("🔊 Nada konfirmasi pairing sukses: [BEEP] [BEEP] [BEEP]")
             return
         else:
             put_firebase("pairing_request/active", False)
             put_firebase("pairing_request/status", "expired")
             print(f"[PAIRING TIMEOUT] ⏳ Permintaan penautan kartu telah kedaluwarsa (>30 detik).")
 
-    # 1. Lookup ke Firebase atau Fallback Preset
-    kartu_data = get_firebase(f"kartu/{uid_kartu}")
+    # 1. Lookup ke Node Terproteksi /rfid_map/{uid} atau /kartu/{uid}
+    kartu_data = get_firebase(f"rfid_map/{uid_kartu}")
+    if not kartu_data:
+        kartu_data = get_firebase(f"kartu/{uid_kartu}")
     if not kartu_data and uid_kartu in KARTU_PRESET:
         kartu_data = KARTU_PRESET[uid_kartu]
         print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu}.")
@@ -280,20 +377,17 @@ def proses_kartu(uid_kartu):
         print(f"Silakan daftarkan di Panel Admin -> Tab Kartu RFID.")
         return
 
-    # 2. PERIKSA APAKAH KARTU GURU (KARTU B)
+    # 2. PERIKSA APAKAH KARTU GURU
     is_guru = False
     nip_guru = None
     if isinstance(kartu_data, dict):
         if kartu_data.get("tipe") == "guru" or kartu_data.get("nip"):
             is_guru = True
             nip_guru = kartu_data.get("nip")
-    if uid_kartu == "E5F6A7B8":
-        is_guru = True
-        nip_guru = "198109012009022003"
 
     if is_guru:
-        nama_guru = kartu_data.get("nama", "Guru Pengajar") if isinstance(kartu_data, dict) else "Hani Hanifah, S.Si"
-        mapel = kartu_data.get("mapel", "Pemrograman Web") if isinstance(kartu_data, dict) else "Pemrograman Web & Perangkat Bergerak"
+        nama_guru = kartu_data.get("nama", "Guru Pengajar") if isinstance(kartu_data, dict) else "Guru SMKN 1 Sumedang"
+        mapel = kartu_data.get("mapel", "Mata Pelajaran") if isinstance(kartu_data, dict) else "Mata Pelajaran Kejuruan"
         kelas_target = kartu_data.get("kelas", DEFAULT_KELAS) if isinstance(kartu_data, dict) else DEFAULT_KELAS
 
         print(f"[GURU DETECTED] 👨‍🏫 {nama_guru} (NIP: {nip_guru})")
@@ -329,13 +423,13 @@ def proses_kartu(uid_kartu):
             print(f"⚠️ Presensi guru tersimpan (antrean/offline fallback aktif).")
         return
 
-    # 3. KARTU SISWA (KARTU A ATAU SISWA TERDAFTAR)
+    # 3. KARTU SISWA (TERDAFTAR DI DATABASE)
     nisn = kartu_data if isinstance(kartu_data, str) else kartu_data.get("nisn")
     if not nisn:
         print(f"[ERR] Data kartu rusak (field NISN tidak ditemukan).")
         return
 
-    # Ambil detail siswa
+    # Ambil profil siswa dari node /siswa/{nisn}
     siswa = get_firebase(f"siswa/{nisn}")
     if not siswa and isinstance(kartu_data, dict) and "nama" in kartu_data:
         siswa = kartu_data
@@ -343,9 +437,8 @@ def proses_kartu(uid_kartu):
     kelas = siswa.get("kelas", DEFAULT_KELAS) if siswa else DEFAULT_KELAS
 
     # Periksa apakah siswa sudah memiliki status Izin/Sakit yang disetujui hari ini
-    # (PRD & Spesifikasi: Status Izin/Sakit disetujui Walas DILARANG ditimpa oleh scan IoT)
     izin_disetujui = False
-    for path_node in ("perijinan", "perizinan"):
+    for path_node in ("perizinan", "perijinan"):
         data_p = get_firebase(path_node)
         if data_p and isinstance(data_p, dict):
             for pid, pval in data_p.items():
@@ -381,6 +474,18 @@ def proses_kartu(uid_kartu):
     }
     sukses_riwayat = post_firebase(f"absensi/{nisn}", entry_absensi)
 
+    # Tulis ke riwayat/{tanggal}/{nisn} (PRD Bab 3.2)
+    entry_riwayat = {
+        "waktu": waktu,
+        "status": status,
+        "keterangan": keterangan,
+        "device_id": DEVICE_ID,
+        "rfidUid": uid_kartu,
+        "nama": nama_siswa,
+        "kelas": kelas
+    }
+    put_firebase(f"riwayat/{tanggal}/{nisn}", entry_riwayat)
+
     # Tulis ke presensi_jam/{kelas}/{tanggal}/1/{nisn} (Monitoring Kelas Realtime)
     entry_kelas = {
         "waktu": waktu,
@@ -400,7 +505,13 @@ def proses_kartu(uid_kartu):
 def main():
     init_offline_db()
 
-    # Jalankan background worker pemulihan offline queue
+    # Otentikasi awal perangkat IoT
+    authenticate_device()
+
+    # Jalankan background workers: auto-refresh token (50 min) & flush offline queue (8s)
+    t_token = threading.Thread(target=worker_token_refresher, daemon=True)
+    t_token.start()
+
     t_worker = threading.Thread(target=worker_flush_offline_queue, daemon=True)
     t_worker.start()
 
@@ -408,8 +519,7 @@ def main():
     print("🚀 GATEWAY PRESENSI RFID IOT — SMK NEGERI 1 SUMEDANG")
     print(f"🔗 Firebase Realtime DB : {DATABASE_URL}")
     print(f"📁 SQLite Offline Queue : {OFFLINE_DB_PATH}")
-    print(f"🏷️ Kartu A (Siswa Fisik): A1B2C3D4 (Ahsan Mahmud - XII RPL 1)")
-    print(f"🏷️ Kartu B (Guru Fisik) : E5F6A7B8 (Hani Hanifah, S.Si)")
+    print(f"🏷️ Mode Keamanan REST   : idToken Auto-Refresh Active (SEC-03)")
     print("Ketik atau scan UID kartu (Tekan Enter):")
     print("="*60)
 

@@ -15,11 +15,16 @@
 #include <MFRC522.h>
 #include <time.h>
 
-// ===== KONFIGURASI WIFI & FIREBASE =====
-const char* WIFI_SSID     = "Nesas_Hotspot";
-const char* WIFI_PASSWORD = "password_sekolah";
-const char* DATABASE_URL  = "https://absensi-6e385-default-rtdb.asia-southeast1.firebasedatabase.app";
-const char* DEVICE_ID     = "gateway-rpl-01"; // Scanner Kelas XII RPL 2
+// ===== KONFIGURASI KREDENSIAL DARI SECRETS.H =====
+#include "secrets.h"
+
+// Helper untuk menyematkan token autentikasi ke request Firebase Realtime Database
+String getAuthQuery() {
+  if (strlen(FIREBASE_AUTH_TOKEN) > 0) {
+    return String("?auth=") + FIREBASE_AUTH_TOKEN;
+  }
+  return "";
+}
 
 // PIN RFID RC522 (ESP32)
 #define SS_PIN  5
@@ -101,7 +106,7 @@ void prosesAbsensi(String uid) {
 
   // 0. Cek apakah ada permintaan pairing NFC aktif di Firebase
   HTTPClient httpPairing;
-  String urlPairing = String(DATABASE_URL) + "/pairing_request.json";
+  String urlPairing = String(DATABASE_URL) + "/pairing_request.json" + getAuthQuery();
   httpPairing.begin(urlPairing);
   int codePairing = httpPairing.GET();
   if (codePairing == 200) {
@@ -189,7 +194,7 @@ void prosesAbsensi(String uid) {
       String linkedAtStr = String(nowSec) + "000";
 
       HTTPClient httpKartu;
-      String urlKartuBinding = String(DATABASE_URL) + "/kartu/" + uid + ".json";
+      String urlKartuBinding = String(DATABASE_URL) + "/kartu/" + uid + ".json" + getAuthQuery();
       httpKartu.begin(urlKartuBinding);
       httpKartu.addHeader("Content-Type", "application/json");
       String bodyCard = "";
@@ -200,6 +205,14 @@ void prosesAbsensi(String uid) {
       }
       httpKartu.PUT(bodyCard);
       httpKartu.end();
+
+      // Sinkronkan ke node terproteksi /rfid_map/{uid} (SEC-03)
+      HTTPClient httpRfidMap;
+      String urlRfidMapBinding = String(DATABASE_URL) + "/rfid_map/" + uid + ".json" + getAuthQuery();
+      httpRfidMap.begin(urlRfidMapBinding);
+      httpRfidMap.addHeader("Content-Type", "application/json");
+      httpRfidMap.PUT(bodyCard);
+      httpRfidMap.end();
       
       HTTPClient httpStatus;
       httpStatus.begin(urlPairing);
@@ -215,20 +228,26 @@ void prosesAbsensi(String uid) {
     httpPairing.end();
   }
 
+  // 1. Cari kartu pada node terproteksi /rfid_map/{uid} atau /kartu/{uid}
   HTTPClient http;
-  String urlKartu = String(DATABASE_URL) + "/kartu/" + uid + ".json";
-  
-  http.begin(urlKartu);
+  String urlRfidMap = String(DATABASE_URL) + "/rfid_map/" + uid + ".json" + getAuthQuery();
+  http.begin(urlRfidMap);
   int code = http.GET();
-  if (code != 200) {
-    Serial.println("[ERR] Gagal query kartu. Code: " + String(code));
-    beepError();
-    http.end();
-    return;
+  String payload = "";
+  if (code == 200) {
+    payload = http.getString();
   }
-
-  String payload = http.getString();
   http.end();
+
+  if (payload == "null" || payload == "") {
+    String urlKartu = String(DATABASE_URL) + "/kartu/" + uid + ".json" + getAuthQuery();
+    http.begin(urlKartu);
+    code = http.GET();
+    if (code == 200) {
+      payload = http.getString();
+    }
+    http.end();
+  }
 
   if (payload == "null" || payload == "") {
     Serial.println("[DITOLAK] Kartu UID " + uid + " BELUM TERDAFTAR di sistem!");
@@ -244,10 +263,10 @@ void prosesAbsensi(String uid) {
   sprintf(waktuBuf, "%02d:%02d:%02d", ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
   // Periksa apakah kartu Guru / Kedinasan
-  bool isGuru = (payload.indexOf("\"tipe\":\"guru\"") != -1 || payload.indexOf("\"nip\":") != -1 || uid == "E5F6A7B8");
+  bool isGuru = (payload.indexOf("\"tipe\":\"guru\"") != -1 || payload.indexOf("\"nip\":") != -1);
   if (isGuru) {
     int nipIdx = payload.indexOf("\"nip\":\"");
-    String nip = (uid == "E5F6A7B8") ? "198109012009022003" : "";
+    String nip = "";
     if (nipIdx != -1) {
       int start = nipIdx + 7;
       int end = payload.indexOf("\"", start);
@@ -281,7 +300,7 @@ void prosesAbsensi(String uid) {
     Serial.println("[GURU DETECTED] " + namaGuru + " (NIP: " + nip + ")");
     
     // Tulis ke presensi_guru/{nip}/{tglBuf}
-    String urlPresensiGuru = String(DATABASE_URL) + "/presensi_guru/" + nip + "/" + String(tglBuf) + ".json";
+    String urlPresensiGuru = String(DATABASE_URL) + "/presensi_guru/" + nip + "/" + String(tglBuf) + ".json" + getAuthQuery();
     String bodyPresensiGuru = "{\"rfidUid\":\"" + uid + "\",\"nama\":\"" + namaGuru + "\",\"nip\":\"" + nip + "\",\"jamMasuk\":\"" + String(waktuBuf) + "\",\"status\":\"hadir\",\"mapel\":\"" + mapelGuru + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"}";
     http.begin(urlPresensiGuru);
     http.addHeader("Content-Type", "application/json");
@@ -289,7 +308,7 @@ void prosesAbsensi(String uid) {
     http.end();
 
     // Update status kelas menjadi belajar
-    String urlKelasStatus = String(DATABASE_URL) + "/kelas/" + kelasTarget + ".json";
+    String urlKelasStatus = String(DATABASE_URL) + "/kelas/" + kelasTarget + ".json" + getAuthQuery();
     String bodyKelasStatus = "{\"status\":\"belajar\",\"activeMapel\":\"" + mapelGuru + "\",\"activeTeacherNama\":\"" + namaGuru + "\",\"activeTeacherId\":\"" + nip + "\"}";
     http.begin(urlKelasStatus);
     http.addHeader("Content-Type", "application/json");
@@ -319,20 +338,35 @@ void prosesAbsensi(String uid) {
     return;
   }
 
-  Serial.println("[KARTU TERVERIFIKASI] Siswa NISN: " + nisn);
+  // Evaluasi Ambang Batas Waktu Presensi Sesuai Invarian SMKN 1 Sumedang:
+  // <= 06:30:00 WIB: Hadir
+  // 06:30:01 - 08:00:00 WIB: Terlambat
+  String statusSiswa = "hadir";
+  if (ptm->tm_hour > 6 || (ptm->tm_hour == 6 && (ptm->tm_min > 30 || (ptm->tm_min == 30 && ptm->tm_sec > 0)))) {
+    statusSiswa = "terlambat";
+  }
+
+  Serial.println("[KARTU TERVERIFIKASI] Siswa NISN: " + nisn + " | Status: " + statusSiswa);
 
   // Kirim data kehadiran siswa ke Firebase Realtime Database
-  String urlAbsensi = String(DATABASE_URL) + "/absensi/" + nisn + ".json";
-  String body = "{\"tanggal\":\"" + String(tglBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"hadir\",\"device_id\":\"" + String(DEVICE_ID) + "\"}";
+  String urlAbsensi = String(DATABASE_URL) + "/absensi/" + nisn + ".json" + getAuthQuery();
+  String body = "{\"tanggal\":\"" + String(tglBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"}";
   
   http.begin(urlAbsensi);
   http.addHeader("Content-Type", "application/json");
   int postCode = http.POST(body);
   http.end();
 
+  // Dual-write ke riwayat presensi harian
+  String urlRiwayat = String(DATABASE_URL) + "/riwayat/" + String(tglBuf) + "/" + nisn + ".json" + getAuthQuery();
+  http.begin(urlRiwayat);
+  http.addHeader("Content-Type", "application/json");
+  http.PUT(body);
+  http.end();
+
   // Sinkronkan ke presensi kelas (XII RPL 2)
-  String urlKelas = String(DATABASE_URL) + "/presensi_jam/XII RPL 2/" + String(tglBuf) + "/1/" + nisn + ".json";
-  String bodyKelas = "{\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"hadir\"}";
+  String urlKelas = String(DATABASE_URL) + "/presensi_jam/XII RPL 2/" + String(tglBuf) + "/1/" + nisn + ".json" + getAuthQuery();
+  String bodyKelas = "{\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\"}";
   http.begin(urlKelas);
   http.addHeader("Content-Type", "application/json");
   http.PUT(bodyKelas);

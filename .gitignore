@@ -1,5 +1,22 @@
-# Jangan pernah commit file kredensial Firebase asli
+# Kredensial Firebase & Environment Variables
 *firebase-adminsdk*.json
+.env
+.env.*
+!.env.example
+iot/secrets.h
+
+# Data Pribadi (PII) & Database Lokal
+siswa-clean-firebase.json
+assets/data-siswa.json
+seed/roster-data.real.json
+*.db
+*.sqlite
+*.sqlite3
+iot/offline_queue.db
+
+# Artefak Build & Sistem
 .DS_Store
 node_modules/
 scratch/
+firebase-debug.log
+firebase-debug.*.log

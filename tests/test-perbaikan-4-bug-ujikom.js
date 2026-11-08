@@ -455,11 +455,11 @@ async function runTests() {
   // E. Verifikasi database.rules.json mengizinkan kendala_mengajar & laporan_kendala
   const rulesJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../database.rules.json'), 'utf8'));
   assert.ok(rulesJson.rules.kendala_mengajar, 'Rules harus memiliki node kendala_mengajar');
-  assert.strictEqual(rulesJson.rules.kendala_mengajar['.read'], true, 'kendala_mengajar .read harus true');
-  assert.strictEqual(rulesJson.rules.kendala_mengajar['.write'], true, 'kendala_mengajar .write harus true');
+  assert.ok(rulesJson.rules.kendala_mengajar['.read'] === true || rulesJson.rules.kendala_mengajar['.read'].includes('auth != null'), 'kendala_mengajar .read harus mengizinkan akses staf terautentikasi');
+  assert.ok(rulesJson.rules.kendala_mengajar['.write'] === true || rulesJson.rules.kendala_mengajar['.write'].includes('auth != null'), 'kendala_mengajar .write harus mengizinkan akses staf terautentikasi');
   assert.ok(rulesJson.rules.laporan_kendala, 'Rules harus memiliki node laporan_kendala');
-  assert.strictEqual(rulesJson.rules.laporan_kendala['.read'], true, 'laporan_kendala .read harus true');
-  assert.strictEqual(rulesJson.rules.laporan_kendala['.write'], true, 'laporan_kendala .write harus true');
+  assert.ok(rulesJson.rules.laporan_kendala['.read'] === true || rulesJson.rules.laporan_kendala['.read'].includes('auth != null'), 'laporan_kendala .read harus mengizinkan akses staf terautentikasi');
+  assert.ok(rulesJson.rules.laporan_kendala['.write'] === true || rulesJson.rules.laporan_kendala['.write'].includes('auth != null'), 'laporan_kendala .write harus mengizinkan akses staf terautentikasi');
 
   console.log('  ✓ Laporan kendala guru -> Admin -> ACC Jamkos terverifikasi 100% konsisten.\n');
 

@@ -4154,8 +4154,13 @@
     async function handleLoginEmail(e) {
       e.preventDefault();
       bersihkanNotif('notifBoxLogin');
-      const email = document.getElementById('loginEmail').value.trim();
+      let email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPassword').value;
+
+      // Jika login menggunakan NISN murni, petakan ke format email internal terstandar (PRD Bab 4.3)
+      if (/^\d{8,12}$/.test(email)) {
+        email = `${email}@siswa.smkn1sumedang.sch.id`;
+      }
 
       // Blokir email administrator dari form login biasa
       if (typeof isEmailAdmin === 'function' && isEmailAdmin(email)) {

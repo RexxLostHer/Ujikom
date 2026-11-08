@@ -3,20 +3,26 @@ const assert = require('assert');
 // 1. Role Routing Helper Test
 function getDashboardUrlByRole(role) {
   if (role === 'admin') return 'admin.html';
-  if (role === 'guru') return 'dashboard-guru.html';
+  if (role === 'guru' || role === 'walas') return 'dashboard-guru.html';
   return 'dashboard.html';
 }
 
 assert.strictEqual(getDashboardUrlByRole('admin'), 'admin.html');
 assert.strictEqual(getDashboardUrlByRole('guru'), 'dashboard-guru.html');
+assert.strictEqual(getDashboardUrlByRole('walas'), 'dashboard-guru.html');
 assert.strictEqual(getDashboardUrlByRole('siswa'), 'dashboard.html');
+assert.strictEqual(getDashboardUrlByRole('pengunjung'), 'dashboard.html');
 assert.strictEqual(getDashboardUrlByRole('ortu'), 'dashboard.html');
 
 // 2. Role Assignment Security Logic Test
 function resolveUserRole(mapped, requestedRole) {
-  return (mapped && (mapped.role === 'guru' || mapped.role === 'admin'))
-    ? mapped.role
-    : (requestedRole === 'ortu' ? 'ortu' : 'siswa');
+  if (mapped && (mapped.role === 'guru' || mapped.role === 'admin' || mapped.role === 'walas')) {
+    return mapped.role;
+  }
+  if (requestedRole === 'ortu') {
+    return 'siswa';
+  }
+  return (requestedRole === 'pengunjung') ? 'pengunjung' : 'siswa';
 }
 
 // Case A: User attempts to register as 'guru' publicly without admin mapping
@@ -25,8 +31,8 @@ assert.strictEqual(resolveUserRole(null, 'guru'), 'siswa', 'Public register cann
 // Case B: User attempts to register as 'admin' publicly without admin mapping
 assert.strictEqual(resolveUserRole(null, 'admin'), 'siswa', 'Public register cannot self-assign admin');
 
-// Case C: Legitimate Ortu registration
-assert.strictEqual(resolveUserRole(null, 'ortu'), 'ortu', 'Ortu can register as ortu');
+// Case C: Deprecated Ortu registration normalized to permitted role
+assert.strictEqual(resolveUserRole(null, 'ortu'), 'siswa', 'Deprecated ortu role is eliminated and normalized to siswa');
 
 // Case D: Legitimate Siswa registration
 assert.strictEqual(resolveUserRole(null, 'siswa'), 'siswa', 'Siswa can register as siswa');

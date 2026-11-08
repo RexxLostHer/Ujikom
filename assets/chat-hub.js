@@ -1141,14 +1141,7 @@
 
     if (activeDb) {
       try {
-        const results = await Promise.allSettled([
-          activeDb.ref('chat_rooms/' + roomId + '/messages/' + msgId).set(msgPayload),
-          activeDb.ref('chat_perijinan/' + roomId + '/messages/' + msgId).set(msgPayload)
-        ]);
-        const err = results.find(r => r.status === 'rejected');
-        if (err) {
-          console.warn('[Firebase RTDB] Kirim pesan gagal di cloud (Aturan Security Rules memblokir write):', err.reason);
-        }
+        await activeDb.ref('chat_rooms/' + roomId + '/messages/' + msgId).set(msgPayload);
       } catch (eDb) {
         console.warn('[Firebase RTDB] Error saat mengirim pesan:', eDb);
       }
@@ -1452,7 +1445,6 @@
                 const activeDb = getActiveDb();
                 if (activeDb) {
                   activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
-                  activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
                 }
               }
             });
@@ -1524,7 +1516,6 @@
         list.forEach(lm => {
           if (lm && lm.id) {
             activeDb.ref('chat_rooms/' + roomId + '/messages/' + lm.id).update(lm).catch(() => null);
-            activeDb.ref('chat_perijinan/' + roomId + '/messages/' + lm.id).update(lm).catch(() => null);
           }
         });
       }
@@ -1576,13 +1567,6 @@
           console.warn('[Firebase RTDB] Listener chat_rooms ditolak aturan keamanan (Permission Denied):', err);
         });
       } catch (eSnap1) {}
-
-      try {
-        activeRoomFirebaseRef2 = activeDb.ref('chat_perijinan/' + roomId + '/messages');
-        activeRoomFirebaseCallback2 = activeRoomFirebaseRef2.on('value', handleSnapshot, err => {
-          console.warn('[Firebase RTDB] Listener chat_perijinan ditolak aturan keamanan (Permission Denied):', err);
-        });
-      } catch (eSnap2) {}
     }
 
     return list;
@@ -1807,7 +1791,6 @@
     if (activeDb) {
       const patch = { pesan: cleanText, isEdited: true, editedAt: Date.now() };
       activeDb.ref('chat_rooms/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
-      activeDb.ref('chat_perijinan/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
     }
   }
 
@@ -1877,7 +1860,6 @@
     if (activeDb) {
       const patch = { isDeleted: true, pesan: '🚫 Pesan ini telah dihapus', audio_url: null, deletedAt: Date.now() };
       activeDb.ref('chat_rooms/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
-      activeDb.ref('chat_perijinan/' + rId + '/messages/' + msgId).update(patch).catch(() => null);
     }
   }
 
@@ -2322,7 +2304,6 @@
         unreadIncoming.forEach(m => {
           if (m && m.id) {
             activeDb.ref('chat_rooms/' + roomId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
-            activeDb.ref('chat_perijinan/' + roomId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
           }
         });
       }
@@ -4086,7 +4067,6 @@
             const activeDb = getActiveDb();
             if (activeDb) {
               activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
-              activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'read' }).catch(() => null);
             }
             try {
               waBroadcastChannel.postMessage({
@@ -4101,7 +4081,6 @@
               const activeDb = getActiveDb();
               if (activeDb) {
                 activeDb.ref('chat_rooms/' + rId + '/messages/' + m.id).update({ status: 'delivered' }).catch(() => null);
-                activeDb.ref('chat_perijinan/' + rId + '/messages/' + m.id).update({ status: 'delivered' }).catch(() => null);
               }
             }
             perbaruiBadgeCounter();

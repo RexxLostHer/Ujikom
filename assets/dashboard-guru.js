@@ -1692,26 +1692,19 @@ function initListenerPerizinan() {
 
   // 2. Pasang realtime listener RTDB dengan resilience callback error
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-    try {
-      db.ref('perijinan').on('value', snap => {
-        cachePerijinanJ = snap.val() || {};
-        if (typeof window !== 'undefined') window.cachePerijinanJ = cachePerijinanJ;
-        if (typeof global !== 'undefined') global.cachePerijinanJ = cachePerijinanJ;
-        muatPerizinanSiswaWalas(false);
-      }, err => {
-        console.warn('Firebase RTDB /perijinan on value error:', err);
-        muatPerizinanSiswaWalas(false);
-      });
-    } catch (e) {
-      console.warn('Gagal attach listener perijinan:', e);
-      muatPerizinanSiswaWalas(false);
-    }
-
+    // Konsolidasi Node Standar: Utamakan node perizinan terproteksi (SEC-01)
     try {
       db.ref('perizinan').on('value', snap => {
         cachePerizinanZ = snap.val() || {};
-        if (typeof window !== 'undefined') window.cachePerizinanZ = cachePerizinanZ;
-        if (typeof global !== 'undefined') global.cachePerizinanZ = cachePerizinanZ;
+        cachePerijinanJ = cachePerizinanZ;
+        if (typeof window !== 'undefined') {
+          window.cachePerizinanZ = cachePerizinanZ;
+          window.cachePerijinanJ = cachePerijinanJ;
+        }
+        if (typeof global !== 'undefined') {
+          global.cachePerizinanZ = cachePerizinanZ;
+          global.cachePerijinanJ = cachePerijinanJ;
+        }
         muatPerizinanSiswaWalas(false);
       }, err => {
         console.warn('Firebase RTDB /perizinan on value error:', err);

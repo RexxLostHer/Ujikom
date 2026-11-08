@@ -457,8 +457,13 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   let perijinanRef = null;
   try {
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-      const r = db.ref('perijinan');
-      if (r && typeof r.push === 'function') perijinanRef = r.push();
+      const r = db.ref('perizinan');
+      if (r && typeof r.push === 'function') {
+        perijinanRef = r.push();
+      } else {
+        const rFallback = db.ref('perijinan');
+        if (rFallback && typeof rFallback.push === 'function') perijinanRef = rFallback.push();
+      }
     }
   } catch (eRef) {}
   const pid = (perijinanRef && perijinanRef.key)
@@ -797,6 +802,10 @@ async function kirimChatPerijinan(pid, user, pesan) {
     try {
       const pushPromises = [];
       try {
+        const refCR = db.ref('chat_rooms/' + pid + '/messages');
+        if (refCR && typeof refCR.push === 'function') pushPromises.push(refCR.push(chatMsg).catch(() => null));
+      } catch (e) {}
+      try {
         const refA = db.ref('chat_perijinan/' + pid);
         if (refA && typeof refA.push === 'function') pushPromises.push(refA.push(chatMsg).catch(() => null));
       } catch (e) {}
@@ -919,9 +928,19 @@ function renderDaftarPerijinanSaya(containerId, user) {
 
       if (latestResolvedItem && user.nisn && !anyPending) {
         const stNorm = (latestResolvedItem.status === 'disetujui' || latestResolvedItem.status === 'approved') ? 'disetujui' : (latestResolvedItem.status === 'ditolak' || latestResolvedItem.status === 'rejected' ? 'ditolak' : 'dibatalkan');
+        const todaySyncP = (typeof getTanggalHariIniWIB === 'function') ? getTanggalHariIniWIB() : ((typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
+        const resDateP = (typeof normalisasiTanggalDashboard === 'function') ? normalisasiTanggalDashboard(latestResolvedItem.tanggal || latestResolvedItem.tanggal_norm || '') : (latestResolvedItem.tanggal || '');
+        const resTimeP = (latestResolvedItem.updated_at ? Date.parse(latestResolvedItem.updated_at) : 0) || latestResolvedItem.dibuat_pada || latestResolvedItem.createdAt || 0;
+        const isPastDayApprovedP = (stNorm === 'disetujui') && resDateP && (resDateP < todaySyncP) && (resTimeP === 0 || (Date.now() - resTimeP > 12 * 3600 * 1000));
+
         try {
           if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('status_izin_' + user.nisn, stNorm);
+            if (isPastDayApprovedP) {
+              localStorage.removeItem('status_izin_' + user.nisn);
+              localStorage.removeItem('last_submission_' + user.nisn);
+            } else {
+              localStorage.setItem('status_izin_' + user.nisn, stNorm);
+            }
             const lastSubStr = localStorage.getItem('last_submission_' + user.nisn);
             if (lastSubStr) {
               const parsedSub = JSON.parse(lastSubStr);
@@ -937,10 +956,18 @@ function renderDaftarPerijinanSaya(containerId, user) {
           }
         } catch (eStorage) {}
 
-        if (typeof bukaKunciFormPengajuanSiswa === 'function') {
-          bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
-        } else if (typeof window !== 'undefined' && typeof window.bukaKunciFormPengajuanSiswa === 'function') {
-          window.bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
+        if (isPastDayApprovedP) {
+          if (typeof bukaKunciFormPengajuanSiswa === 'function') {
+            bukaKunciFormPengajuanSiswa(null, user);
+          } else if (typeof window !== 'undefined' && typeof window.bukaKunciFormPengajuanSiswa === 'function') {
+            window.bukaKunciFormPengajuanSiswa(null, user);
+          }
+        } else {
+          if (typeof bukaKunciFormPengajuanSiswa === 'function') {
+            bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
+          } else if (typeof window !== 'undefined' && typeof window.bukaKunciFormPengajuanSiswa === 'function') {
+            window.bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
+          }
         }
       }
 

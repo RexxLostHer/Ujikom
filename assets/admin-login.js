@@ -47,10 +47,10 @@ async function handleStaffLoginGoogle() {
     const res = await loginDenganGoogle();
     const userData = await prosesLoginUser(res.user);
 
-    if (userData.role === 'admin') {
+    if (userData && userData.role === 'admin' && userData.isVerified === true) {
       showAdminNotif('success', 'Akses Administrator terverifikasi. Mengalihkan ke Panel Admin...');
       setTimeout(() => { window.location.href = 'admin.html'; }, 800);
-    } else if (userData.role === 'guru' || userData.role === 'walas') {
+    } else if (userData && (userData.role === 'guru' || userData.role === 'walas') && userData.isVerified === true) {
       showAdminNotif('success', 'Akses Guru/Walas terverifikasi. Mengalihkan ke Portal Guru...');
       setTimeout(() => { window.location.href = 'dashboard-guru.html'; }, 800);
     } else {
@@ -112,57 +112,22 @@ async function handleStaffLoginEmail(e) {
     const fbUser = await loginDenganEmail(email, password);
     const userData = await prosesLoginUser(fbUser);
 
-    if (userData.role === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(userData.email || email))) {
-      userData.role = 'admin';
+    if (userData && userData.role === 'admin' && userData.isVerified === true) {
       delete userData.isRoleSwitched;
       setSessionUser(userData);
       showAdminNotif('success', 'Akses Administrator terverifikasi. Mengalihkan...');
       setTimeout(() => { window.location.href = 'admin.html'; }, 800);
-    } else if (userData.role === 'guru' || userData.role === 'walas') {
-      showAdminNotif('success', 'Akses Guru terverifikasi. Mengalihkan...');
+    } else if (userData && (userData.role === 'guru' || userData.role === 'walas') && userData.isVerified === true) {
+      showAdminNotif('success', 'Akses Guru/Staff terverifikasi. Mengalihkan...');
       setTimeout(() => { window.location.href = 'dashboard-guru.html'; }, 800);
     } else {
-      showAdminNotif('warning', `Akses ditolak: Akun <strong>${userData.email}</strong> bukan akun Staff atau Administrator.`);
+      showAdminNotif('warning', `Akses ditolak: Akun <strong>${(userData && userData.email) || email}</strong> tidak memiliki otorisasi staf atau Administrator.`);
       setTimeout(async () => {
-        await firebase.auth().signOut().catch(() => null);
-        window.location.href = 'index.html';
-      }, 2500);
+        if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut().catch(() => null);
+        if (typeof clearSession === 'function') clearSession();
+      }, 1500);
     }
   } catch (err) {
-    if (typeof isEmailAdmin === 'function' && isEmailAdmin(email)) {
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        const userData = await prosesLoginUser(cred.user);
-        userData.role = 'admin';
-        delete userData.isRoleSwitched;
-        setSessionUser(userData);
-        showAdminNotif('success', 'Akses Administrator terverifikasi. Mengalihkan...');
-        setTimeout(() => { window.location.href = 'admin.html'; }, 800);
-        return;
-      } catch (e2) {
-        const adminData = {
-          uid: 'ADMIN_' + email.replace(/[^a-zA-Z0-9]/g, '_'),
-          email: email,
-          nama: 'Administrator SMKN 1 Sumedang',
-          role: 'admin',
-          isVerified: true
-        };
-        try {
-          sessionStorage.removeItem('isRoleSwitched');
-          localStorage.removeItem('isRoleSwitched');
-        } catch (e3) {}
-        setSessionUser(adminData);
-        try {
-          if (firebase.auth().currentUser) {
-            await db.ref('users/' + firebase.auth().currentUser.uid).update({ role: 'admin', isVerified: true, nama: adminData.nama, email: email, isRoleSwitched: null }).catch(() => null);
-          }
-        } catch (e4) {}
-        showAdminNotif('success', 'Akses Administrator terverifikasi. Mengalihkan...');
-        setTimeout(() => { window.location.href = 'admin.html'; }, 800);
-        return;
-      }
-    }
-
     if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
       showAdminNotif('error', 'Email atau kata sandi salah.');
     } else if (err.code === 'auth/email-not-verified') {
@@ -170,7 +135,7 @@ async function handleStaffLoginEmail(e) {
     } else if (err.code === 'auth/too-many-requests') {
       showAdminNotif('error', 'Terlalu banyak percobaan gagal. Silakan coba beberapa saat lagi.');
     } else {
-      showAdminNotif('error', 'Gagal masuk: ' + (err.message || 'Kesalahan jaringan.'));
+      showAdminNotif('error', 'Gagal masuk: ' + (err.message || 'Kesalahan otentikasi.'));
     }
   } finally {
     btnSubmit.disabled = false;

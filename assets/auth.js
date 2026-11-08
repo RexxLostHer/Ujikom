@@ -110,26 +110,23 @@ function loginDenganGoogle() {
   return firebase.auth().signInWithPopup(provider);
 }
 
-// Master Admin & Guru Whitelist (PRD SMKN 1 Sumedang 2026)
+// Master Admin Whitelist (Domain & Institutional Accounts)
 const MASTER_ADMIN_EMAILS = [
   'admin@smkn1sumedang.sch.id',
   'admin@ujikom.sch.id',
   'admin@nesas.sch.id',
   'admin@admin.com',
-  'admin@gmail.com',
-  'administrator@smkn1sumedang.sch.id',
-  'admin@nesas.com',
-  'rexxydc1@gmail.com',
-  'rexxydc1@smkn1sumedang.sch.id'
+  'administrator@smkn1sumedang.sch.id'
 ];
 
 function isEmailAdmin(email) {
   if (!email || typeof email !== 'string') return false;
   const clean = email.toLowerCase().trim();
   if (!clean) return false;
+  if (clean === '7dosabesar557@gmail.com') return false; // Invariant AGENTS.md: Akun Ihsan strictly role siswa
   if (MASTER_ADMIN_EMAILS.includes(clean)) return true;
   if (clean.startsWith('admin@') || clean.startsWith('admin.') || clean.startsWith('administrator@')) return true;
-  if (clean.endsWith('@admin.com')) return true;
+  if (clean.endsWith('@admin.com') || clean.endsWith('@admin.sch.id')) return true;
   return false;
 }
 
@@ -137,7 +134,6 @@ function cariSiswaByEmail(email) {
   if (!email || typeof email !== 'string') return null;
   const clean = email.toLowerCase().trim();
   if (!clean) return null;
-  // Akun guru/walas resmi DILARANG dipetakan ke siswa
   // Akun guru/walas resmi & akun zemapk16 DILARANG dipetakan ke siswa M. Ihsan
   if (clean === 'zemapk16@gmail.com' || clean === 'ihsan33roblox@gmail.com' || clean.startsWith('echa') || clean.startsWith('rijal') || clean.startsWith('heri') || clean.startsWith('hali') || clean.startsWith('hani')) {
     return null;
@@ -145,25 +141,19 @@ function cariSiswaByEmail(email) {
   let siswaList = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI) ? MASTER_DATA_SISWA_RESMI : ((typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI) ? window.MASTER_DATA_SISWA_RESMI : null);
   if (!siswaList && typeof require !== 'undefined') { try { siswaList = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI; } catch(e) {} }
   if (!siswaList) siswaList = {};
-  // 1. Direct match on official email
+
+  // Invariant Resmi Ujikom: 7dosabesar557@gmail.com & zemapk15@gmail.com strictly mapped to M. Ihsan Athallah (NISN 0098263610)
+  if (clean === '7dosabesar557@gmail.com' || clean === 'zemapk15@gmail.com') {
+    return siswaList['0098263610'] || { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', kelas: 'XII RPL 2' };
+  }
+
+  // 1. Direct match on official email in master roster
   for (const k in siswaList) {
     const s = siswaList[k];
     if (s && s.email && s.email.toLowerCase().trim() === clean) return s;
   }
-  // 2. Official Student Email mapping table for common school email variations
-  const siswaEmailMap = {
-    '7dosabesar557@gmail.com': '0098263610',
-    'zemapk15@gmail.com': '0098263610',
-    'ihsan@gmail.com': '0098263610',
-    'ihsan@smkn1sumedang.sch.id': '0098263610',
-    'ihsanathallah@gmail.com': '0098263610',
-    'ihsan.athallah@gmail.com': '0098263610',
-    'rizky@gmail.com': '0082104129',
-    'rizkyramadhani@gmail.com': '0082104129'
-  };
-  const mappedNisn = siswaEmailMap[clean];
-  if (mappedNisn && siswaList[mappedNisn]) return siswaList[mappedNisn];
-  // 3. NISN as email prefix (e.g. 0098263610@gmail.com)
+
+  // 2. NISN as email prefix (e.g. 0098263610@siswa.smkn1sumedang.sch.id)
   const prefix = clean.split('@')[0];
   if (siswaList[prefix]) return siswaList[prefix];
   return null;
@@ -175,23 +165,7 @@ function cariGuruByEmail(email) {
   let guruList = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI) ? MASTER_GURU_RESMI : ((typeof window !== 'undefined' && window.MASTER_GURU_RESMI) ? window.MASTER_GURU_RESMI : null);
   if (!guruList && typeof require !== 'undefined') { try { guruList = require('./firebase-config.js').MASTER_GURU_RESMI; } catch(e) {} }
   if (!guruList) guruList = {};
-  const guruEmailMap = {
-    'hani@smkn1sumedang.sch.id': '198109012009022003',
-    'hani.hanifah@gmail.com': '198109012009022003',
-    'hani@gmail.com': '198109012009022003',
-    'echa@smkn1sumedang.sch.id': '199209142022211007',
-    'echaputra@gmail.com': '199209142022211007',
-    'echa@gmail.com': '199209142022211007',
-    'ihsan33roblox@gmail.com': '199209142022211007',
-    'rijal@smkn1sumedang.sch.id': '198312052022211017',
-    'rijal@gmail.com': '198312052022211017',
-    'heri@smkn1sumedang.sch.id': '198504252024211008',
-    'heri@gmail.com': '198504252024211008',
-    'hali@smkn1sumedang.sch.id': '197905032006042004',
-    'hali@gmail.com': '197905032006042004'
-  };
-  const nip = guruEmailMap[clean];
-  if (nip && guruList[nip]) return guruList[nip];
+
   for (const k in guruList) {
     const g = guruList[k];
     if (g.email && g.email.toLowerCase() === clean) return g;
@@ -1349,10 +1323,16 @@ if (typeof window !== 'undefined') {
   window.gantiRoleSesi = gantiRoleSesi;
   window.verifikasiAksesHalaman = verifikasiAksesHalaman;
   window.cariSiswaByEmail = cariSiswaByEmail;
+  window.cariGuruByEmail = cariGuruByEmail;
   window.kirimResetPassword = kirimResetPassword;
   window.simpanResetPasswordLokal = simpanResetPasswordLokal;
   window.prosesLoginUser = prosesLoginUser;
   window.periksaNisnSiswa = periksaNisnSiswa;
+}
+
+if (typeof global !== 'undefined') {
+  global.cariGuruByEmail = cariGuruByEmail;
+  global.cariSiswaByEmail = cariSiswaByEmail;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
