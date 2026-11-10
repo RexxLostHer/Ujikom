@@ -271,17 +271,13 @@
         </div>
         <div class="guest-banner-text">
           <strong>Akun Pengunjung / Belum Terverifikasi</strong>
-          <p>Akun ini belum ditautkan dengan data resmi. Tautkan <strong>NISN</strong> untuk Siswa atau <strong>NIP</strong> untuk Guru / Wali Kelas guna mengaktifkan hak akses resmi.</p>
+          <p>Tautkan <strong>NISN</strong> Anda guna mengaktifkan fitur presensi resmi, kartu pintar RFID, dan pencatatan akademik harian.</p>
         </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNisn()" style="color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;display:inline-flex;align-items:center;gap:6px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
           Verifikasi NISN Siswa
-        </button>
-        <button type="button" class="btn-guest-verify" onclick="bukaModalProfilDenganTabNip('walas')" style="color:#7C3AED;background:#F5F3FF;border:1px solid #DDD6FE;display:inline-flex;align-items:center;gap:6px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Verifikasi NIP Guru / Walas
         </button>
         <button type="button" class="btn-guest-verify" onclick="bukaModalPairingNfcSiswa()" style="color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;display:inline-flex;align-items:center;gap:6px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -314,15 +310,12 @@
         <div class="smart-student-card" id="smartStudentCard">
           <div class="smart-card-top">
             <div class="smart-card-brand">
-              <img src="assets/logo-nesas.png" alt="Logo NESAS">
-              <div class="smart-card-brand-text">
-                SMK NEGERI 1 SUMEDANG<br>
-                <span style="opacity:0.75; font-size:9px;">KOMPETENSI KEAHLIAN RPL</span>
-              </div>
+              <img src="assets/animasi/ezgif-frame-069.png" alt="Logo Presensia" class="smart-card-logo-img">
+              <div class="smart-card-brand-text">SMK NEGERI 1 SUMEDANG</div>
             </div>
             <div class="smart-card-nfc-indicator" onclick="bukaModalPairingNfcSiswa()" style="cursor:pointer;" title="Klik untuk Verifikasi & Penautan NFC Smartphone / Kartu Pelajar">
               <span class="pulsing-dot" style="width:6px;height:6px;"></span>
-              <span>NFC / RFID 13.56 MHz</span>
+              <span>SMART RFID</span>
             </div>
           </div>
           
@@ -346,7 +339,6 @@
 
           <div class="smart-card-barcode-row">
             <span>UID: <strong id="smartCardUidTag">- (Belum Ada)</strong></span>
-            <span>SMART CARD PRESENSI NESAS</span>
           </div>
         </div>
 
@@ -385,8 +377,8 @@
       </div>
     </div>
 
-    <!-- WIDGET STATUS OPERASIONAL KELAS TERKINI (PRD Bab 4.2 & Bab 7.1) -->
-    <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none;margin-bottom:24px;padding:20px 24px;border-radius:24px;background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);border:1.5px solid #C7D2FE;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 8px 24px -4px rgba(99,102,241,0.15);">
+    <!-- WIDGET STATUS OPERASIONAL KELAS TERKINI (DINONAKTIFKAN SESUAI ARAHAN USER) -->
+    <div id="widgetStatusKelas" class="status-kelas-banner" style="display:none !important;margin-bottom:24px;padding:20px 24px;border-radius:24px;background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);border:1.5px solid #C7D2FE;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 8px 24px -4px rgba(99,102,241,0.15);">
       <div style="display:flex;align-items:center;gap:16px;">
         <div id="iconStatusKelas" style="font-size:16px;width:44px;height:44px;border-radius:14px;background:#4338CA;color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(99,102,241,0.25);">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
@@ -791,12 +783,32 @@
       </div>
 
       <div class="form-group" id="uploadDokumenWrap">
-        <label for="fotoSurat" style="display:inline-flex;align-items:center;gap:6px;">
+        <label for="fotoSurat" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;margin-bottom:8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           Lampirkan Bukti / Surat Izin (Foto / PDF) <span style="color:#ef4444;font-weight:700;">* (Wajib Diunggah)</span>
         </label>
-        <input type="file" id="fotoSurat" name="fotoSurat" accept="image/*,application/pdf">
-        <small style="color:#6B7280;font-size:12px;margin-top:6px;display:block;">Maksimal 5MB format JPG/PNG/PDF.</small>
+        <div class="custom-file-dropzone" onclick="document.getElementById('fotoSurat').click()">
+          <input type="file" id="fotoSurat" name="fotoSurat" accept="image/*,application/pdf" style="display:none;" onchange="handleFileSuratChange(this)">
+          <div class="dropzone-content" id="dropzoneContentSurat">
+            <div class="dropzone-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="dropzone-text">
+              <span class="dropzone-primary-text">Pilih atau Seret Foto / Dokumen Surat Izin</span>
+              <span class="dropzone-sub-text">Maksimal 5MB format JPG, PNG, atau PDF</span>
+            </div>
+          </div>
+          <div class="dropzone-file-selected" id="dropzoneFileSelected" style="display:none;">
+            <div class="dropzone-icon" style="background:#ecfdf5;color:#059669;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="dropzone-text" style="flex:1;min-width:0;">
+              <span id="dropzoneFileName" class="selected-file-name">-</span>
+              <span style="font-size:11.5px;color:#059669;font-weight:600;">Berkas siap dikirim bersama permohonan</span>
+            </div>
+            <span class="badge-file-ready">Siap Diunggah</span>
+          </div>
+        </div>
       </div>
 
       <button class="btn-primary-action" onclick="handleSubmitPerijinan()" id="btnSubmitPerijinan">
@@ -1151,7 +1163,7 @@
 
     <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 6px 0;letter-spacing:-0.02em;font-family:'Plus Jakarta Sans',sans-serif;">Hubungkan Kartu / NFC HP</h3>
     <p id="teksPanduanNfcSiswa" style="font-size:13px;color:#64748b;margin:0 auto 22px auto;line-height:1.5;max-width:380px;">
-      Nyalakan sensor NFC di HP Anda atau gunakan kartu pelajar, lalu tempelkan ke scanner sekolah...
+      Tempelkan kartu pelajar RFID atau sensor NFC HP Anda ke perangkat scanner IoT sekolah...
     </p>
 
     <!-- Sleek Minimalist NFC Radar Graphic -->
@@ -1181,23 +1193,17 @@
       </div>
       <div id="statusPairingNfcSiswa" style="font-size:12.5px;font-weight:600;color:#059669;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
         <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite;"></span>
-        <span id="nfcStatusTextSiswa">Menunggu kartu atau HP ditempelkan...</span>
+        <span id="nfcStatusTextSiswa">Menunggu scan pada scanner IoT sekolah...</span>
       </div>
     </div>
 
     <div id="boxFeedbackNfcSiswa" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:700;border:1px solid transparent;"></div>
 
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button id="btnSimulasiTapSiswa" type="button" onclick="lakukanSimulasiTapSiswa()" style="flex:1;min-width:180px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(15,23,42,0.12);transition:all 0.2s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
-          <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
-          <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
-          <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
-        </svg>
+      <button id="btnSimulasiTapSiswa" type="button" onclick="lakukanSimulasiTapSiswa()" style="display:none !important;" aria-hidden="true" tabindex="-1">
         Coba Tap Kartu / HP
       </button>
-      <button id="btnBatalPairingSiswa" type="button" onclick="tutupModalPairingNfcSiswa()" style="background:#ffffff;color:#475569;border:1px solid #cbd5e1;border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+      <button id="btnBatalPairingSiswa" type="button" onclick="tutupModalPairingNfcSiswa()" style="min-width:140px;background:#ffffff;color:#475569;border:1.5px solid #cbd5e1;border-radius:12px;padding:12px 28px;font-size:13.5px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.borderColor='#94a3b8'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#cbd5e1'">
         Batal
       </button>
     </div>

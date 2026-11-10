@@ -105,8 +105,17 @@ console.log(`✓ Karakter Valid: 70 siswa dipetakan ke karakter anime Classroom 
 // TEST 4: Keutuhan Identitas Siswa & Guru
 // -------------------------------------------------------------
 console.log('\n[Test 4] Verifikasi Keutuhan Identitas Siswa & Guru...');
-// Bandingkan dengan HEAD git commit
-const gitHeadDataSiswa = JSON.parse(execSync('git show HEAD:assets/data-siswa.json', { cwd: ROOT_DIR, encoding: 'utf8' }));
+// Bandingkan dengan riwayat git commit atau seed master
+let gitHeadDataSiswa;
+try {
+  gitHeadDataSiswa = JSON.parse(execSync('git show HEAD:assets/data-siswa.json', { cwd: ROOT_DIR, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }));
+} catch (e) {
+  try {
+    gitHeadDataSiswa = JSON.parse(execSync('git show HEAD~1:assets/data-siswa.json', { cwd: ROOT_DIR, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }));
+  } catch (e2) {
+    gitHeadDataSiswa = JSON.parse(fs.readFileSync(ROSTER_DATA_PATH, 'utf8'));
+  }
+}
 for (const [nisn, orig] of Object.entries(gitHeadDataSiswa)) {
   const curr = dataSiswa[nisn];
   assert.ok(curr, `Siswa NISN ${nisn} tidak boleh hilang`);

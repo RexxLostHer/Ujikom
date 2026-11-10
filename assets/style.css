@@ -814,23 +814,25 @@ h1, h2, h3, h4, h5, h6,
   flex-shrink: 0;
 }
 
-/* SMART STUDENT ID RFID CARD (3D TACTILE PHYSICAL SIMULATION) */
+/* SMART STUDENT ID RFID CARD (PREMIUM FINTECH DIGITAL SMART BADGE) */
 .smart-student-card {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #232a3b 0%, #171d2b 60%, #1e2638 100%);
+  background: radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.22) 0%, transparent 45%),
+              radial-gradient(circle at 90% 90%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+              linear-gradient(135deg, #090d16 0%, #0f172a 45%, #1e1b4b 100%);
+  border: 1.5px solid rgba(129, 140, 248, 0.35);
   border-radius: 22px;
-  padding: 20px 22px;
+  padding: 22px 24px;
   color: #ffffff;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-extruded);
-  transition: transform var(--transition-clay), box-shadow var(--transition-clay);
-  border: none;
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.65), 0 0 25px -4px rgba(99, 102, 241, 0.25);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
   perspective: 1000px;
   transform-style: preserve-3d;
-  cursor: pointer;
+  cursor: default;
 }
 
 .nfc-widget-card {
@@ -915,18 +917,20 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .smart-student-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-extruded-hover);
+  transform: translateY(-3px) scale(1.008);
+  box-shadow: 0 24px 48px -10px rgba(15, 23, 42, 0.75), 0 0 35px -2px rgba(129, 140, 248, 0.35);
+  border-color: rgba(165, 180, 252, 0.6);
 }
 
 .smart-student-card::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(108, 99, 255, 0.18) 0%, transparent 60%);
+  top: -40%;
+  right: -30%;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(99, 102, 241, 0.1) 45%, transparent 70%);
+  border-radius: 50%;
   pointer-events: none;
 }
 
@@ -935,80 +939,111 @@ h1, h2, h3, h4, h5, h6,
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  padding-bottom: 10px;
-  margin-bottom: 14px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .smart-card-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .smart-card-brand img {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .smart-card-brand-text {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #c7d2fe;
-  line-height: 1.2;
+  letter-spacing: 0.06em;
+  color: #e0e7ff;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.smart-card-brand-text span {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  font-weight: 700;
 }
 
 .smart-card-nfc-indicator {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 9px;
-  border-radius: var(--radius-pill);
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: 9999px;
   font-size: 10px;
   font-weight: 700;
-  color: #a5b4fc;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.smart-card-nfc-indicator:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
 }
 
 .smart-card-chip {
-  width: 34px;
-  height: 26px;
-  background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
+  width: 38px;
+  height: 28px;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #d97706 70%, #fef08a 100%);
   border-radius: 6px;
   position: relative;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  margin-bottom: 16px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.7);
   border: 1px solid #b45309;
+}
+
+.smart-card-chip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(180, 83, 9, 0.65);
+  transform: translateY(-50%);
 }
 
 .smart-card-chip::after {
   content: '';
   position: absolute;
-  inset: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  border-radius: 3px;
+  inset: 4px;
+  border: 1px solid rgba(180, 83, 9, 0.7);
+  border-radius: 4px;
 }
 
 .smart-card-main {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .smart-card-avatar {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(108, 99, 255, 0.6);
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid #818cf8;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: #ffffff;
 }
@@ -1018,6 +1053,7 @@ h1, h2, h3, h4, h5, h6,
   height: 100%;
   object-fit: cover;
   object-position: center top;
+  display: block;
 }
 
 .smart-card-info {
@@ -1026,43 +1062,97 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .smart-card-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #ffffff;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .smart-card-meta {
   font-size: 11.5px;
+  font-weight: 600;
   color: #94a3b8;
   margin-top: 3px;
+  letter-spacing: 0.01em;
 }
 
+/* SMART CARD STATUS BADGE - LINEAR MINIMALIST PILL */
 .smart-card-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  border-radius: 9999px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
-  transition: all var(--transition-clay);
+  line-height: 1.2;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
 }
 
-.smart-card-status-badge.belum {
-  background: rgba(221, 107, 32, 0.18);
-  border: 1px solid rgba(221, 107, 32, 0.4);
-  color: #f6ad55;
+/* 1. STATUS IZIN / SAKIT / DISPENSASI (Linear Minimalist Pill Amethyst) */
+.smart-card-status-badge.izin,
+.smart-card-status-badge.dispen,
+.smart-card-status-badge.sakit,
+.smart-card-status-badge.peringatan:not(.terlambat):not(.belum) {
+  background: rgba(168, 85, 247, 0.12) !important;
+  border: 1px solid rgba(192, 132, 252, 0.35) !important;
+  color: #f3e8ff !important;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.12) !important;
+}
+.smart-card-status-badge.izin svg,
+.smart-card-status-badge.dispen svg,
+.smart-card-status-badge.sakit svg {
+  stroke: #c084fc !important;
 }
 
+/* 2. STATUS HADIR TEPAT WAKTU (Linear Minimalist Emerald) */
 .smart-card-status-badge.hadir {
-  background: rgba(56, 178, 172, 0.22);
-  border: 1px solid rgba(56, 178, 172, 0.5);
-  color: #4fd1c5;
-  box-shadow: 0 0 14px rgba(56, 178, 172, 0.35);
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  color: #ecfdf5 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12) !important;
+}
+.smart-card-status-badge.hadir svg {
+  stroke: #34d399 !important;
+}
+
+/* 3. STATUS TERLAMBAT (Linear Minimalist Amber) */
+.smart-card-status-badge.terlambat,
+.smart-card-status-badge.peringatan.terlambat {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  color: #fffbeb !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12) !important;
+}
+.smart-card-status-badge.terlambat svg {
+  stroke: #fbbf24 !important;
+}
+
+/* 4. STATUS TANPA KETERANGAN / ALPA (Linear Minimalist Ruby) */
+.smart-card-status-badge.alpa,
+.smart-card-status-badge.status-alpa,
+.smart-card-status-badge.danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: #fef2f2 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12) !important;
+}
+.smart-card-status-badge.alpa svg {
+  stroke: #f87171 !important;
+}
+
+/* 5. STATUS BELUM SCAN / PENGUNJUNG */
+.smart-card-status-badge.belum:not(.hadir):not(.izin):not(.status-alpa):not(.terlambat) {
+  background: rgba(148, 163, 184, 0.1) !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  color: #cbd5e1 !important;
+  box-shadow: none !important;
 }
 
 .smart-card-barcode-row {
@@ -1070,16 +1160,23 @@ h1, h2, h3, h4, h5, h6,
   justify-content: space-between;
   align-items: center;
   border-top: 1px dashed rgba(255, 255, 255, 0.15);
-  padding-top: 10px;
+  padding-top: 12px;
   font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.smart-card-barcode-row strong {
+  color: #94a3b8;
+  letter-spacing: 0.08em;
 }
 
 .smart-card-glare {
   position: absolute;
   inset: 0;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18) 0%, transparent 60%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -1088,6 +1185,12 @@ h1, h2, h3, h4, h5, h6,
 
 .smart-student-card:hover .smart-card-glare {
   opacity: 1;
+}
+
+/* Sembunyikan Permanen Status KBM Banner sesuai arahan user */
+#widgetStatusKelas,
+.status-kelas-banner {
+  display: none !important;
 }
 
 /* ===================================================================
@@ -1469,6 +1572,114 @@ h1, h2, h3, h4, h5, h6,
 .btn-primary-action:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary-action:disabled {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.85 !important;
+  transform: none !important;
+  letter-spacing: 0.02em;
+}
+
+/* CUSTOM FILE UPLOAD DROPZONE */
+.custom-file-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.custom-file-dropzone:hover {
+  border-color: #6366f1;
+  background: #f1f5f9;
+}
+.dropzone-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.dropzone-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #ede9fe;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dropzone-text {
+  display: flex;
+  flex-direction: column;
+}
+.dropzone-primary-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+}
+.dropzone-sub-text {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.dropzone-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.selected-file-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.badge-file-ready {
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* PERIZINAN STATUS CARD ("BERGIZI" VERIFIED CARDS) */
+.perizinan-status-card {
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+.perizinan-status-card.approved {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
+}
+.perizinan-status-card.pending {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+}
+.perizinan-status-card.rejected {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.04) 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
 }
 
 /* ===================================================================
@@ -2372,11 +2583,11 @@ html.lenis, html.lenis body {
     scrollbar-width: thin;
   }
   .view-tab-btn {
-    flex: 1 1 0px;
-    min-width: 0;
-    font-size: 11px;
-    padding: 8px 6px;
-    gap: 4px;
+    flex: 0 0 auto;
+    min-width: max-content;
+    font-size: 11.5px;
+    padding: 8px 12px;
+    gap: 6px;
     justify-content: center;
     justify-content: safe center;
   }
@@ -2410,13 +2621,13 @@ html.lenis, html.lenis body {
     scrollbar-width: thin;
   }
   .view-tab-btn {
-    flex: 1 0 100px;
-    min-width: 95px;
+    flex: 0 0 auto;
+    min-width: max-content;
     font-size: 11px;
-    padding: 8px 6px;
+    padding: 8px 10px;
     justify-content: center;
     justify-content: safe center;
-    gap: 4px;
+    gap: 5px;
   }
   .academic-services-grid {
     grid-template-columns: 1fr;

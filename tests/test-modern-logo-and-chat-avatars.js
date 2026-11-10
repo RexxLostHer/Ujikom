@@ -96,7 +96,7 @@ const adminHtml = fs.readFileSync(path.join(ROOT_DIR, 'admin.html'), 'utf8');
 assert.ok(adminHtml.includes('shieldGrad'), 'admin.html harus memuat gradient shieldGrad');
 assert.ok(adminHtml.includes('coreGrad'), 'admin.html harus memuat gradient coreGrad');
 assert.ok(adminHtml.includes('assets/foto/admin.jpg'), 'admin.html harus menyematkan avatar admin.jpg');
-assert.ok(adminHtml.includes('Kepala Sekolah ANHS'), 'admin.html harus memuat label Kepala Sekolah');
+assert.ok(adminHtml.includes('Administrator SMKN 1 Sumedang') || adminHtml.includes('Kepala Sekolah ANHS'), 'admin.html harus memuat label Administrator SMKN 1 Sumedang');
 console.log('  ✓ Logo modern beresolusi tinggi dan avatar Kepala Sekolah terpasang di header admin.\n');
 
 // -------------------------------------------------------------

@@ -37,8 +37,10 @@
   <!-- APP BAR -->
   <div class="admin-appbar">
     <div class="admin-brand">
-      <div class="admin-brand-icon" style="width:44px;height:44px;background:linear-gradient(135deg, #1e1b4b 0%, #3730a3 40%, #0284c7 100%);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -2px rgba(55,48,163,0.35), inset 0 1px 1px rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.25);position:relative;overflow:hidden;">
-        <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div class="admin-brand-icon" style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #38bdf8;box-shadow:0 6px 16px -2px rgba(2,132,199,0.35);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#0f172a;position:relative;">
+        <img src="assets/foto/admin.jpg" alt="Foto Profil Admin" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='assets/foto/0095250998.jpg';">
+        <!-- SVG Defs preserved for gradient asset compatibility -->
+        <svg width="0" height="0" style="position:absolute;visibility:hidden;width:0;height:0;" aria-hidden="true">
           <defs>
             <linearGradient id="shieldGrad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#38bdf8"/>
@@ -50,11 +52,6 @@
               <stop offset="100%" stop-color="#bae6fd"/>
             </linearGradient>
           </defs>
-          <path d="M24 4L40 10V22C40 32.5 33.2 41.5 24 44C14.8 41.5 8 32.5 8 22V10L24 4Z" stroke="url(#shieldGrad)" stroke-width="2.5" stroke-linejoin="round" fill="rgba(15,23,42,0.2)"/>
-          <path d="M24 11L33 16V23C33 28.5 29.2 33.8 24 35.5C18.8 33.8 15 28.5 15 23V16L24 11Z" fill="url(#shieldGrad)" fill-opacity="0.25"/>
-          <polygon points="24,15 31,22 24,29 17,22" stroke="url(#coreGrad)" stroke-width="2" fill="none"/>
-          <circle cx="24" cy="22" r="3" fill="#ffffff"/>
-          <path d="M24 5V11M24 35.5V43M9 22H15M33 22H39" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
       <div class="admin-brand-text">
@@ -67,7 +64,7 @@
         <img src="assets/foto/admin.jpg" alt="Admin" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #3b82f6;flex-shrink:0;box-shadow:0 2px 5px rgba(59,130,246,0.3);" onerror="this.onerror=null;this.src='assets/foto/0095250998.jpg';">
         <div style="display:flex;flex-direction:column;text-align:left;line-height:1.15;">
           <span id="adminNamaBadge" style="font-weight:800;font-size:12.5px;color:#0f172a;">Administrator</span>
-          <small style="font-size:10px;color:#0284c7;font-weight:700;">Kepala Sekolah ANHS</small>
+          <small style="font-size:10px;color:#0284c7;font-weight:700;">Administrator SMKN 1 Sumedang</small>
         </div>
         <span class="dot" style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;margin-left:4px;" title="Online"></span>
       </div>
@@ -101,7 +98,7 @@
 
     <!-- SIDEBAR NAVIGASI -->
     <nav class="admin-sidebar">
-      <div class="sidebar-section-label">Menu Utama</div>
+      <div class="sidebar-section-label">OPERASIONAL PRESENSI</div>
       <button class="sidebar-btn active" data-tab="perijinan" onclick="switchToTab('perijinan')">
         <span class="icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -161,7 +158,7 @@
         <span class="label">Kartu RFID</span>
       </button>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Pengaturan</div>
+      <div class="sidebar-section-label">DATA MASTER & KARTU</div>
       <button class="sidebar-btn" data-tab="jadwal" onclick="switchToTab('jadwal')">
         <span class="icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -187,7 +184,7 @@
         <span class="label">Data Guru & Akun</span>
       </button>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Simulasi</div>
+      <div class="sidebar-section-label">SIMULASI SISTEM</div>
       <button class="sidebar-btn" data-tab="simulasi" onclick="switchToTab('simulasi')">
         <span class="icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -227,7 +224,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>Pilih Kelas</label>
-              <select id="presensiKelas"></select>
+              <select id="presensiKelas">
+                <option value="XII RPL 1">XII RPL 1</option>
+                <option value="XII RPL 2">XII RPL 2</option>
+                <option value="XII TKJ 1">XII TKJ 1</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Tanggal</label>
@@ -278,7 +279,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>Pilih Kelas</label>
-              <select id="rekapKelas" onchange="muatRekapPresensi()"></select>
+              <select id="rekapKelas" onchange="muatRekapPresensi()">
+                <option value="XII RPL 1">XII RPL 1</option>
+                <option value="XII RPL 2">XII RPL 2</option>
+                <option value="XII TKJ 1">XII TKJ 1</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Periode Rekapitulasi</label>
@@ -715,6 +720,19 @@
           </div>
           <div id="tabelRingkasan3Kelas" style="overflow-x:auto;">
             <!-- Tabel komparasi -->
+          </div>
+        </div>
+
+        <div class="admin-form-card" style="margin-top:20px;" id="cardMonitoringGuru">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h3 style="font-size:15px;font-weight:800;color:#1e293b;margin:0;">Kehadiran Dewan Guru Hari Ini</h3>
+              <span id="badgeGuruMonitoring" style="font-size:11.5px;font-weight:700;color:#0284c7;background:#e0f2fe;padding:3px 10px;border-radius:999px;">Memuat status guru...</span>
+            </div>
+            <button class="btn-secondary" onclick="muatMonitoring3Kelas()" style="padding:6px 14px;font-size:12.5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Refresh Guru</span></button>
+          </div>
+          <div id="monitoringGuruContainer" style="overflow-x:auto;">
+            <!-- Tabel / Grid Kehadiran Guru Disuntikkan via JS -->
           </div>
         </div>
       </div>

@@ -1,3 +1,21 @@
+
+function handleFileSuratChange(input) {
+  const contentEl = document.getElementById('dropzoneContentSurat');
+  const selEl = document.getElementById('dropzoneFileSelected');
+  const nameEl = document.getElementById('dropzoneFileName');
+  if (input && input.files && input.files.length > 0 && input.files[0]) {
+    const f = input.files[0];
+    if (nameEl) nameEl.textContent = `${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+    if (contentEl) contentEl.style.display = 'none';
+    if (selEl) selEl.style.display = 'flex';
+  } else {
+    if (contentEl) contentEl.style.display = 'flex';
+    if (selEl) selEl.style.display = 'none';
+  }
+}
+if (typeof window !== 'undefined') window.handleFileSuratChange = handleFileSuratChange;
+if (typeof global !== 'undefined') global.handleFileSuratChange = handleFileSuratChange;
+
 function getWIBTime(d) {
   if (typeof getJamSekarangWIB === 'function') return getJamSekarangWIB(d);
   const dateObj = d || new Date();
@@ -466,7 +484,7 @@ function resetStatusIzinHarianJikaPerlu(targetNisn) {
 
     if (isPastDate && isOldTimestamp) {
       const currentFlag = localStorage.getItem('status_izin_' + targetNisn);
-      if (currentFlag === 'disetujui' || currentFlag === 'approved' || currentFlag === 'pending' || !currentFlag) {
+      if (currentFlag === 'disetujui' || currentFlag === 'approved' || currentFlag === 'pending' || currentFlag === 'ditolak' || currentFlag === 'rejected' || !currentFlag) {
         console.log(`[DailyPermitReset] Tanggal izin (${subDate}) telah berlalu dari hari ini (${today}). Me-reset form izin.`);
         localStorage.removeItem('status_izin_' + targetNisn);
         localStorage.removeItem('last_submission_' + targetNisn);
@@ -537,7 +555,8 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
   const todayNow = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
   const infoDate = itemInfo ? normalisasiTanggalDashboard(itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
   const infoTime = itemInfo ? (itemInfo.dibuat_pada || itemInfo.createdAt || (itemInfo.created_at ? Date.parse(itemInfo.created_at) : 0) || 0) : 0;
-  if (isApproved && infoDate && infoDate < todayNow && infoTime > 0 && (Date.now() - infoTime > 12 * 3600 * 1000)) {
+  const isPastDayItem = infoDate && (infoDate < todayNow) && infoTime > 0 && (Date.now() - infoTime > 12 * 3600 * 1000);
+  if ((isApproved || isRejected || isCancelled) && isPastDayItem) {
     // Izin lama dari hari kemarin, form hari ini harus tetap terbuka
     if (btnSubmit) {
       btnSubmit.disabled = false;
@@ -558,21 +577,34 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
     // KETENTUAN USER: Jika sudah di-ACC, maka tombol submit TERKUNCI (tidak bisa kirim lagi)
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.style.opacity = '0.6';
+      btnSubmit.style.opacity = '0.85';
       btnSubmit.style.cursor = 'not-allowed';
       btnSubmit.textContent = 'Izin Telah Disetujui Resmi (Terkunci)';
       btnSubmit.title = 'Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin. Tidak dapat mengirimkan keluhan/izin lagi.';
     }
     if (msg) {
       msg.style.display = 'block';
+      const humanJenis = (typeof formatHumanStatusIzin === 'function')
+        ? formatHumanStatusIzin(jenis)
+        : (jenis ? (jenis.charAt(0).toUpperCase() + jenis.slice(1).toLowerCase()) : 'Izin');
       msg.innerHTML = [
-        '<div style="background:#ecfdf5;border:1.5px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
-        '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#047857;">',
-        '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-        '    <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+        '<div class="perizinan-status-card approved" style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%);border:1.5px solid rgba(16, 185, 129, 0.35);border-radius:14px;padding:16px 18px;margin-top:14px;color:#065f46;">',
+        '  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">',
+        '    <div style="font-weight:800;display:flex;align-items:center;gap:8px;color:#047857;font-size:14px;">',
+        '      <span style="width:26px;height:26px;border-radius:8px;background:rgba(16, 185, 129, 0.15);color:#059669;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">',
+        '        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        '      </span>',
+        '      <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+        '    </div>',
+        '    <span style="font-size:10.5px;font-weight:800;letter-spacing:0.04em;padding:3px 9px;border-radius:9999px;background:rgba(16, 185, 129, 0.15);color:#047857;border:1px solid rgba(16, 185, 129, 0.3);">● TERVERIFIKASI</span>',
         '  </div>',
-        '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui</strong> oleh Wali Kelas' + (catatan ? '. Catatan guru: <em>"' + catatan + '"</em>' : '.') + '<br>',
-        '  Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.',
+        '  <div style="font-size:13px;line-height:1.6;color:#065f46;">',
+        '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh Wali Kelas.' + (catatan ? ' Catatan guru: <em>"' + catatan + '"</em>.' : ''),
+        '  </div>',
+        '  <div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(16, 185, 129, 0.25);display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#059669;">',
+        '    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+        '    <span>Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.</span>',
+        '  </div>',
         '</div>'
       ].join('\n');
     }
@@ -707,12 +739,15 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
         // Sinkronkan ke localStorage seketika
         try {
           if (typeof localStorage !== 'undefined' && targetNisn) {
-            if (!anyPending) {
+            if (!anyPending && !isPastDayResolved) {
               const currentFlag = localStorage.getItem('status_izin_' + targetNisn);
               if (currentFlag !== statusNorm) {
                 hasChange = true;
                 localStorage.setItem('status_izin_' + targetNisn, statusNorm);
               }
+            } else if (isPastDayResolved && !anyPending) {
+              localStorage.removeItem('status_izin_' + targetNisn);
+              localStorage.removeItem('last_submission_' + targetNisn);
             }
             
             // Update last_submission jika item yang di-submit cocok dengan item yang di-review
@@ -763,7 +798,8 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
         const todaySync = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
         const resolvedDate = normalisasiTanggalDashboard(latestResolved.tanggal || latestResolved.tanggal_norm || '');
         const resolvedTime = (latestResolved.updated_at ? Date.parse(latestResolved.updated_at) : 0) || latestResolved.dibuat_pada || latestResolved.createdAt || 0;
-        const isPastDayApproved = (statusNorm === 'disetujui') && resolvedDate && (resolvedDate < todaySync) && resolvedTime > 0 && (Date.now() - resolvedTime > 12 * 3600 * 1000);
+        const isPastDayResolved = resolvedDate && (resolvedDate < todaySync) && resolvedTime > 0 && (Date.now() - resolvedTime > 12 * 3600 * 1000);
+        const isPastDayApproved = isPastDayResolved;
 
         if (isPastDayApproved) {
           // Status izin lama di-reset untuk hari ini agar siswa bisa membuat izin baru
@@ -1094,6 +1130,14 @@ function ambilIzinDitolakAktifSiswa(nisn) {
           try {
             const parsed = JSON.parse(lastSubStr);
             if (parsed && (parsed.status === 'ditolak' || parsed.status === 'rejected')) {
+              const todaySt = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+              const subDate = normalisasiTanggalDashboard(parsed.tanggal || parsed.tanggal_norm || '');
+              const subTime = parsed.timestamp || parsed.dibuat_pada || parsed.createdAt || 0;
+              if (subDate && subDate < todaySt && subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000)) {
+                localStorage.removeItem('status_izin_' + targetNisn);
+                localStorage.removeItem('last_submission_' + targetNisn);
+                return null;
+              }
               return Object.assign({}, parsed, { status: 'ditolak' });
             }
           } catch (eP) {}
@@ -1142,6 +1186,18 @@ function ambilIzinDitolakAktifSiswa(nisn) {
   const latestItem = rawStudentItems[0];
   const st = String(latestItem.status || '').toLowerCase().trim();
   if (st === 'ditolak' || st === 'rejected') {
+    const todayDitolak = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+    const itemDate = normalisasiTanggalDashboard(latestItem.tanggal || latestItem.tanggal_norm || '');
+    const itemTime = ambilWaktuSubmit(latestItem);
+    if (itemDate && itemDate < todayDitolak && itemTime > 0 && (Date.now() - itemTime > 12 * 3600 * 1000)) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('status_izin_' + targetNisn);
+          localStorage.removeItem('last_submission_' + targetNisn);
+        }
+      } catch (e) {}
+      return null;
+    }
     return latestItem;
   }
   return null;
@@ -1197,24 +1253,37 @@ function populateDropdownSiswa(user) {
     if (approvedItem) {
       if (btnSubmit) {
         btnSubmit.disabled = true;
-        btnSubmit.style.opacity = '0.6';
+        btnSubmit.style.opacity = '0.85';
         btnSubmit.style.cursor = 'not-allowed';
         btnSubmit.textContent = 'Izin Telah Disetujui Resmi (Terkunci)';
         btnSubmit.title = 'Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin.';
       }
       if (msg) {
         msg.style.display = 'block';
-        const jenis = (approvedItem.jenis || approvedItem.tipe || 'Izin').toUpperCase();
+        const rawJenis = (approvedItem.jenis || approvedItem.tipe || 'Izin');
+        const humanJenis = (typeof formatHumanStatusIzin === 'function')
+          ? formatHumanStatusIzin(rawJenis)
+          : (rawJenis.charAt(0).toUpperCase() + rawJenis.slice(1).toLowerCase());
         const tgl = approvedItem.tanggal || approvedItem.tanggal_norm || '';
         const catatan = approvedItem.catatan_guru || approvedItem.catatan || approvedItem.alasan || '';
         msg.innerHTML = [
-          '<div style="background:#ecfdf5;border:1.5px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
-          '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#047857;">',
-          '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-          '    <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+          '<div class="perizinan-status-card approved" style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%);border:1.5px solid rgba(16, 185, 129, 0.35);border-radius:14px;padding:16px 18px;margin-top:14px;color:#065f46;">',
+          '  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">',
+          '    <div style="font-weight:800;display:flex;align-items:center;gap:8px;color:#047857;font-size:14px;">',
+          '      <span style="width:26px;height:26px;border-radius:8px;background:rgba(16, 185, 129, 0.15);color:#059669;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">',
+          '        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+          '      </span>',
+          '      <span>Pengajuan Izin Telah Disetujui Resmi</span>',
+          '    </div>',
+          '    <span style="font-size:10.5px;font-weight:800;letter-spacing:0.04em;padding:3px 9px;border-radius:9999px;background:rgba(16, 185, 129, 0.15);color:#047857;border:1px solid rgba(16, 185, 129, 0.3);">● TERVERIFIKASI</span>',
           '  </div>',
-          '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui</strong> oleh Wali Kelas' + (catatan ? '. Catatan guru: <em>"' + catatan + '"</em>' : '.') + '<br>',
-          '  Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.',
+          '  <div style="font-size:13px;line-height:1.6;color:#065f46;">',
+          '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh Wali Kelas.' + (catatan ? ' Catatan guru: <em>"' + catatan + '"</em>.' : ''),
+          '  </div>',
+          '  <div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(16, 185, 129, 0.25);display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#059669;">',
+          '    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+          '    <span>Status kehadiran Anda telah tercatat resmi di sistem. Tombol pengajuan dinonaktifkan karena permohonan sudah disetujui.</span>',
+          '  </div>',
           '</div>'
         ].join('\n');
       }
@@ -1550,7 +1619,10 @@ async function handleSubmitPerijinan() {
       msg.innerHTML = '<b>✓ Pengajuan berhasil dikirim!</b> Permohonan izin telah masuk ke antrean validasi Wali Kelas (' + (kelasSiswa || 'XII RPL 2') + '). Silakan buka tab Status Perizinan untuk konfirmasi.';
     }
     if (alasanInput) alasanInput.value = '';
-    if (fileInput) fileInput.value = '';
+    if (fileInput) {
+      fileInput.value = '';
+      if (typeof handleFileSuratChange === 'function') handleFileSuratChange(fileInput);
+    }
 
     // Segera perbarui daftar riwayat izin di dashboard siswa
     if (typeof renderDaftarPerijinanSaya === 'function') {
@@ -1579,7 +1651,10 @@ async function handleSubmitPerijinan() {
         msg.innerHTML = '<b>✓ Pengajuan izin berhasil tersimpan.</b> Silakan buka tab Status Perizinan untuk konfirmasi.';
       }
       if (alasanInput) alasanInput.value = '';
-      if (fileInput) fileInput.value = '';
+      if (fileInput) {
+      fileInput.value = '';
+      if (typeof handleFileSuratChange === 'function') handleFileSuratChange(fileInput);
+    }
       if (typeof renderDaftarPerijinanSaya === 'function') {
         renderDaftarPerijinanSaya('daftarPerijinanSaya', user);
       }
@@ -1741,7 +1816,7 @@ async function bukaModalPairingNfcSiswa() {
   const boxFb = document.getElementById('boxFeedbackNfcSiswa');
   const iconCenter = document.getElementById('nfcIconCenterSiswa');
   if (cdEl) cdEl.textContent = '30s';
-  if (statusEl) statusEl.textContent = 'Menunggu kartu atau HP ditempelkan...';
+  if (statusEl) statusEl.textContent = 'Menunggu scan pada scanner IoT sekolah...';
   if (boxFb) { boxFb.style.display = 'none'; boxFb.textContent = ''; }
   if (iconCenter) {
     iconCenter.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>';
@@ -1782,7 +1857,8 @@ async function bukaModalPairingNfcSiswa() {
   if (unsubPairingSiswa) unsubPairingSiswa();
   if (typeof dengarkanHasilPairing === 'function') {
     unsubPairingSiswa = dengarkanHasilPairing((req) => {
-      if (req && req.status === 'success' && req.uid) {
+      const finalUid = req && (req.uid || req.cardUid || req.card_uid);
+      if (req && req.status === 'success' && finalUid) {
         if (timerPairingSiswa) clearInterval(timerPairingSiswa);
         if (iconCenter) {
           iconCenter.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -3205,13 +3281,12 @@ function initBerandaOverview(user) {
           statusClass = 'belum status-alpa';
           iconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         } else if (stLower.includes('sakit') || stLower.includes('izin') || stLower.includes('ijin') || stLower.includes('dispen')) {
-          statusLabel = (typeof formatHumanStatusIzin === 'function')
+          const jenisNama = (typeof formatHumanStatusIzin === 'function')
             ? formatHumanStatusIzin(stLower)
             : (stLower.includes('sakit') ? 'Sakit' : (stLower.includes('dispen') ? 'Dispensasi' : 'Izin'));
-          statusClass = 'peringatan';
-          iconSvg = stLower.includes('sakit')
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>'
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+          statusLabel = `${jenisNama} Resmi`;
+          statusClass = stLower.includes('sakit') ? 'sakit' : (stLower.includes('dispen') ? 'dispen' : 'izin');
+          iconSvg = '<span class="status-dot-pulse" style="width:6px;height:6px;border-radius:50%;background:#c084fc;box-shadow:0 0 6px #c084fc;display:inline-block;flex-shrink:0;"></span>';
         }
       } else {
         // Belum ada data kehadiran / belum scan
