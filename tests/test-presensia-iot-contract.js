@@ -18,12 +18,24 @@ assert.ok(contract.FIREBASE_IOT_CONFIG.databaseURL.includes('absensi-6e385'), 'U
 assert.strictEqual(contract.ATURAN_WAKTU_PRESENSI.TIMEZONE, 'Asia/Jakarta', 'Timezone harus WIB');
 console.log('  ✓ Konfigurasi Firebase RTDB dan zona waktu WIB valid.\n');
 
-// [Test 2] Verifikasi Tap Tepat Waktu (Hadir <= 06:30 WIB) dengan Dummy UID Sintetis (PRD Bab 5.1)
-console.log('▶ [Test 2] Verifikasi Evaluasi Status Hadir Tepat Waktu...');
-const resHadir = contract.processCardTap('TEST_UID_0001', {
+// [Test 1B] Verifikasi Isolasi Zero-Dummy (PRD FR-1.3)
+console.log('▶ [Test 1B] Verifikasi Isolasi Kartu Dummy Tanpa allowTestCards...');
+const resUnregistered = contract.processCardTap('TEST_UID_0001', {
   timestamp: new Date('2026-10-29T06:20:00+07:00'),
   deviceId: 'esp32-gerbang-depan',
   cooldownSeconds: 0
+});
+assert.strictEqual(resUnregistered.success, false, 'Kartu mock tidak boleh lolos tanpa allowTestCards');
+assert.strictEqual(resUnregistered.error, 'UNREGISTERED_CARD', 'Harus mengembalikan error UNREGISTERED_CARD');
+console.log('  ✓ Kartu dummy berhasil diisolasi dari alur produksi normal.\n');
+
+// [Test 2] Verifikasi Tap Tepat Waktu (Hadir <= 06:30 WIB) dengan Dummy UID Sintetis (PRD Bab 5.1 & FR-1.3)
+console.log('▶ [Test 2] Verifikasi Evaluasi Status Hadir Tepat Waktu (dengan allowTestCards)...');
+const resHadir = contract.processCardTap('TEST_UID_0001', {
+  timestamp: new Date('2026-10-29T06:20:00+07:00'),
+  deviceId: 'esp32-gerbang-depan',
+  cooldownSeconds: 0,
+  allowTestCards: true
 });
 assert.strictEqual(resHadir.success, true);
 assert.strictEqual(resHadir.status, 'hadir');
@@ -37,7 +49,8 @@ console.log('▶ [Test 3] Verifikasi Evaluasi Status Terlambat...');
 const resTerlambat = contract.processCardTap('TEST_UID_0002', {
   timestamp: new Date('2026-10-29T07:15:00+07:00'),
   deviceId: 'esp32-gerbang-depan',
-  cooldownSeconds: 0
+  cooldownSeconds: 0,
+  allowTestCards: true
 });
 assert.strictEqual(resTerlambat.success, true);
 assert.strictEqual(resTerlambat.status, 'terlambat');
@@ -50,6 +63,7 @@ console.log('▶ [Test 4] Verifikasi Proteksi Izin/Sakit Sah Tidak Tertimpa Tap 
 const resIzin = contract.processCardTap('TEST_UID_0001', {
   timestamp: new Date('2026-10-29T06:20:00+07:00'),
   cooldownSeconds: 0,
+  allowTestCards: true,
   permitList: [
     {
       nisn: '9999999991',
@@ -70,11 +84,13 @@ console.log('  ✓ Siswa dengan izin sakit resmi yang disetujui tidak tertimpa t
 console.log('▶ [Test 5] Verifikasi Anti-Double Tap / Cooldown...');
 contract.processCardTap('TEST_UID_0001', {
   timestamp: new Date('2026-10-29T06:10:00+07:00'),
-  cooldownSeconds: 5
+  cooldownSeconds: 5,
+  allowTestCards: true
 });
 const tapCepat = contract.processCardTap('TEST_UID_0001', {
   timestamp: new Date('2026-10-29T06:10:02+07:00'),
-  cooldownSeconds: 5
+  cooldownSeconds: 5,
+  allowTestCards: true
 });
 assert.strictEqual(tapCepat.success, false);
 assert.strictEqual(tapCepat.error, 'COOLDOWN_ACTIVE');
@@ -90,22 +106,34 @@ const esp32RestAuth = contract.getEsp32RestEndpoint('9999999991', '2026-10-29', 
 assert.ok(esp32RestAuth.url.includes('?auth=SAMPLE_FIREBASE_ID_TOKEN'), 'Endpoint REST harus menyertakan token autentikasi ?auth=');
 console.log('  ✓ Endpoint REST API untuk ESP32 Arduino HTTPClient terbentuk dengan benar.\n');
 
-// [Test 7] Verifikasi Penautan Kartu Mandiri (Pairing Completion)
-console.log('▶ [Test 7] Verifikasi Alur Pairing Kartu Baru...');
+// [Test 7] Verifikasi Penautan Kartu Mandiri (Pairing Completion) & Pencabutan Kartu Lama (FR-2.1 & FR-2.2)
+console.log('▶ [Test 7] Verifikasi Alur Pairing Kartu Baru & Revoke Kartu Lama...');
 const reqPairing = {
   active: true,
   userId: '00082109',
   role: 'siswa',
   nama: 'TIFANI ADISYA RAMADHANI',
   kelas: 'XII RPL 2',
-  status: 'waiting'
+  status: 'waiting',
+  target_device_id: 'ESP32_READER_01',
+  previous_uid: 'OLD_CARD_999'
 };
-const resPairing = contract.resolvePairingCompletion(reqPairing, '99EE88FF');
+
+// Sub-test 7A: Target Device Mismatch
+const resMismatch = contract.resolvePairingCompletion(reqPairing, '99EE88FF', 'WRONG_READER_02');
+assert.strictEqual(resMismatch.success, false, 'Harus gagal jika target_device_id tidak cocok');
+assert.strictEqual(resMismatch.error, 'TARGET_DEVICE_MISMATCH');
+
+// Sub-test 7B: Pairing Sukses & Revoke Kartu Lama
+const resPairing = contract.resolvePairingCompletion(reqPairing, '99EE88FF', 'ESP32_READER_01');
 assert.ok(resPairing, 'Hasil pairing harus terbuat');
 assert.strictEqual(resPairing.pairingUpdate.status, 'success');
 assert.strictEqual(resPairing.pairingUpdate.cardUid, '99EE88FF');
 assert.strictEqual(resPairing.kartuUpdate['kartu/99EE88FF'].nisn, '00082109');
-console.log('  ✓ Alur pairing kartu baru siswa sukses dipetakan ke kartu/99EE88FF.\n');
+assert.strictEqual(resPairing.kartuUpdate['rfid_map/99EE88FF'].nisn, '00082109');
+assert.strictEqual(resPairing.kartuUpdate['kartu/OLD_CARD_999'], null, 'Kartu lama wajib di-revoke (set null)');
+assert.strictEqual(resPairing.kartuUpdate['rfid_map/OLD_CARD_999'], null, 'rfid_map lama wajib di-revoke (set null)');
+console.log('  ✓ Alur pairing kartu baru siswa sukses dipetakan dan kartu lama di-revoke secara atomik.\n');
 
 console.log('================================================================');
 console.log('🎉 SEMUA PENGUJIAN PRESENSIA IoT CONTRACT LULUS 100%!');

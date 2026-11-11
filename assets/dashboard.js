@@ -3230,7 +3230,12 @@ function initBerandaOverview(user) {
     }
 
     const today = tanggalHariIni();
-    db.ref(`presensi_jam/${kelasAktif}/${today}`).on('value', snapshot => {
+    if (typeof window !== 'undefined' && window._listenerPresensiJamSiswa) {
+      try { window._listenerPresensiJamSiswa.ref.off('value', window._listenerPresensiJamSiswa.callback); } catch(e) {}
+      window._listenerPresensiJamSiswa = null;
+    }
+    const pjRef = db.ref(`presensi_jam/${kelasAktif}/${today}`);
+    const pjCb = snapshot => {
       const data = snapshot.val() || {};
       let waktuHadir = null;
       let statusDitemukan = null;
@@ -3348,7 +3353,11 @@ function initBerandaOverview(user) {
         iconEl.innerHTML = iconSvg;
         textEl.textContent = statusLabel;
       }
-    });
+    };
+    pjRef.on('value', pjCb);
+    if (typeof window !== 'undefined') {
+      window._listenerPresensiJamSiswa = { ref: pjRef, callback: pjCb };
+    }
 
     // Inisialisasi Rekap & Riwayat Presensi Siswa (1 Tahun Terakhir)
     initRekapPresensiSiswa(user);

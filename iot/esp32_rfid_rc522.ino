@@ -76,9 +76,14 @@ void loop() {
   }
   uid.toUpperCase();
 
-  // Anti-Double Tap: Tolak jika kartu yang sama di-tap dalam jeda < 5 detik
+  // Anti-Double Tap: Cooldown per-UID (5000 ms untuk kartu sama, 500 ms jeda antar-kartu berbeda)
   if (uid == lastUID && (millis() - lastTapTime < 5000)) {
-    Serial.println("[TOLAK] Kartu baru saja di-tap (Anti-Double Tap).");
+    Serial.println("[TOLAK] Kartu baru saja di-tap (Anti-Double Tap per-UID).");
+    rfc.PICC_HaltA();
+    return;
+  }
+  if (uid != lastUID && (millis() - lastTapTime < 500)) {
+    Serial.println("[TOLAK] Jeda minimum antar-kartu berbeda 500ms.");
     rfc.PICC_HaltA();
     return;
   }
@@ -348,28 +353,20 @@ void prosesAbsensi(String uid) {
 
   Serial.println("[KARTU TERVERIFIKASI] Siswa NISN: " + nisn + " | Status: " + statusSiswa);
 
-  // Kirim data kehadiran siswa ke Firebase Realtime Database
-  String urlAbsensi = String(DATABASE_URL) + "/absensi/" + nisn + ".json" + getAuthQuery();
-  String body = "{\"tanggal\":\"" + String(tglBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"}";
-  
-  http.begin(urlAbsensi);
-  http.addHeader("Content-Type", "application/json");
-  int postCode = http.POST(body);
-  http.end();
+  // Multi-Path Atomic HTTP PATCH ke Firebase Realtime Database (FR-2.4)
+  String urlRoot = String(DATABASE_URL) + "/.json" + getAuthQuery();
+  String bodyPatch = "{"
+    "\"absensi/" + String(tglBuf) + "/" + nisn + "\":{\"id\":\"abs_" + String(tglBuf) + "_" + nisn + "\",\"nisn\":\"" + nisn + "\",\"status\":\"" + statusSiswa + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"jam\":\"" + String(waktuBuf) + "\",\"metode\":\"rfid_gateway\",\"uid_kartu\":\"" + uid + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"},"
+    "\"absensi/" + nisn + "/" + String(tglBuf) + "\":{\"tanggal\":\"" + String(tglBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"},"
+    "\"tap_realtime/" + String(DEVICE_ID) + "\":{\"uid\":\"" + uid + "\",\"nisn\":\"" + nisn + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"},"
+    "\"tap_realtime/latest\":{\"uid\":\"" + uid + "\",\"nisn\":\"" + nisn + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"},"
+    "\"presensi_jam/XII RPL 2/" + String(tglBuf) + "/1/" + nisn + "\":{\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\"},"
+    "\"riwayat/" + String(tglBuf) + "/" + nisn + "\":{\"tanggal\":\"" + String(tglBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"}"
+  "}";
 
-  // Dual-write ke riwayat presensi harian
-  String urlRiwayat = String(DATABASE_URL) + "/riwayat/" + String(tglBuf) + "/" + nisn + ".json" + getAuthQuery();
-  http.begin(urlRiwayat);
+  http.begin(urlRoot);
   http.addHeader("Content-Type", "application/json");
-  http.PUT(body);
-  http.end();
-
-  // Sinkronkan ke presensi kelas (XII RPL 2)
-  String urlKelas = String(DATABASE_URL) + "/presensi_jam/XII RPL 2/" + String(tglBuf) + "/1/" + nisn + ".json" + getAuthQuery();
-  String bodyKelas = "{\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"" + statusSiswa + "\"}";
-  http.begin(urlKelas);
-  http.addHeader("Content-Type", "application/json");
-  http.PUT(bodyKelas);
+  int postCode = http.sendRequest("PATCH", bodyPatch);
   http.end();
 
   if (postCode == 200 || postCode == 201) {

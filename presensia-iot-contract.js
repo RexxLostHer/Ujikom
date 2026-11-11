@@ -123,7 +123,9 @@ function processCardTap(cardUid, options = {}) {
   }
 
   // 2. Pencarian Data Kartu di Database / Cache / Parameter rfidMap
-  const dbCards = options.rfidMap || (options.mockDb && (options.mockDb.rfid_map || options.mockDb.kartu)) || DAFTAR_KARTU_RFID_RESMI;
+  const allowTestCards = options.allowTestCards === true || (typeof process !== 'undefined' && process.env && process.env.ALLOW_TEST_CARDS === '1');
+  const defaultFallbackCards = allowTestCards ? DAFTAR_KARTU_RFID_RESMI : {};
+  const dbCards = options.rfidMap || (options.mockDb && (options.mockDb.rfid_map || options.mockDb.kartu)) || defaultFallbackCards;
   const cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
 
   if (!cardData) {
@@ -245,27 +247,53 @@ function getEsp32RestEndpoint(userIdentifier, tanggal, recordPayload, idToken = 
  * Format Payload Penyelesaian Pairing Kartu Baru
  * Digunakan jika IoT Gateway sedang dalam mode membaca kartu untuk ditautkan ke akun web
  */
-function resolvePairingCompletion(activePairingRequest, scannedCardUid) {
+function resolvePairingCompletion(activePairingRequest, scannedCardUid, readerDeviceId = null) {
   if (!activePairingRequest || activePairingRequest.status !== 'waiting') {
     return null;
   }
+  if (activePairingRequest.target_device_id && activePairingRequest.target_device_id !== 'all' && readerDeviceId) {
+    if (activePairingRequest.target_device_id !== readerDeviceId) {
+      return {
+        success: false,
+        error: 'TARGET_DEVICE_MISMATCH',
+        message: `Permintaan pairing ditujukan untuk reader ${activePairingRequest.target_device_id}, bukan ${readerDeviceId}.`
+      };
+    }
+  }
   const cleanUid = String(scannedCardUid || '').trim().toUpperCase();
+  const cardData = {
+    nisn: activePairingRequest.role === 'siswa' ? activePairingRequest.userId : null,
+    nip: activePairingRequest.role !== 'siswa' ? activePairingRequest.userId : null,
+    nama: activePairingRequest.nama,
+    kelas: activePairingRequest.kelas || null,
+    tipe: activePairingRequest.role,
+    registeredAt: Date.now()
+  };
+
+  const kartuUpdate = {
+    [`kartu/${cleanUid}`]: cardData,
+    [`rfid_map/${cleanUid}`]: cardData
+  };
+
+  const previousUid = activePairingRequest.previous_uid || activePairingRequest.old_uid;
+  if (previousUid) {
+    const cleanPrev = String(previousUid).trim().toUpperCase();
+    if (cleanPrev && cleanPrev !== cleanUid) {
+      kartuUpdate[`kartu/${cleanPrev}`] = null;
+      kartuUpdate[`rfid_map/${cleanPrev}`] = null;
+    }
+  }
+
   return {
+    success: true,
+    cleanUid: cleanUid,
     pairingUpdate: {
       status: 'success',
+      active: false,
       cardUid: cleanUid,
       completedAt: Date.now()
     },
-    kartuUpdate: {
-      [`kartu/${cleanUid}`]: {
-        nisn: activePairingRequest.role === 'siswa' ? activePairingRequest.userId : null,
-        nip: activePairingRequest.role !== 'siswa' ? activePairingRequest.userId : null,
-        nama: activePairingRequest.nama,
-        kelas: activePairingRequest.kelas || null,
-        tipe: activePairingRequest.role,
-        registeredAt: Date.now()
-      }
-    }
+    kartuUpdate: kartuUpdate
   };
 }
 

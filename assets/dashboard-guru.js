@@ -4704,25 +4704,36 @@ async function muatStatistikWalas() {
   const labelBinaan = document.getElementById('badgeKelasBinaanWalas');
   if (labelBinaan) labelBinaan.textContent = 'KELAS BINAAN: ' + kelas;
 
-  // 1. Status Kelas Realtime
+  // 1. Status Kelas Realtime (dengan pembersihan listener FR-4.2)
+  if (typeof window !== 'undefined' && window._listenerKelasWalas) {
+    try { window._listenerKelasWalas.ref.off('value', window._listenerKelasWalas.callback); } catch(e) {}
+    window._listenerKelasWalas = null;
+  }
   const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') db.ref('kelas/' + normKelas).on('value', snap => {
-    const kData = snap.val() || { status: 'belajar' };
-    const stBadge = document.getElementById('badgeStatusKelasWalas');
-    if (stBadge) {
-      const st = (kData.status || 'belajar').toLowerCase();
-      if (st === 'jamkos') {
-        stBadge.textContent = 'KBM: JAMKOS';
-        stBadge.style.background = '#ef4444';
-      } else if (st === 'pulang') {
-        stBadge.textContent = 'KBM: PULANG';
-        stBadge.style.background = '#64748b';
-      } else {
-        stBadge.textContent = 'KBM: BELAJAR';
-        stBadge.style.background = '#10b981';
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    const kRef = db.ref('kelas/' + normKelas);
+    const kCb = snap => {
+      const kData = snap.val() || { status: 'belajar' };
+      const stBadge = document.getElementById('badgeStatusKelasWalas');
+      if (stBadge) {
+        const st = (kData.status || 'belajar').toLowerCase();
+        if (st === 'jamkos') {
+          stBadge.textContent = 'KBM: JAMKOS';
+          stBadge.style.background = '#ef4444';
+        } else if (st === 'pulang') {
+          stBadge.textContent = 'KBM: PULANG';
+          stBadge.style.background = '#64748b';
+        } else {
+          stBadge.textContent = 'KBM: BELAJAR';
+          stBadge.style.background = '#10b981';
+        }
       }
+    };
+    kRef.on('value', kCb);
+    if (typeof window !== 'undefined') {
+      window._listenerKelasWalas = { ref: kRef, callback: kCb };
     }
-  });
+  }
 
   // 2. Ambil Semua Siswa di Kelas Binaan dengan Fallback Instan MASTER_DATA_SISWA_RESMI
   let semuaSiswa = {};

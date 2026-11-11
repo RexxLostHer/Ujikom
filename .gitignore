@@ -18,5 +18,7 @@ iot/offline_queue.db
 .DS_Store
 node_modules/
 scratch/
+__pycache__/
+*.pyc
 firebase-debug.log
 firebase-debug.*.log

@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, FieldValue } from '../utils/admin';
-import { calculateHaversineDistance } from '../utils/geo';
+import { calculateHaversineDistance, validateGpsAccuracy } from '../utils/geo';
 import { validateQrToken } from '../utils/qr';
 
 export interface VerifyAttendanceRequest {
@@ -9,6 +9,7 @@ export interface VerifyAttendanceRequest {
   coords: {
     lat: number;
     lng: number;
+    accuracy?: number;
   };
 }
 
@@ -25,6 +26,14 @@ export async function handleVerifyAttendance(
 
   if (!companyId || !token || !coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') {
     throw new HttpsError('invalid-argument', 'Data presensi tidak lengkap.');
+  }
+
+  // 0. Enforce GPS accuracy <= 100 meters (FR-3.3)
+  if (typeof coords.accuracy === 'number' && !validateGpsAccuracy(coords.accuracy, 100)) {
+    throw new HttpsError(
+      'invalid-argument',
+      `Akurasi sinyal GPS perangkat Anda terlalu rendah (${coords.accuracy.toFixed(1)}m > 100m). Mohon aktifkan GPS akurasi tinggi dan coba lagi.`
+    );
   }
 
   // 1. Verify Dynamic QR Token

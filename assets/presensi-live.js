@@ -42,12 +42,13 @@ const kelasSelect = document.getElementById('kelasSelect');
 const infoJam = document.getElementById('infoJam');
 
 // ---- Helper Foto ----
-function buatSiswaCard(nisn, s, statusSudah, isDummy) {
+function buatSiswaCard(nisn, s, statusSudah, punyaKartu) {
   const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
   const card = document.createElement('div');
   card.className = 'siswa-card ' + (statusSudah ? 'status-sudah' : 'status-belum');
   if (typeof card.setAttribute === 'function') card.setAttribute('data-nisn', nisn);
+  if (!punyaKartu) card.classList.add('kartu-belum-terdaftar');
 
   // Foto / Avatar Inisial
   const photoEl = document.createElement('div');
@@ -101,16 +102,21 @@ function buatSiswaCard(nisn, s, statusSudah, isDummy) {
     } else if (stEntry === 'terlambat' || ((entry?.waktu) && entry.waktu > '06:30:00')) {
       pill.className = 'status-pill terlambat';
       pill.textContent = 'Terlambat' + (entry?.waktu ? ' (' + entry.waktu.slice(0, 5) + ')' : '');
-    } else if (isDummy) {
-      pill.className = 'status-pill sudah';
-      pill.textContent = '✓ Hadir (Otomatis)';
     } else {
       pill.className = 'status-pill sudah';
       const waktu = entry?.waktu || '';
       pill.textContent = '✓ Hadir' + (waktu ? ' pukul ' + waktu.slice(0, 5) : '');
     }
   } else {
-    if (isLewat08) {
+    if (!punyaKartu) {
+      pill.className = 'status-pill terlambat belum';
+      pill.textContent = 'Tanpa Keterangan';
+      const badgeNoCard = document.createElement('span');
+      badgeNoCard.className = 'badge-kartu-kosong';
+      badgeNoCard.textContent = 'Kartu Belum Terdaftar';
+      badgeNoCard.style.cssText = 'display:block;font-size:10px;color:#ef4444;margin-top:2px;font-weight:600;';
+      info.appendChild(badgeNoCard);
+    } else if (isLewat08) {
       pill.className = 'status-pill alpa danger';
       pill.textContent = 'Tanpa Keterangan';
       if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
@@ -160,10 +166,9 @@ function renderRoster() {
     : 'Rekap Hari Ini';
 
   daftarSiswaKelas.forEach(function ([nisn, s]) {
-    const punyaKartu = kartuDataLoaded ? kartuNisnSet.has(nisn) : true;
-    const isSudah = punyaKartu ? sudahAbsenSet.has(nisn) : true;
-    const isDummy = !punyaKartu;
-    const card = buatSiswaCard(nisn, s, isSudah, isDummy);
+    const punyaKartu = kartuDataLoaded ? kartuNisnSet.has(nisn) : false;
+    const isSudah = sudahAbsenSet.has(nisn);
+    const card = buatSiswaCard(nisn, s, isSudah, punyaKartu);
     if (isSudah) {
       sudahEl.appendChild(card);
       jumlahSudah++;
@@ -207,13 +212,8 @@ function pasangListenerPresensiJam(kelas) {
     listenerPresensiJam = null;
   }
   const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : kelas;
-  const defaultPresensi = (typeof generateDefaultPresensiResmi === 'function')
-    ? generateDefaultPresensiResmi(normKelas, tanggalHariIni())
-    : {};
-  detailAbsensi = Object.assign({}, defaultPresensi);
-  delete detailAbsensi['0098263610'];
-  delete detailAbsensi['0082104129'];
-  sudahAbsenSet = new Set(Object.keys(detailAbsensi));
+  detailAbsensi = {};
+  sudahAbsenSet = new Set();
 
   if (!normKelas) {
     renderRoster();
@@ -244,16 +244,8 @@ function pasangListenerPresensiJam(kelas) {
       }
     });
 
-    const mergedLive = Object.assign({}, defaultPresensi, gabungan);
-    if (!gabungan['0098263610']) {
-      delete mergedLive['0098263610'];
-    }
-    if (!gabungan['0082104129']) {
-      delete mergedLive['0082104129'];
-    }
-
-    sudahAbsenSet = new Set(Object.keys(mergedLive));
-    detailAbsensi = mergedLive;
+    sudahAbsenSet = new Set(Object.keys(gabungan));
+    detailAbsensi = gabungan;
     renderRoster();
   };
   ref.on('value', callback);
@@ -273,6 +265,10 @@ function cekJamAktifTerkini() {
 let listenerJadwalPelajaran = null;
 
 function pindahKelas(kelas) {
+  if (listenerPresensiJam) {
+    listenerPresensiJam.ref.off('value', listenerPresensiJam.callback);
+    listenerPresensiJam = null;
+  }
   if (listenerJadwalPelajaran) {
     listenerJadwalPelajaran.ref.off('value', listenerJadwalPelajaran.callback);
     listenerJadwalPelajaran = null;
@@ -343,6 +339,18 @@ db.ref('siswa').on('value', function (snapshot) {
         .catch(function() {});
     }
   }
+});
+
+db.ref('rfid_map').on('value', function (snapshot) {
+  var data = snapshot.val() || {};
+  Object.values(data).forEach(function(v) {
+    if (v && typeof v === 'object' && v.nisn) {
+      kartuNisnSet.add(String(v.nisn));
+    } else if (typeof v === 'string') {
+      kartuNisnSet.add(v);
+    }
+  });
+  renderRoster();
 });
 
 db.ref('kartu').on('value', function (snapshot) {

@@ -14,3 +14,6 @@ export { onApplicationDecided } from './triggers/onApplicationDecided';
 export { onAssessmentFinalized } from './triggers/onAssessmentFinalized';
 export { onSosStatusChanged } from './triggers/onSosStatusChanged';
 export { markAbsentees } from './triggers/markAbsentees';
+
+// Export Realtime Database Triggers & Cross-Sync Bridges
+export { onRfidAttendanceWritten, syncRfidRecordToFirestore } from './triggers/onRfidAttendanceWritten';

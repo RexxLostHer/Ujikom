@@ -57,3 +57,16 @@ export function isWithinGeofence(
   const distance = calculateHaversineDistance(userLat, userLng, targetLat, targetLng);
   return distance <= radiusMeters;
 }
+
+/**
+ * Validates GPS accuracy radius to ensure location fix precision (FR-3.3).
+ * @param accuracyMeters GPS accuracy radius in meters
+ * @param maxAllowedMeters Maximum acceptable uncertainty radius in meters (default: 100m)
+ */
+export function validateGpsAccuracy(
+  accuracyMeters?: number,
+  maxAllowedMeters: number = 100
+): boolean {
+  if (typeof accuracyMeters !== 'number' || isNaN(accuracyMeters)) return true;
+  return accuracyMeters <= maxAllowedMeters;
+}

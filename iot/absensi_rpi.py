@@ -147,6 +147,18 @@ def build_firebase_url(path):
     return f"{DATABASE_URL}/{path}.json"
 
 # ===== OFFLINE SQLITE QUEUE RESILIENCE (PRD Bab 3.2 & 5.1) =====
+def check_ntp_sync():
+    """Memeriksa status sinkronisasi waktu NTP perangkat (timedatectl) demi akurasi jam presensi."""
+    try:
+        import subprocess
+        res = subprocess.run(["timedatectl", "status"], capture_output=True, text=True, timeout=3)
+        if res.returncode == 0:
+            print("[NTP STATUS] Sinkronisasi waktu sistem:\n" + res.stdout.strip())
+        else:
+            print("[NTP STATUS] timedatectl tidak tersedia, menggunakan jam sistem lokal.")
+    except Exception:
+        print(f"[NTP STATUS] Waktu lokal saat ini: {datetime.now().strftime('%Y-%m-%d %H:%M:%S WIB')}")
+
 def init_offline_db():
     try:
         conn = sqlite3.connect(OFFLINE_DB_PATH)
@@ -158,23 +170,32 @@ def init_offline_db():
                 method TEXT NOT NULL,
                 payload TEXT NOT NULL,
                 created_at TEXT NOT NULL,
+                scanned_at TEXT,
+                synced_at TEXT,
                 retry_count INTEGER DEFAULT 0
             )
         ''')
+        c.execute("PRAGMA table_info(offline_queue)")
+        cols = [row[1] for row in c.fetchall()]
+        if "scanned_at" not in cols:
+            c.execute("ALTER TABLE offline_queue ADD COLUMN scanned_at TEXT")
+        if "synced_at" not in cols:
+            c.execute("ALTER TABLE offline_queue ADD COLUMN synced_at TEXT")
         conn.commit()
         conn.close()
     except Exception as e:
         print(f"[OFFLINE DB INIT ERR] {e}")
 
-def enqueue_offline(path, method, payload):
+def enqueue_offline(path, method, payload, scanned_at=None):
     try:
         conn = sqlite3.connect(OFFLINE_DB_PATH)
         c = conn.cursor()
         now_iso = datetime.now().isoformat()
+        scan_time = scanned_at or now_iso
         c.execute('''
-            INSERT INTO offline_queue (path, method, payload, created_at, retry_count)
-            VALUES (?, ?, ?, ?, 0)
-        ''', (path, method, json.dumps(payload), now_iso))
+            INSERT INTO offline_queue (path, method, payload, created_at, scanned_at, retry_count)
+            VALUES (?, ?, ?, ?, ?, 0)
+        ''', (path, method, json.dumps(payload), now_iso, scan_time))
         conn.commit()
         conn.close()
         print(f"[OFFLINE QUEUE] 💾 Disimpan ke antrean SQLite lokal: {method} {path}")
@@ -303,6 +324,10 @@ def proses_kartu(uid_kartu):
     # 0. PERIKSA APAKAH ADA PERMINTAAN PAIRING NFC AKTIF
     pairing_req = get_firebase("pairing_request")
     if pairing_req and isinstance(pairing_req, dict) and pairing_req.get("active") is True and pairing_req.get("status") == "waiting":
+        target_dev = str(pairing_req.get("target_device_id", "all")).strip()
+        if target_dev != "all" and target_dev != DEVICE_ID:
+            print(f"[PAIRING SKIP] Target device '{target_dev}' bukan reader gateway ini ('{DEVICE_ID}').")
+            return
         req_ts = pairing_req.get("timestamp", 0)
         req_ts_sec = (req_ts / 1000.0) if req_ts > 1e11 else req_ts
         if (now_ts - req_ts_sec) <= 30.0:
@@ -343,7 +368,13 @@ def proses_kartu(uid_kartu):
                             old_id = k_val.strip()
                         if old_id == user_id:
                             delete_firebase(f"kartu/{old_uid}")
+                            delete_firebase(f"rfid_map/{old_uid}")
                             print(f"[RE-ENROLLMENT] Kartu lama {old_uid} milik {user_id} telah dihapus/digantikan.")
+                if pairing_req.get("previous_uid"):
+                    p_uid = str(pairing_req.get("previous_uid")).strip()
+                    if p_uid and p_uid != uid_kartu:
+                        delete_firebase(f"kartu/{p_uid}")
+                        delete_firebase(f"rfid_map/{p_uid}")
 
             # 1. Simpan ke /kartu/{uid_kartu} dan /rfid_map/{uid_kartu}
             put_firebase(f"kartu/{uid_kartu}", card_data)
@@ -368,9 +399,9 @@ def proses_kartu(uid_kartu):
     kartu_data = get_firebase(f"rfid_map/{uid_kartu}")
     if not kartu_data:
         kartu_data = get_firebase(f"kartu/{uid_kartu}")
-    if not kartu_data and uid_kartu in KARTU_PRESET:
+    if not kartu_data and uid_kartu in KARTU_PRESET and os.environ.get("IOT_TEST_MODE") == "1":
         kartu_data = KARTU_PRESET[uid_kartu]
-        print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu}.")
+        print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu} (IOT_TEST_MODE=1).")
 
     if not kartu_data:
         print(f"[DITOLAK] ❌ Kartu {uid_kartu} BELUM TERDAFTAR di sistem.")

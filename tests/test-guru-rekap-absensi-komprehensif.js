@@ -355,7 +355,8 @@ return guruMod.muatDataRekapSiswaGuru('setahun').then(() => {
 
       // 9. Uji Mode B deduplikasi tap masuk dan pulang pada tanggal yang sama
       console.log('▶ [Test 8] Verifikasi Mode B deduplikasi tap masuk (hadir) & pulang...');
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const nowLoc = new Date();
+      const todayStr = `${nowLoc.getFullYear()}-${String(nowLoc.getMonth() + 1).padStart(2, '0')}-${String(nowLoc.getDate()).padStart(2, '0')}`;
       mockAbsensiStore[testNisn] = [
         { tanggal: todayStr, waktu: '06:20:00', status: 'hadir', keterangan: 'Tap RFID Masuk' },
         { tanggal: todayStr, waktu: '15:35:00', status: 'pulang', keterangan: 'Tap RFID Pulang' }

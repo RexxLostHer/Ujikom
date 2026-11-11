@@ -1284,10 +1284,16 @@ async function mulaiPairingNfc(userData) {
   const mapel = userData.mapel || '';
   const walasKelasId = userData.walasKelasId || (isWalas ? kelas : '');
   const timestamp = Date.now();
+  const targetDeviceId = userData.target_device_id || userData.targetDeviceId || 'all';
+  const previousUid = userData.previous_uid || userData.previousUid || userData.old_uid || null;
 
   const pairingData = {
     active: true,
+    target_device_id: targetDeviceId,
+    previous_uid: previousUid,
     userId: userId,
+    nisn: role === 'siswa' ? userId : null,
+    nip: role !== 'siswa' ? userId : null,
     role: role,
     nama: nama,
     kelas: kelas,
@@ -1474,16 +1480,23 @@ async function simulasiTapPairing(uid) {
           const itemId = String(typeof item === 'string' ? item : (item.nisn || item.nip || item.userId || '')).trim();
           if (itemId === targetUserId) {
             const oldRef = rtdb.ref('kartu/' + kUid);
-            if (typeof oldRef.remove === 'function') {
-              await oldRef.remove();
-            } else {
-              await oldRef.set(null);
-            }
+            if (typeof oldRef.remove === 'function') await oldRef.remove(); else await oldRef.set(null);
+            const oldRefMap = rtdb.ref('rfid_map/' + kUid);
+            if (typeof oldRefMap.remove === 'function') await oldRefMap.remove(); else await oldRefMap.set(null);
           }
         }
       }
 
+      const prev = req.previous_uid || req.old_uid;
+      if (prev && String(prev).trim().toUpperCase() !== cleanUid) {
+        const oldRef = rtdb.ref('kartu/' + prev);
+        if (typeof oldRef.remove === 'function') await oldRef.remove(); else await oldRef.set(null);
+        const oldRefMap = rtdb.ref('rfid_map/' + prev);
+        if (typeof oldRefMap.remove === 'function') await oldRefMap.remove(); else await oldRefMap.set(null);
+      }
+
       await rtdb.ref('kartu/' + cleanUid).set(cardData);
+      await rtdb.ref('rfid_map/' + cleanUid).set(cardData);
     } catch (e) {
       console.warn('[Pairing] Gagal simpan kartu ke Firebase:', e.message);
     }
