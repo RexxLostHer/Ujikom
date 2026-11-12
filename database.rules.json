@@ -125,6 +125,26 @@
     "jadwal_pelajaran": {
       ".read": "auth != null",
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru')"
+    },
+
+    "nfc_session": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "hwid_map": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "presensi_harian": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "tap_realtime": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

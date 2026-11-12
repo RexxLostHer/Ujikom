@@ -342,36 +342,47 @@
           </div>
         </div>
 
-        <!-- WIDGET STATUS KARTU / NFC SISWA MANDIRI -->
-        <div id="widgetNfcSiswa" class="nfc-widget-card">
-          <div class="nfc-widget-left">
-            <div id="iconNfcStatusSiswa" class="nfc-widget-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- WIDGET STATUS KARTU / NFC SISWA MANDIRI (MODERN 2-TIER ANTI-COLLISION) -->
+        <div id="widgetNfcSiswa" class="nfc-widget-card-modern">
+          <div class="nfc-status-row">
+            <div class="nfc-status-info">
+              <div id="iconNfcStatusSiswa" class="nfc-icon-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+                  <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+                  <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
+                  <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+                </svg>
+              </div>
+              <div class="nfc-text-group">
+                <div class="nfc-label">Status NFC / Smart Card</div>
+                <div id="badgeStatusNfcSiswa" class="nfc-widget-badge">
+                  <span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Belum Ditautkan
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="nfc-actions-row">
+            <button id="btnMulaiTapNfcHp" type="button" onclick="mulaiSesiTapNfcHp()" class="btn-nfc-action-primary" title="Aktifkan radar dan dekatkan HP ke sensor MFRC522 di alat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                <line x1="12" y1="18" x2="12.01" y2="18"/>
+              </svg>
+              <span>Siap Tap NFC ke Alat</span>
+            </button>
+            <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" class="btn-nfc-action-secondary" title="Tautkan atau ubah kartu RFID fisik">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
                 <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
                 <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
                 <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
               </svg>
-            </div>
-            <div class="nfc-widget-text-col">
-              <div class="nfc-widget-title">Status NFC / Kartu</div>
-              <div id="badgeStatusNfcSiswa" class="nfc-widget-badge">
-                <span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  Belum Ditautkan
-                </span>
-              </div>
-            </div>
+              <span>Tautkan Kartu</span>
+            </button>
           </div>
-          <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" style="display:inline-flex;align-items:center;gap:5px;background:#0f172a;color:#ffffff;border:1px solid #1e293b;border-radius:10px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,0.12);transition:all 0.2s;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
-              <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
-              <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
-              <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
-            </svg>
-            Tautkan Kartu
-          </button>
         </div>
 
       </div>
@@ -1146,7 +1157,7 @@
 </script>
 
 <!-- MODAL PENAUTAN (PAIRING) NFC SISWA -->
-<div id="modalPairingNfcSiswa" class="modal-nfc-overlay">
+<div id="modalPairingNfcSiswa" class="modal-nfc-overlay" onclick="if(event.target === this) tutupModalPairingNfcSiswa()">
   <div class="modal-nfc-card">
     
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
@@ -1208,6 +1219,65 @@
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- MODAL HANDSHAKE REAL HARDWARE NFC HP KE RASPBERRY PI -->
+<div id="modalNfcHandshake" class="modal-nfc-overlay" style="display:none;" onclick="if(event.target === this) batalSesiTapNfcHp()">
+  <div class="modal-nfc-card" style="max-width:420px;text-align:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:5px 12px;border-radius:9999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        Presensi Fisik NFC Smartphone
+      </div>
+      <button type="button" onclick="batalSesiTapNfcHp()" style="width:30px;height:30px;border-radius:50%;background:#f8fafc;border:1px solid #e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;cursor:pointer;padding:0;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'" onmouseout="this.style.background='#f8fafc';this.style.color='#64748b'" title="Tutup">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <h3 style="font-size:19px;font-weight:800;color:#0f172a;margin:0 0 6px 0;letter-spacing:-0.02em;">Dekatkan HP ke Reader MFRC522</h3>
+    <p style="font-size:13px;color:#64748b;margin:0 auto 20px auto;line-height:1.5;max-width:360px;">
+      NFC HP siap dideteksi. Segera <strong>tempelkan bodi belakang HP Anda ke sensor MFRC522</strong> pada Raspberry Pi gateway.
+    </p>
+
+    <!-- Sleek Minimalist NFC Radar Graphic -->
+    <div class="nfc-radar-container">
+      <div class="nfc-radar-guide guide-1"></div>
+      <div class="nfc-radar-guide guide-2"></div>
+      <div class="nfc-wave wave-1"></div>
+      <div class="nfc-wave wave-2"></div>
+      <div class="nfc-wave wave-3"></div>
+      <div class="nfc-center-circle" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);">
+        <span style="display:flex;align-items:center;justify-content:center;color:#ffffff;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+            <path d="M9 7h6"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Countdown & Status Card -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;">Batas Waktu Tap Fisik</div>
+      <div style="font-size:32px;font-weight:800;color:#2563eb;font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:-0.03em;line-height:1.1;margin-top:2px;">
+        <span id="timerNfcHandshake">15s</span>
+      </div>
+      <div id="statusNfcHandshake" style="font-size:12.5px;font-weight:600;color:#059669;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite;"></span>
+        <span>Mendeteksi kontak gelombang RF sensor MFRC522...</span>
+      </div>
+    </div>
+
+    <div id="boxFeedbackNfcHandshake" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:700;border:1px solid transparent;"></div>
+
+    <button type="button" onclick="batalSesiTapNfcHp()" style="min-width:140px;background:#ffffff;color:#475569;border:1.5px solid #cbd5e1;border-radius:12px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+      Batal
+    </button>
   </div>
 </div>
 

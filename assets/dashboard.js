@@ -1932,6 +1932,257 @@ async function lakukanSimulasiTapSiswa(uidSimulasi) {
   return { success: false, reason: 'FUNCTION_NOT_FOUND' };
 }
 
+// ===================================================================
+// SISTEM REAL HARDWARE NFC SMARTPHONE HANDSHAKE (ZERO DUMMY / REAL HARDWARE)
+// ===================================================================
+let timerNfcHandshake = null;
+let unsubNfcHandshake = null;
+const NFC_GATEWAY_DEVICE_ID = 'gateway-rpi-01';
+
+function getOrCreateDeviceHWID() {
+  const STORAGE_KEY = 'SMKN1_DEVICE_HWID';
+  try {
+    let hwid = (typeof localStorage !== 'undefined') ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!hwid || !hwid.startsWith('HWID-SMKN1-')) {
+      const randPart = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()
+        : Math.random().toString(36).substring(2, 10).toUpperCase() + Math.random().toString(36).substring(2, 10).toUpperCase();
+      hwid = `HWID-SMKN1-${randPart}`;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, hwid);
+      }
+    }
+    return hwid;
+  } catch (e) {
+    return 'HWID-SMKN1-FALLBACK-' + Date.now();
+  }
+}
+
+async function mulaiSesiTapNfcHp() {
+  const sess = (typeof getSessionUser === 'function') ? getSessionUser() : ((typeof window !== 'undefined' && window.currentUser) ? window.currentUser : null);
+  if (!sess || !sess.nisn) {
+    alert('Akses Dibatasi: Anda harus login sebagai siswa terverifikasi untuk presensi NFC.');
+    return;
+  }
+
+  const hwid = getOrCreateDeviceHWID();
+  const modal = (typeof document !== 'undefined') ? document.getElementById('modalNfcHandshake') : null;
+  const timerEl = (typeof document !== 'undefined') ? document.getElementById('timerNfcHandshake') : null;
+  const statusEl = (typeof document !== 'undefined') ? document.getElementById('statusNfcHandshake') : null;
+  const boxFb = (typeof document !== 'undefined') ? document.getElementById('boxFeedbackNfcHandshake') : null;
+
+  if (boxFb) {
+    boxFb.style.display = 'none';
+    boxFb.textContent = '';
+  }
+
+  // 1. Buka modal seketika (Zero Delay)
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+  }
+
+  // 2. Pasang hitung mundur 15 detik SECARA SINKRON & LANGSUNG AKTIF
+  let sisaDetik = 15;
+  if (timerEl) timerEl.textContent = `${sisaDetik}s`;
+  if (statusEl) {
+    statusEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite;"></span><span>Mendeteksi kontak gelombang RF sensor MFRC522...</span>';
+  }
+
+  if (timerNfcHandshake) clearInterval(timerNfcHandshake);
+  timerNfcHandshake = setInterval(() => {
+    sisaDetik--;
+    if (timerEl) timerEl.textContent = `${sisaDetik}s`;
+
+    if (sisaDetik <= 0) {
+      if (timerNfcHandshake) {
+        clearInterval(timerNfcHandshake);
+        timerNfcHandshake = null;
+      }
+      if (unsubNfcHandshake) {
+        try { unsubNfcHandshake(); } catch (e) {}
+        unsubNfcHandshake = null;
+      }
+
+      // Tandai kedaluwarsa di Firebase secara background
+      try {
+        if (typeof db !== 'undefined' && db && db.ref) {
+          db.ref(`nfc_session/${NFC_GATEWAY_DEVICE_ID}`).update({
+            active: false,
+            status: 'expired'
+          }).catch(() => {});
+        }
+      } catch (eExp) {}
+
+      if (boxFb) {
+        boxFb.style.display = 'block';
+        boxFb.style.background = '#fffbeb';
+        boxFb.style.color = '#92400e';
+        boxFb.style.borderColor = '#fde68a';
+        boxFb.innerHTML = '<strong>Waktu Habis:</strong> Smartphone belum disentuhkan ke reader MFRC522 dalam 15 detik. Presensi tidak tercatat. Silakan ulangi saat berada di dekat alat.';
+      }
+      if (statusEl) {
+        statusEl.innerHTML = '<span style="color:#b45309;font-weight:700;">Sesi Kedaluwarsa. Presensi tidak dicatat.</span>';
+      }
+    }
+  }, 1000);
+
+  // 3. Tulis sesi handshake & verifikasi HWID secara background tanpa menahan UI
+  const nowMs = Date.now();
+  const sessionPayload = {
+    active: true,
+    hwid: hwid,
+    nisn: String(sess.nisn).trim(),
+    nama: sess.nama || sess.displayName || 'Siswa SMKN 1 Sumedang',
+    kelas: sess.kelas || 'XII RPL 2',
+    role: 'siswa',
+    device_id: NFC_GATEWAY_DEVICE_ID,
+    timestamp: nowMs,
+    expiresAt: nowMs + 15000,
+    status: 'waiting'
+  };
+
+  (async () => {
+    try {
+      if (typeof db !== 'undefined' && db && db.ref) {
+        // Cek binding HWID di /hwid_map/{hwid}
+        try {
+          const snapHwid = await db.ref(`hwid_map/${hwid}`).once('value');
+          const valHwid = snapHwid ? (typeof snapHwid.val === 'function' ? snapHwid.val() : snapHwid.val) : null;
+          if (valHwid && valHwid.nisn && String(valHwid.nisn).trim() !== String(sess.nisn).trim()) {
+            if (timerNfcHandshake) {
+              clearInterval(timerNfcHandshake);
+              timerNfcHandshake = null;
+            }
+            if (boxFb) {
+              boxFb.style.display = 'block';
+              boxFb.style.background = '#fef2f2';
+              boxFb.style.color = '#991b1b';
+              boxFb.style.borderColor = '#fecaca';
+              boxFb.innerHTML = `<strong>Peringatan Anti-Titip Absen:</strong> Smartphone ini telah terikat resmi untuk siswa lain (${valHwid.nama || valHwid.nisn}). Anda tidak dapat menggunakan HP orang lain untuk presensi!`;
+            }
+            return;
+          }
+        } catch (errCheck) {
+          console.warn('[NFC Handshake] Gagal cek hwid_map (lanjut fallback):', errCheck);
+        }
+
+        // Tulis sesi aktif ke Firebase RTDB
+        await db.ref(`nfc_session/${NFC_GATEWAY_DEVICE_ID}`).set(sessionPayload);
+        await db.ref('nfc_session/latest').set(sessionPayload);
+      }
+    } catch (eWrite) {
+      console.warn('[NFC Handshake] Warning write nfc_session:', eWrite);
+    }
+  })();
+
+  // 4. Pasang listener realtime untuk status "completed" dari IoT gateway
+  if (unsubNfcHandshake) {
+    try { unsubNfcHandshake(); } catch (e) {}
+    unsubNfcHandshake = null;
+  }
+
+  if (typeof db !== 'undefined' && db && db.ref) {
+    const sessionRef = db.ref(`nfc_session/${NFC_GATEWAY_DEVICE_ID}`);
+    const onValCallback = (snap) => {
+      const data = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
+      if (!data) return;
+
+      if (data.status === 'completed' && data.hwid === hwid && data.nisn === String(sess.nisn).trim()) {
+        if (timerNfcHandshake) {
+          clearInterval(timerNfcHandshake);
+          timerNfcHandshake = null;
+        }
+        sessionRef.off('value', onValCallback);
+        unsubNfcHandshake = null;
+
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.remove('show');
+        }
+
+        // Tampilkan animasi pop-up ceklis ACC
+        const fnCeklis = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : (typeof window !== 'undefined' ? window.tampilkanAnimasiCeklis : (typeof global !== 'undefined' ? global.tampilkanAnimasiCeklis : null)));
+        if (fnCeklis) {
+          const statusText = (data.statusPresensi || 'Hadir').toUpperCase();
+          fnCeklis({
+            judul: 'Presensi NFC Fisik Berhasil!',
+            subjudul: `Terverifikasi via Sensor MFRC522 (${statusText})`,
+            badge: 'REAL HARDWARE NFC',
+            nama: data.nama || sess.nama,
+            kelas: data.kelas || sess.kelas,
+            waktu: data.waktu || 'Sekarang',
+            autoCloseMs: 3500
+          });
+        }
+
+        // Segarkan riwayat presensi siswa
+        if (typeof muatRiwayatKehadiranSiswa === 'function') {
+          muatRiwayatKehadiranSiswa(sess.nisn);
+        }
+        if (typeof initRekapPresensiSiswa === 'function') {
+          initRekapPresensiSiswa(sess.nisn);
+        }
+      } else if (data.status === 'rejected_used_by_other') {
+        if (timerNfcHandshake) {
+          clearInterval(timerNfcHandshake);
+          timerNfcHandshake = null;
+        }
+        if (boxFb) {
+          boxFb.style.display = 'block';
+          boxFb.style.background = '#fef2f2';
+          boxFb.style.color = '#991b1b';
+          boxFb.style.borderColor = '#fecaca';
+          boxFb.innerHTML = '<strong>Presensi Ditolak:</strong> Perangkat HP ini terdeteksi sudah terikat ke akun siswa lain!';
+        }
+      }
+    };
+
+    sessionRef.on('value', onValCallback);
+    unsubNfcHandshake = () => sessionRef.off('value', onValCallback);
+  }
+}
+
+function batalSesiTapNfcHp() {
+  if (timerNfcHandshake) {
+    clearInterval(timerNfcHandshake);
+    timerNfcHandshake = null;
+  }
+  if (unsubNfcHandshake) {
+    try { unsubNfcHandshake(); } catch (e) {}
+    unsubNfcHandshake = null;
+  }
+
+  // Tutup modal secara langsung & instan
+  const modal = (typeof document !== 'undefined') ? document.getElementById('modalNfcHandshake') : null;
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+  }
+
+  // Kirim pembatalan ke Firebase di background (tanpa menahan thread UI)
+  try {
+    if (typeof db !== 'undefined' && db && db.ref) {
+      db.ref(`nfc_session/${NFC_GATEWAY_DEVICE_ID}`).update({
+        active: false,
+        status: 'cancelled'
+      }).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+// Global shortcut Escape key untuk menutup modal handshake seketika
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      const modal = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modalNfcHandshake') : null;
+      if (modal && (modal.style.display === 'flex' || (modal.classList && modal.classList.contains && modal.classList.contains('show')))) {
+        batalSesiTapNfcHp();
+      }
+    }
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.detailAbsensiSiswa = detailAbsensiSiswa;
   window.sudahAbsenSet = sudahAbsenSet;
@@ -3990,7 +4241,7 @@ function sinkronkanChipJadwal(kelas, hari) {
     });
   }
 }
-window.sinkronkanChipJadwal = sinkronkanChipJadwal;
+if (typeof window !== 'undefined') window.sinkronkanChipJadwal = sinkronkanChipJadwal;
 
 function pilihKelasJadwal(kelas) {
   if (!kelas) return;
@@ -4001,7 +4252,7 @@ function pilihKelasJadwal(kelas) {
     dengarkanStatusKelasOperasional(kelas);
   }
 }
-window.pilihKelasJadwal = pilihKelasJadwal;
+if (typeof window !== 'undefined') window.pilihKelasJadwal = pilihKelasJadwal;
 
 function pilihHariJadwal(hari) {
   if (!hari) return;
@@ -4009,7 +4260,7 @@ function pilihHariJadwal(hari) {
   sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
   muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
 }
-window.pilihHariJadwal = pilihHariJadwal;
+if (typeof window !== 'undefined') window.pilihHariJadwal = pilihHariJadwal;
 
 function muatJadwalBeranda(kelas, hari) {
   const targetKelas = kelas || currentSelectedKelasJadwal || 'XII RPL 2';
@@ -4071,7 +4322,7 @@ function muatJadwalBeranda(kelas, hari) {
     }
   }
 }
-window.muatJadwalBeranda = muatJadwalBeranda;
+if (typeof window !== 'undefined') window.muatJadwalBeranda = muatJadwalBeranda;
 
 function initClassChipsSelector(user) {
   const container = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('classChipsList') : null;
@@ -4198,6 +4449,9 @@ if (typeof window !== 'undefined') {
   window.bukaModalPairingNfcSiswa = bukaModalPairingNfcSiswa;
   window.tutupModalPairingNfcSiswa = tutupModalPairingNfcSiswa;
   window.lakukanSimulasiTapSiswa = lakukanSimulasiTapSiswa;
+  window.getOrCreateDeviceHWID = getOrCreateDeviceHWID;
+  window.mulaiSesiTapNfcHp = mulaiSesiTapNfcHp;
+  window.batalSesiTapNfcHp = batalSesiTapNfcHp;
   window.populateDropdownSiswa = populateDropdownSiswa;
   window.handleSubmitPerijinan = handleSubmitPerijinan;
   window.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
@@ -4210,6 +4464,9 @@ if (typeof window !== 'undefined') {
   window.getStatusPresensiGuru = getStatusPresensiGuru;
   window.initRealtimePresensiGuru = initRealtimePresensiGuru;
   if (typeof global !== 'undefined') {
+    global.getOrCreateDeviceHWID = getOrCreateDeviceHWID;
+    global.mulaiSesiTapNfcHp = mulaiSesiTapNfcHp;
+    global.batalSesiTapNfcHp = batalSesiTapNfcHp;
     global.populateDropdownSiswa = populateDropdownSiswa;
     global.handleSubmitPerijinan = handleSubmitPerijinan;
     global.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
@@ -4262,6 +4519,9 @@ if (typeof module !== 'undefined' && module.exports) {
     bukaModalPairingNfcSiswa,
     tutupModalPairingNfcSiswa,
     lakukanSimulasiTapSiswa,
+    getOrCreateDeviceHWID,
+    mulaiSesiTapNfcHp,
+    batalSesiTapNfcHp,
     initRekapPresensiSiswa,
     muatDataRekapNisn,
     muatRiwayatKehadiranSiswa,

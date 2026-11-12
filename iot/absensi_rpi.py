@@ -403,9 +403,65 @@ def proses_kartu(uid_kartu):
         kartu_data = KARTU_PRESET[uid_kartu]
         print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu} (IOT_TEST_MODE=1).")
 
+    # 1.B. Jika Kartu Tidak Terdaftar, Cek Sesi Handshake NFC HP (/nfc_session/{DEVICE_ID})
+    if not kartu_data:
+        nfc_sess = get_firebase(f"nfc_session/{DEVICE_ID}")
+        if not nfc_sess or not isinstance(nfc_sess, dict) or nfc_sess.get("active") is not True:
+            nfc_sess = get_firebase("nfc_session/gateway-rpi-01")
+        if not nfc_sess or not isinstance(nfc_sess, dict) or nfc_sess.get("active") is not True:
+            nfc_sess = get_firebase("nfc_session/latest")
+
+        if nfc_sess and isinstance(nfc_sess, dict) and nfc_sess.get("active") is True:
+            sess_status = str(nfc_sess.get("status", "waiting")).lower()
+            exp_ts = nfc_sess.get("expiresAt", 0)
+            exp_ts_sec = (exp_ts / 1000.0) if exp_ts > 1e11 else exp_ts
+            if sess_status == "waiting" and now_ts <= exp_ts_sec:
+                sess_hwid = str(nfc_sess.get("hwid", "")).strip()
+                sess_nisn = str(nfc_sess.get("nisn", "")).strip()
+                sess_nama = str(nfc_sess.get("nama", "")).strip()
+                sess_kelas = str(nfc_sess.get("kelas", DEFAULT_KELAS)).strip()
+
+                if sess_nisn and sess_hwid:
+                    print(f"\n[NFC HANDSHAKE TERDETEKSI] 📱 Sensor MFRC522 mendeteksi kontak fisik NFC dari HP!")
+                    print(f"Siswa: {sess_nama} (NISN: {sess_nisn}) | HWID: {sess_hwid[:16]}... | Raw UID: {uid_kartu}")
+
+                    # Verifikasi / Auto-bind HWID di /hwid_map/{hwid}
+                    hwid_record = get_firebase(f"hwid_map/{sess_hwid}")
+                    if hwid_record and isinstance(hwid_record, dict):
+                        bound_nisn = str(hwid_record.get("nisn", "")).strip()
+                        if bound_nisn and bound_nisn != sess_nisn:
+                            print(f"[NFC HANDSHAKE DITOLAK] ❌ HP ini sudah terikat untuk siswa lain ({hwid_record.get('nama', bound_nisn)}). Anti-Titip Absen!")
+                            put_firebase(f"nfc_session/{DEVICE_ID}/status", "rejected_used_by_other")
+                            put_firebase(f"nfc_session/{DEVICE_ID}/active", False)
+                            return
+                    else:
+                        # Auto-bind perangkat pertama kali
+                        new_hwid_data = {
+                            "hwid": sess_hwid,
+                            "nisn": sess_nisn,
+                            "nama": sess_nama,
+                            "kelas": sess_kelas,
+                            "boundAt": int(now_ts * 1000),
+                            "device_id": DEVICE_ID
+                        }
+                        put_firebase(f"hwid_map/{sess_hwid}", new_hwid_data)
+                        put_firebase(f"users/{sess_nisn}/hwid", sess_hwid)
+                        print(f"[HWID AUTO-BIND] ✓ Perangkat {sess_hwid[:16]}... resmi dikunci untuk {sess_nama} ({sess_nisn}).")
+
+                    # Bentuk kartu_data terverifikasi untuk diproses presensi
+                    kartu_data = {
+                        "tipe": "siswa",
+                        "nisn": sess_nisn,
+                        "nama": sess_nama,
+                        "kelas": sess_kelas,
+                        "metode_presensi": "nfc_hwid",
+                        "hwid": sess_hwid,
+                        "raw_uid": uid_kartu
+                    }
+
     if not kartu_data:
         print(f"[DITOLAK] ❌ Kartu {uid_kartu} BELUM TERDAFTAR di sistem.")
-        print(f"Silakan daftarkan di Panel Admin -> Tab Kartu RFID.")
+        print(f"Silakan daftarkan di Panel Admin -> Tab Kartu RFID, atau tekan 'Siap Tap NFC ke Alat' di web.")
         return
 
     # 2. PERIKSA APAKAH KARTU GURU
@@ -490,7 +546,11 @@ def proses_kartu(uid_kartu):
     # Evaluasi Ambang Batas Waktu PRD
     status, keterangan = evaluasi_waktu_absen(waktu)
 
-    print(f"[SISWA TERVERIFIKASI] 🎓 {nama_siswa} ({kelas}) — NISN: {nisn}")
+    is_nfc_hwid = isinstance(kartu_data, dict) and kartu_data.get("metode_presensi") == "nfc_hwid"
+    metode_presensi = "nfc_hwid" if is_nfc_hwid else "rfid_fisik"
+    hwid_val = kartu_data.get("hwid") if is_nfc_hwid else None
+
+    print(f"[SISWA TERVERIFIKASI] 🎓 {nama_siswa} ({kelas}) — NISN: {nisn} | Metode: {metode_presensi}")
     print(f"[WAKTU] {tanggal} {waktu} WIB")
     print(f"[STATUS EVALUASI] 📊 {status.upper()} — {keterangan}")
 
@@ -501,9 +561,14 @@ def proses_kartu(uid_kartu):
         "status": status,
         "keterangan": keterangan,
         "device_id": DEVICE_ID,
-        "rfidUid": uid_kartu
+        "rfidUid": uid_kartu,
+        "metode": metode_presensi
     }
+    if hwid_val:
+        entry_absensi["hwid"] = hwid_val
     sukses_riwayat = post_firebase(f"absensi/{nisn}", entry_absensi)
+    put_firebase(f"absensi/{nisn}/{tanggal}", entry_absensi)
+    put_firebase(f"absensi/{tanggal}/{nisn}", entry_absensi)
 
     # Tulis ke riwayat/{tanggal}/{nisn} (PRD Bab 3.2)
     entry_riwayat = {
@@ -513,20 +578,57 @@ def proses_kartu(uid_kartu):
         "device_id": DEVICE_ID,
         "rfidUid": uid_kartu,
         "nama": nama_siswa,
-        "kelas": kelas
+        "kelas": kelas,
+        "metode": metode_presensi
     }
+    if hwid_val:
+        entry_riwayat["hwid"] = hwid_val
     put_firebase(f"riwayat/{tanggal}/{nisn}", entry_riwayat)
+    put_firebase(f"presensi_harian/{tanggal}/{nisn}", entry_riwayat)
 
     # Tulis ke presensi_jam/{kelas}/{tanggal}/1/{nisn} (Monitoring Kelas Realtime)
     entry_kelas = {
         "waktu": waktu,
         "status": status,
         "keterangan": keterangan,
-        "tipe": "rfid_fisik",
+        "tipe": metode_presensi,
         "rfidUid": uid_kartu,
         "updatedAt": now.isoformat()
     }
+    if hwid_val:
+        entry_kelas["hwid"] = hwid_val
     sukses_kelas = put_firebase(f"presensi_jam/{kelas}/{tanggal}/1/{nisn}", entry_kelas)
+
+    # Telemetri Realtime untuk Monitor TV / presensi-live
+    put_firebase("tap_realtime/latest", {
+        "nisn": nisn,
+        "nama": nama_siswa,
+        "kelas": kelas,
+        "status": status,
+        "waktu": waktu,
+        "metode": metode_presensi,
+        "device_id": DEVICE_ID,
+        "timestamp": int(now_ts * 1000)
+    })
+
+    # Jika melalui jabat-tangan NFC Smartphone, tandai sesi 'completed'
+    if is_nfc_hwid:
+        sess_completion = {
+            "active": False,
+            "status": "completed",
+            "completedAt": int(now_ts * 1000),
+            "uid_kartu": uid_kartu,
+            "hwid": hwid_val,
+            "nisn": nisn,
+            "nama": nama_siswa,
+            "kelas": kelas,
+            "statusPresensi": status,
+            "waktu": waktu
+        }
+        put_firebase(f"nfc_session/{DEVICE_ID}", sess_completion)
+        put_firebase("nfc_session/gateway-rpi-01", sess_completion)
+        put_firebase("nfc_session/latest", sess_completion)
+        print(f"[NFC HANDSHAKE SUKSES] 📱 Sesi NFC HP untuk {nama_siswa} ({nisn}) resmi COMPLETED!")
 
     if sukses_riwayat and sukses_kelas:
         print(f"✅ PRESENSI SISWA BERHASIL DISINKRONKAN KE CLOUD!")

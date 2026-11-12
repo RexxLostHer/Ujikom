@@ -126,7 +126,35 @@ function processCardTap(cardUid, options = {}) {
   const allowTestCards = options.allowTestCards === true || (typeof process !== 'undefined' && process.env && process.env.ALLOW_TEST_CARDS === '1');
   const defaultFallbackCards = allowTestCards ? DAFTAR_KARTU_RFID_RESMI : {};
   const dbCards = options.rfidMap || (options.mockDb && (options.mockDb.rfid_map || options.mockDb.kartu)) || defaultFallbackCards;
-  const cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
+  let cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
+
+  // 2.B Cek Sesi Handshake Real Hardware NFC Smartphone jika kartu belum terdaftar di rfidMap
+  if (!cardData && options.nfcSession && options.nfcSession.active === true) {
+    const sess = options.nfcSession;
+    const expSec = (sess.expiresAt > 1e11) ? (sess.expiresAt / 1000) : sess.expiresAt;
+    if (sess.status === 'waiting' && nowSec <= expSec && sess.nisn && sess.hwid) {
+      // Cek anti-titip absen di hwid_map
+      const hwidMap = options.hwidMap || (options.mockDb && options.mockDb.hwid_map) || {};
+      const boundRecord = hwidMap[sess.hwid];
+      if (boundRecord && boundRecord.nisn && boundRecord.nisn !== sess.nisn) {
+        return {
+          success: false,
+          error: 'HWID_USED_BY_OTHER',
+          message: `NFC Handshake ditolak: Smartphone ini sudah terikat resmi untuk siswa lain (${boundRecord.nama || boundRecord.nisn}).`,
+          hwid: sess.hwid
+        };
+      }
+      cardData = {
+        nisn: sess.nisn,
+        nama: sess.nama,
+        kelas: sess.kelas || 'XII RPL 2',
+        tipe: 'siswa',
+        metode_presensi: 'nfc_hwid',
+        hwid: sess.hwid,
+        raw_uid: cleanUid
+      };
+    }
+  }
 
   if (!cardData) {
     return {
@@ -179,17 +207,23 @@ function processCardTap(cardUid, options = {}) {
     status = 'terlambat';
   }
 
+  const isNfcHwid = cardData.metode_presensi === 'nfc_hwid';
+  const metodePresensi = isNfcHwid ? 'nfc_hwid' : 'rfid_gateway';
+
   // 5. Pembentukan Payload Firebase RTDB
   const recordPayload = {
     tanggal: tanggal,
     waktu: waktu,
     jam: waktu,
     status: status,
-    metode: 'rfid_gateway',
+    metode: metodePresensi,
     device_id: deviceId,
     uid_kartu: cleanUid,
     updated_at: Date.now()
   };
+  if (isNfcHwid) {
+    recordPayload.hwid = cardData.hwid;
+  }
 
   const firebasePaths = {
     [`absensi/${userIdentifier}/${tanggal}`]: recordPayload,
@@ -198,15 +232,46 @@ function processCardTap(cardUid, options = {}) {
       nama: cardData.nama,
       kelas: cardData.kelas || '-'
     },
+    [`presensi_jam/${cardData.kelas || 'XII RPL 2'}/${tanggal}/1/${userIdentifier}`]: {
+      waktu: waktu,
+      status: status,
+      tipe: metodePresensi,
+      rfidUid: cleanUid,
+      ...(isNfcHwid ? { hwid: cardData.hwid } : {})
+    },
     [`gateway_logs/${Date.now()}_${cleanUid}`]: {
       device_id: deviceId,
       uid: cleanUid,
       target_id: userIdentifier,
       nama: cardData.nama,
       status: status,
-      waktu: `${tanggal} ${waktu}`
+      waktu: `${tanggal} ${waktu}`,
+      metode: metodePresensi
     }
   };
+
+  if (isNfcHwid) {
+    firebasePaths[`nfc_session/${deviceId}`] = {
+      active: false,
+      status: 'completed',
+      completedAt: Date.now(),
+      uid_kartu: cleanUid,
+      hwid: cardData.hwid,
+      nisn: userIdentifier,
+      nama: cardData.nama,
+      kelas: cardData.kelas || '-',
+      statusPresensi: status,
+      waktu: waktu
+    };
+    firebasePaths[`hwid_map/${cardData.hwid}`] = {
+      hwid: cardData.hwid,
+      nisn: userIdentifier,
+      nama: cardData.nama,
+      kelas: cardData.kelas || '-',
+      boundAt: Date.now(),
+      device_id: deviceId
+    };
+  }
 
   return {
     success: true,
