@@ -21,6 +21,7 @@ import threading
 from datetime import datetime
 import urllib.request
 import urllib.error
+import urllib.parse
 
 # ===== LOAD ENVIRONMENT VARIABLES (.env) =====
 def load_dotenv(dotenv_path=None):
@@ -144,11 +145,14 @@ def worker_token_refresher():
 
 def build_firebase_url(path):
     """Menambahkan parameter autentikasi ?auth={idToken} ke URL REST API RTDB."""
+    # Path WAJIB di-encode: nama kelas resmi mengandung spasi ("XII RPL 2"),
+    # tanpa quote() urllib menolak dengan "URL can't contain control characters".
+    safe_path = urllib.parse.quote(path.strip("/"), safe="/-_.~")
     token = device_auth.get("idToken")
     if token:
-        sep = "&" if "?" in path else "?"
-        return f"{DATABASE_URL}/{path}.json{sep}auth={token}"
-    return f"{DATABASE_URL}/{path}.json"
+        sep = "&" if "?" in safe_path else "?"
+        return f"{DATABASE_URL}/{safe_path}.json{sep}auth={token}"
+    return f"{DATABASE_URL}/{safe_path}.json"
 
 # ===== OFFLINE SQLITE QUEUE RESILIENCE (PRD Bab 3.2 & 5.1) =====
 def check_ntp_sync():
