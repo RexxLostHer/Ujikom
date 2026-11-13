@@ -616,8 +616,10 @@ def proses_kartu(uid_kartu):
         sess_completion = {
             "active": False,
             "status": "completed",
+            "metode": "nfc_hwid",
             "completedAt": int(now_ts * 1000),
             "uid_kartu": uid_kartu,
+            "raw_uid": uid_kartu,
             "hwid": hwid_val,
             "nisn": nisn,
             "nama": nama_siswa,
@@ -629,11 +631,52 @@ def proses_kartu(uid_kartu):
         put_firebase("nfc_session/gateway-rpi-01", sess_completion)
         put_firebase("nfc_session/latest", sess_completion)
         print(f"[NFC HANDSHAKE SUKSES] 📱 Sesi NFC HP untuk {nama_siswa} ({nisn}) resmi COMPLETED!")
+    else:
+        # Jika kartu RFID fisik di-scan dan ada sesi aktif (atau siswa membuka sesi scan di web):
+        nfc_sess = get_firebase(f"nfc_session/{DEVICE_ID}") or get_firebase("nfc_session/gateway-rpi-01") or get_firebase("nfc_session/latest")
+        if nfc_sess and isinstance(nfc_sess, dict) and (nfc_sess.get("active") is True or nfc_sess.get("status") in ("waiting", "active")):
+            card_completion = {
+                "active": False,
+                "status": "completed",
+                "metode": "rfid_fisik",
+                "completedAt": int(now_ts * 1000),
+                "cardUid": uid_kartu,
+                "uid_kartu": uid_kartu,
+                "nisn": nisn,
+                "nama": nama_siswa,
+                "kelas": kelas,
+                "statusPresensi": status,
+                "waktu": waktu
+            }
+            put_firebase(f"nfc_session/{DEVICE_ID}", card_completion)
+            put_firebase("nfc_session/gateway-rpi-01", card_completion)
+            put_firebase("nfc_session/latest", card_completion)
+            print(f"[RFID FISIK SUKSES] 🏷️ Sesi scan kartu {uid_kartu} untuk {nama_siswa} ({nisn}) resmi COMPLETED!")
 
     if sukses_riwayat and sukses_kelas:
         print(f"✅ PRESENSI SISWA BERHASIL DISINKRONKAN KE CLOUD!")
     else:
         print(f"⚠️ Presensi tersimpan (antrean offline SQLite diaktifkan bila tanpa internet).")
+
+def worker_mfrc522_spi():
+    """
+    Background worker untuk membaca sensor fisik MFRC522 via antarmuka SPI hardware (Raspberry Pi GPIO).
+    """
+    try:
+        from mfrc522 import SimpleMFRC522
+        reader = SimpleMFRC522()
+        print("[MFRC522 SPI] 🔌 Modul RC522 Hardware SPI aktif dan siap mendeteksi kartu/NFC...")
+        while True:
+            try:
+                card_id, text = reader.read()
+                if card_id:
+                    uid_str = hex(card_id)[2:].upper() if isinstance(card_id, int) else str(card_id).strip()
+                    proses_kartu(uid_str)
+                    time.sleep(1.0)
+            except Exception:
+                time.sleep(0.5)
+    except Exception:
+        pass
 
 def main():
     init_offline_db()
@@ -641,12 +684,15 @@ def main():
     # Otentikasi awal perangkat IoT
     authenticate_device()
 
-    # Jalankan background workers: auto-refresh token (50 min) & flush offline queue (8s)
+    # Jalankan background workers: auto-refresh token (50 min), flush offline queue (8s), dan SPI reader
     t_token = threading.Thread(target=worker_token_refresher, daemon=True)
     t_token.start()
 
     t_worker = threading.Thread(target=worker_flush_offline_queue, daemon=True)
     t_worker.start()
+
+    t_spi = threading.Thread(target=worker_mfrc522_spi, daemon=True)
+    t_spi.start()
 
     print("="*60)
     print("🚀 GATEWAY PRESENSI RFID IOT — SMK NEGERI 1 SUMEDANG")
