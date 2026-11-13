@@ -129,22 +129,33 @@
 
     "nfc_session": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      "$deviceId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'iot_gateway' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('nisn').val() === newData.child('nisn').val())"
+      }
     },
 
     "hwid_map": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      "$hwid": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'iot_gateway' || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+
+    "gateway_status": {
+      ".read": "auth != null",
+      "$deviceId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'iot_gateway' || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
     },
 
     "presensi_harian": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
     },
 
     "tap_realtime": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'guru' || root.child('users').child(auth.uid).child('role').val() === 'iot_gateway')"
     }
   }
 }

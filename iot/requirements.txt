@@ -1,0 +1,8 @@
+# Dependensi gateway Raspberry Pi (di luar stdlib Python).
+# Install di venv, bukan pip sistem (Debian Bookworm PEP 668):
+#   python3 -m venv --system-site-packages .venv
+#   source .venv/bin/activate
+#   pip install -r iot/requirements.txt
+mfrc522>=0.0.7
+spidev>=3.6
+RPi.GPIO>=0.7.1

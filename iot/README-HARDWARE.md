@@ -51,3 +51,52 @@ Sistem presensi ini mendukung 3 metode pembacaan kartu:
      - Nama siswa otomatis pindah ke kolom **"Sudah Hadir di Kelas"**.
      - Jam tap (misal `07:05 WIB`) langsung tampil.
      - Foto resmi siswa (`assets/foto/0098263610.jpg` atau `assets/foto/0082104129.jpg`) langsung muncul dengan bingkai status hijau.
+
+---
+
+## 4. Presensi NFC Smartphone (HWID) & Diagnosa
+
+NFC UID dari HP selalu berubah, jadi UID **tidak pernah** dipakai sebagai kunci. Identitas diambil dari HWID perangkat (`localStorage`, format `HWID-SMKN1-XXXX`) yang dikirim lewat sesi `/nfc_session/{DEVICE_ID}`.
+
+- **Window tap**: 60 detik sejak tombol "Siap Tap NFC ke Alat" ditekan (`NFC_SESSION_WINDOW_MS` di `assets/dashboard.js`).
+- **Urutan evaluasi gateway**: sesi NFC -> pairing -> kartu RFID fisik. Selama sesi aktif, UID HP tidak dicocokkan ke `/kartu`.
+- **Anti-titip absen**: satu HWID hanya boleh terikat ke satu NISN (`/hwid_map/{hwid}`).
+- **Semua jalur gagal menutup sesi**: `rejected_used_by_other`, `rejected_unregistered`, `expired`, atau `completed` dengan `ignored:true` bila siswa punya izin disetujui.
+- **Heartbeat**: gateway menulis `/gateway_status/{DEVICE_ID}` tiap 10 detik. Web menganggap alat offline bila `lastSeen` lebih tua dari 30 detik.
+
+Cek kondisi alat sebelum demo:
+
+```bash
+python3 iot/diagnosa_gateway.py
+```
+
+Diagnosa memeriksa library `mfrc522`, SPI aktif, login Firebase, node sesi/heartbeat, data master, pembacaan kartu nyata, dan izin tulis. Item `[FAIL]` menunjuk langsung penyebabnya.
+
+### Instalasi dependensi (Raspberry Pi OS Bookworm+)
+
+`pip install` langsung ke sistem diblokir PEP 668 (`externally-managed-environment`). Pakai venv:
+
+```bash
+sudo apt update
+sudo apt install -y python3-venv python3-dev gcc
+cd ~/Ujikom
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -r iot/requirements.txt
+sudo usermod -aG spi,gpio $USER   # sekali saja, lalu logout/login
+```
+
+`--system-site-packages` membuat venv tetap melihat paket GPIO/SPI yang sudah ada dari apt, sehingga pip tidak perlu mengompilasi ulang bila paketnya sudah terpasang.
+
+Nama paket apt yang benar: **`python3-spidev`** (bukan `python-spidev`). Opsional, bisa dipakai sebagai pengganti build pip:
+
+```bash
+sudo apt install -y python3-spidev        # modul spidev
+sudo apt install -y python3-rpi-lgpio     # Bookworm: menyediakan modul RPi.GPIO
+```
+
+Bila `python3-spidev` / `python3-rpi.gpio` tidak ada di repo image kamu, biarkan — `pip install -r iot/requirements.txt` di dalam venv sudah mencakup keduanya (butuh `python3-dev` + `gcc`, sudah dipasang di langkah pertama).
+
+Semua perintah Python gateway dijalankan setelah `source .venv/bin/activate`.
+
+

@@ -55,6 +55,10 @@ OFFLINE_DB_PATH = os.path.join(os.path.dirname(__file__), "offline_queue.db")
 COOLDOWN_SECONDS = 5
 riwayat_tap = {}
 
+# Status reader SPI untuk telemetri /gateway_status (None = belum dicoba, True/False = hasil)
+reader_ok = None
+reader_error = ""
+
 # Prototipe Kartu Dummy untuk Pengujian Lokal & Simulator (PRD Bab 5.1)
 KARTU_PRESET = {
     "TEST_UID_0001": {
@@ -303,6 +307,40 @@ def evaluasi_waktu_absen(waktu_str):
     else:
         return "terlambat", "Terlambat (Lewat Batas Toleransi)"
 
+# ===== SESI HANDSHAKE NFC SMARTPHONE (HWID) =====
+# HWID = identitas perangkat. NFC UID dari HP selalu berubah, jadi UID hanya
+# dipakai sebagai bukti sentuh fisik dan TIDAK PERNAH menjadi kunci pencarian.
+def baca_sesi_nfc():
+    """Baca sesi handshake NFC HP: prioritas device ini, lalu mirror gateway-rpi-01 & latest."""
+    for path in (f"nfc_session/{DEVICE_ID}", "nfc_session/gateway-rpi-01", "nfc_session/latest"):
+        data = get_firebase(path)
+        if isinstance(data, dict) and data:
+            return data
+    return None
+
+def sesi_masih_berlaku(sesi, now_ts):
+    """True bila sesi berstatus waiting dan belum melewati expiresAt."""
+    if not isinstance(sesi, dict):
+        return False
+    exp_ts = sesi.get("expiresAt", 0) or 0
+    exp_ts_sec = (exp_ts / 1000.0) if exp_ts > 1e11 else exp_ts
+    return (
+        sesi.get("active") is True
+        and str(sesi.get("status", "")).lower() == "waiting"
+        and bool(str(sesi.get("hwid", "")).strip())
+        and bool(str(sesi.get("nisn", "")).strip())
+        and now_ts <= exp_ts_sec
+    )
+
+def selesaikan_sesi(status, extra=None):
+    """Tutup sesi handshake supaya modal di HP tidak menggantung menunggu timeout."""
+    payload = {"active": False, "status": status}
+    if extra:
+        payload.update(extra)
+    for path in (f"nfc_session/{DEVICE_ID}", "nfc_session/gateway-rpi-01", "nfc_session/latest"):
+        put_firebase(path, payload, fallback_queue=False)
+    return payload
+
 # ===== CORE LOGIC PEMROSESAN TAP KARTU =====
 def proses_kartu(uid_kartu):
     uid_kartu = uid_kartu.strip().upper()
@@ -321,8 +359,61 @@ def proses_kartu(uid_kartu):
     tanggal = now.strftime("%Y-%m-%d")
     waktu = now.strftime("%H:%M:%S")
 
-    # 0. PERIKSA APAKAH ADA PERMINTAAN PAIRING NFC AKTIF
-    pairing_req = get_firebase("pairing_request")
+    # 0. PRIORITAS TERTINGGI: Sesi handshake NFC Smartphone (/nfc_session)
+    # Selama siswa sengaja membuka sesi tap, UID apa pun dari HP diperlakukan
+    # sebagai "HP siswa X" dan TIDAK dicari di /kartu (UID HP selalu berubah).
+    sesi = baca_sesi_nfc()
+    sesi_dipakai = False
+    kartu_data = None
+
+    if sesi_masih_berlaku(sesi, now_ts):
+        sess_hwid = str(sesi.get("hwid", "")).strip()
+        sess_nisn = str(sesi.get("nisn", "")).strip()
+        sess_nama = str(sesi.get("nama", "")).strip()
+        sess_kelas = str(sesi.get("kelas", DEFAULT_KELAS)).strip()
+
+        print("\n[NFC HANDSHAKE TERDETEKSI] 📱 Sensor MFRC522 mendeteksi kontak fisik NFC dari HP!")
+        print(f"Siswa: {sess_nama} (NISN: {sess_nisn}) | HWID: {sess_hwid[:16]}... | Raw UID: {uid_kartu}")
+
+        # Anti-titip absen: 1 HWID = 1 siswa
+        hwid_record = get_firebase(f"hwid_map/{sess_hwid}")
+        if hwid_record and isinstance(hwid_record, dict):
+            bound_nisn = str(hwid_record.get("nisn", "")).strip()
+            if bound_nisn and bound_nisn != sess_nisn:
+                print(f"[NFC HANDSHAKE DITOLAK] ❌ HP ini sudah terikat untuk siswa lain ({hwid_record.get('nama', bound_nisn)}). Anti-Titip Absen!")
+                selesaikan_sesi("rejected_used_by_other")
+                return
+        else:
+            new_hwid_data = {
+                "hwid": sess_hwid,
+                "nisn": sess_nisn,
+                "nama": sess_nama,
+                "kelas": sess_kelas,
+                "boundAt": int(now_ts * 1000),
+                "device_id": DEVICE_ID
+            }
+            put_firebase(f"hwid_map/{sess_hwid}", new_hwid_data)
+            put_firebase(f"users/{sess_nisn}/hwid", sess_hwid)
+            print(f"[HWID AUTO-BIND] ✓ Perangkat {sess_hwid[:16]}... resmi dikunci untuk {sess_nama} ({sess_nisn}).")
+
+        kartu_data = {
+            "tipe": "siswa",
+            "nisn": sess_nisn,
+            "nama": sess_nama,
+            "kelas": sess_kelas,
+            "metode_presensi": "nfc_hwid",
+            "hwid": sess_hwid,
+            "raw_uid": uid_kartu
+        }
+        sesi_dipakai = True
+
+    elif isinstance(sesi, dict) and sesi.get("active") is True and str(sesi.get("status", "")).lower() == "waiting":
+        print("[NFC SESI KEDALUWARSA] ⏳ Sesi tap NFC HP sudah melewati batas waktu. Presensi tidak dicatat.")
+        selesaikan_sesi("expired")
+
+    # 0.B. PERIKSA APAKAH ADA PERMINTAAN PAIRING NFC AKTIF
+    # Pairing TIDAK boleh membajak tap saat sesi presensi sedang aktif.
+    pairing_req = None if sesi_dipakai else get_firebase("pairing_request")
     if pairing_req and isinstance(pairing_req, dict) and pairing_req.get("active") is True and pairing_req.get("status") == "waiting":
         target_dev = str(pairing_req.get("target_device_id", "all")).strip()
         if target_dev != "all" and target_dev != DEVICE_ID:
@@ -396,72 +487,21 @@ def proses_kartu(uid_kartu):
             print(f"[PAIRING TIMEOUT] ⏳ Permintaan penautan kartu telah kedaluwarsa (>30 detik).")
 
     # 1. Lookup ke Node Terproteksi /rfid_map/{uid} atau /kartu/{uid}
-    kartu_data = get_firebase(f"rfid_map/{uid_kartu}")
-    if not kartu_data:
-        kartu_data = get_firebase(f"kartu/{uid_kartu}")
-    if not kartu_data and uid_kartu in KARTU_PRESET and os.environ.get("IOT_TEST_MODE") == "1":
-        kartu_data = KARTU_PRESET[uid_kartu]
-        print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu} (IOT_TEST_MODE=1).")
-
-    # 1.B. Jika Kartu Tidak Terdaftar, Cek Sesi Handshake NFC HP (/nfc_session/{DEVICE_ID})
-    if not kartu_data:
-        nfc_sess = get_firebase(f"nfc_session/{DEVICE_ID}")
-        if not nfc_sess or not isinstance(nfc_sess, dict) or nfc_sess.get("active") is not True:
-            nfc_sess = get_firebase("nfc_session/gateway-rpi-01")
-        if not nfc_sess or not isinstance(nfc_sess, dict) or nfc_sess.get("active") is not True:
-            nfc_sess = get_firebase("nfc_session/latest")
-
-        if nfc_sess and isinstance(nfc_sess, dict) and nfc_sess.get("active") is True:
-            sess_status = str(nfc_sess.get("status", "waiting")).lower()
-            exp_ts = nfc_sess.get("expiresAt", 0)
-            exp_ts_sec = (exp_ts / 1000.0) if exp_ts > 1e11 else exp_ts
-            if sess_status == "waiting" and now_ts <= exp_ts_sec:
-                sess_hwid = str(nfc_sess.get("hwid", "")).strip()
-                sess_nisn = str(nfc_sess.get("nisn", "")).strip()
-                sess_nama = str(nfc_sess.get("nama", "")).strip()
-                sess_kelas = str(nfc_sess.get("kelas", DEFAULT_KELAS)).strip()
-
-                if sess_nisn and sess_hwid:
-                    print(f"\n[NFC HANDSHAKE TERDETEKSI] 📱 Sensor MFRC522 mendeteksi kontak fisik NFC dari HP!")
-                    print(f"Siswa: {sess_nama} (NISN: {sess_nisn}) | HWID: {sess_hwid[:16]}... | Raw UID: {uid_kartu}")
-
-                    # Verifikasi / Auto-bind HWID di /hwid_map/{hwid}
-                    hwid_record = get_firebase(f"hwid_map/{sess_hwid}")
-                    if hwid_record and isinstance(hwid_record, dict):
-                        bound_nisn = str(hwid_record.get("nisn", "")).strip()
-                        if bound_nisn and bound_nisn != sess_nisn:
-                            print(f"[NFC HANDSHAKE DITOLAK] ❌ HP ini sudah terikat untuk siswa lain ({hwid_record.get('nama', bound_nisn)}). Anti-Titip Absen!")
-                            put_firebase(f"nfc_session/{DEVICE_ID}/status", "rejected_used_by_other")
-                            put_firebase(f"nfc_session/{DEVICE_ID}/active", False)
-                            return
-                    else:
-                        # Auto-bind perangkat pertama kali
-                        new_hwid_data = {
-                            "hwid": sess_hwid,
-                            "nisn": sess_nisn,
-                            "nama": sess_nama,
-                            "kelas": sess_kelas,
-                            "boundAt": int(now_ts * 1000),
-                            "device_id": DEVICE_ID
-                        }
-                        put_firebase(f"hwid_map/{sess_hwid}", new_hwid_data)
-                        put_firebase(f"users/{sess_nisn}/hwid", sess_hwid)
-                        print(f"[HWID AUTO-BIND] ✓ Perangkat {sess_hwid[:16]}... resmi dikunci untuk {sess_nama} ({sess_nisn}).")
-
-                    # Bentuk kartu_data terverifikasi untuk diproses presensi
-                    kartu_data = {
-                        "tipe": "siswa",
-                        "nisn": sess_nisn,
-                        "nama": sess_nama,
-                        "kelas": sess_kelas,
-                        "metode_presensi": "nfc_hwid",
-                        "hwid": sess_hwid,
-                        "raw_uid": uid_kartu
-                    }
+    # Dilewati total bila sesi NFC HP aktif: UID HP tidak boleh dicocokkan ke kartu terdaftar.
+    if not sesi_dipakai:
+        kartu_data = get_firebase(f"rfid_map/{uid_kartu}")
+        if not kartu_data:
+            kartu_data = get_firebase(f"kartu/{uid_kartu}")
+        if not kartu_data and uid_kartu in KARTU_PRESET and os.environ.get("IOT_TEST_MODE") == "1":
+            kartu_data = KARTU_PRESET[uid_kartu]
+            print(f"[INFO] Menggunakan data preset prototipe untuk {uid_kartu} (IOT_TEST_MODE=1).")
 
     if not kartu_data:
         print(f"[DITOLAK] ❌ Kartu {uid_kartu} BELUM TERDAFTAR di sistem.")
         print(f"Silakan daftarkan di Panel Admin -> Tab Kartu RFID, atau tekan 'Siap Tap NFC ke Alat' di web.")
+        # Tutup sesi bila ada, supaya modal di HP tidak menggantung sampai timeout.
+        if isinstance(sesi, dict) and sesi.get("active") is True:
+            selesaikan_sesi("rejected_unregistered")
         return
 
     # 2. PERIKSA APAKAH KARTU GURU
@@ -541,6 +581,18 @@ def proses_kartu(uid_kartu):
 
     if izin_disetujui:
         print(f"[ABAIKAN SCAN] ℹ️ Siswa {nama_siswa} (NISN: {nisn}) sudah berstatus Izin/Sakit resmi yang disetujui. Scan IoT tidak menimpa status.")
+        # Tutup sesi supaya modal di HP tidak menggantung menunggu timeout.
+        if sesi_dipakai:
+            selesaikan_sesi("completed", {
+                "ignored": True,
+                "reason": "APPROVED_PERMIT_ACTIVE",
+                "hwid": kartu_data.get("hwid"),
+                "nisn": nisn,
+                "nama": nama_siswa,
+                "kelas": kelas,
+                "statusPresensi": "izin",
+                "waktu": waktu
+            })
         return
 
     # Evaluasi Ambang Batas Waktu PRD
@@ -613,9 +665,7 @@ def proses_kartu(uid_kartu):
 
     # Jika melalui jabat-tangan NFC Smartphone, tandai sesi 'completed'
     if is_nfc_hwid:
-        sess_completion = {
-            "active": False,
-            "status": "completed",
+        selesaikan_sesi("completed", {
             "metode": "nfc_hwid",
             "completedAt": int(now_ts * 1000),
             "uid_kartu": uid_kartu,
@@ -626,10 +676,7 @@ def proses_kartu(uid_kartu):
             "kelas": kelas,
             "statusPresensi": status,
             "waktu": waktu
-        }
-        put_firebase(f"nfc_session/{DEVICE_ID}", sess_completion)
-        put_firebase("nfc_session/gateway-rpi-01", sess_completion)
-        put_firebase("nfc_session/latest", sess_completion)
+        })
         print(f"[NFC HANDSHAKE SUKSES] 📱 Sesi NFC HP untuk {nama_siswa} ({nisn}) resmi COMPLETED!")
     else:
         # Jika kartu RFID fisik di-scan dan ada sesi aktif (atau siswa membuka sesi scan di web):
@@ -660,23 +707,56 @@ def proses_kartu(uid_kartu):
 
 def worker_mfrc522_spi():
     """
-    Background worker untuk membaca sensor fisik MFRC522 via antarmuka SPI hardware (Raspberry Pi GPIO).
+    Background worker pembaca sensor fisik MFRC522 via SPI hardware (Raspberry Pi GPIO).
+    Kegagalan tidak boleh senyap: reader mati harus terlihat di log & /gateway_status.
     """
-    try:
-        from mfrc522 import SimpleMFRC522
-        reader = SimpleMFRC522()
-        print("[MFRC522 SPI] 🔌 Modul RC522 Hardware SPI aktif dan siap mendeteksi kartu/NFC...")
-        while True:
-            try:
-                card_id, text = reader.read()
-                if card_id:
-                    uid_str = hex(card_id)[2:].upper() if isinstance(card_id, int) else str(card_id).strip()
-                    proses_kartu(uid_str)
-                    time.sleep(1.0)
-            except Exception:
-                time.sleep(0.5)
-    except Exception:
-        pass
+    global reader_ok, reader_error
+    while True:
+        try:
+            from mfrc522 import SimpleMFRC522
+            reader = SimpleMFRC522()
+            reader_ok = True
+            reader_error = ""
+            print("[MFRC522 SPI] 🔌 Modul RC522 Hardware SPI aktif dan siap mendeteksi kartu/NFC...")
+            while True:
+                try:
+                    card_id, text = reader.read()
+                    if card_id:
+                        uid_str = hex(card_id)[2:].upper() if isinstance(card_id, int) else str(card_id).strip()
+                        proses_kartu(uid_str)
+                        time.sleep(1.0)
+                except Exception as e_read:
+                    print(f"[SPI READ WARN] Gagal baca kartu: {e_read}")
+                    time.sleep(0.5)
+        except Exception as e_import:
+            reader_ok = False
+            reader_error = str(e_import)
+            print("=" * 60)
+            print("[SPI FATAL] ❌ Reader MFRC522 tidak dapat diinisialisasi.")
+            print(f"  Penyebab: {e_import}")
+            print("  Perbaikan di Raspberry Pi:")
+            print("    1) pip install mfrc522")
+            print("    2) sudo raspi-config -> Interface Options -> SPI -> Enable -> Reboot")
+            print("    3) Cek wiring: SDA/SS=GPIO8(CE0), SCK=GPIO11, MOSI=GPIO10, MISO=GPIO9, RST=GPIO25")
+            print("  Mode stdin (ketik UID manual) tetap aktif. Mencoba ulang dalam 5 detik...")
+            print("=" * 60)
+            time.sleep(5)
+
+def worker_gateway_heartbeat():
+    """Tulis /gateway_status/{DEVICE_ID} tiap 10 detik agar web bisa bedakan 'alat mati' vs 'tap gagal'."""
+    while True:
+        try:
+            put_firebase(f"gateway_status/{DEVICE_ID}", {
+                "online": True,
+                "device_id": DEVICE_ID,
+                "reader": "ok" if reader_ok else ("error" if reader_ok is False else "unknown"),
+                "reader_error": reader_error,
+                "lastSeen": int(time.time() * 1000),
+                "wib": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }, fallback_queue=False)
+        except Exception:
+            pass
+        time.sleep(10)
 
 def main():
     init_offline_db()
@@ -693,6 +773,9 @@ def main():
 
     t_spi = threading.Thread(target=worker_mfrc522_spi, daemon=True)
     t_spi.start()
+
+    t_hb = threading.Thread(target=worker_gateway_heartbeat, daemon=True)
+    t_hb.start()
 
     print("="*60)
     print("🚀 GATEWAY PRESENSI RFID IOT — SMK NEGERI 1 SUMEDANG")

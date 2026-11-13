@@ -126,10 +126,12 @@ function processCardTap(cardUid, options = {}) {
   const allowTestCards = options.allowTestCards === true || (typeof process !== 'undefined' && process.env && process.env.ALLOW_TEST_CARDS === '1');
   const defaultFallbackCards = allowTestCards ? DAFTAR_KARTU_RFID_RESMI : {};
   const dbCards = options.rfidMap || (options.mockDb && (options.mockDb.rfid_map || options.mockDb.kartu)) || defaultFallbackCards;
-  let cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
 
-  // 2.B Cek Sesi Handshake Real Hardware NFC Smartphone jika kartu belum terdaftar di rfidMap
-  if (!cardData && options.nfcSession && options.nfcSession.active === true) {
+  // 2. Sesi handshake NFC smartphone MENANG atas kartu terdaftar.
+  // UID dari HP selalu berubah, jadi selama sesi aktif UID TIDAK dicocokkan ke /kartu.
+  let cardData = null;
+
+  if (options.nfcSession && options.nfcSession.active === true) {
     const sess = options.nfcSession;
     const expSec = (sess.expiresAt > 1e11) ? (sess.expiresAt / 1000) : sess.expiresAt;
     if (sess.status === 'waiting' && nowSec <= expSec && sess.nisn && sess.hwid) {
@@ -154,6 +156,11 @@ function processCardTap(cardUid, options = {}) {
         raw_uid: cleanUid
       };
     }
+  }
+
+  // 2.C Fallback kartu RFID fisik terdaftar (dual-mode: tetap jalan tanpa web)
+  if (!cardData) {
+    cardData = dbCards[cleanUid] || dbCards[cleanUid.toLowerCase()];
   }
 
   if (!cardData) {

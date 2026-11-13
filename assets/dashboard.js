@@ -1938,6 +1938,10 @@ async function lakukanSimulasiTapSiswa(uidSimulasi) {
 let timerNfcHandshake = null;
 let unsubNfcHandshake = null;
 const NFC_GATEWAY_DEVICE_ID = 'gateway-rpi-01';
+// Jendela waktu tap NFC HP. Harus >= durasi user menempelkan HP ke reader RC522.
+const NFC_SESSION_WINDOW_MS = 60000;
+// Gateway dianggap offline bila heartbeat terakhir lebih tua dari ini.
+const NFC_GATEWAY_STALE_MS = 30000;
 
 function getOrCreateDeviceHWID() {
   const STORAGE_KEY = 'SMKN1_DEVICE_HWID';
@@ -1982,8 +1986,25 @@ async function mulaiSesiTapNfcHp() {
     modal.classList.add('show');
   }
 
-  // 2. Pasang hitung mundur 15 detik SECARA SINKRON & LANGSUNG AKTIF
-  let sisaDetik = 15;
+  // Helper lokal: hentikan timer & tampilkan kotak feedback tanpa duplikasi kode
+  const hentikanTimer = () => {
+    if (timerNfcHandshake) {
+      clearInterval(timerNfcHandshake);
+      timerNfcHandshake = null;
+    }
+  };
+  const tampilkanKotak = (bg, fg, border, html) => {
+    if (!boxFb) return;
+    boxFb.style.display = 'block';
+    boxFb.style.background = bg;
+    boxFb.style.color = fg;
+    boxFb.style.borderColor = border;
+    boxFb.innerHTML = html;
+  };
+
+  // 2. Hitung mundur dari expiresAt (bukan counter lokal) agar jam HP meleset tidak memotong sesi
+  const expiresAtMs = Date.now() + NFC_SESSION_WINDOW_MS;
+  let sisaDetik = Math.ceil((expiresAtMs - Date.now()) / 1000);
   if (timerEl) timerEl.textContent = `${sisaDetik}s`;
   if (statusEl) {
     statusEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite;"></span><span>Mendeteksi kontak gelombang RF sensor MFRC522...</span>';
@@ -1991,14 +2012,11 @@ async function mulaiSesiTapNfcHp() {
 
   if (timerNfcHandshake) clearInterval(timerNfcHandshake);
   timerNfcHandshake = setInterval(() => {
-    sisaDetik--;
-    if (timerEl) timerEl.textContent = `${sisaDetik}s`;
+    sisaDetik = Math.ceil((expiresAtMs - Date.now()) / 1000);
+    if (timerEl) timerEl.textContent = `${Math.max(0, sisaDetik)}s`;
 
     if (sisaDetik <= 0) {
-      if (timerNfcHandshake) {
-        clearInterval(timerNfcHandshake);
-        timerNfcHandshake = null;
-      }
+      hentikanTimer();
       if (unsubNfcHandshake) {
         try { unsubNfcHandshake(); } catch (e) {}
         unsubNfcHandshake = null;
@@ -2014,13 +2032,8 @@ async function mulaiSesiTapNfcHp() {
         }
       } catch (eExp) {}
 
-      if (boxFb) {
-        boxFb.style.display = 'block';
-        boxFb.style.background = '#fffbeb';
-        boxFb.style.color = '#92400e';
-        boxFb.style.borderColor = '#fde68a';
-        boxFb.innerHTML = '<strong>Waktu Habis:</strong> Smartphone belum disentuhkan ke reader MFRC522 dalam 15 detik. Presensi tidak tercatat. Silakan ulangi saat berada di dekat alat.';
-      }
+      tampilkanKotak('#fffbeb', '#92400e', '#fde68a',
+        '<strong>Waktu Habis:</strong> Smartphone belum disentuhkan ke reader MFRC522 dalam 60 detik. Presensi tidak tercatat. Silakan ulangi saat berada di dekat alat.');
       if (statusEl) {
         statusEl.innerHTML = '<span style="color:#b45309;font-weight:700;">Sesi Kedaluwarsa. Presensi tidak dicatat.</span>';
       }
@@ -2038,29 +2051,39 @@ async function mulaiSesiTapNfcHp() {
     role: 'siswa',
     device_id: NFC_GATEWAY_DEVICE_ID,
     timestamp: nowMs,
-    expiresAt: nowMs + 15000,
+    expiresAt: expiresAtMs,
     status: 'waiting'
   };
 
   (async () => {
     try {
       if (typeof db !== 'undefined' && db && db.ref) {
+        // Cek gateway hidup dulu: bedakan "alat mati" dari "tap gagal"
+        try {
+          const snapGw = await db.ref(`gateway_status/${NFC_GATEWAY_DEVICE_ID}`).once('value');
+          const gw = snapGw ? (typeof snapGw.val === 'function' ? snapGw.val() : snapGw.val) : null;
+          if (gw && typeof gw.lastSeen === 'number' && (Date.now() - gw.lastSeen) > NFC_GATEWAY_STALE_MS) {
+            hentikanTimer();
+            const umurDetik = Math.round((Date.now() - gw.lastSeen) / 1000);
+            tampilkanKotak('#fef2f2', '#991b1b', '#fecaca',
+              `<strong>Gateway Offline:</strong> Reader MFRC522 terakhir terhubung ${umurDetik} detik lalu. Presensi NFC tidak dapat diproses. Hubungi petugas piket atau gunakan kartu RFID fisik.`);
+            if (statusEl) {
+              statusEl.innerHTML = '<span style="color:#b91c1c;font-weight:700;">Alat tidak terhubung.</span>';
+            }
+            return;
+          }
+        } catch (eGw) {
+          console.warn('[NFC Handshake] Gagal cek gateway_status (lanjut):', eGw);
+        }
+
         // Cek binding HWID di /hwid_map/{hwid}
         try {
           const snapHwid = await db.ref(`hwid_map/${hwid}`).once('value');
           const valHwid = snapHwid ? (typeof snapHwid.val === 'function' ? snapHwid.val() : snapHwid.val) : null;
           if (valHwid && valHwid.nisn && String(valHwid.nisn).trim() !== String(sess.nisn).trim()) {
-            if (timerNfcHandshake) {
-              clearInterval(timerNfcHandshake);
-              timerNfcHandshake = null;
-            }
-            if (boxFb) {
-              boxFb.style.display = 'block';
-              boxFb.style.background = '#fef2f2';
-              boxFb.style.color = '#991b1b';
-              boxFb.style.borderColor = '#fecaca';
-              boxFb.innerHTML = `<strong>Peringatan Anti-Titip Absen:</strong> Smartphone ini telah terikat resmi untuk siswa lain (${valHwid.nama || valHwid.nisn}). Anda tidak dapat menggunakan HP orang lain untuk presensi!`;
-            }
+            hentikanTimer();
+            tampilkanKotak('#fef2f2', '#991b1b', '#fecaca',
+              `<strong>Peringatan Anti-Titip Absen:</strong> Smartphone ini telah terikat resmi untuk siswa lain (${valHwid.nama || valHwid.nisn}). Anda tidak dapat menggunakan HP orang lain untuk presensi!`);
             return;
           }
         } catch (errCheck) {
@@ -2089,12 +2112,30 @@ async function mulaiSesiTapNfcHp() {
       if (!data) return;
 
       if (data.status === 'completed' && data.hwid === hwid && data.nisn === String(sess.nisn).trim()) {
-        if (timerNfcHandshake) {
-          clearInterval(timerNfcHandshake);
-          timerNfcHandshake = null;
-        }
+        hentikanTimer();
         sessionRef.off('value', onValCallback);
         unsubNfcHandshake = null;
+
+        // Siswa punya izin resmi: gateway tidak menimpa status, jangan tampilkan ceklis hadir
+        if (data.ignored === true) {
+          if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+          }
+          if (typeof tampilkanAnimasiCeklis === 'function' || (typeof window !== 'undefined' && window.tampilkanAnimasiCeklis)) {
+            const fnCeklisIzin = (typeof tampilkanAnimasiCeklis === 'function' ? tampilkanAnimasiCeklis : window.tampilkanAnimasiCeklis);
+            fnCeklisIzin({
+              judul: 'Status Izin Dipertahankan',
+              subjudul: 'Anda sudah memiliki izin resmi yang disetujui',
+              badge: 'IZIN DISETUJUI',
+              nama: data.nama || sess.nama,
+              kelas: data.kelas || sess.kelas,
+              waktu: data.waktu || 'Sekarang',
+              autoCloseMs: 3500
+            });
+          }
+          return;
+        }
 
         if (modal) {
           modal.style.display = 'none';
@@ -2124,17 +2165,17 @@ async function mulaiSesiTapNfcHp() {
           initRekapPresensiSiswa(sess.nisn);
         }
       } else if (data.status === 'rejected_used_by_other') {
-        if (timerNfcHandshake) {
-          clearInterval(timerNfcHandshake);
-          timerNfcHandshake = null;
-        }
-        if (boxFb) {
-          boxFb.style.display = 'block';
-          boxFb.style.background = '#fef2f2';
-          boxFb.style.color = '#991b1b';
-          boxFb.style.borderColor = '#fecaca';
-          boxFb.innerHTML = '<strong>Presensi Ditolak:</strong> Perangkat HP ini terdeteksi sudah terikat ke akun siswa lain!';
-        }
+        hentikanTimer();
+        tampilkanKotak('#fef2f2', '#991b1b', '#fecaca',
+          '<strong>Presensi Ditolak:</strong> Perangkat HP ini terdeteksi sudah terikat ke akun siswa lain!');
+      } else if (data.status === 'rejected_unregistered') {
+        hentikanTimer();
+        tampilkanKotak('#fef2f2', '#991b1b', '#fecaca',
+          '<strong>Presensi Ditolak:</strong> Sesi tap terdeteksi tetapi data siswa tidak ditemukan. Hubungi wali kelas untuk verifikasi data.');
+      } else if (data.status === 'expired') {
+        hentikanTimer();
+        tampilkanKotak('#fffbeb', '#92400e', '#fde68a',
+          '<strong>Sesi Kedaluwarsa:</strong> Tap NFC tidak terdeteksi tepat waktu. Silakan ulangi.');
       }
     };
 
