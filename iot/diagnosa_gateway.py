@@ -56,6 +56,15 @@ def cek_spi():
     return True
 
 
+def info_soc():
+    """Baca model Pi untuk memberi saran yang tepat saat GPIO gagal."""
+    try:
+        with open("/proc/device-tree/model", "r", encoding="utf-8", errors="ignore") as f:
+            return f.read().strip("\x00\n ")
+    except Exception:
+        return "model tidak terdeteksi"
+
+
 def main():
     print("=" * 70)
     print("DIAGNOSA GATEWAY PRESENSI NFC/RFID — SMKN 1 SUMEDANG")
@@ -91,8 +100,11 @@ def main():
     hb = gw.get_firebase(f"gateway_status/{gw.DEVICE_ID}")
     if isinstance(hb, dict):
         umur = int((time.time() * 1000 - int(hb.get("lastSeen", 0))) / 1000)
-        status = LULUS if umur <= 30 else GAGAL
-        catat("4. Heartbeat /gateway_status", status, f"terakhir {umur}s lalu, reader={hb.get('reader')}")
+        # Heartbeat basi hanya berarti absensi_rpi.py belum/sudah tidak jalan. Bukan kegagalan hardware.
+        status = LULUS if umur <= 30 else SKIP
+        catatan = "" if umur <= 30 else " | absensi_rpi.py belum jalan, bukan error"
+        catat("4. Heartbeat /gateway_status", status,
+              f"terakhir {umur}s lalu, reader={hb.get('reader')}{catatan}")
     else:
         catat("4. Heartbeat /gateway_status", SKIP, "belum ada (jalankan absensi_rpi.py untuk mengisi)")
 
@@ -104,36 +116,39 @@ def main():
 
     # 6. Baca kartu/HP nyata
     if lib_ok and spi_ok:
-        print("\n6. Menunggu kartu / HP ditempelkan ke reader (10 detik)...")
+        print("\n6. Menunggu kartu / HP ditempelkan ke reader (15 detik)...")
         try:
             from mfrc522 import SimpleMFRC522
             reader = SimpleMFRC522()
             baca_nonblok = getattr(reader, "read_no_block", None)
-            batas = time.time() + 10
-            terbaca = None
-            while time.time() < batas:
-                if baca_nonblok:
-                    card_id, _ = baca_nonblok()
-                else:
-                    card_id, _ = reader.read()
-                if card_id:
-                    terbaca = hex(card_id)[2:].upper()
-                    break
-                time.sleep(0.2)
-            if terbaca:
-                catat("6. Pembacaan reader", LULUS, f"UID terdeteksi: {terbaca}")
+            batas = time.time() + 15
+            card_id = None
+            while time.time() < batas and not card_id:
+                hasil_baca = baca_nonblok() if baca_nonblok else reader.read()
+                # Sebagian versi mfrc522 mengembalikan (id, text), sebagian lagi id saja.
+                card_id = hasil_baca[0] if isinstance(hasil_baca, (tuple, list)) else hasil_baca
+                if not card_id:
+                    time.sleep(0.2)
+            if card_id:
+                uid = hex(int(card_id))[2:].upper() if isinstance(card_id, int) else str(card_id).strip().upper()
+                catat("6. Pembacaan reader", LULUS, f"UID terdeteksi: {uid} (raw={card_id})")
             else:
                 catat("6. Pembacaan reader", GAGAL,
-                      "tidak ada kartu/HP terdeteksi 10s | cek wiring: SDA=GPIO8, SCK=GPIO11, MOSI=GPIO10, MISO=GPIO9, RST=GPIO25")
+                      "tidak ada kartu/HP terdeteksi 15s | cek wiring: SDA=GPIO8, SCK=GPIO11, MOSI=GPIO10, MISO=GPIO9, RST=GPIO25")
         except Exception as e:
-            catat("6. Pembacaan reader", GAGAL, str(e))
+            pesan = f"{type(e).__name__}: {e}"
+            if "SOC peripheral" in str(e) or "base address" in str(e):
+                pesan += (f" | SoC: {info_soc()} | RPi.GPIO tidak mendukung model ini. "
+                          "Pi 5: pip uninstall -y RPi.GPIO && sudo apt install -y python3-rpi-lgpio. "
+                          "Pi 3/4/Zero: pip uninstall -y RPi.GPIO && sudo apt install -y python3-rpi.gpio")
+            catat("6. Pembacaan reader", GAGAL, pesan)
     else:
         catat("6. Pembacaan reader", SKIP, "library/SPI belum siap")
 
-    # 7. Izin tulis
+    # 7. Izin tulis (ke node uji terpisah agar tidak mengotori heartbeat asli)
     uji = {"online": True, "device_id": gw.DEVICE_ID, "reader": "diagnosa",
            "lastSeen": int(time.time() * 1000), "wib": time.strftime("%Y-%m-%d %H:%M:%S")}
-    if gw.put_firebase(f"gateway_status/{gw.DEVICE_ID}", uji, fallback_queue=False):
+    if gw.put_firebase(f"gateway_status/selftest-{gw.DEVICE_ID}", uji, fallback_queue=False):
         catat("7. Izin tulis /gateway_status", LULUS)
     else:
         catat("7. Izin tulis /gateway_status", GAGAL,
