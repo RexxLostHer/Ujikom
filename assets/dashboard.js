@@ -1732,17 +1732,28 @@ let unsubPairingSiswa = null;
 async function cekStatusKartuNfcSiswa(nisn) {
   const badgeEl = document.getElementById('badgeStatusNfcSiswa');
   const btnEl = document.getElementById('btnTautkanNfcSiswa');
+  const labelEl = document.getElementById('labelAksiTautkanNfc');
   const cardUidEl = document.getElementById('smartCardUidTag');
   const headerBtn = document.getElementById('btnHeaderNfcSiswa');
   if (!badgeEl || !btnEl) return;
 
+  // Label opsi ada di dalam sheet; jangan timpa struktur tombolnya.
+  const setLabel = (html) => {
+    if (labelEl) labelEl.innerHTML = html;
+    else btnEl.innerHTML = html;
+  };
+  const setGaya = (bg) => {
+    if (labelEl) return; // gaya tombol sheet dikelola CSS
+    btnEl.style.background = bg;
+    btnEl.style.padding = '6px 11px';
+    btnEl.style.fontSize = '11.5px';
+  };
+
   const targetNisn = nisn || (typeof getSessionUser === 'function' && getSessionUser() ? getSessionUser().nisn : null);
   if (!targetNisn) {
     badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Belum Ditautkan</span>';
-    btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Tautkan Kartu';
-    btnEl.style.background = '#0f172a';
-    btnEl.style.padding = '6px 11px';
-    btnEl.style.fontSize = '11.5px';
+    setLabel('Tautkan Kartu Pelajar');
+    setGaya('#0f172a');
     if (headerBtn) {
       headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Tautkan Kartu</span>';
     }
@@ -1767,10 +1778,8 @@ async function cekStatusKartuNfcSiswa(nisn) {
 
     if (card && card.uid) {
       badgeEl.innerHTML = `<span class="badge-nfc-linked" style="display:inline-flex;align-items:center;gap:4px;color:#15803d;background:#f0fdf4;border:1px solid #dcfce7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Terhubung (${card.uid})</span>`;
-      btnEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>Ganti Kartu / HP`;
-      btnEl.style.background = '#059669';
-      btnEl.style.padding = '6px 11px';
-      btnEl.style.fontSize = '11.5px';
+      setLabel('Ganti Kartu Pelajar');
+      setGaya('#059669');
       if (cardUidEl) cardUidEl.textContent = card.uid;
       if (headerBtn) {
         headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Kartu / HP Aktif (${card.uid})</span>`;
@@ -1780,10 +1789,8 @@ async function cekStatusKartuNfcSiswa(nisn) {
       }
     } else {
       badgeEl.innerHTML = '<span class="badge-nfc-unlinked" style="display:inline-flex;align-items:center;gap:4px;color:#b45309;background:#fffbeb;border:1px solid #fef3c7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Belum Ditautkan</span>';
-      btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>Hubungkan Kartu / HP';
-      btnEl.style.background = '#0f172a';
-      btnEl.style.padding = '6px 11px';
-      btnEl.style.fontSize = '11.5px';
+      setLabel('Tautkan Kartu Pelajar');
+      setGaya('#0f172a');
       if (cardUidEl) cardUidEl.textContent = '- (Belum Ada)';
       if (headerBtn) {
         headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Hubungkan Kartu / HP</span>';
@@ -1795,6 +1802,25 @@ async function cekStatusKartuNfcSiswa(nisn) {
   } catch (e) {
     console.warn('[NFC Siswa] Gagal cek status kartu:', e);
   }
+}
+
+// Sheet pemilih metode presensi: satu tombol utama, dua opsi (NFC HP vs kartu fisik)
+function bukaPilihanNfcSiswa() {
+  const sheet = document.getElementById('modalPilihanNfc');
+  if (!sheet) {
+    // Fallback: bila markup sheet tidak ada, langsung ke aksi paling umum
+    mulaiSesiTapNfcHp();
+    return;
+  }
+  sheet.style.display = 'flex';
+  sheet.classList.add('show');
+}
+
+function tutupPilihanNfcSiswa() {
+  const sheet = document.getElementById('modalPilihanNfc');
+  if (!sheet) return;
+  sheet.style.display = 'none';
+  sheet.classList.remove('show');
 }
 
 async function bukaModalPairingNfcSiswa() {
@@ -2216,6 +2242,11 @@ function batalSesiTapNfcHp() {
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' || e.key === 'Esc') {
+      const sheet = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modalPilihanNfc') : null;
+      if (sheet && (sheet.style.display === 'flex' || (sheet.classList && sheet.classList.contains && sheet.classList.contains('show')))) {
+        tutupPilihanNfcSiswa();
+        return;
+      }
       const modal = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modalNfcHandshake') : null;
       if (modal && (modal.style.display === 'flex' || (modal.classList && modal.classList.contains && modal.classList.contains('show')))) {
         batalSesiTapNfcHp();
@@ -4493,6 +4524,8 @@ if (typeof window !== 'undefined') {
   window.getOrCreateDeviceHWID = getOrCreateDeviceHWID;
   window.mulaiSesiTapNfcHp = mulaiSesiTapNfcHp;
   window.batalSesiTapNfcHp = batalSesiTapNfcHp;
+  window.bukaPilihanNfcSiswa = bukaPilihanNfcSiswa;
+  window.tutupPilihanNfcSiswa = tutupPilihanNfcSiswa;
   window.populateDropdownSiswa = populateDropdownSiswa;
   window.handleSubmitPerijinan = handleSubmitPerijinan;
   window.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
@@ -4508,6 +4541,8 @@ if (typeof window !== 'undefined') {
     global.getOrCreateDeviceHWID = getOrCreateDeviceHWID;
     global.mulaiSesiTapNfcHp = mulaiSesiTapNfcHp;
     global.batalSesiTapNfcHp = batalSesiTapNfcHp;
+    global.bukaPilihanNfcSiswa = bukaPilihanNfcSiswa;
+    global.tutupPilihanNfcSiswa = tutupPilihanNfcSiswa;
     global.populateDropdownSiswa = populateDropdownSiswa;
     global.handleSubmitPerijinan = handleSubmitPerijinan;
     global.ambilIzinPendingAktifSiswa = ambilIzinPendingAktifSiswa;
@@ -4563,6 +4598,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getOrCreateDeviceHWID,
     mulaiSesiTapNfcHp,
     batalSesiTapNfcHp,
+    bukaPilihanNfcSiswa,
+    tutupPilihanNfcSiswa,
     initRekapPresensiSiswa,
     muatDataRekapNisn,
     muatRiwayatKehadiranSiswa,

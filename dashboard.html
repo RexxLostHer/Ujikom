@@ -366,25 +366,57 @@
             </div>
           </div>
           <div class="nfc-actions-row">
-            <button id="btnMulaiTapNfcHp" type="button" onclick="mulaiSesiTapNfcHp()" class="btn-nfc-action-primary" title="Aktifkan radar dan dekatkan HP ke sensor MFRC522 di alat">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                <line x1="12" y1="18" x2="12.01" y2="18"/>
-              </svg>
-              <span>Siap Tap NFC ke Alat</span>
-            </button>
-            <button id="btnTautkanNfcSiswa" type="button" onclick="bukaModalPairingNfcSiswa()" class="btn-nfc-action-secondary" title="Tautkan atau ubah kartu RFID fisik">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button id="btnNfcAksiUtama" type="button" onclick="bukaPilihanNfcSiswa()" class="btn-nfc-action-primary" title="Presensi via NFC HP atau tautkan kartu pelajar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
                 <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
                 <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/>
                 <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
               </svg>
-              <span>Tautkan Kartu</span>
+              <span>Presensi NFC</span>
             </button>
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- SHEET PILIHAN METODE PRESENSI NFC (HP vs KARTU FISIK) -->
+    <div id="modalPilihanNfc" class="modal-nfc-overlay" style="display:none;" onclick="if(event.target === this) tutupPilihanNfcSiswa()">
+      <div class="modal-nfc-card" style="max-width:380px;text-align:left;padding:22px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;">
+          <div>
+            <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 4px 0;letter-spacing:-0.01em;">Pilih Metode Presensi</h3>
+            <p style="font-size:12px;color:#64748b;margin:0;line-height:1.5;">Satu tombol untuk dua cara: NFC HP atau kartu pelajar fisik.</p>
+          </div>
+          <button type="button" onclick="tutupPilihanNfcSiswa()" aria-label="Tutup" style="background:#f1f5f9;border:none;color:#475569;width:28px;height:28px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1;">&#10005;</button>
+        </div>
+
+        <button id="btnMulaiTapNfcHp" type="button" onclick="tutupPilihanNfcSiswa(); mulaiSesiTapNfcHp()" class="nfc-opsi-item">
+          <span class="nfc-opsi-ikon" style="background:#eff6ff;color:#2563eb;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </span>
+          <span style="flex:1;min-width:0;">
+            <span class="nfc-opsi-judul">Tap NFC HP</span>
+            <span class="nfc-opsi-desc">Tempelkan HP ke reader MFRC522 di gerbang</span>
+          </span>
+        </button>
+
+        <button id="btnTautkanNfcSiswa" type="button" onclick="tutupPilihanNfcSiswa(); bukaModalPairingNfcSiswa()" class="nfc-opsi-item">
+          <span class="nfc-opsi-ikon" style="background:#ecfdf5;color:#059669;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </span>
+          <span style="flex:1;min-width:0;">
+            <span id="labelAksiTautkanNfc" class="nfc-opsi-judul">Tautkan Kartu Pelajar</span>
+            <span class="nfc-opsi-desc">Untuk kartu RFID fisik, bukan NFC HP</span>
+          </span>
+        </button>
       </div>
     </div>
 
