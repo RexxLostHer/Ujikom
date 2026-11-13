@@ -285,7 +285,7 @@ test('7. mulaiSesiTapNfcHp membuka modal dan menjalankan countdown secara instan
 
   // Modal harus langsung display flex
   assert.strictEqual(modalEl.style.display, 'flex', 'Modal harus langsung terbuka');
-  assert.strictEqual(timerEl.textContent, '15s', 'Timer harus langsung dimulai di 15s');
+  assert.strictEqual(timerEl.textContent, '60s', 'Timer harus langsung dimulai di 60s');
 
   // Panggil batalSesiTapNfcHp
   dashboard.batalSesiTapNfcHp();
