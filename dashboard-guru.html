@@ -692,7 +692,7 @@
           </div>
           <div>
             <h2 style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-0.01em;margin:0;">Presensi Guru</h2>
-            <p style="font-size:13px;color:#64748b;margin-top:2px;margin-bottom:0;">Presensi masuk dan pulang otomatis tercatat saat Anda menempelkan kartu atau HP ke scanner di sekolah.</p>
+            <p style="font-size:13px;color:#64748b;margin-top:2px;margin-bottom:0;">Presensi masuk otomatis tercatat saat Anda menempelkan kartu atau HP ke scanner di sekolah.</p>
           </div>
         </div>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:7px 16px;border-radius:12px;font-size:13px;font-weight:700;color:#334155;display:flex;align-items:center;gap:8px;">
@@ -713,7 +713,7 @@
         </div>
         <div style="font-size:13px;line-height:1.55;color:#065f46;">
           <strong style="color:#047857;display:block;margin-bottom:2px;font-weight:700;">Presensi Cepat via Kartu atau HP:</strong>
-          Cukup tempelkan kartu atau HP ke scanner sekolah saat tiba dan pulang untuk mencatat kehadiran Anda secara otomatis.
+          Cukup tempelkan kartu atau HP ke scanner sekolah saat tiba untuk mencatat kehadiran Anda secara otomatis.
         </div>
       </div>
 
@@ -731,20 +731,6 @@
           <div style="font-size:26px;font-weight:800;color:#059669;letter-spacing:-0.02em;font-family:'Space Grotesk', 'Plus Jakarta Sans', sans-serif;" id="guruJamMasuk">--:--:--</div>
           <div style="font-size:12px;font-weight:600;color:#059669;margin-top:6px;display:flex;align-items:center;gap:5px;" id="guruStatusMasuk">
             <span style="width:6px;height:6px;border-radius:50%;background:#059669;display:inline-block;"></span> Belum Masuk
-          </div>
-        </div>
-
-        <!-- Jam Pulang -->
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:18px 20px;transition:all 0.2s ease;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:11.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;">Jam Pulang</span>
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(79,70,229,0.1);display:flex;align-items:center;justify-content:center;color:#4f46e5;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-          </div>
-          <div style="font-size:26px;font-weight:800;color:#4f46e5;letter-spacing:-0.02em;font-family:'Space Grotesk', 'Plus Jakarta Sans', sans-serif;" id="guruJamPulang">--:--:--</div>
-          <div style="font-size:12px;font-weight:600;color:#6366f1;margin-top:6px;display:flex;align-items:center;gap:5px;" id="guruStatusPulang">
-            <span style="width:6px;height:6px;border-radius:50%;background:#6366f1;display:inline-block;"></span> Belum Pulang
           </div>
         </div>
 
@@ -773,10 +759,6 @@
           </svg>
           Hubungkan Kartu / HP
         </button>
-        <button type="button" onclick="catatIzinDinasGuru()" style="flex:1;min-width:200px;background:#fff;color:#b45309;border:1.5px solid #f59e0b;border-radius:12px;padding:13px 20px;font-weight:700;font-size:13.5px;cursor:pointer;transition:all 0.2s ease;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 6px rgba(245,158,11,0.1);">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          Izin / Tugas Luar
-        </button>
       </div>
       <div id="msgAbsenGuru" style="margin-top:14px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;display:none;"></div>
     </div>
@@ -793,13 +775,12 @@
             <tr style="background:#f8fafc;color:#475569;text-align:left;border-bottom:1.5px solid #e2e8f0;">
               <th style="padding:12px 14px;font-weight:700;border-top-left-radius:10px;">Tanggal</th>
               <th style="padding:12px 14px;font-weight:700;">Jam Masuk</th>
-              <th style="padding:12px 14px;font-weight:700;">Jam Pulang</th>
               <th style="padding:12px 14px;font-weight:700;">Status</th>
               <th style="padding:12px 14px;font-weight:700;border-top-right-radius:10px;">Keterangan</th>
             </tr>
           </thead>
           <tbody id="bodyRiwayatAbsenGuru">
-            <tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">Belum ada data kehadiran hari ini.</td></tr>
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;">Belum ada data kehadiran hari ini.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1380,13 +1361,12 @@
               <th style="padding:12px 14px;">Tanggal</th>
               <th style="padding:12px 14px;">Hari</th>
               <th style="padding:12px 14px;">Jam Masuk (Tap)</th>
-              <th style="padding:12px 14px;">Jam Pulang</th>
               <th style="padding:12px 14px;">Status Kehadiran</th>
-              <th style="padding:12px 14px;">Keterangan / Tugas Luar</th>
+              <th style="padding:12px 14px;">Keterangan</th>
             </tr>
           </thead>
           <tbody id="rekapGuruPribadiTbody">
-            <tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">Memuat log presensi pribadi...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Memuat log presensi pribadi...</td></tr>
           </tbody>
         </table>
       </div>

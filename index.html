@@ -4118,7 +4118,13 @@
         restoreGoogleBtn();
 
         if (e.code === 'auth/unauthorized-domain') {
-          tampilNotif(notifTarget, 'Harap tambahkan domain lokal ke Firebase Console -> Auth -> Authorized domains.', 'error');
+          const hostAktif = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'domain ini';
+          let pesan = `⚠️ <b>Domain belum diizinkan Firebase (${hostAktif}):</b><br>`;
+          if (hostAktif === '127.0.0.1') {
+            pesan += '• <b>Solusi Cepat:</b> Ganti URL di bilah browser dari <code>127.0.0.1</code> menjadi <code>localhost</code> (contoh: <code>http://localhost:5500/...</code>).<br>';
+          }
+          pesan += `• Atau tambahkan <code>${hostAktif}</code> ke <b>Firebase Console &rarr; Auth &rarr; Settings &rarr; Authorized domains</b>.`;
+          tampilNotif(notifTarget, pesan, 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
           tampilNotif(notifTarget, 'Login dibatalkan.', 'error');
         } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || (e.message && (e.message.includes('popup-blocked') || e.message.includes('cancelled-popup-request')))) {

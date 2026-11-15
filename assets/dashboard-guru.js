@@ -858,7 +858,7 @@ async function muatRiwayatAbsenGuru() {
 
   tbody.innerHTML = '';
   if (myHistory.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:18px;color:#94a3b8;">Belum ada data kehadiran hari ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:18px;color:#94a3b8;">Belum ada data kehadiran hari ini.</td></tr>';
     return;
   }
 
@@ -868,7 +868,6 @@ async function muatRiwayatAbsenGuru() {
     tr.innerHTML = `
       <td style="padding:10px 12px;font-weight:700;">${h.tgl}</td>
       <td style="padding:10px 12px;color:#059669;font-weight:600;">${h.waktu_masuk || '-'}</td>
-      <td style="padding:10px 12px;color:#2563eb;font-weight:600;">${h.waktu_pulang || '-'}</td>
       <td style="padding:10px 12px;"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:${h.status==='hadir'?'#ecfdf5':'#fef3c7'};color:${h.status==='hadir'?'#065f46':'#92400e'};text-transform:uppercase;">${h.status || 'HADIR'}</span></td>
       <td style="padding:10px 12px;color:#64748b;">${h.catatan || '-'}</td>
     `;
@@ -3697,9 +3696,8 @@ async function generateRekapGuru() {
           <th style="padding:12px 14px;">Tanggal</th>
           <th style="padding:12px 14px;">Hari</th>
           <th style="padding:12px 14px;">Jam Masuk (Tap)</th>
-          <th style="padding:12px 14px;">Jam Pulang</th>
           <th style="padding:12px 14px;">Status Kehadiran</th>
-          <th style="padding:12px 14px;">Keterangan Dinas</th>
+          <th style="padding:12px 14px;">Keterangan</th>
         </tr>
       `;
     }
@@ -3803,7 +3801,6 @@ async function generateRekapGuru() {
           <td style="padding:12px 14px;font-family:monospace;font-weight:700;">${r.tanggal}</td>
           <td style="padding:12px 14px;font-weight:600;">${capHari}</td>
           <td style="padding:12px 14px;color:#059669;font-weight:700;">${r.waktu_masuk || '-'}</td>
-          <td style="padding:12px 14px;color:#4f46e5;font-weight:700;">${r.waktu_pulang || '-'}</td>
           <td style="padding:12px 14px;">
             <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:12px;color:${badgeColor};background:${badgeBg};">${stLabel}</span>
           </td>
@@ -4672,7 +4669,7 @@ async function muatDataRekapPribadiGuru(range) {
   const elStatTerlambat = document.getElementById('rekapGuruPribadiStatTerlambat');
   const elStatHariKerja = document.getElementById('rekapGuruPribadiStatHariKerja');
 
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">⏳ Memuat log kehadiran pribadi guru...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">⏳ Memuat log kehadiran pribadi guru...</td></tr>';
 
   const u = guruAktif || (typeof getSessionUser === 'function' ? getSessionUser() : null) || {};
   const gKey = u.nip || u.email || 'guru_utama';
@@ -4776,7 +4773,7 @@ async function muatDataRekapPribadiGuru(range) {
   let hGuru = 0, tGuru = 0, iGuru = 0;
   tbody.innerHTML = '';
   if (filteredGuru.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">Belum ada catatan presensi pada periode ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Belum ada catatan presensi pada periode ini.</td></tr>';
   } else {
     filteredGuru.forEach((r, idx) => {
       const st = (r.status || 'hadir').toLowerCase();
@@ -4803,7 +4800,6 @@ async function muatDataRekapPribadiGuru(range) {
         <td style="padding:12px 14px;font-family:monospace;font-weight:700;">${r.tanggal}</td>
         <td style="padding:12px 14px;font-weight:600;">${hari}</td>
         <td style="padding:12px 14px;color:#059669;font-weight:700;">${r.waktu_masuk || r.jam_masuk || '-'}</td>
-        <td style="padding:12px 14px;color:#4f46e5;font-weight:700;">${r.waktu_pulang || r.jam_pulang || '-'}</td>
         <td style="padding:12px 14px;">
           <span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:12px;color:${bColor};background:${bBg};">${stLabel}</span>
         </td>
