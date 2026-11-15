@@ -3642,7 +3642,7 @@ function gantiSubmodeRekapGuru(mode) {
   const wrapKls = document.getElementById('wrapPilihKelasRekapGuru');
   if (wrapKls) wrapKls.style.display = (mode === 'kelas') ? 'block' : 'none';
 
-  generateRekapGuru();
+  return generateRekapGuru();
 }
 
 function setRentangRekapGuru(range, btn) {
@@ -3651,7 +3651,7 @@ function setRentangRekapGuru(range, btn) {
     b.classList.remove('active');
   });
   if (btn) btn.classList.add('active');
-  generateRekapGuru();
+  return generateRekapGuru();
 }
 
 function filterTabelRekapGuruLive() {
@@ -4021,10 +4021,43 @@ async function generateRekapGuru() {
     for (const j of ['1', '2', '3', '4', '5', '6', '7', '8']) {
       if (presensiTgl[j] && presensiTgl[j][nisn]) {
         const itemP = presensiTgl[j][nisn];
-        statusKehadiran = (itemP.status === 'terlambat') ? 'Terlambat' : 'Hadir';
-        statusClass = (itemP.status === 'terlambat') ? 'color:#d97706;font-weight:700;' : 'color:#059669;font-weight:700;';
-        waktuScan = itemP.waktu || '06:25:00';
-        keterangan = itemP.tipe === 'manual_guru' ? 'Manual Guru' : 'Tap Kartu RFID';
+        const stP = String(itemP.status || '').toLowerCase().trim();
+        if (stP === 'alpa' || stP === 'alpha' || stP === 'tanpa_keterangan') {
+          statusKehadiran = 'Tanpa Keterangan';
+          statusClass = 'color:#ef4444;font-weight:700;';
+          waktuScan = itemP.waktu || '-';
+          keterangan = itemP.keterangan || (itemP.tipe === 'auto_alpa_system' ? 'Auto-Alpa (Tidak Hadir)' : 'Tanpa Keterangan');
+        } else if (stP === 'sakit') {
+          statusKehadiran = 'Sakit';
+          statusClass = 'color:#2563eb;font-weight:700;';
+          waktuScan = itemP.waktu || '-';
+          keterangan = itemP.keterangan || 'Sakit';
+        } else if (['dispensasi', 'dispen', 'izin', 'ijin', 'ijin_kegiatan'].includes(stP)) {
+          statusKehadiran = 'Izin';
+          statusClass = 'color:#d97706;font-weight:700;';
+          waktuScan = itemP.waktu || '-';
+          keterangan = itemP.keterangan || 'Izin Resmi Disetujui';
+        } else if (stP === 'terlambat') {
+          statusKehadiran = 'Terlambat';
+          statusClass = 'color:#d97706;font-weight:700;';
+          waktuScan = itemP.waktu || '06:35:00';
+          keterangan = itemP.tipe === 'manual_guru' ? 'Manual Guru' : 'Tap Kartu RFID';
+        } else if (stP === 'hadir' || stP === 'pulang') {
+          statusKehadiran = 'Hadir';
+          statusClass = 'color:#059669;font-weight:700;';
+          waktuScan = itemP.waktu || '06:25:00';
+          keterangan = itemP.tipe === 'manual_guru' ? 'Manual Guru' : 'Tap Kartu RFID';
+        } else if (['belum', 'belum absen', 'belum_absen'].includes(stP)) {
+          statusKehadiran = 'Tanpa Keterangan';
+          statusClass = 'color:#ef4444;font-weight:700;';
+          waktuScan = '-';
+          keterangan = 'Belum Absen';
+        } else {
+          statusKehadiran = 'Tanpa Keterangan';
+          statusClass = 'color:#ef4444;font-weight:700;';
+          waktuScan = itemP.waktu || '-';
+          keterangan = itemP.keterangan || 'Tanpa Keterangan';
+        }
         break;
       }
     }
@@ -4033,15 +4066,19 @@ async function generateRekapGuru() {
     if (izinMap[nisn]) {
       const jenis = (izinMap[nisn].jenis || '').toLowerCase();
       statusKehadiran = jenis.includes('sakit') ? 'Sakit' : 'Izin';
-      statusClass = 'color:#2563eb;font-weight:700;';
+      statusClass = jenis.includes('sakit') ? 'color:#2563eb;font-weight:700;' : 'color:#d97706;font-weight:700;';
       keterangan = izinMap[nisn].alasan || 'Izin Resmi Disetujui';
     }
 
-    // 3. Fallback default presensi resmi
-    if (statusKehadiran === 'Tanpa Keterangan' && defaultPresensi[nisn]) {
+    // 3. Fallback default presensi resmi (DILARANG menimpa siswa yang belum absen / EXCLUDED_BELUM_ABSEN_NISN)
+    const isExcludedBelumAbsen = (typeof EXCLUDED_BELUM_ABSEN_NISN !== 'undefined' && Array.isArray(EXCLUDED_BELUM_ABSEN_NISN))
+      ? EXCLUDED_BELUM_ABSEN_NISN.includes(String(nisn).trim())
+      : ['0098263610', '0082104129'].includes(String(nisn).trim());
+
+    if (statusKehadiran === 'Tanpa Keterangan' && defaultPresensi[nisn] && !isExcludedBelumAbsen) {
       const def = defaultPresensi[nisn];
       statusKehadiran = (def.status === 'terlambat') ? 'Terlambat' : 'Hadir';
-      statusClass = 'color:#059669;font-weight:700;';
+      statusClass = (def.status === 'terlambat') ? 'color:#d97706;font-weight:700;' : 'color:#059669;font-weight:700;';
       waktuScan = def.waktu || '06:22:15';
       keterangan = 'Tap Kartu RFID Pagi';
     }

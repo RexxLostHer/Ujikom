@@ -343,10 +343,6 @@ function switchToTab(tabName) {
   if (tabName === 'perijinan') {
     renderDaftarPerijinanAdmin('daftarPerijinanAdmin', filterPerijinanAktif);
   }
-
-  if (tabName === 'simulasi') {
-    populateVirtualSiswaSimulasi();
-  }
 }
 
 // ===== MSG HELPER =====
