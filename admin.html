@@ -55,19 +55,11 @@
         </svg>
       </div>
       <div class="admin-brand-text">
-        <small style="color:#0284c7;font-weight:800;letter-spacing:0.06em;">SMKN 1 SUMEDANG</small>
+        <small style="color:#0284c7;font-weight:800;letter-spacing:0.06em;" title="Administrator SMKN 1 Sumedang">SMKN 1 SUMEDANG</small>
         <strong style="background:linear-gradient(90deg, #0f172a 0%, #334155 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Panel Admin</strong>
       </div>
     </div>
     <div class="admin-appbar-right">
-      <div class="admin-user-pill" style="display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:9999px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <img src="assets/foto/admin.jpg" alt="Admin" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #3b82f6;flex-shrink:0;box-shadow:0 2px 5px rgba(59,130,246,0.3);" onerror="this.onerror=null;this.src='assets/foto/0095250998.jpg';">
-        <div style="display:flex;flex-direction:column;text-align:left;line-height:1.15;">
-          <span id="adminNamaBadge" style="font-weight:800;font-size:12.5px;color:#0f172a;">Administrator</span>
-          <small style="font-size:10px;color:#0284c7;font-weight:700;">Administrator SMKN 1 Sumedang</small>
-        </div>
-        <span class="dot" style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;margin-left:4px;" title="Online"></span>
-      </div>
       <button class="btn-nav" onclick="bukaModalProfil()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -425,6 +417,20 @@
           </div>
           <div class="msg" id="siswaMsg"></div>
         </div>
+
+        <!-- PENCARIAN & FILTER DATA SISWA -->
+        <div style="margin:20px 0 14px 0; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div style="position:relative; flex:1; min-width:260px; max-width:420px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="cariSiswaAdmin" oninput="filterDataSiswaAdminLive()" placeholder="Cari NISN, nama siswa, atau kelas..." style="width:100%; padding:9px 12px 9px 36px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13.5px; outline:none; background:#ffffff; color:#0f172a; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; padding:7px 14px; border-radius:8px;">
+            Total Ditampilkan: <span id="countSiswaAdmin" style="color:#0f172a; font-weight:800;">0</span> Siswa
+          </div>
+        </div>
+
         <table class="data-table">
           <thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Email</th><th></th></tr></thead>
           <tbody id="siswaTableBody"></tbody>
@@ -675,11 +681,11 @@
         </div>
       </div>
 
-      <!-- ===== PANEL ACC KENDALA GURU (JAMKOS - PRD Bab 4.2 & 7.4) ===== -->
+      <!-- ===== PANEL ACC KENDALA GURU (BELAJAR MANDIRI - PRD Bab 4.2 & 7.4) ===== -->
       <div id="tab-kendala" class="tab-panel">
         <div class="content-header">
-          <h2>Kendala Guru & Jamkos</h2>
-          <p>Persetujuan laporan kendala mengajar guru untuk mengaktifkan status jam kosong kelas.</p>
+          <h2>Kendala Guru & Belajar Mandiri</h2>
+          <p>Persetujuan laporan kendala mengajar guru untuk mengaktifkan status belajar mandiri kelas.</p>
         </div>
 
         <!-- Kontrol Cepat Status Operasional 3 Kelas -->
@@ -691,8 +697,8 @@
         </div>
 
         <div class="filter-bar">
-          <button class="filter-btn active" data-filter-kendala="pending" onclick="setFilterKendalaAdmin('pending', this)">Menunggu ACC</button>
-          <button class="filter-btn" data-filter-kendala="approved" onclick="setFilterKendalaAdmin('approved', this)">Sudah di-ACC (Jamkos)</button>
+          <button class="filter-btn active" data-filter-kendala="pending" onclick="setFilterKendalaAdmin('pending', this)">Menunggu konfirmasi</button>
+          <button class="filter-btn" data-filter-kendala="approved" onclick="setFilterKendalaAdmin('approved', this)">Sudah di-ACC (Belajar Mandiri)</button>
           <button class="filter-btn" data-filter-kendala="semua" onclick="setFilterKendalaAdmin('semua', this)">Semua Laporan</button>
         </div>
 

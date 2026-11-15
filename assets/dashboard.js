@@ -481,8 +481,9 @@ function resetStatusIzinHarianJikaPerlu(targetNisn) {
 
     const isPastDate = subDate && (subDate < today);
     const isOldTimestamp = subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000);
+    const isPastSubmission = isPastDate && isOldTimestamp;
 
-    if (isPastDate && isOldTimestamp) {
+    if (isPastSubmission) {
       const currentFlag = localStorage.getItem('status_izin_' + targetNisn);
       if (currentFlag === 'disetujui' || currentFlag === 'approved' || currentFlag === 'pending' || currentFlag === 'ditolak' || currentFlag === 'rejected' || !currentFlag) {
         console.log(`[DailyPermitReset] Tanggal izin (${subDate}) telah berlalu dari hari ini (${today}). Me-reset form izin.`);
@@ -528,11 +529,13 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
     else if (rejectedItem) itemInfo = rejectedItem;
   }
 
-  if (msg && !itemInfo) {
-    if (msg.innerHTML && msg.innerHTML.includes('Pengajuan Izin Sedang Menunggu Konfirmasi')) {
-      msg.textContent = '';
-      msg.innerHTML = '';
-      msg.style.display = 'none';
+  if (!itemInfo) {
+    if (msg) {
+      if (!msg.innerHTML || msg.innerHTML.includes('Pengajuan Izin Sedang Menunggu Konfirmasi') || msg.innerHTML.includes('antrean verifikasi')) {
+        msg.textContent = '';
+        msg.innerHTML = '';
+        msg.style.display = 'none';
+      }
     }
     if (btnSubmit) {
       btnSubmit.disabled = false;
@@ -645,27 +648,197 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
   }
 }
 
+// Helper: Sinkronisasi perizinan spesifik siswa ke antrean lokal dan form UI secara realtime
+function sinkronkanStatusIzinTargetSiswa(kId, val, targetNisn, user) {
+  if (!kId) return;
+  const userTarget = user || (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  const nisnTarget = targetNisn || (userTarget && userTarget.nisn ? String(userTarget.nisn).trim() : '');
+
+  if (!val) {
+    // Permohonan izin tidak ditemukan / telah dihapus dari RTDB
+    if (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) {
+      delete window.cachePerizinanSiswaRealtime[kId];
+    }
+    if (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) {
+      delete global.cachePerizinanSiswaRealtime[kId];
+    }
+    try {
+      if (typeof localStorage !== 'undefined' && nisnTarget) {
+        const lastSubStr = localStorage.getItem('last_submission_' + nisnTarget);
+        if (lastSubStr) {
+          const p = JSON.parse(lastSubStr);
+          if (p && (p.id === kId || p.pid === kId)) {
+            localStorage.removeItem('last_submission_' + nisnTarget);
+          }
+        }
+        ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'].forEach(k => {
+          const raw = localStorage.getItem(k);
+          if (!raw) return;
+          try {
+            let arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              const filtered = arr.filter(it => it && it.id !== kId && it.pid !== kId);
+              if (filtered.length !== arr.length) localStorage.setItem(k, JSON.stringify(filtered));
+            }
+          } catch (eArr) {}
+        });
+      }
+    } catch (eCl) {}
+
+    // Periksa apakah masih ada izin pending lain di cache realtime
+    const rtCache = (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) ||
+                    (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) || {};
+    const remainingPending = Object.values(rtCache).some(it => {
+      if (!it) return false;
+      const itNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+      const isTarget = (itNisn === nisnTarget || (nisnTarget === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan')));
+      const st = String(it.status || 'pending').toLowerCase().trim();
+      return isTarget && (st === 'pending' || st === 'menunggu');
+    });
+
+    let hasSessionPending = false;
+    try {
+      if (typeof sessionStorage !== 'undefined' && nisnTarget) {
+        hasSessionPending = Boolean(sessionStorage.getItem('pending_submission_' + nisnTarget));
+      }
+    } catch (eSs) {}
+
+    if (!remainingPending && !hasSessionPending) {
+      try {
+        if (typeof localStorage !== 'undefined' && nisnTarget) {
+          const curFlag = localStorage.getItem('status_izin_' + nisnTarget);
+          if (curFlag === 'pending' || curFlag === 'menunggu') {
+            localStorage.removeItem('status_izin_' + nisnTarget);
+          }
+        }
+      } catch (eLs) {}
+      bukaKunciFormPengajuanSiswa(null, userTarget);
+    }
+    if (typeof renderDaftarPerijinanSaya === 'function') {
+      renderDaftarPerijinanSaya('daftarPerijinanSaya', userTarget);
+    }
+    return;
+  }
+
+  // Snapshot memiliki data izin
+  if (typeof window !== 'undefined') {
+    if (!window.cachePerizinanSiswaRealtime) window.cachePerizinanSiswaRealtime = {};
+    window.cachePerizinanSiswaRealtime[kId] = val;
+  }
+  if (typeof global !== 'undefined') {
+    if (!global.cachePerizinanSiswaRealtime) global.cachePerizinanSiswaRealtime = {};
+    global.cachePerizinanSiswaRealtime[kId] = val;
+  }
+
+  const st = String(val.status || val.statusBaru || 'pending').toLowerCase().trim();
+  const isResolved = (st === 'disetujui' || st === 'approved' || st === 'ditolak' || st === 'rejected' || st === 'dibatalkan' || st === 'cancelled');
+  const statusNorm = (st === 'disetujui' || st === 'approved') ? 'disetujui' : ((st === 'ditolak' || st === 'rejected') ? 'ditolak' : 'dibatalkan');
+
+  if (isResolved) {
+    try {
+      if (typeof localStorage !== 'undefined' && nisnTarget) {
+        localStorage.setItem('status_izin_' + nisnTarget, statusNorm);
+        const lastSubStr = localStorage.getItem('last_submission_' + nisnTarget);
+        if (lastSubStr) {
+          const lastSub = JSON.parse(lastSubStr);
+          if (lastSub && (lastSub.id === kId || lastSub.pid === kId || (val.tanggal && lastSub.tanggal === val.tanggal) || lastSub.status === 'pending')) {
+            lastSub.status = statusNorm;
+            if (val.catatan_guru) lastSub.catatan_guru = val.catatan_guru;
+            if (val.diverifikasi_oleh) lastSub.diverifikasi_oleh = val.diverifikasi_oleh;
+            if (val.alasanTolak) lastSub.alasanTolak = val.alasanTolak;
+            localStorage.setItem('last_submission_' + nisnTarget, JSON.stringify(lastSub));
+          }
+        }
+        ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'].forEach(k => {
+          const raw = localStorage.getItem(k);
+          if (!raw) return;
+          try {
+            let arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              let updated = false;
+              arr = arr.map(it => {
+                if (!it) return it;
+                const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+                const isTarget = (itmNisn === nisnTarget || (nisnTarget === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan')));
+                if (it.id === kId || it.pid === kId || (isTarget && (it.status === 'pending' || it.status === 'menunggu'))) {
+                  updated = true;
+                  return { ...it, status: statusNorm, catatan_guru: val.catatan_guru || it.catatan_guru, diverifikasi_oleh: val.diverifikasi_oleh || it.diverifikasi_oleh };
+                }
+                return it;
+              });
+              if (updated) localStorage.setItem(k, JSON.stringify(arr));
+            }
+          } catch (eArr) {}
+        });
+        localStorage.setItem('local_perizinan_updated', String(Date.now()));
+        localStorage.setItem('perizinan_sync_ping', String(Date.now()));
+      }
+      if (typeof sessionStorage !== 'undefined' && nisnTarget) {
+        sessionStorage.removeItem('pending_submission_' + nisnTarget);
+      }
+    } catch (eSync) {}
+
+    bukaKunciFormPengajuanSiswa(val, userTarget);
+    if (typeof renderDaftarPerijinanSaya === 'function') {
+      renderDaftarPerijinanSaya('daftarPerijinanSaya', userTarget);
+    }
+  } else if (st === 'pending' || st === 'menunggu') {
+    try {
+      if (typeof localStorage !== 'undefined' && nisnTarget) {
+        localStorage.setItem('status_izin_' + nisnTarget, 'pending');
+      }
+    } catch (ePending) {}
+  }
+}
+
 // Inisialisasi sinkronisasi realtime perizinan siswa (Firebase RTDB + BroadcastChannel)
 let perizinanSiswaListenerAktif = false;
+let perizinanSiswaListenerTargetNisn = '';
 function inisialisasiSinkronisasiPerizinanSiswa(user) {
   if (!user) return;
-  const targetNisn = (user.nisn ? String(user.nisn).trim() : '') || (user.email === '7dosabesar557@gmail.com' ? '0098263610' : '');
+  const targetNisn = (user.nisn ? String(user.nisn).trim() : '') || (user.email === '7dosabesar557@gmail.com' ? '0098263610' : '') || (user.nama && user.nama.toLowerCase().includes('ihsan') ? '0098263610' : '');
   const targetUid = user.uid || ('UID_' + targetNisn);
   const targetNama = (user.nama || '').trim().toLowerCase();
 
   // 1. Firebase RTDB Realtime Listener (untuk sinkronisasi lintas browser, incognito, & perangkat)
-  if (typeof db !== 'undefined' && db && typeof db.ref === 'function' && !perizinanSiswaListenerAktif) {
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function' && (!perizinanSiswaListenerAktif || perizinanSiswaListenerTargetNisn !== targetNisn)) {
     perizinanSiswaListenerAktif = true;
+    perizinanSiswaListenerTargetNisn = targetNisn;
     const handleSnap = function(snap) {
-      if (!snap) return;
-      const val = (typeof snap.val === 'function') ? snap.val() : snap;
-      if (!val) return;
+      const val = (snap && typeof snap.val === 'function') ? snap.val() : snap;
+      const valData = (val && typeof val === 'object') ? val : {};
       
       const permitResolvedList = [];
       let anyPending = false;
       let hasChange = false;
 
-      const items = Array.isArray(val) ? val : Object.values(val);
+      // Bersihkan cache realtime lama untuk target siswa ini agar tidak menampung data usang
+      if (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) {
+        Object.keys(window.cachePerizinanSiswaRealtime).forEach(k => {
+          const it = window.cachePerizinanSiswaRealtime[k];
+          if (it) {
+            const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+            const itmNama = (it.nama || it.nama_siswa || '').trim().toLowerCase();
+            if (itmNisn === targetNisn || (targetNisn === '0098263610' && itmNama.includes('ihsan'))) {
+              delete window.cachePerizinanSiswaRealtime[k];
+            }
+          }
+        });
+      }
+      if (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) {
+        Object.keys(global.cachePerizinanSiswaRealtime).forEach(k => {
+          const it = global.cachePerizinanSiswaRealtime[k];
+          if (it) {
+            const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+            const itmNama = (it.nama || it.nama_siswa || '').trim().toLowerCase();
+            if (itmNisn === targetNisn || (targetNisn === '0098263610' && itmNama.includes('ihsan'))) {
+              delete global.cachePerizinanSiswaRealtime[k];
+            }
+          }
+        });
+      }
+
+      const items = Array.isArray(valData) ? valData : Object.values(valData);
       items.forEach(item => {
         if (!item) return;
         const itmNisn = String(item.nisn || item.siswaId || item.pengajuId || '').trim();
@@ -736,6 +909,12 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
         const latestResolved = permitResolvedList[0];
         const statusNorm = (latestResolved.status === 'disetujui' || latestResolved.status === 'approved') ? 'disetujui' : (latestResolved.status === 'ditolak' || latestResolved.status === 'rejected' ? 'ditolak' : 'dibatalkan');
 
+        const todaySync = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+        const resolvedDate = normalisasiTanggalDashboard(latestResolved.tanggal || latestResolved.tanggal_norm || '');
+        const resolvedTime = (latestResolved.updated_at ? Date.parse(latestResolved.updated_at) : 0) || latestResolved.dibuat_pada || latestResolved.createdAt || 0;
+        const isPastDayResolved = Boolean(resolvedDate && (resolvedDate < todaySync)) && resolvedTime > 0 && (Date.now() - resolvedTime > 12 * 3600 * 1000);
+        const isPastDayApproved = isPastDayResolved;
+
         // Sinkronkan ke localStorage seketika
         try {
           if (typeof localStorage !== 'undefined' && targetNisn) {
@@ -776,9 +955,15 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
                   if (!it) return it;
                   const isItm = (targetNisn && (it.nisn === targetNisn || it.siswaId === targetNisn)) ||
                                 (targetNisn === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan'));
-                  if (isItm && (it.id === latestResolved.id || it.pid === latestResolved.pid || (latestResolved.tanggal && it.tanggal === latestResolved.tanggal))) {
-                    updatedArr = true;
-                    return { ...it, status: statusNorm, catatan_guru: latestResolved.catatan_guru || it.catatan_guru, diverifikasi_oleh: latestResolved.diverifikasi_oleh || it.diverifikasi_oleh };
+                  if (isItm) {
+                    if (it.id === latestResolved.id || it.pid === latestResolved.pid || (latestResolved.tanggal && it.tanggal === latestResolved.tanggal)) {
+                      updatedArr = true;
+                      return { ...it, status: statusNorm, catatan_guru: latestResolved.catatan_guru || it.catatan_guru, diverifikasi_oleh: latestResolved.diverifikasi_oleh || it.diverifikasi_oleh };
+                    }
+                    if ((it.status === 'pending' || it.status === 'menunggu') && !anyPending) {
+                      updatedArr = true;
+                      return { ...it, status: statusNorm };
+                    }
                   }
                   return it;
                 });
@@ -793,13 +978,10 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
               localStorage.setItem('perizinan_sync_ping', String(Date.now()));
             }
           }
+          if (typeof sessionStorage !== 'undefined' && targetNisn) {
+            sessionStorage.removeItem('pending_submission_' + targetNisn);
+          }
         } catch (eStorage) {}
-
-        const todaySync = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
-        const resolvedDate = normalisasiTanggalDashboard(latestResolved.tanggal || latestResolved.tanggal_norm || '');
-        const resolvedTime = (latestResolved.updated_at ? Date.parse(latestResolved.updated_at) : 0) || latestResolved.dibuat_pada || latestResolved.createdAt || 0;
-        const isPastDayResolved = resolvedDate && (resolvedDate < todaySync) && resolvedTime > 0 && (Date.now() - resolvedTime > 12 * 3600 * 1000);
-        const isPastDayApproved = isPastDayResolved;
 
         if (isPastDayApproved) {
           // Status izin lama di-reset untuk hari ini agar siswa bisa membuat izin baru
@@ -826,6 +1008,46 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
           // Buka form submit siswa seketika jika status sudah resolved dan tidak ada permohonan pending baru
           bukaKunciFormPengajuanSiswa(latestResolved, user);
         }
+      } else if (!anyPending) {
+        // Tidak ada perizinan pending maupun resolved di RTDB untuk siswa ini
+        try {
+          if (typeof localStorage !== 'undefined' && targetNisn) {
+            const currentFlag = localStorage.getItem('status_izin_' + targetNisn);
+            if (currentFlag === 'pending' || currentFlag === 'menunggu') {
+              localStorage.removeItem('status_izin_' + targetNisn);
+              localStorage.removeItem('last_submission_' + targetNisn);
+              hasChange = true;
+            }
+            ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'].forEach(k => {
+              const raw = localStorage.getItem(k);
+              if (!raw) return;
+              try {
+                let arr = JSON.parse(raw);
+                if (Array.isArray(arr)) {
+                  const filtered = arr.filter(it => {
+                    if (!it) return false;
+                    const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+                    const isTarget = (itmNisn === targetNisn || (targetNisn === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan')));
+                    const st = String(it.status || '').toLowerCase().trim();
+                    return !(isTarget && (st === 'pending' || st === 'menunggu'));
+                  });
+                  if (filtered.length !== arr.length) {
+                    localStorage.setItem(k, JSON.stringify(filtered));
+                    hasChange = true;
+                  }
+                }
+              } catch (eArr) {}
+            });
+            if (hasChange) {
+              localStorage.setItem('local_perizinan_updated', String(Date.now()));
+              localStorage.setItem('perizinan_sync_ping', String(Date.now()));
+            }
+          }
+          if (typeof sessionStorage !== 'undefined' && targetNisn) {
+            sessionStorage.removeItem('pending_submission_' + targetNisn);
+          }
+        } catch (eClear) {}
+        bukaKunciFormPengajuanSiswa(null, user);
       }
 
       // Re-render riwayat izin jika fungsi render tersedia
@@ -836,11 +1058,84 @@ function inisialisasiSinkronisasiPerizinanSiswa(user) {
 
     try {
       if (targetNisn) {
+        db.ref('perijinan').orderByChild('nisn').equalTo(targetNisn).once('value', handleSnap).catch(() => null);
+        db.ref('perizinan').orderByChild('nisn').equalTo(targetNisn).once('value', handleSnap).catch(() => null);
         db.ref('perijinan').orderByChild('nisn').equalTo(targetNisn).on('value', handleSnap, () => {});
         db.ref('perizinan').orderByChild('nisn').equalTo(targetNisn).on('value', handleSnap, () => {});
       }
+      db.ref('perijinan').once('value', handleSnap).catch(() => null);
+      db.ref('perizinan').once('value', handleSnap).catch(() => null);
       db.ref('perijinan').on('value', handleSnap, () => {});
       db.ref('perizinan').on('value', handleSnap, () => {});
+
+      // Pasang targeted listener ke child node spesifik siswa untuk menjamin realtime saat rules koleksi membatasi
+      const knownIds = new Set();
+      try {
+        if (typeof localStorage !== 'undefined' && targetNisn) {
+          const lastSubStr = localStorage.getItem('last_submission_' + targetNisn);
+          if (lastSubStr) {
+            const p = JSON.parse(lastSubStr);
+            if (p && (p.id || p.pid)) knownIds.add(p.id || p.pid);
+          }
+        }
+        const localList = (typeof ambilDataPerizinanLokal === 'function') ? ambilDataPerizinanLokal() : [];
+        localList.forEach(it => {
+          if (!it) return;
+          const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+          if (itmNisn === targetNisn && (it.id || it.pid)) {
+            knownIds.add(it.id || it.pid);
+          }
+        });
+      } catch (eKnown) {}
+
+      if (knownIds.size === 0) {
+        let hasSessionPending = false;
+        try {
+          if (typeof sessionStorage !== 'undefined' && targetNisn) {
+            hasSessionPending = Boolean(sessionStorage.getItem('pending_submission_' + targetNisn));
+          }
+        } catch (eSs) {}
+        if (!hasSessionPending && typeof localStorage !== 'undefined' && targetNisn) {
+          const curFlag = localStorage.getItem('status_izin_' + targetNisn);
+          if (curFlag === 'pending' || curFlag === 'menunggu') {
+            localStorage.removeItem('status_izin_' + targetNisn);
+            localStorage.removeItem('last_submission_' + targetNisn);
+            bukaKunciFormPengajuanSiswa(null, user);
+          }
+        }
+      } else {
+        let pendingChecks = knownIds.size;
+        let foundAnyInDb = false;
+        knownIds.forEach(kId => {
+          const handleTargetSnap = (snap) => {
+            const val = (snap && typeof snap.val === 'function') ? snap.val() : snap;
+            sinkronkanStatusIzinTargetSiswa(kId, val, targetNisn, user);
+          };
+          db.ref('perizinan/' + kId).once('value').then(snap => {
+            const v = (snap && typeof snap.val === 'function') ? snap.val() : snap;
+            if (v) foundAnyInDb = true;
+            pendingChecks--;
+            if (pendingChecks === 0 && !foundAnyInDb) {
+              let hasSessionPending = false;
+              try {
+                if (typeof sessionStorage !== 'undefined' && targetNisn) {
+                  hasSessionPending = Boolean(sessionStorage.getItem('pending_submission_' + targetNisn));
+                }
+              } catch (eSs) {}
+              if (!hasSessionPending && typeof localStorage !== 'undefined' && targetNisn) {
+                const curFlag = localStorage.getItem('status_izin_' + targetNisn);
+                if (curFlag === 'pending' || curFlag === 'menunggu') {
+                  localStorage.removeItem('status_izin_' + targetNisn);
+                  localStorage.removeItem('last_submission_' + targetNisn);
+                  bukaKunciFormPengajuanSiswa(null, user);
+                }
+              }
+            }
+          }).catch(() => {});
+          db.ref('perizinan/' + kId).on('value', handleTargetSnap, () => {});
+          db.ref('perijinan/' + kId).on('value', handleTargetSnap, () => {});
+        });
+      }
     } catch (eDb) {}
   }
 
@@ -986,16 +1281,24 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
   const tPending = ambilWaktuSubmit(latestPending);
   const todayPend = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
   const pDate = normalisasiTanggalDashboard(latestPending.tanggal || latestPending.tanggal_norm || '');
-  if (pDate && pDate < todayPend && tPending > 0 && (Date.now() - tPending > 12 * 3600 * 1000)) {
+  if (pDate && pDate < todayPend && (tPending === 0 || (Date.now() - tPending > 12 * 3600 * 1000))) {
     return null;
   }
 
-  // Jika izin siswa pernah ditolak/disetujui Walas, dan pending item ini dibuat SEBELUM waktu review tersebut,
-  // maka pending ini adalah entri usang sebelum review
-  if (hasResolvedStatus && latestResolvedTime && tPending > 0 && tPending < latestResolvedTime) {
-    if ((latestPending.id && resolvedIds.has(latestPending.id)) || (latestPending.pid && resolvedIds.has(latestPending.pid))) {
-      return null;
+  // Jika izin siswa pernah ditolak/disetujui Walas, dan pending item ini dibuat SEBELUM atau SAAT waktu review tersebut,
+  // maka pending ini adalah entri usang sebelum review dan tidak boleh mengunci form
+  let stFlag = '';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      stFlag = localStorage.getItem('status_izin_' + targetNisn) || '';
     }
+  } catch (e) {}
+
+  if (hasResolvedStatus && latestResolvedTime > 0 && tPending > 0 && tPending <= latestResolvedTime) {
+    return null;
+  }
+  if ((stFlag === 'ditolak' || stFlag === 'rejected' || stFlag === 'dibatalkan' || stFlag === 'cancelled') && (!tPending || (latestResolvedTime > 0 && tPending <= latestResolvedTime))) {
+    return null;
   }
 
   // Jika pengajuan pending benar-benar baru dan belum dikonfirmasi oleh Walas, kunci form dan tunggu
@@ -1006,6 +1309,7 @@ function ambilIzinPendingAktifSiswa(nisn, jenis, tanggal) {
 function ambilIzinDisetujuiAktifSiswa(nisn) {
   if (!nisn) return null;
   const targetNisn = String(nisn).trim();
+  const todayDisetujui = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
 
   // 1. Cek langsung flag status_izin
   try {
@@ -1020,11 +1324,11 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
           try {
             const parsed = JSON.parse(lastSubStr);
             if (parsed) {
-              const todaySt = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
               const subDate = normalisasiTanggalDashboard(parsed.tanggal || parsed.tanggal_norm || '');
-              const subTime = parsed.timestamp || parsed.dibuat_pada || parsed.createdAt || 0;
-              if (subDate && subDate < todaySt && subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000)) {
+              const subTime = parsed.timestamp || parsed.dibuat_pada || parsed.createdAt || (parsed.created_at ? Date.parse(parsed.created_at) : 0) || 0;
+              if (subDate && subDate < todayDisetujui && subTime > 0 && (Date.now() - subTime > 12 * 3600 * 1000)) {
                 localStorage.removeItem('status_izin_' + targetNisn);
+                localStorage.removeItem('last_submission_' + targetNisn);
                 return null;
               }
               return Object.assign({}, parsed, { status: 'disetujui' });
@@ -1091,7 +1395,6 @@ function ambilIzinDisetujuiAktifSiswa(nisn) {
   const latestItem = rawStudentItems[0];
   const st = String(latestItem.status || '').toLowerCase().trim();
   if (st === 'disetujui' || st === 'approved') {
-    const todayDisetujui = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
     const itemDate = normalisasiTanggalDashboard(latestItem.tanggal || latestItem.tanggal_norm || '');
     const itemTime = ambilWaktuSubmit(latestItem);
     // Jika izin disetujui dibuat pada hari lampau (>12 jam lalu & itemDate < today), reset harian
@@ -1159,6 +1462,21 @@ function ambilIzinDitolakAktifSiswa(nisn) {
     }
   }
 
+  // Kumpulkan juga dari cache realtime RTDB jika tersedia
+  try {
+    const rtCache = (typeof window !== 'undefined' && window.cachePerizinanSiswaRealtime) ||
+                    (typeof global !== 'undefined' && global.cachePerizinanSiswaRealtime) || null;
+    if (rtCache) {
+      Object.values(rtCache).forEach(item => {
+        if (!item) return;
+        const itemNisn = String(item.nisn || item.siswaId || item.pengajuId || '').trim();
+        if (itemNisn === targetNisn || (targetNisn === '0098263610' && item.nama && String(item.nama).toLowerCase().includes('ihsan'))) {
+          rawStudentItems.push(item);
+        }
+      });
+    }
+  } catch (eRt) {}
+
   try {
     if (typeof localStorage !== 'undefined') {
       const lastSub = localStorage.getItem('last_submission_' + targetNisn);
@@ -1189,7 +1507,7 @@ function ambilIzinDitolakAktifSiswa(nisn) {
     const todayDitolak = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
     const itemDate = normalisasiTanggalDashboard(latestItem.tanggal || latestItem.tanggal_norm || '');
     const itemTime = ambilWaktuSubmit(latestItem);
-    if (itemDate && itemDate < todayDitolak && itemTime > 0 && (Date.now() - itemTime > 12 * 3600 * 1000)) {
+    if (itemDate && itemDate < todayDitolak && (itemTime === 0 || (Date.now() - itemTime > 12 * 3600 * 1000))) {
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.removeItem('status_izin_' + targetNisn);
@@ -1486,10 +1804,14 @@ async function handleSubmitPerijinan() {
     return fsEl || pfEl || biEl;
   })();
 
-  const pickedFile = (fileInput && fileInput.files && fileInput.files[0]) ||
+  const pickedFile = (typeof fileInput === 'string' && fileInput.trim()) ||
+                     (fileInput && fileInput.files && fileInput.files[0]) ||
                      (typeof File !== 'undefined' && fileInput instanceof File ? fileInput : null) ||
                      (fileInput && fileInput.name && fileInput.size ? fileInput : null);
-  if (!pickedFile) {
+  const jenisInfo = (typeof getJenisPerijinanInfo === 'function')
+    ? getJenisPerijinanInfo(jenis)
+    : ((typeof JENIS_PERIJINAN !== 'undefined' && JENIS_PERIJINAN[jenis]) || {});
+  if (jenisInfo.dokumenWajib !== false && !pickedFile) {
     if (msg) {
       msg.style.color = '#ef4444';
       msg.textContent = 'Harap lampirkan bukti foto surat atau dokumen izin (asli) terlebih dahulu.';
@@ -1579,8 +1901,20 @@ async function handleSubmitPerijinan() {
     };
 
     // 3. Simpan perizinan utama ke node perizinan dan antrean lokal localStorage
-    await submitPerijinan(userPayload, jenis, alasan, tanggal, fileInput);
+    const submittedPid = await submitPerijinan(userPayload, jenis, alasan, tanggal, fileInput);
     isSuccessSubmit = true;
+
+    // Pasang listener langsung ke perizinan/{pid} untuk sinkronisasi seketika jika Walas menyetujui/menolak
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function' && submittedPid) {
+      try {
+        const handleChildSnap = (snap) => {
+          const val = (snap && typeof snap.val === 'function') ? snap.val() : snap;
+          sinkronkanStatusIzinTargetSiswa(submittedPid, val, selSiswa, userPayload);
+        };
+        db.ref('perizinan/' + submittedPid).on('value', handleChildSnap, () => {});
+        db.ref('perijinan/' + submittedPid).on('value', handleChildSnap, () => {});
+      } catch (eCh) {}
+    }
 
     // 4. Sinkronisasi sekunder opsional ke node siswa (jika diizinkan oleh rules), dibungkus aman
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
@@ -1602,6 +1936,11 @@ async function handleSubmitPerijinan() {
       try {
         localStorage.setItem('status_izin_' + selSiswa, 'pending');
       } catch (eLs) {}
+    }
+    if (typeof sessionStorage !== 'undefined' && selSiswa) {
+      try {
+        sessionStorage.setItem('pending_submission_' + selSiswa, String(Date.now()));
+      } catch (eSs) {}
     }
 
     if (btn) {
@@ -1636,6 +1975,11 @@ async function handleSubmitPerijinan() {
         try {
           localStorage.setItem('status_izin_' + selSiswa, 'pending');
         } catch (eLs) {}
+      }
+      if (typeof sessionStorage !== 'undefined' && selSiswa) {
+        try {
+          sessionStorage.setItem('pending_submission_' + selSiswa, String(Date.now()));
+        } catch (eSs) {}
       }
       if (btn) {
         btn.disabled = true;
@@ -1680,6 +2024,11 @@ async function handleSubmitPerijinan() {
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
       btn.textContent = 'Kirim Pengajuan Izin';
+      if (typeof sessionStorage !== 'undefined' && selSiswa) {
+        try {
+          sessionStorage.removeItem('pending_submission_' + selSiswa);
+        } catch (eSs) {}
+      }
     }
   }
 }
@@ -4532,6 +4881,7 @@ if (typeof window !== 'undefined') {
   window.ambilIzinDisetujuiAktifSiswa = ambilIzinDisetujuiAktifSiswa;
   window.ambilIzinDitolakAktifSiswa = ambilIzinDitolakAktifSiswa;
   window.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
+  window.sinkronkanStatusIzinTargetSiswa = sinkronkanStatusIzinTargetSiswa;
   window.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
   window.switchSubtabKehadiran = switchSubtabKehadiran;
   window.renderKehadiranGuru = renderKehadiranGuru;
@@ -4549,6 +4899,7 @@ if (typeof window !== 'undefined') {
     global.ambilIzinDisetujuiAktifSiswa = ambilIzinDisetujuiAktifSiswa;
     global.ambilIzinDitolakAktifSiswa = ambilIzinDitolakAktifSiswa;
     global.bukaKunciFormPengajuanSiswa = bukaKunciFormPengajuanSiswa;
+    global.sinkronkanStatusIzinTargetSiswa = sinkronkanStatusIzinTargetSiswa;
     global.inisialisasiSinkronisasiPerizinanSiswa = inisialisasiSinkronisasiPerizinanSiswa;
     global.switchSubtabKehadiran = switchSubtabKehadiran;
     global.renderKehadiranGuru = renderKehadiranGuru;
@@ -4567,6 +4918,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ambilIzinDisetujuiAktifSiswa,
     ambilIzinDitolakAktifSiswa,
     bukaKunciFormPengajuanSiswa,
+    sinkronkanStatusIzinTargetSiswa,
     inisialisasiSinkronisasiPerizinanSiswa,
     switchSubtabKehadiran,
     renderKehadiranGuru,
@@ -4673,6 +5025,42 @@ try {
         if (!event || !event.data) return;
         const d = event.data;
         if (d.type === 'PERMIT_APPROVED' || d.type === 'PERMIT_REJECTED' || d.type === 'PERMIT_CANCELLED') {
+          const tNisn = d.nisn || (d.payload && d.payload.nisn) || '';
+          const st = (d.type === 'PERMIT_APPROVED' || d.status === 'disetujui' || d.statusBaru === 'disetujui') ? 'disetujui' : ((d.type === 'PERMIT_REJECTED' || d.status === 'ditolak' || d.statusBaru === 'ditolak') ? 'ditolak' : 'dibatalkan');
+          if (typeof localStorage !== 'undefined' && tNisn) {
+            try {
+              localStorage.setItem('status_izin_' + tNisn, st);
+              const lastSubStr = localStorage.getItem('last_submission_' + tNisn);
+              if (lastSubStr) {
+                const p = JSON.parse(lastSubStr);
+                p.status = st;
+                if (d.catatan || d.catatan_guru) p.catatan_guru = d.catatan || d.catatan_guru;
+                if (d.diverifikasi_oleh) p.diverifikasi_oleh = d.diverifikasi_oleh;
+                localStorage.setItem('last_submission_' + tNisn, JSON.stringify(p));
+              }
+              ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'].forEach(k => {
+                const raw = localStorage.getItem(k);
+                if (!raw) return;
+                try {
+                  let arr = JSON.parse(raw);
+                  if (Array.isArray(arr)) {
+                    arr = arr.map(it => {
+                      if (!it) return it;
+                      const itmNisn = String(it.nisn || it.siswaId || it.pengajuId || '').trim();
+                      if (itmNisn === tNisn || (tNisn === '0098263610' && it.nama && String(it.nama).toLowerCase().includes('ihsan'))) {
+                        return { ...it, status: st, catatan_guru: d.catatan || d.catatan_guru || it.catatan_guru };
+                      }
+                      return it;
+                    });
+                    localStorage.setItem(k, JSON.stringify(arr));
+                  }
+                } catch (eArr) {}
+              });
+            } catch (eLsSync) {}
+          }
+          if (typeof sessionStorage !== 'undefined' && tNisn) {
+            try { sessionStorage.removeItem('pending_submission_' + tNisn); } catch (eSs) {}
+          }
           if (typeof bukaKunciFormPengajuanSiswa === 'function') {
             bukaKunciFormPengajuanSiswa(d);
           }

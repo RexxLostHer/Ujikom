@@ -639,7 +639,7 @@ async function muatStatusAbsenGuruHariIni() {
   const key = getGuruKey();
   let data = null;
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snap = await db.ref(`presensi_guru/${today}/${key}`).once('value').catch(() => null);
       if (snap) data = snap.val();
     }
@@ -694,7 +694,7 @@ async function catatAbsenGuru(tipe) {
   const key = getGuruKey();
   let existing = {};
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snap = await db.ref(`presensi_guru/${today}/${key}`).once('value').catch(() => null);
       if (snap) existing = snap.val() || {};
     }
@@ -732,7 +732,7 @@ async function catatAbsenGuru(tipe) {
     existing.catatan = 'Hadir mengajar di sekolah';
     
     try {
-      if (db && typeof db.ref === 'function') {
+      if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
         await db.ref(`presensi_guru/${today}/${key}`).set(existing);
       }
     } catch (e) {}
@@ -761,7 +761,7 @@ async function catatAbsenGuru(tipe) {
     existing.tanggal = today;
 
     try {
-      if (db && typeof db.ref === 'function') {
+      if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
         await db.ref(`presensi_guru/${today}/${key}`).set(existing);
       }
     } catch (e) {}
@@ -821,7 +821,7 @@ async function muatRiwayatAbsenGuru() {
   let allData = {};
   try {
     let snap = null;
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       try {
         snap = await db.ref('presensi_guru').limitToLast(14).once('value');
       } catch (eLimit) {
@@ -995,7 +995,7 @@ async function muatDataPresensiKelas() {
     semuaSiswa = { ...MASTER_DATA_SISWA_RESMI };
   }
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snapSiswa = await db.ref('siswa').once('value').catch(() => null);
       if (snapSiswa && snapSiswa.val()) {
         const parsed = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snapSiswa.val()) : snapSiswa.val();
@@ -1015,7 +1015,7 @@ async function muatDataPresensiKelas() {
   // 3. Ambil data presensi jam berjalan & presensi harian
   let presensiHariIni = {};
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snapPresensi = await db.ref(`presensi_jam/${currentKelas}/${today}/${jamKeAktif}`).once('value').catch(() => null);
       if (snapPresensi && snapPresensi.val()) presensiHariIni = snapPresensi.val();
       
@@ -1055,7 +1055,7 @@ async function muatDataPresensiKelas() {
   // 5. Kartu RFID set: Ihsan (0098263610) dan Rizky (0082104129) memiliki kartu RFID fisik
   let kartuNisnGuruSet = new Set(['0098263610', '0082104129']);
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snapKartu = await db.ref('kartu').once('value').catch(() => null);
       const dataKartu = (snapKartu && snapKartu.val()) || {};
       Object.values(dataKartu).forEach(v => {
@@ -1406,7 +1406,7 @@ function ambilWalasKelasNorm(u) {
 
 function ambilKelasIzin(iz) {
   if (!iz) return '';
-  const raw = iz.kelas || iz.kelasId || (iz.user && iz.user.kelas) || '';
+  const raw = iz.kelas || iz.kelasId || iz.targetKelasId || iz.kelas_target || (iz.user && iz.user.kelas) || '';
   if (raw && raw !== '-') {
     return (typeof normalisasiKelas === 'function') ? normalisasiKelas(raw) : raw;
   }
@@ -1417,7 +1417,7 @@ function ambilKelasIzin(iz) {
   if (Object.keys(ms).length === 0 && typeof require !== 'undefined') {
     try { ms = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI || {}; } catch (e) {}
   }
-  const nisnClean = iz.nisn ? String(iz.nisn).trim() : '';
+  const nisnClean = String(iz.nisn || iz.siswaId || iz.pengajuId || (typeof iz.uid === 'string' && iz.uid.startsWith('UID_') ? iz.uid.replace('UID_', '') : '') || '').trim();
   if (nisnClean && ms[nisnClean]) {
     const k = ms[nisnClean].kelas || (typeof ambilKelasSiswa === 'function' ? ambilKelasSiswa(ms[nisnClean]) : '');
     if (k && k !== '-') return (typeof normalisasiKelas === 'function') ? normalisasiKelas(k) : k;
@@ -1444,7 +1444,7 @@ function ambilNamaSiswaIzin(iz) {
   if (iz.nama && String(iz.nama).trim() && String(iz.nama).trim().toLowerCase() !== 'siswa') {
     return String(iz.nama).trim();
   }
-  const nisnClean = iz.nisn ? String(iz.nisn).trim() : '';
+  const nisnClean = String(iz.nisn || iz.siswaId || iz.pengajuId || (typeof iz.uid === 'string' && iz.uid.startsWith('UID_') ? iz.uid.replace('UID_', '') : '') || '').trim();
   if (nisnClean === '0098263610') {
     return 'M. Ihsan Athallah';
   }
@@ -1669,10 +1669,11 @@ function muatPerizinanSiswaWalas(fetchCloud = true) {
 
     const existing = merged[id];
     // PERTAHANKAN STATUS RESOLVED DARI LOCAL JIKA SNAPSHOT CLOUD MASIH PENDING, KECUALI jika flag izin di-reset ke pending
-    if (existing && (existing.status === 'disetujui' || existing.status === 'ditolak') && statusNorm === 'pending') {
+    const prevResolved = allPerizinanData && (allPerizinanData[id] || (item.id && allPerizinanData[item.id]) || (item.pid && allPerizinanData[item.pid]));
+    if ((existing && (existing.status === 'disetujui' || existing.status === 'ditolak') || (prevResolved && (prevResolved.status === 'disetujui' || prevResolved.status === 'ditolak'))) && statusNorm === 'pending') {
       const isResetPending = item && item.nisn && (typeof localStorage !== 'undefined' && localStorage.getItem('status_izin_' + item.nisn) === 'pending');
       if (!isResetPending) {
-        statusNorm = existing.status;
+        statusNorm = (existing && existing.status) || (prevResolved && prevResolved.status) || statusNorm;
       }
     }
 
@@ -1739,6 +1740,7 @@ function muatPerizinanSiswaWalas(fetchCloud = true) {
   if (typeof window !== 'undefined') window.allPerizinanData = allPerizinanData;
   if (typeof global !== 'undefined') global.allPerizinanData = allPerizinanData;
   renderListApprovalIzin();
+  if (typeof updateBadgeValidasiIzin === 'function') updateBadgeValidasiIzin();
 
   // Async non-blocking fresh fetch from Firebase RTDB
   if (fetchCloud && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
@@ -1788,23 +1790,32 @@ function initListenerPerizinan() {
 
   // 2. Pasang realtime listener RTDB dengan resilience callback error
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-    // Konsolidasi Node Standar: Utamakan node perizinan terproteksi (SEC-01)
+    // Konsolidasi Node Standar: Utamakan node perizinan & perijinan terproteksi (SEC-01)
     try {
-      db.ref('perizinan').on('value', snap => {
-        cachePerizinanZ = snap.val() || {};
-        cachePerijinanJ = cachePerizinanZ;
+      const handleSnapPermit = (source) => (snap) => {
+        const val = (snap && typeof snap.val === 'function' ? snap.val() : snap) || {};
+        if (source === 'perizinan') cachePerizinanZ = val;
+        if (source === 'perijinan') cachePerijinanJ = val;
+        allPerizinanData = Object.assign({}, cachePerijinanJ || {}, cachePerizinanZ || {});
         if (typeof window !== 'undefined') {
           window.cachePerizinanZ = cachePerizinanZ;
           window.cachePerijinanJ = cachePerijinanJ;
+          window.allPerizinanData = allPerizinanData;
         }
         if (typeof global !== 'undefined') {
           global.cachePerizinanZ = cachePerizinanZ;
           global.cachePerijinanJ = cachePerijinanJ;
+          global.allPerizinanData = allPerizinanData;
         }
         muatPerizinanSiswaWalas(false);
-      }, err => {
+      };
+
+      db.ref('perizinan').on('value', handleSnapPermit('perizinan'), err => {
         console.warn('Firebase RTDB /perizinan on value error:', err);
         muatPerizinanSiswaWalas(false);
+      });
+      db.ref('perijinan').on('value', handleSnapPermit('perijinan'), err => {
+        console.warn('Firebase RTDB /perijinan on value error:', err);
       });
     } catch (e) {
       console.warn('Gagal attach listener perizinan:', e);
@@ -1840,6 +1851,71 @@ function filterIzinGuru(status) {
     b.style.color = sLow === 'ditolak' ? '#fff' : '#334155';
   });
   renderListApprovalIzin();
+}
+
+function updateBadgeValidasiIzin() {
+  const badgeCounter = (typeof document !== 'undefined') ? document.getElementById('countPendingIzin') : null;
+  if (!badgeCounter) return 0;
+
+  try {
+    const items = Object.values(allPerizinanData || {});
+    const u = (typeof ambilUserAktifGuru === 'function' ? ambilUserAktifGuru() : null) || guruAktif || {};
+    const isAdm = Boolean(u.role === 'admin' || u.prevRole === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(u.email)));
+    let isWalas = !isAdm && Boolean(u.role === 'walas' || !!u.isWalas);
+    if (!isAdm && !isWalas && (u.nip || u.email)) {
+      const mg = (typeof MASTER_GURU_RESMI !== 'undefined' && MASTER_GURU_RESMI)
+        || (typeof window !== 'undefined' && window.MASTER_GURU_RESMI)
+        || {};
+      const guruFound = (u.nip && mg[u.nip]) || Object.values(mg).find(g =>
+        (g.email && u.email && g.email.toLowerCase() === u.email.toLowerCase()) ||
+        (g.nama && u.nama && g.nama.toLowerCase() === u.nama.toLowerCase())
+      );
+      if (guruFound && (guruFound.isWalas || guruFound.walasKelasId)) {
+        isWalas = true;
+      }
+    }
+    const walasKelasNorm = (typeof ambilWalasKelasNorm === 'function') ? ambilWalasKelasNorm(u) : (u.walasKelasId || u.kelas || '');
+    const targetKWalas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(walasKelasNorm) : walasKelasNorm;
+    if (!isAdm && !isWalas && targetKWalas) {
+      isWalas = true;
+    }
+
+    const countToShow = items.filter(i => {
+      if (!i || isItemIzinGuru(i)) return false;
+      let st = (i.status || 'pending').toLowerCase().trim();
+      if (st === 'menunggu' || !st) st = 'pending';
+      if (st !== 'pending') return false;
+      if (isAdm) return true;
+      const k = (typeof normalisasiKelas === 'function') ? normalisasiKelas(ambilKelasIzin(i)) : ambilKelasIzin(i);
+      return isWalas && k === targetKWalas;
+    }).length;
+
+    if (countToShow > 0) {
+      badgeCounter.style.display = 'inline-block';
+      if (badgeCounter.style && typeof badgeCounter.style.setProperty === 'function') {
+        badgeCounter.style.setProperty('display', 'inline-flex', 'important');
+      }
+      badgeCounter.textContent = String(countToShow);
+      if (badgeCounter.classList && typeof badgeCounter.classList.remove === 'function') {
+        badgeCounter.classList.remove('counter-zero');
+        badgeCounter.classList.remove('hidden');
+      }
+    } else {
+      badgeCounter.style.display = 'none';
+      if (badgeCounter.style && typeof badgeCounter.style.setProperty === 'function') {
+        badgeCounter.style.setProperty('display', 'none', 'important');
+      }
+      badgeCounter.textContent = '';
+      if (badgeCounter.classList && typeof badgeCounter.classList.add === 'function') {
+        badgeCounter.classList.add('counter-zero');
+        badgeCounter.classList.add('hidden');
+      }
+    }
+    return countToShow;
+  } catch (eBadge) {
+    console.warn('[Badge Validasi Izin] Update error:', eBadge);
+    return 0;
+  }
 }
 
 function renderListApprovalIzin() {
@@ -1878,22 +1954,7 @@ function renderListApprovalIzin() {
       isWalas = true;
     }
 
-    const countToShow = items.filter(i => {
-      if (!i || isItemIzinGuru(i)) return false;
-      let st = (i.status || 'pending').toLowerCase().trim();
-      if (st === 'menunggu' || !st) st = 'pending';
-      if (st !== 'pending') return false;
-      if (isAdm) return true;
-      const k = (typeof normalisasiKelas === 'function') ? normalisasiKelas(ambilKelasIzin(i)) : ambilKelasIzin(i);
-      return isWalas && k === targetKWalas;
-    }).length;
-
-    if (countToShow > 0 && badgeCounter) {
-      badgeCounter.style.display = 'inline-block';
-      badgeCounter.textContent = countToShow;
-    } else if (badgeCounter) {
-      badgeCounter.style.display = 'none';
-    }
+    const countToShow = updateBadgeValidasiIzin();
 
     const isSemua = (!currentFilterIzin || currentFilterIzin === 'semua' || currentFilterIzin === 'all');
     let filtered = items.filter(i => i && typeof i === 'object' && !isItemIzinGuru(i));
@@ -2167,6 +2228,9 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
     if (!iz.nama) iz.nama = 'M. IHSAN ATHALLAH';
     if (!iz.kelas) iz.kelas = 'XII RPL 2';
   }
+  if (!iz.nisn) {
+    iz.nisn = iz.siswaId || iz.pengajuId || (typeof iz.uid === 'string' && iz.uid.startsWith('UID_') ? iz.uid.replace('UID_', '') : '') || '';
+  }
   const u = ambilUserAktifGuru();
   const isAdm = Boolean(u.role === 'admin' || u.prevRole === 'admin' || (typeof isEmailAdmin === 'function' && isEmailAdmin(u.email)));
   let isWalas = !isAdm && Boolean(u.role === 'walas' || !!u.isWalas);
@@ -2195,8 +2259,15 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
     return;
   }
 
-  const catatan = prompt(`Masukkan catatan guru untuk verifikasi (${statusBaru}):`, statusBaru === 'disetujui' ? 'Disetujui. Cepat sembuh.' : 'Bukti kurang lengkap.');
-  if (catatan === null) return;
+  let catatan = statusBaru === 'disetujui' ? 'Disetujui. Cepat sembuh.' : 'Bukti kurang lengkap.';
+  if (typeof prompt === 'function') {
+    try {
+      const pRes = prompt(`Masukkan catatan guru untuk verifikasi (${statusBaru}):`, catatan);
+      if (pRes !== null) {
+        catatan = pRes.trim() || catatan;
+      }
+    } catch (ePrompt) {}
+  }
 
   const isApprovedStatus = (statusBaru === 'disetujui' || statusBaru === 'approved');
   const codeVal = isApprovedStatus ? 'approved' : 'rejected';
@@ -2237,28 +2308,43 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
   });
 
   // 1. Update in-memory & render seketika tanpa delay (Optimistic UI)
-  if (allPerizinanData) {
-    Object.keys(allPerizinanData).forEach(k => {
-      const itm = allPerizinanData[k];
-      if (!itm) return;
-      const isTargetStudent = (iz.nisn && (itm.nisn === iz.nisn || itm.siswaId === iz.nisn))
-        || (iz.nisn === '0098263610' && itm.nama && String(itm.nama).toLowerCase().includes('ihsan'));
-      if (allTargetIds.has(itm.id) || allTargetIds.has(itm.pid) || allTargetIds.has(k) || (isTargetStudent && (itm.status === 'pending' || itm.status === 'menunggu'))) {
-        allPerizinanData[k] = {
-          ...itm,
-          ...updatePayload
-        };
-      }
-    });
+  const syncTargets = [allPerizinanData, cachePerijinanJ, cachePerizinanZ];
+  if (typeof window !== 'undefined') {
+    if (window.allPerizinanData) syncTargets.push(window.allPerizinanData);
+    if (window.cachePerijinanJ) syncTargets.push(window.cachePerijinanJ);
+    if (window.cachePerizinanZ) syncTargets.push(window.cachePerizinanZ);
   }
+  if (typeof global !== 'undefined') {
+    if (global.allPerizinanData) syncTargets.push(global.allPerizinanData);
+    if (global.cachePerijinanJ) syncTargets.push(global.cachePerijinanJ);
+    if (global.cachePerizinanZ) syncTargets.push(global.cachePerizinanZ);
+  }
+  syncTargets.forEach(targetCache => {
+    if (targetCache && typeof targetCache === 'object') {
+      Object.keys(targetCache).forEach(k => {
+        const itm = targetCache[k];
+        if (!itm) return;
+        const isTargetStudent = (iz.nisn && (itm.nisn === iz.nisn || itm.siswaId === iz.nisn))
+          || (iz.nisn === '0098263610' && itm.nama && String(itm.nama).toLowerCase().includes('ihsan'));
+        if (allTargetIds.has(itm.id) || allTargetIds.has(itm.pid) || allTargetIds.has(k) || (isTargetStudent && (itm.status === 'pending' || itm.status === 'menunggu'))) {
+          targetCache[k] = {
+            ...itm,
+            ...updatePayload
+          };
+        }
+      });
+    }
+  });
   renderListApprovalIzin();
+  if (typeof updateBadgeValidasiIzin === 'function') updateBadgeValidasiIzin();
 
   // 2. Update antrean localStorage agar sinkron seketika ke tab siswa / admin
-  ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal'].forEach(key => {
+  ['local_perizinan', 'local_perijinan', 'daftar_perizinan_lokal', 'perizinan', 'perijinan'].forEach(key => {
     try {
       if (typeof localStorage === 'undefined') return;
       let list = JSON.parse(localStorage.getItem(key) || '[]');
       if (Array.isArray(list)) {
+        let found = false;
         list = list.map(item => {
           if (!item) return item;
           const isTargetStudent = (iz.nisn && (item.nisn === iz.nisn || item.siswaId === iz.nisn))
@@ -2266,17 +2352,21 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
           const matchTarget = allTargetIds.has(item.id) || allTargetIds.has(item.pid)
             || (isTargetStudent && (item.status === 'pending' || item.status === 'menunggu'));
           if (matchTarget) {
+            found = true;
             return { ...item, ...updatePayload };
           }
           return item;
         });
+        if (!found && iz) {
+          list.unshift({ ...iz, ...updatePayload });
+        }
         localStorage.setItem(key, JSON.stringify(list));
       }
     } catch (e) {}
   });
 
   try {
-    const finalNisnTarget = iz.nisn || (idIzin && (idIzin.includes('IHSAN') || idIzin.includes('0098263610') || (iz.nama && iz.nama.toLowerCase().includes('ihsan'))) ? '0098263610' : '');
+    const finalNisnTarget = iz.nisn || iz.siswaId || iz.pengajuId || (idIzin && (idIzin.includes('IHSAN') || idIzin.includes('0098263610') || (iz.nama && iz.nama.toLowerCase().includes('ihsan'))) ? '0098263610' : '');
     if (typeof localStorage !== 'undefined') {
       if (finalNisnTarget) {
         localStorage.setItem('status_izin_' + finalNisnTarget, statusBaru);
@@ -2287,6 +2377,9 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
           parsedSub.diverifikasi_oleh = updatePayload.diverifikasi_oleh;
           parsedSub.catatan_guru = catatan;
           localStorage.setItem('last_submission_' + finalNisnTarget, JSON.stringify(parsedSub));
+        }
+        if (typeof sessionStorage !== 'undefined') {
+          try { sessionStorage.removeItem('pending_submission_' + finalNisnTarget); } catch (eSs) {}
         }
       }
       localStorage.setItem('perizinan_sync_ping', String(Date.now()));
@@ -2369,7 +2462,7 @@ async function prosesApprovalIzin(idIzin, statusBaru) {
         }
       } catch (errSnap) {}
 
-      const kelasTarget = ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas || siswa.kelas || currentKelas) : (iz.kelas || siswa.kelas || currentKelas));
+      const kelasTarget = kIzin || ((typeof normalisasiKelas === 'function') ? normalisasiKelas(iz.kelas || siswa.kelas || currentKelas) : (iz.kelas || siswa.kelas || currentKelas));
       let jadwal = { '1': true, '2': true, '3': true, '4': true, '5': true, '6': true, '7': true, '8': true };
       if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
         try {
@@ -2926,6 +3019,14 @@ if (typeof window !== 'undefined') {
             if (typeof global !== 'undefined') global.allPerizinanData = {};
             if (typeof renderListApprovalIzin === 'function') renderListApprovalIzin();
             return;
+          }
+          if (event.data.type === 'NEW_PERMIT' && event.data.data) {
+            const itm = event.data.data;
+            const pid = event.data.pid || itm.id || itm.pid;
+            if (pid) {
+              cachePerizinanZ = Object.assign({}, cachePerizinanZ || {}, { [pid]: itm });
+              cachePerijinanJ = Object.assign({}, cachePerijinanJ || {}, { [pid]: itm });
+            }
           }
           if (typeof muatPerizinanSiswaWalas === 'function') {
             muatPerizinanSiswaWalas(false);
@@ -4743,7 +4844,7 @@ async function muatStatistikWalas() {
     semuaSiswa = { ...window.MASTER_DATA_SISWA_RESMI };
   }
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snap = await db.ref('siswa').once('value').catch(() => null);
       if (snap && snap.val()) {
         const parsed = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snap.val()) : snap.val();
@@ -4777,7 +4878,7 @@ async function muatStatistikWalas() {
   // 3. Ambil Presensi Jam Hari Ini & Izin Disetujui
   let presensiData = {};
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value').catch(() => null);
       if (snapPresensi && snapPresensi.val()) presensiData = snapPresensi.val();
       const snapAbsensi = await db.ref(`absensi/${today}`).once('value').catch(() => null);
@@ -4987,7 +5088,7 @@ async function muatLiveAlertWalas() {
     semuaSiswa = { ...window.MASTER_DATA_SISWA_RESMI };
   }
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snap = await db.ref('siswa').once('value').catch(() => null);
       if (snap && snap.val()) {
         const parsed = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(snap.val()) : snap.val();
@@ -5020,7 +5121,7 @@ async function muatLiveAlertWalas() {
 
   let presensiData = {};
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       const snapPresensi = await db.ref(`presensi_jam/${kelas}/${today}`).once('value').catch(() => null);
       if (snapPresensi && snapPresensi.val()) presensiData = snapPresensi.val();
       const snapAbsensi = await db.ref(`absensi/${today}`).once('value').catch(() => null);
@@ -5523,7 +5624,7 @@ async function hadirkanManualGuru(nisn, namaSiswa, jamKe) {
 
   // Kirim ke Firebase RTDB di background
   try {
-    if (db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       await db.ref(`presensi_jam/${currentKelas}/${today}/${jamKe}/${nisn}`).set({
         status: 'hadir',
         waktu: waktu + ' WIB',
@@ -5807,6 +5908,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports.catatHadirManualWalas = catatHadirManualWalas;
   module.exports.isItemIzinGuru = isItemIzinGuru;
   module.exports.muatPerizinanSiswaWalas = muatPerizinanSiswaWalas;
+  module.exports.initListenerPerizinan = initListenerPerizinan;
   module.exports.ambilDataPerizinanLokalWalas = ambilDataPerizinanLokalWalas;
   module.exports.renderListApprovalIzin = renderListApprovalIzin;
   module.exports.switchSubtabRekapGuru = switchSubtabRekapGuru;

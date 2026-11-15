@@ -474,8 +474,16 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   let uploadSuccess = false;
 
   if (fileInput) {
+    if (typeof fileInput === 'string' && fileInput.trim()) {
+      dokumen_url = fileInput.trim();
+      uploadSuccess = true;
+    }
     const file = (fileInput.files && fileInput.files[0]) || (typeof File !== 'undefined' && fileInput instanceof File ? fileInput : (fileInput.size && fileInput.name ? fileInput : null));
     if (file) {
+      if (file.dataUrl || file.url || file.base64 || file.previewUrl) {
+        dokumen_url = file.dataUrl || file.url || file.base64 || file.previewUrl;
+        uploadSuccess = true;
+      }
       const isImage = (file.type && file.type.startsWith('image/')) || (file.name && /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name));
       if (!isImage && file.size > 10 * 1024 * 1024) {
         throw new Error('Ukuran file dokumen PDF maksimal 10MB');
@@ -590,13 +598,15 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   try {
     if (typeof localStorage !== 'undefined') {
       if (finalNisn) {
-        try { localStorage.setItem('status_izin_' + finalNisn, 'pending'); } catch (e) {}
+        try {
+          localStorage.setItem('status_izin_' + finalNisn, 'pending');
+          localStorage.setItem('last_submission_' + finalNisn, JSON.stringify(data));
+        } catch (e) {}
       }
       if (dokumen_url) {
         try {
           if (finalNisn) {
             localStorage.setItem('foto_izin_' + finalNisn, dokumen_url);
-            localStorage.setItem('last_submission_' + finalNisn, JSON.stringify(data));
           }
           localStorage.setItem('lampiran_foto_' + pid, dokumen_url);
           if (finalNisn === '0098263610' || (data.nama && data.nama.toLowerCase().includes('ihsan'))) {

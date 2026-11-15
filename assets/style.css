@@ -943,6 +943,29 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.12);
 }
 
+/* NFC OPSI LOCKED (GEMBOK MODERN & NON-CLICKABLE) */
+.nfc-opsi-item.nfc-opsi-locked,
+.nfc-opsi-item[disabled],
+.nfc-opsi-item.locked {
+  background: #f8fafc !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.75 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  user-select: none !important;
+}
+
+.nfc-opsi-item.nfc-opsi-locked:hover,
+.nfc-opsi-item[disabled]:hover,
+.nfc-opsi-item.locked:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
 .nfc-opsi-ikon {
   display: inline-flex;
   align-items: center;

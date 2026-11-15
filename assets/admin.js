@@ -1232,6 +1232,17 @@ function submitSiswa() {
     .catch(function (err) { showMsg('siswaMsg', 'Gagal: ' + err.message, 'error'); });
 }
 
+let filterQuerySiswaAdmin = '';
+
+function filterDataSiswaAdminLive() {
+  const inputEl = document.getElementById('cariSiswaAdmin');
+  filterQuerySiswaAdmin = inputEl ? inputEl.value.trim().toLowerCase() : '';
+  const pool = (typeof siswaCache !== 'undefined' && siswaCache && Object.keys(siswaCache).length > 0)
+    ? siswaCache
+    : ((typeof global !== 'undefined' && global.siswaCache) || {});
+  renderSiswaTable(pool);
+}
+
 function renderSiswaTable(data) {
   const tbody = document.getElementById('siswaTableBody');
   const selKartu  = document.getElementById('kartuNisn');
@@ -1246,14 +1257,50 @@ function renderSiswaTable(data) {
   if (selSim) selSim.innerHTML = '<option value="">-- Pilih siswa --</option>';
 
   const parsedData = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(data) : data;
-  const items = Object.entries(parsedData).sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
+  const allItems = Object.entries(parsedData).sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
   const kelasSet = new Set((typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1']);
 
-  if (items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>Belum ada data siswa.</p></td></tr>';
+  // Selalu populate dropdown opsi dari seluruh data siswa
+  allItems.forEach(function ([nisn, s]) {
+    if (s && s.kelas) kelasSet.add(s.kelas);
+    const displayNisn = s.nisn || nisn;
+    if (selKartu) {
+      const opt = document.createElement('option');
+      opt.value = displayNisn;
+      opt.textContent = displayNisn + ' — ' + (s.nama || '');
+      selKartu.appendChild(opt);
+    }
+    if (selSim) {
+      const opt2 = document.createElement('option');
+      opt2.value = displayNisn;
+      opt2.textContent = (s.nama || displayNisn) + ' (' + (s.kelas || '') + ')';
+      selSim.appendChild(opt2);
+    }
+  });
+
+  // Filter siswa yang ditampilkan di tabel jika ada kata kunci pencarian
+  let displayItems = allItems;
+  if (filterQuerySiswaAdmin) {
+    displayItems = allItems.filter(function ([nisn, s]) {
+      const q = filterQuerySiswaAdmin;
+      const n = String(s && s.nama || '').toLowerCase();
+      const id = String(s && s.nisn || nisn).toLowerCase();
+      const k = String(s && s.kelas || '').toLowerCase();
+      const em = String(s && s.email || '').toLowerCase();
+      return n.includes(q) || id.includes(q) || k.includes(q) || em.includes(q);
+    });
+  }
+
+  const countEl = document.getElementById('countSiswaAdmin');
+  if (countEl) countEl.textContent = displayItems.length;
+
+  if (displayItems.length === 0) {
+    const pesanKosong = filterQuerySiswaAdmin
+      ? 'Tidak ada siswa yang sesuai dengan pencarian "' + filterQuerySiswaAdmin + '".'
+      : 'Belum ada data siswa.';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><p>' + pesanKosong + '</p></td></tr>';
   } else {
-    items.forEach(function ([nisn, s]) {
-      if (s && s.kelas) kelasSet.add(s.kelas);
+    displayItems.forEach(function ([nisn, s]) {
       const displayNisn = s.nisn || nisn;
       const keyTarget = s._key || displayNisn;
       const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -1312,20 +1359,6 @@ function renderSiswaTable(data) {
       actionsTd.appendChild(editBtn);
       actionsTd.appendChild(delBtn);
       tbody.appendChild(tr);
-
-      if (selKartu) {
-        const opt = document.createElement('option');
-        opt.value = displayNisn;
-        opt.textContent = displayNisn + ' — ' + (s.nama || '');
-        selKartu.appendChild(opt);
-      }
-
-      if (selSim) {
-        const opt2 = document.createElement('option');
-        opt2.value = displayNisn;
-        opt2.textContent = (s.nama || displayNisn) + ' (' + (s.kelas || '') + ')';
-        selSim.appendChild(opt2);
-      }
     });
   }
 
@@ -1351,7 +1384,7 @@ function renderSiswaTable(data) {
 // TAB: KARTU NFC
 // ===================================================================
 function submitKartu() {
-  const idKartu = document.getElementById('kartuId').value.trim();
+  const idKartu = document.getElementById('kartuId').value.trim().toUpperCase();
   const nisn    = document.getElementById('kartuNisn').value;
 
   if (!idKartu || !nisn) {
@@ -1359,10 +1392,38 @@ function submitKartu() {
     return;
   }
 
-  const namaPemilik = (siswaCache[nisn] && siswaCache[nisn].nama) || '';
-  db.ref('kartu/' + idKartu).set({ nisn, pemilik: namaPemilik })
+  const s = (typeof siswaCache !== 'undefined' && siswaCache[nisn]) || {};
+  const namaPemilik = s.nama || '';
+  const kelas = s.kelas || '';
+
+  // Bersihkan mapping kartu lama milik siswa yang sama di database agar tidak ganda
+  const promises = [];
+  if (typeof kartuCache === 'object' && kartuCache) {
+    Object.entries(kartuCache).forEach(([oldUid, val]) => {
+      const oldNisn = typeof val === 'string' ? val : (val && val.nisn);
+      if (oldNisn === nisn && oldUid !== idKartu) {
+        promises.push(db.ref('kartu/' + oldUid).remove());
+        promises.push(db.ref('rfid_map/' + oldUid).remove());
+      }
+    });
+  }
+
+  const payloadKartu = {
+    uid: idKartu,
+    nisn: nisn,
+    nama: namaPemilik,
+    pemilik: namaPemilik,
+    kelas: kelas,
+    tipe: 'siswa',
+    updatedAt: new Date().toISOString()
+  };
+
+  promises.push(db.ref('kartu/' + idKartu).set(payloadKartu));
+  promises.push(db.ref('rfid_map/' + idKartu).set(payloadKartu));
+
+  Promise.all(promises)
     .then(function () {
-      showMsg('kartuMsg', 'Mapping kartu disimpan.', 'success');
+      showMsg('kartuMsg', 'Mapping kartu berhasil disimpan & disinkronkan.', 'success');
       document.getElementById('kartuId').value = '';
     })
     .catch(function (err) { showMsg('kartuMsg', 'Gagal: ' + err.message, 'error'); });
@@ -1370,7 +1431,10 @@ function submitKartu() {
 
 function hapusKartu(idKartu) {
   if (!confirm('Hapus mapping kartu ' + idKartu + '?')) return;
-  db.ref('kartu/' + idKartu).remove()
+  Promise.all([
+    db.ref('kartu/' + idKartu).remove(),
+    db.ref('rfid_map/' + idKartu).remove()
+  ])
     .then(function () { showMsg('kartuMsg', 'Mapping dihapus.', 'success'); })
     .catch(function (err) { showMsg('kartuMsg', 'Gagal: ' + err.message, 'error'); });
 }
@@ -1381,7 +1445,7 @@ function renderKartuTable(data) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const idList = Object.keys(data).sort();
+  const idList = Object.keys(data || {}).sort();
   if (idList.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div><p>Belum ada mapping kartu.</p></div></td></tr>';
     return;
@@ -1389,12 +1453,21 @@ function renderKartuTable(data) {
 
   idList.forEach(function (idKartu) {
     const raw  = data[idKartu];
-    const nisn = typeof raw === 'string' ? raw : (raw && raw.nisn);
-    const nama = (siswaCache[nisn] && siswaCache[nisn].nama) || '(tidak ditemukan)';
+    const isGuru = Boolean(raw && (raw.tipe === 'guru' || raw.nip));
+    const nisn = typeof raw === 'string' ? raw : (raw && (raw.nisn || (isGuru ? raw.nip : '')));
+    let nama = '';
+    if (isGuru) {
+      const guruObj = (typeof guruCache !== 'undefined' && guruCache && guruCache[raw.nip]) || {};
+      nama = raw.nama || guruObj.nama || 'Guru Pengajar SMKN 1 Sumedang';
+    } else {
+      nama = (siswaCache[nisn] && siswaCache[nisn].nama) || (raw && (raw.nama || raw.pemilik)) || '(tidak ditemukan)';
+    }
+
+    const badgeGuru = isGuru ? ' <span style="font-size:10.5px;padding:2px 7px;border-radius:4px;background:#e0e7ff;color:#4338ca;font-weight:700;margin-left:6px;">GURU</span>' : '';
 
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td><code style="font-size:13px;">' + idKartu + '</code></td>' +
+      '<td><code style="font-size:13px;font-weight:700;">' + idKartu + '</code>' + badgeGuru + '</td>' +
       '<td>' + (nisn || '-') + '</td>' +
       '<td>' + nama + '</td>' +
       '<td></td>';
@@ -3072,6 +3145,32 @@ function setFilterKendalaAdmin(filter, btn) {
   renderKendalaGuruAdmin(filterKendalaAktif);
 }
 
+function formatJenisKendala(jenisRaw) {
+  if (!jenisRaw || typeof jenisRaw !== 'string') return 'Belajar Mandiri';
+  const clean = jenisRaw.trim().toLowerCase();
+  const KAMUS_KENDALA = {
+    sakit_mendadak: 'Sakit Mendadak',
+    penugasan_dinas: 'Tugas Luar / Dinas',
+    keperluan_mendesak: 'Keperluan Keluarga',
+    kendala_teknis: 'Kendala Perjalanan',
+    izin_resmi: 'Izin Resmi',
+    tugas_luar: 'Tugas Luar',
+    dinas_luar: 'Dinas Luar',
+    jamkos: 'Belajar Mandiri',
+    jam_kosong: 'Belajar Mandiri',
+    belajar_mandiri: 'Belajar Mandiri',
+    dispensasi: 'Dispensasi',
+    dispen: 'Dispensasi',
+    sakit: 'Sakit',
+    izin: 'Izin',
+    ijin: 'Izin'
+  };
+  if (KAMUS_KENDALA[clean]) return KAMUS_KENDALA[clean];
+  return clean
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b[a-z]/g, c => c.toUpperCase()) || 'Belajar Mandiri';
+}
+
 function listenKendalaGuruAdmin() {
   // 1. Ambil data lokal terlebih dahulu untuk render instan & offline support
   let localList = [];
@@ -3164,7 +3263,7 @@ function renderKendalaGuruAdmin(filter) {
     const statusBadge = (k.status === 'pending')
       ? '<span class="status-pill pending" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fff7ed;color:#c2410c;border:1px solid #ffedd5;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Menunggu ACC</span>'
       : (k.status === 'approved'
-        ? '<span class="status-pill disetujui" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#f0fdf4;color:#15803d;border:1px solid #dcfce7;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Disetujui (Jamkos Aktif)</span>'
+        ? '<span class="status-pill disetujui" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#f0fdf4;color:#15803d;border:1px solid #dcfce7;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> ✓ Disetujui (Belajar Mandiri Aktif)</span>'
         : '<span class="status-pill ditolak" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;border:1px solid #fee2e2;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Ditolak</span>');
 
     let aksiHtml = '';
@@ -3173,7 +3272,7 @@ function renderKendalaGuruAdmin(filter) {
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="btn-primary" style="background:#2563eb;padding:8px 16px;font-weight:600;border-radius:8px;display:inline-flex;align-items:center;gap:6px;border:none;box-shadow:0 1px 2px rgba(37,99,235,0.2);cursor:pointer;" onclick="adminApproveKendala('${id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Setujui Jamkos (Kelas ${k.kelasId || k.kelas || '-'})</span>
+            <span>Setujui Belajar Mandiri (Kelas ${k.kelasId || k.kelas || '-'})</span>
           </button>
           <button class="btn-secondary" style="padding:8px 16px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="adminRejectKendala('${id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -3212,7 +3311,7 @@ function renderKendalaGuruAdmin(filter) {
         ${statusBadge}
       </div>
       <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;margin:10px 0;font-size:13px;">
-        <div style="margin-bottom:4px;"><strong>Jenis Kendala:</strong> ${k.jenis || 'Jam Kosong'}</div>
+        <div style="margin-bottom:4px;"><strong>Jenis Kendala:</strong> ${formatJenisKendala(k.jenis)}</div>
         ${k.jamPelajaran ? `<div style="margin-bottom:4px;"><strong>Jam Pembelajaran:</strong> <span style="background:#e0e7ff;color:#3730a3;font-weight:700;padding:2px 8px;border-radius:6px;font-size:12px;">${k.jamPelajaran}</span></div>` : ''}
         <div><strong>Alasan / Keterangan:</strong> ${k.deskripsiKendala || k.alasan || '-'}</div>
         ${lampiranBukti}
@@ -3266,8 +3365,8 @@ async function adminApproveKendala(id) {
     ? confirm(
         `Setujui laporan kendala dari ${k.guruNama || k.nama}?\n\n` +
         `TINDAKAN OTOMATIS:\n` +
-        `1. Kelas ${targetKelas} dialihkan menjadi status 'JAMKOS'.\n` +
-        `2. Live alert Jamkos dipancarkan ke seluruh Siswa & Walas kelas ${targetKelas}.`
+        `1. Kelas ${targetKelas} dialihkan menjadi status 'Belajar Mandiri'.\n` +
+        `2. Live alert Belajar Mandiri dipancarkan ke seluruh Siswa & Walas kelas ${targetKelas}.`
       )
     : true;
   if (!konfirmasi) return;
@@ -3310,7 +3409,7 @@ async function adminApproveKendala(id) {
   if (typeof DEFAULT_STATUS_KELAS !== 'undefined' && targetKelas && DEFAULT_STATUS_KELAS[targetKelas]) {
     DEFAULT_STATUS_KELAS[targetKelas].status = 'jamkos';
     DEFAULT_STATUS_KELAS[targetKelas].activeTeacherNama = k.guruNama || k.nama || '-';
-    DEFAULT_STATUS_KELAS[targetKelas].activeMapel = k.mapel || 'Jam Kosong';
+    DEFAULT_STATUS_KELAS[targetKelas].activeMapel = k.mapel || 'Belajar Mandiri';
     if (typeof renderStatusKelasControls === 'function') {
       renderStatusKelasControls(DEFAULT_STATUS_KELAS);
     }
@@ -3328,12 +3427,12 @@ async function adminApproveKendala(id) {
     if (fnCeklis) {
       fnCeklis({
         judul: 'Kendala Guru Berhasil Di-ACC!',
-        pesan: `Laporan kendala dari ${k.guruNama || k.nama || 'Guru'} telah disetujui. Status operasional kelas ${targetKelas} kini resmi beralih ke JAMKOS.`,
+        pesan: `Laporan kendala dari ${k.guruNama || k.nama || 'Guru'} telah disetujui. Status operasional kelas ${targetKelas} kini resmi beralih ke Belajar Mandiri.`,
         badge: 'ACC KENDALA GURU',
         kategori: 'kendala'
       });
     } else if (typeof alert === 'function') {
-      alert(`✅ Laporan disetujui! Status kelas ${targetKelas} kini resmi berstatus JAMKOS.`);
+      alert(`✅ Laporan disetujui! Status kelas ${targetKelas} kini resmi berstatus Belajar Mandiri.`);
     }
 
 
@@ -3404,7 +3503,7 @@ async function adminApproveKendala(id) {
         }).catch(() => null),
         activeDb.ref('kelas/' + targetKelas).update({
           status: 'jamkos',
-          activeMapel: k.mapel || 'Jam Kosong',
+          activeMapel: k.mapel || 'Belajar Mandiri',
           activeTeacherNama: k.guruNama || k.nama || '-',
           keteranganJamkos: (k.jamPelajaran ? `[${k.jamPelajaran}] ` : '') + (k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)'),
           jamPelajaran: k.jamPelajaran || '',
@@ -3415,7 +3514,7 @@ async function adminApproveKendala(id) {
         activeDb.ref('classes/' + targetKelas).update({
           status: 'jamkos',
           statusKelas: 'jamkos',
-          activeMapel: k.mapel || 'Jam Kosong',
+          activeMapel: k.mapel || 'Belajar Mandiri',
           activeTeacherNama: k.guruNama || k.nama || '-',
           keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
           updatedAt: new Date().toISOString()
@@ -3423,7 +3522,7 @@ async function adminApproveKendala(id) {
         activeDb.ref('status_kelas/' + targetKelas).update({
           status: 'jamkos',
           keterangan: k.alasan || 'Tugas Mandiri',
-          mapel: k.mapel || 'Jam Kosong',
+          mapel: k.mapel || 'Belajar Mandiri',
           updatedAt: Date.now()
         }).catch(() => null)
       ];
@@ -3597,7 +3696,7 @@ function renderStatusKelasControls(dataKelas) {
       : (st === 'jamkos'
         ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
         : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>');
-    const stLabel = st === 'belajar' ? 'KBM Aktif' : (st === 'jamkos' ? 'Jam Kosong' : 'Selesai / Pulang');
+    const stLabel = st === 'belajar' ? 'KBM Aktif' : (st === 'jamkos' ? 'Belajar Mandiri' : 'Selesai / Pulang');
 
     const card = document.createElement('div');
     card.style.background = '#ffffff';
@@ -3621,15 +3720,15 @@ function renderStatusKelasControls(dataKelas) {
         </div>
         <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5;">
           <div>Mapel: <strong style="color:#334155;">${item.activeMapel || '-'}</strong></div>
-          <div>Guru Pengajar: <strong style="color:${isJamkos ? '#dc2626' : '#334155'};">${guruPengajar}${isJamkos ? ' (Jamkos)' : ''}</strong></div>
+          <div>Guru Pengajar: <strong style="color:${isJamkos ? '#dc2626' : '#334155'};">${guruPengajar}${isJamkos ? ' (Belajar Mandiri)' : ''}</strong></div>
           <div>Wali Kelas: <strong style="color:#64748b;">${walasNama}</strong></div>
         </div>
       <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;">
         <button onclick="ubahStatusKelasManual('${cls}', 'belajar')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'belajar' ? '#10b981' : '#e2e8f0'};background:${st === 'belajar' ? '#10b981' : '#ffffff'};color:${st === 'belajar' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Belajar
         </button>
-        <button onclick="ubahStatusKelasManual('${cls}', 'jamkos')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'jamkos' ? '#ef4444' : '#e2e8f0'};background:${st === 'jamkos' ? '#ef4444' : '#ffffff'};color:${st === 'jamkos' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
-          Jamkos
+        <button onclick="ubahStatusKelasManual('${cls}', 'jamkos')" style="padding:6px 2px;font-size:10.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'jamkos' ? '#ef4444' : '#e2e8f0'};background:${st === 'jamkos' ? '#ef4444' : '#ffffff'};color:${st === 'jamkos' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;white-space:nowrap;">
+          Belajar Mandiri
         </button>
         <button onclick="ubahStatusKelasManual('${cls}', 'pulang')" style="padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:8px;border:1px solid ${st === 'pulang' ? '#64748b' : '#e2e8f0'};background:${st === 'pulang' ? '#64748b' : '#ffffff'};color:${st === 'pulang' ? '#fff' : '#475569'};cursor:pointer;transition:all 0.15s ease;">
           Pulang
@@ -3725,7 +3824,7 @@ async function muatMonitoring3Kelas() {
       const kInfo = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
       const st = kInfo.status || 'belajar';
       const stColor = st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b');
-      const stBadgeText = st === 'belajar' ? 'KBM AKTIF' : (st === 'jamkos' ? 'JAMKOS' : 'SELESAI');
+      const stBadgeText = st === 'belajar' ? 'KBM AKTIF' : (st === 'jamkos' ? 'BELAJAR MANDIRI' : 'SELESAI');
 
       // Ambil daftar siswa resmi
       const poolSiswaMonitoring = (typeof global !== 'undefined' && global.siswaCache && Object.keys(global.siswaCache).length > 0) ? global.siswaCache : ((typeof window !== 'undefined' && window.siswaCache && Object.keys(window.siswaCache).length > 0) ? window.siswaCache : ((siswaCache && Object.keys(siswaCache).length > 0) ? siswaCache : ((typeof MASTER_DATA_SISWA_RESMI !== 'undefined') ? MASTER_DATA_SISWA_RESMI : ((typeof global !== 'undefined' && global.MASTER_DATA_SISWA_RESMI) ? global.MASTER_DATA_SISWA_RESMI : {}))));
@@ -3847,7 +3946,7 @@ async function muatMonitoring3Kelas() {
         <tr>
           <td><strong>${cls}</strong></td>
           <td>${itemCls.walas}</td>
-          <td><span style="font-weight:700;color:${stColor};">${st.toUpperCase()}</span></td>
+          <td><span style="font-weight:700;color:${stColor};">${st === 'jamkos' ? 'BELAJAR MANDIRI' : (st === 'belajar' ? 'KBM AKTIF' : st.toUpperCase())}</span></td>
           <td><span style="color:#059669;font-weight:800;">${hadirCount}</span></td>
           <td><span style="color:#d97706;font-weight:800;">${terlambatCount}</span></td>
           <td><span style="color:#2563eb;font-weight:800;">${izinCount}</span></td>
@@ -3855,7 +3954,7 @@ async function muatMonitoring3Kelas() {
           <td><strong style="color:#4f46e5;">${persenKehadiran}%</strong></td>
           <td>
             <button onclick="ubahStatusKelasManual('${cls}', '${st === 'jamkos' ? 'belajar' : 'jamkos'}')" style="padding:4px 10px;font-size:11px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:700;">
-              ${st === 'jamkos' ? 'Aktifkan KBM' : 'Alihkan Jamkos'}
+              ${st === 'jamkos' ? 'Aktifkan KBM' : 'Alihkan Belajar Mandiri'}
             </button>
           </td>
         </tr>
@@ -4359,6 +4458,9 @@ if (typeof window !== 'undefined') {
   window.verifikasiIzin = window.setujuiIzinSiswa;
   window.muatMonitoring3Kelas = muatMonitoring3Kelas;
   window.populatePresensiKelas = populatePresensiKelas;
+  window.filterDataSiswaAdminLive = filterDataSiswaAdminLive;
+  window.renderSiswaTable = renderSiswaTable;
+  window.renderKartuTable = renderKartuTable;
 }
 
 if (typeof global !== 'undefined') {
@@ -4377,10 +4479,16 @@ if (typeof global !== 'undefined') {
   global.PROFIL_PERINGATAN_REKAP = PROFIL_PERINGATAN_REKAP;
   global.muatMonitoring3Kelas = muatMonitoring3Kelas;
   global.populatePresensiKelas = populatePresensiKelas;
+  global.filterDataSiswaAdminLive = filterDataSiswaAdminLive;
+  global.renderSiswaTable = renderSiswaTable;
+  global.renderKartuTable = renderKartuTable;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    filterDataSiswaAdminLive,
+    renderSiswaTable,
+    renderKartuTable,
     muatRekapPresensi,
     muatMonitoring3Kelas,
     populatePresensiKelas,

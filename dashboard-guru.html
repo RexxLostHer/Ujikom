@@ -370,6 +370,95 @@
     user-select: none;
     box-shadow: none !important;
   }
+
+  /* ===================================================================
+     ERGONOMIC NAVBAR GURU OVERRIDE (R2: ANTI-OVERFLOW & SPASI LEGA)
+     =================================================================== */
+  .dashboard-container {
+    max-width: 1240px !important;
+  }
+  
+  .view-tabs {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    border-radius: 20px !important;
+    background: #f1f5f9 !important;
+    border: 1.5px solid #e2e8f0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .view-tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+  .view-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  /* Desktop Viewport Lebar (>= 1180px): Symmetrical Equal-Width Flex */
+  @media (min-width: 1180px) {
+    .view-tab-btn {
+      flex: 1 1 0px !important;
+      min-width: 0 !important;
+      padding: 10px 8px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.01em !important;
+      gap: 6px !important;
+      justify-content: center !important;
+      justify-content: safe center !important;
+      white-space: nowrap !important;
+      text-overflow: clip !important;
+    }
+  }
+
+  /* Laptop, Tablet & Mobile (< 1180px): Smooth Horizontal Pill Navigation */
+  @media (max-width: 1179px) {
+    .view-tabs {
+      flex-wrap: nowrap !important;
+      gap: 6px !important;
+      padding: 6px 8px !important;
+    }
+    .view-tab-btn {
+      flex: 0 0 auto !important;
+      min-width: max-content !important;
+      padding: 8px 14px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      border-radius: 12px !important;
+      white-space: nowrap !important;
+    }
+  }
+
+  /* Perapian Counter Badge agar tidak mendesak tombol */
+  .counter-badge {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px !important;
+    height: 18px !important;
+    padding: 0 5px;
+    border-radius: 9999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    margin-left: 4px;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+  }
+  .counter-badge[style*="display: none"],
+  .counter-badge[style*="display:none"],
+  .counter-badge.hidden,
+  .counter-badge.counter-zero,
+  .counter-badge:empty {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
@@ -428,7 +517,7 @@
     </button>
     <button class="view-tab-btn" id="btnTabApprovalIzin" onclick="switchGuruTab('tabApprovalIzin', this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-      Validasi Izin <span class="counter-badge" id="countPendingIzin" style="display:none;">0</span>
+      Validasi Izin <span class="counter-badge counter-zero" id="countPendingIzin" style="display:none !important;"></span>
     </button>
     <button class="view-tab-btn" id="btnTabValidasiIzin" onclick="switchGuruTab('tabApprovalIzin', this)" style="display:none;" aria-hidden="true"></button>
     <button class="view-tab-btn" id="btnTabAbsenGuru" onclick="switchGuruTab('tabAbsenGuru', this)">
@@ -446,11 +535,11 @@
     <!-- Rekapitulasi Presensi disembunyikan: Khusus Admin Sesuai PRD -->
     <button class="view-tab-btn" id="btnTabRekapGuru" onclick="switchGuruTab('tabRekapGuru', this)" style="display:none !important;" hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Rekapitulasi Presensi
+      Rekap Harian
     </button>
     <button class="view-tab-btn nav-item-rekap-presensi" id="btnTabRekapPresensiGuru" onclick="switchGuruTab('tabRekapPresensiGuru', this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
-      Rekap Presensi
+      Rekap Terpadu
     </button>
   </div>
 
