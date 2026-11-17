@@ -13,9 +13,9 @@ function getWIBTime(d) {
 }
 
 // Monitoring Presensi RFID — Akses Terbuka (Siswa, Guru & Pengunjung)
-const adminUser = localStorage.getItem('admin_aktif') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('user_aktif'));
+const adminUser = (typeof localStorage !== 'undefined' ? localStorage.getItem('admin_aktif') : null) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('user_aktif'));
 
-const logoutBtn = document.getElementById('logoutBtn');
+const logoutBtn = (typeof document !== 'undefined') ? document.getElementById('logoutBtn') : null;
 if (logoutBtn) {
   logoutBtn.addEventListener('click', function () {
     try {
@@ -38,8 +38,8 @@ let detailAbsensi = {};
 let kartuNisnSet = new Set();
 let kartuDataLoaded = false;
 
-const kelasSelect = document.getElementById('kelasSelect');
-const infoJam = document.getElementById('infoJam');
+const kelasSelect = (typeof document !== 'undefined') ? document.getElementById('kelasSelect') : null;
+const infoJam = (typeof document !== 'undefined') ? document.getElementById('infoJam') : null;
 
 // ---- Helper Foto ----
 function buatSiswaCard(nisn, s, statusSudah, punyaKartu) {
@@ -189,15 +189,74 @@ function renderRoster() {
   document.getElementById('jumlahBelum').textContent = jumlahBelum;
 }
 
+let statusKelasLiveMap = {};
+if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  try {
+    db.ref('kelas').on('value', function (snapshot) {
+      statusKelasLiveMap = snapshot.val() || {};
+      renderInfoJam();
+    });
+  } catch (e) {}
+}
+
 // ---- Render Info Jam ----
 function renderInfoJam() {
-  if (!jamKeAktifSekarang) {
-    infoJam.className = 'jam-aktif-banner kosong';
-    infoJam.innerHTML = '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div>Bukan jam pelajaran sekarang (istirahat / di luar jadwal).</div>';
+  const elInfoJam = (typeof infoJam !== 'undefined' && infoJam) ? infoJam : ((typeof document !== 'undefined') ? document.getElementById('infoJam') : null);
+  if (!elInfoJam) return;
+  const targetK = (typeof kelasSelect !== 'undefined' && kelasSelect && kelasSelect.value) ? kelasSelect.value : 'XII RPL 2';
+  let st = null;
+  const fnTentukan = (typeof tentukanStatusKelas === 'function')
+    ? tentukanStatusKelas
+    : ((typeof window !== 'undefined' && typeof window.tentukanStatusKelas === 'function')
+      ? window.tentukanStatusKelas
+      : ((typeof global !== 'undefined' && typeof global.tentukanStatusKelas === 'function')
+        ? global.tentukanStatusKelas
+        : null));
+  if (fnTentukan) {
+    const kData = (typeof statusKelasLiveMap !== 'undefined' && statusKelasLiveMap) ? statusKelasLiveMap[targetK] : null;
+    st = fnTentukan(targetK, {
+      waktuWIB: (typeof jamSekarang === 'function' ? jamSekarang() : null),
+      tanggal: (typeof tanggalHariIni === 'function' ? tanggalHariIni() : null),
+      kData: kData,
+      statusOverride: kData ? kData.status : null
+    });
+  }
+
+  if (st && st.status === 'pulang') {
+    elInfoJam.className = 'jam-aktif-banner kosong';
+    elInfoJam.innerHTML = '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div>KBM Selesai (Jam Pulang) — Seluruh rangkaian jam pelajaran hari ini telah berakhir.</div>';
     return;
   }
-  infoJam.className = 'jam-aktif-banner';
-  infoJam.innerHTML =
+  if (st && st.status === 'libur') {
+    elInfoJam.className = 'jam-aktif-banner kosong';
+    elInfoJam.innerHTML = '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div>Hari Libur — Tidak ada jam pelajaran KBM aktif hari ini.</div>';
+    return;
+  }
+  if (st && st.status === 'belum_mulai') {
+    elInfoJam.className = 'jam-aktif-banner kosong';
+    elInfoJam.innerHTML = '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div>KBM Belum Mulai — Jam pelajaran pertama dimulai pukul 07:00 WIB.</div>';
+    return;
+  }
+
+  if (!jamKeAktifSekarang) {
+    elInfoJam.className = 'jam-aktif-banner kosong';
+    elInfoJam.innerHTML = '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div>Bukan jam pelajaran sekarang (istirahat / di luar jadwal).</div>';
+    return;
+  }
+
+  if (st && st.status === 'jamkos') {
+    elInfoJam.className = 'jam-aktif-banner jamkos';
+    elInfoJam.innerHTML =
+      '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>' +
+      '<div>' +
+        '<div>Jam ke-' + jamKeAktifSekarang.jam_ke + ': <b>Belajar Mandiri (' + jamKeAktifSekarang.mapel + ')</b></div>' +
+        '<div class="sub" style="color:#ef4444;">' + jamKeAktifSekarang.mulai + ' – ' + jamKeAktifSekarang.selesai + ' • Guru berhalangan hadir (Laporan kendala disetujui)</div>' +
+      '</div>';
+    return;
+  }
+
+  elInfoJam.className = 'jam-aktif-banner';
+  elInfoJam.innerHTML =
     '<span class="icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>' +
     '<div>' +
       '<div>Jam ke-' + jamKeAktifSekarang.jam_ke + ': <b>' + jamKeAktifSekarang.mapel + '</b></div>' +
@@ -286,12 +345,16 @@ function pindahKelas(kelas) {
   listenerJadwalPelajaran = { ref, callback };
 }
 
-kelasSelect.addEventListener('change', function () {
-  pindahKelas(kelasSelect.value);
-});
+if (typeof kelasSelect !== 'undefined' && kelasSelect && typeof kelasSelect.addEventListener === 'function') {
+  kelasSelect.addEventListener('change', function () {
+    pindahKelas(kelasSelect.value);
+  });
+}
 
 // Cek pergantian jam tiap 15 detik
-setInterval(cekJamAktifTerkini, 15000);
+if (typeof window !== 'undefined' && typeof setInterval === 'function') {
+  setInterval(cekJamAktifTerkini, 15000);
+}
 
 // Load semua siswa & populate dropdown kelas
 function perbaruiSiswaLive(parsed) {
@@ -299,70 +362,86 @@ function perbaruiSiswaLive(parsed) {
     siswaCache = Object.assign({}, siswaCache, parsed);
   }
 
-  const kelasSebelumnya = kelasSelect.value;
+  const kelasSebelumnya = (typeof kelasSelect !== 'undefined' && kelasSelect) ? kelasSelect.value : null;
   const daftarKelas = (typeof DAFTAR_KELAS_RESMI !== 'undefined') ? DAFTAR_KELAS_RESMI : ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
-  kelasSelect.innerHTML = '';
+  if (typeof kelasSelect !== 'undefined' && kelasSelect) {
+    kelasSelect.innerHTML = '';
+    daftarKelas.forEach(function (kelas) {
+      const opt = document.createElement('option');
+      opt.value = kelas;
+      opt.textContent = 'Kelas ' + kelas;
+      kelasSelect.appendChild(opt);
+    });
 
-  daftarKelas.forEach(function (kelas) {
-    const opt = document.createElement('option');
-    opt.value = kelas;
-    opt.textContent = 'Kelas ' + kelas;
-    kelasSelect.appendChild(opt);
-  });
+    if (kelasSebelumnya && daftarKelas.includes(kelasSebelumnya)) {
+      kelasSelect.value = kelasSebelumnya;
+    } else {
+      kelasSelect.value = daftarKelas[0] || 'XII RPL 2';
+    }
 
-  if (kelasSebelumnya && daftarKelas.includes(kelasSebelumnya)) {
-    kelasSelect.value = kelasSebelumnya;
-  } else {
-    kelasSelect.value = daftarKelas[0] || 'XII RPL 2';
+    pindahKelas(kelasSelect.value);
   }
-
-  pindahKelas(kelasSelect.value);
 }
 
-db.ref('siswa').on('value', function (snapshot) {
-  const parsed = (typeof parseSiswaSnapshot === 'function')
-    ? parseSiswaSnapshot(snapshot.val())
-    : (snapshot.val() || {});
-  perbaruiSiswaLive(parsed);
+if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+  try {
+    db.ref('siswa').on('value', function (snapshot) {
+      const parsed = (typeof parseSiswaSnapshot === 'function')
+        ? parseSiswaSnapshot(snapshot.val())
+        : (snapshot.val() || {});
+      perbaruiSiswaLive(parsed);
 
-  if (Object.keys(parsed).length < 50) {
-    db.ref('data').once('value').then(function(snapData) {
-      if (snapData.exists()) {
-        perbaruiSiswaLive(parseSiswaSnapshot(snapData.val()));
+      if (Object.keys(parsed).length < 50) {
+        db.ref('data').once('value').then(function(snapData) {
+          if (snapData.exists()) {
+            perbaruiSiswaLive(parseSiswaSnapshot(snapData.val()));
+          }
+        }).catch(function() {});
+
+        if (typeof fetch === 'function') {
+          fetch('assets/data-siswa.json')
+            .then(r => r.json())
+            .then(loc => perbaruiSiswaLive(parseSiswaSnapshot(loc)))
+            .catch(function() {});
+        }
       }
-    }).catch(function() {});
+    });
 
-    if (typeof fetch === 'function') {
-      fetch('assets/data-siswa.json')
-        .then(r => r.json())
-        .then(loc => perbaruiSiswaLive(parseSiswaSnapshot(loc)))
-        .catch(function() {});
-    }
-  }
-});
+    db.ref('rfid_map').on('value', function (snapshot) {
+      var data = snapshot.val() || {};
+      Object.values(data).forEach(function(v) {
+        if (v && typeof v === 'object' && v.nisn) {
+          kartuNisnSet.add(String(v.nisn));
+        } else if (typeof v === 'string') {
+          kartuNisnSet.add(v);
+        }
+      });
+      renderRoster();
+    });
 
-db.ref('rfid_map').on('value', function (snapshot) {
-  var data = snapshot.val() || {};
-  Object.values(data).forEach(function(v) {
-    if (v && typeof v === 'object' && v.nisn) {
-      kartuNisnSet.add(String(v.nisn));
-    } else if (typeof v === 'string') {
-      kartuNisnSet.add(v);
-    }
-  });
-  renderRoster();
-});
+    db.ref('kartu').on('value', function (snapshot) {
+      kartuNisnSet = new Set();
+      var data = snapshot.val() || {};
+      Object.values(data).forEach(function(v) {
+        if (v && typeof v === 'object' && v.nisn) {
+          kartuNisnSet.add(String(v.nisn));
+        } else if (typeof v === 'string') {
+          kartuNisnSet.add(v);
+        }
+      });
+      kartuDataLoaded = true;
+      renderRoster();
+    });
+  } catch (e) {}
+}
 
-db.ref('kartu').on('value', function (snapshot) {
-  kartuNisnSet = new Set();
-  var data = snapshot.val() || {};
-  Object.values(data).forEach(function(v) {
-    if (v && typeof v === 'object' && v.nisn) {
-      kartuNisnSet.add(String(v.nisn));
-    } else if (typeof v === 'string') {
-      kartuNisnSet.add(v);
-    }
-  });
-  kartuDataLoaded = true;
-  renderRoster();
-});
+if (typeof window !== 'undefined') {
+  window.renderInfoJam = renderInfoJam;
+  window.statusKelasLiveMap = statusKelasLiveMap;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    renderInfoJam,
+    statusKelasLiveMap
+  };
+}

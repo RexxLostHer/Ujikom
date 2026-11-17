@@ -19,7 +19,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { processCardTap } = require('../presensia-iot-contract.js');
+const { processCardTap, getWibDateTime } = require('../presensia-iot-contract.js');
 
 const rpiSrc = fs.readFileSync(path.join(__dirname, '../iot/absensi_rpi.py'), 'utf8');
 const dashboardSrc = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
@@ -119,7 +119,7 @@ test('4. HWID yang sudah terikat siswa lain ditolak', () => {
 
 // 5. Izin disetujui tidak ditimpa
 test('5. Izin disetujui: tap diabaikan dan status tidak ditimpa', () => {
-  const tgl = new Date().toISOString().slice(0, 10);
+  const tgl = getWibDateTime().tanggal;
   const r = processCardTap('EE55FF66', {
     deviceId: DEVICE,
     nfcSession: sesi(),

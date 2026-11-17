@@ -32,6 +32,33 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+  .badge-status-kbm {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+  }
+  .badge-status-kbm.badge-kbm-pulang {
+    background: #64748b !important;
+    color: #ffffff !important;
+  }
+  .badge-status-kbm.badge-kbm-belajar {
+    background: #10b981 !important;
+    color: #ffffff !important;
+  }
+  .badge-status-kbm.badge-kbm-jamkos {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+  }
+  .badge-status-kbm.badge-kbm-libur,
+  .badge-status-kbm.badge-kbm-belum_mulai {
+    background: #64748b !important;
+    color: #ffffff !important;
+  }
   .counter-badge {
     background: #ef4444;
     color: #fff;
@@ -582,7 +609,7 @@
         <div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="badge-role-guru" id="badgeKelasBinaanWalas" style="background:#dcfce7;color:#166534;">KELAS BINAAN: XII RPL 2</span>
-            <span id="badgeStatusKelasWalas" style="background:#10b981;color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;">KBM: BELAJAR</span>
+            <span id="badgeStatusKelasWalas" class="badge-status-kbm" style="background:#10b981;color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;">KBM: BELAJAR</span>
           </div>
           <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin-top:6px;display:flex;align-items:center;gap:8px;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>

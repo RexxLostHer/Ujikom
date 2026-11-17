@@ -3818,9 +3818,15 @@ async function muatMonitoring3Kelas() {
     pilotClasses.forEach(itemCls => {
       const cls = itemCls.nama;
       const kInfo = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
-      const st = kInfo.status || 'belajar';
-      const stColor = st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b');
-      const stBadgeText = st === 'belajar' ? 'KBM AKTIF' : (st === 'jamkos' ? 'BELAJAR MANDIRI' : 'SELESAI');
+      let stEval = null;
+      if (typeof tentukanStatusKelas === 'function') {
+        stEval = tentukanStatusKelas(cls, { kData: kInfo, statusOverride: kInfo.status });
+      }
+      const st = stEval ? stEval.status : (kInfo.status || 'belajar');
+      const stColor = stEval ? stEval.warna : (st === 'belajar' ? '#10b981' : (st === 'jamkos' ? '#ef4444' : '#64748b'));
+      const stBadgeText = stEval
+        ? (stEval.status === 'pulang' ? 'KBM: PULANG' : (stEval.status === 'jamkos' ? 'BELAJAR MANDIRI' : (stEval.status === 'libur' ? 'LIBUR' : (stEval.status === 'belum_mulai' ? 'BELUM MULAI' : 'KBM AKTIF'))))
+        : (st === 'belajar' ? 'KBM AKTIF' : (st === 'jamkos' ? 'BELAJAR MANDIRI' : 'SELESAI'));
 
       // Ambil daftar siswa resmi
       const poolSiswaMonitoring = (typeof global !== 'undefined' && global.siswaCache && Object.keys(global.siswaCache).length > 0) ? global.siswaCache : ((typeof window !== 'undefined' && window.siswaCache && Object.keys(window.siswaCache).length > 0) ? window.siswaCache : ((siswaCache && Object.keys(siswaCache).length > 0) ? siswaCache : ((typeof MASTER_DATA_SISWA_RESMI !== 'undefined') ? MASTER_DATA_SISWA_RESMI : ((typeof global !== 'undefined' && global.MASTER_DATA_SISWA_RESMI) ? global.MASTER_DATA_SISWA_RESMI : {}))));
@@ -3942,7 +3948,7 @@ async function muatMonitoring3Kelas() {
         <tr>
           <td><strong>${cls}</strong></td>
           <td>${itemCls.walas}</td>
-          <td><span style="font-weight:700;color:${stColor};">${st === 'jamkos' ? 'BELAJAR MANDIRI' : (st === 'belajar' ? 'KBM AKTIF' : st.toUpperCase())}</span></td>
+          <td><span style="font-weight:700;color:${stColor};">${stBadgeText}</span></td>
           <td><span style="color:#059669;font-weight:800;">${hadirCount}</span></td>
           <td><span style="color:#d97706;font-weight:800;">${terlambatCount}</span></td>
           <td><span style="color:#2563eb;font-weight:800;">${izinCount}</span></td>

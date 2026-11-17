@@ -3,6 +3,12 @@
 
 function tanggalHariIni() {
   if (typeof getTanggalHariIniWIB === 'function') return getTanggalHariIniWIB();
+  if (typeof global !== 'undefined' && typeof global.tanggalHariIni === 'function' && global.tanggalHariIni !== tanggalHariIni) {
+    return global.tanggalHariIni();
+  }
+  if (typeof window !== 'undefined' && typeof window.tanggalHariIni === 'function' && window.tanggalHariIni !== tanggalHariIni) {
+    return window.tanggalHariIni();
+  }
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -10,6 +16,12 @@ function tanggalHariIni() {
 
 function jamSekarang() {
   if (typeof getJamSekarangWIB === 'function') return getJamSekarangWIB().slice(0, 5);
+  if (typeof global !== 'undefined' && typeof global.jamSekarang === 'function' && global.jamSekarang !== jamSekarang) {
+    return global.jamSekarang().slice(0, 5);
+  }
+  if (typeof window !== 'undefined' && typeof window.jamSekarang === 'function' && window.jamSekarang !== jamSekarang) {
+    return window.jamSekarang().slice(0, 5);
+  }
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -278,6 +290,161 @@ function ambilJadwalKelasHariIni(jadwalData, kelas, hari) {
   };
 }
 
+/**
+ * Menentukan status KBM suatu kelas berdasarkan prioritas waktu WIB, jadwal, dan status Firebase:
+ * Prioritas 1 — PULANG:
+ *   - Jika admin/sistem menyetel status kelas menjadi "pulang" (pulang cepat/resmi), ATAU
+ *   - Waktu WIB saat ini telah melewati jam selesai pelajaran terakhir kelas tersebut (jam pulang hari itu).
+ *   - WAJIB menjadi "KBM: PULANG", tidak boleh jatuh ke fallback "JAMKOS".
+ * Prioritas 2 — BELAJAR / AKTIF:
+ *   - Jika berada dalam rentang jam KBM hari ini dan terdapat jadwal aktif serta guru hadir (tidak ada laporan jamkos yang disetujui).
+ * Prioritas 3 — JAMKOS:
+ *   - Hanya berlaku jika masih di dalam rentang jam KBM aktif (setelah jam masuk dan sebelum jam pulang),
+ *     dan jam pelajaran yang berjalan memang kosong / terdapat laporan ketidakhadiran guru disetujui.
+ * Di Luar Jam KBM:
+ *   - Jika hari libur / akhir pekan (Sabtu/Minggu atau status 'libur'), tampilkan status "Libur".
+ *   - Jika sebelum jam masuk sekolah dimulai di hari aktif (sebelum 07:00 WIB), tampilkan status "Belum Mulai".
+ */
+function tentukanStatusKelas(kelas, opsi) {
+  const normKelas = (typeof normalisasiKelas === 'function')
+    ? normalisasiKelas(kelas)
+    : (kelas || 'XII RPL 2');
+
+  const opts = (typeof opsi === 'string')
+    ? (opsi.includes(':') ? { waktuWIB: opsi } : { statusOverride: opsi })
+    : (opsi || {});
+
+  const tgl = opts.tanggal
+    || (typeof window !== 'undefined' && typeof window.tanggalHariIni === 'function' ? window.tanggalHariIni() : null)
+    || (typeof global !== 'undefined' && typeof global.tanggalHariIni === 'function' ? global.tanggalHariIni() : null)
+    || (typeof tanggalHariIni === 'function' ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
+  const waktuRaw = opts.waktuWIB
+    || (typeof window !== 'undefined' && typeof window.jamSekarang === 'function' ? window.jamSekarang() : null)
+    || (typeof global !== 'undefined' && typeof global.jamSekarang === 'function' ? global.jamSekarang() : null)
+    || (typeof jamSekarang === 'function' ? jamSekarang() : '12:00');
+  const waktuWIB = String(waktuRaw).slice(0, 5);
+
+  const hariIni = opts.hari || (typeof namaHariDariTanggal === 'function' ? namaHariDariTanggal(tgl) : 'senin');
+  const hariLower = String(hariIni).toLowerCase();
+
+  const rawStatus = opts.statusOverride
+    || (opts.overrideFirebase && opts.overrideFirebase.status)
+    || (opts.kData && opts.kData.status)
+    || (typeof opts.status === 'string' ? opts.status : '')
+    || '';
+  const statusFirebase = String(rawStatus).toLowerCase().trim();
+
+  // Ambil jadwal pelajaran untuk kelas hari ini
+  const resJadwal = (typeof ambilJadwalKelasHariIni === 'function')
+    ? ambilJadwalKelasHariIni(opts.jadwalData || null, normKelas, hariLower)
+    : { hari: hariLower, jadwal: {}, jamPulang: '15:30' };
+
+  const jamPulangResmi = (resJadwal && resJadwal.jamPulang)
+    || (typeof JAM_PULANG_RESMI !== 'undefined' && JAM_PULANG_RESMI[hariLower])
+    || (hariLower === 'jumat' ? '11:45' : '15:30');
+
+  let jamMasuk = '07:00';
+  let jamSelesaiTerakhir = jamPulangResmi || '15:30';
+
+  if (resJadwal && resJadwal.jadwal && typeof resJadwal.jadwal === 'object') {
+    Object.values(resJadwal.jadwal).forEach(p => {
+      if (p && p.mulai && p.mulai < jamMasuk) {
+        jamMasuk = p.mulai;
+      }
+      if (p && p.selesai && p.selesai > jamSelesaiTerakhir) {
+        jamSelesaiTerakhir = p.selesai;
+      }
+    });
+  }
+
+  function createResult(status, badgeText, label, warna, deskripsi) {
+    return {
+      status,
+      badgeText,
+      teksBadge: badgeText,
+      label,
+      warna,
+      bg: warna,
+      color: '#ffffff',
+      deskripsi,
+      toString() { return badgeText; },
+      valueOf() { return status; }
+    };
+  }
+
+  // ===================================================================
+  // 1. DI LUAR JAM KBM: HARI LIBUR / AKHIR PEKAN
+  // Pada akhir pekan atau hari libur resmi, status selalu Libur
+  // ===================================================================
+  if (hariLower === 'sabtu' || hariLower === 'minggu' || statusFirebase === 'libur') {
+    return createResult(
+      'libur',
+      'Libur',
+      'Libur',
+      '#64748b',
+      'Hari libur sekolah / akhir pekan. Tidak ada jadwal KBM aktif hari ini.'
+    );
+  }
+
+  // ===================================================================
+  // 2. DI LUAR JAM KBM: SEBELUM JAM MASUK DIMULAI DI HARI AKTIF
+  // Sebelum jam masuk KBM (07:00 WIB) di hari aktif KBM
+  // ===================================================================
+  if (waktuWIB < jamMasuk) {
+    return createResult(
+      'belum_mulai',
+      'Belum Mulai',
+      'Belum Mulai',
+      '#64748b',
+      `KBM hari ini belum dimulai. Pelajaran pertama dimulai pukul ${jamMasuk} WIB.`
+    );
+  }
+
+  // ===================================================================
+  // 3. PRIORITAS 1 — PULANG
+  // Waktu WIB >= jam selesai pelajaran terakhir ATAU override eksplisit 'pulang' (pulang cepat/resmi)
+  // WAJIB "KBM: PULANG", tidak boleh jatuh ke fallback JAMKOS
+  // ===================================================================
+  const isLewatJamPulang = (waktuWIB >= jamSelesaiTerakhir);
+  const isOverridePulang = (statusFirebase === 'pulang');
+
+  if (isLewatJamPulang || isOverridePulang) {
+    return createResult(
+      'pulang',
+      'KBM: PULANG',
+      'Pulang',
+      '#64748b',
+      'Seluruh rangkaian KBM hari ini telah berakhir / Jam Kepulangan Resmi.'
+    );
+  }
+
+  // ===================================================================
+  // 4. DI DALAM RENTANG JAM KBM AKTIF (jamMasuk <= waktuWIB < jamSelesaiTerakhir)
+  // PRIORITAS 3 — JAMKOS (Hanya jika di dalam jam aktif & ada laporan / override jamkos)
+  // ===================================================================
+  const isJamkos = (statusFirebase === 'jamkos' || !!opts.isJamkos);
+  if (isJamkos) {
+    return createResult(
+      'jamkos',
+      'KBM: JAMKOS',
+      'Belajar Mandiri',
+      '#ef4444',
+      'Jam Pelajaran Kosong / Penugasan Belajar Mandiri (Guru berhalangan hadir).'
+    );
+  }
+
+  // ===================================================================
+  // 5. PRIORITAS 2 — BELAJAR / AKTIF (KBM Normal dengan guru hadir)
+  // ===================================================================
+  return createResult(
+    'belajar',
+    'KBM: BELAJAR',
+    'Belajar',
+    '#10b981',
+    'KBM Sedang Berlangsung Aktif & Normal Sesuai Jadwal.'
+  );
+}
+
 if (typeof window !== 'undefined') {
   window.tanggalHariIni = tanggalHariIni;
   window.jamSekarang = jamSekarang;
@@ -286,6 +453,17 @@ if (typeof window !== 'undefined') {
   window.MASTER_JADWAL_RESMI = MASTER_JADWAL_RESMI;
   window.JAM_PULANG_RESMI = JAM_PULANG_RESMI;
   window.ambilJadwalKelasHariIni = ambilJadwalKelasHariIni;
+  window.tentukanStatusKelas = tentukanStatusKelas;
+}
+if (typeof global !== 'undefined') {
+  global.tanggalHariIni = tanggalHariIni;
+  global.jamSekarang = jamSekarang;
+  global.namaHariDariTanggal = namaHariDariTanggal;
+  global.cariJamKeAktif = cariJamKeAktif;
+  global.MASTER_JADWAL_RESMI = MASTER_JADWAL_RESMI;
+  global.JAM_PULANG_RESMI = JAM_PULANG_RESMI;
+  global.ambilJadwalKelasHariIni = ambilJadwalKelasHariIni;
+  global.tentukanStatusKelas = tentukanStatusKelas;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -296,7 +474,8 @@ if (typeof module !== 'undefined' && module.exports) {
     cariJamKeAktif,
     MASTER_JADWAL_RESMI,
     JAM_PULANG_RESMI,
-    ambilJadwalKelasHariIni
+    ambilJadwalKelasHariIni,
+    tentukanStatusKelas
   };
 }
 

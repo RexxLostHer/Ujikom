@@ -3632,7 +3632,18 @@ function updateWidgetStatusKelas(arg1, arg2) {
   const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 1');
   const data = (arg1 && typeof arg1 === 'object') ? arg1 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
 
-  const st = String(data.status || 'belajar').toLowerCase();
+  let st = String(data.status || 'belajar').toLowerCase();
+  if (typeof tentukanStatusKelas === 'function') {
+    const evaluated = tentukanStatusKelas(namaKelas, {
+      kData: data,
+      statusOverride: st,
+      waktuWIB: (typeof jamSekarang === 'function' ? jamSekarang() : null),
+      tanggal: (typeof tanggalHariIni === 'function' ? tanggalHariIni() : null)
+    });
+    if (evaluated && evaluated.status) {
+      st = evaluated.status;
+    }
+  }
   if (tag) tag.textContent = 'Status ' + namaKelas;
 
   // Sinkronisasi status tombol pill pemilih kelas pada widget
@@ -3693,6 +3704,34 @@ function updateWidgetStatusKelas(arg1, arg2) {
       judul.style.color = '#334155';
     }
     if (desc) desc.textContent = 'Seluruh rangkaian KBM hari ini telah berakhir. Selamat beristirahat dan hati-hati di jalan.';
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  } else if (st === 'libur') {
+    badge.textContent = 'LIBUR (AKHIR PEKAN)';
+    badge.style.background = '#64748b';
+    badge.style.color = '#fff';
+    if (icon) {
+      icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+      icon.style.background = '#f1f5f9';
+    }
+    if (judul) {
+      judul.textContent = `Hari Libur / Akhir Pekan (${namaKelas})`;
+      judul.style.color = '#334155';
+    }
+    if (desc) desc.textContent = 'Tidak ada kegiatan belajar mengajar terjadwal hari ini. Selamat beristirahat.';
+    if (alertJamkos) alertJamkos.style.display = 'none';
+  } else if (st === 'belum_mulai') {
+    badge.textContent = 'BELUM MULAI (KBM PAGI)';
+    badge.style.background = '#64748b';
+    badge.style.color = '#fff';
+    if (icon) {
+      icon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      icon.style.background = '#f1f5f9';
+    }
+    if (judul) {
+      judul.textContent = `KBM Belum Dimulai (${namaKelas})`;
+      judul.style.color = '#334155';
+    }
+    if (desc) desc.textContent = `KBM hari ini dimulai pukul 07:00 WIB. Pelajaran pertama: ${mapelDisplay} • Guru: ${guruDisplay}`;
     if (alertJamkos) alertJamkos.style.display = 'none';
   } else {
     // Default / Belajar
@@ -5088,3 +5127,10 @@ try {
     }
   }
 } catch (e) {}
+
+if (typeof window !== 'undefined') {
+  window.updateWidgetStatusKelas = updateWidgetStatusKelas;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.updateWidgetStatusKelas = updateWidgetStatusKelas;
+}

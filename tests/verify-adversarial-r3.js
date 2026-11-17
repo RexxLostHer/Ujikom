@@ -317,7 +317,7 @@ async function runAdversarialVerification() {
     role: 'walas'
   };
 
-  const todayTestDate = (typeof fbConfig.tanggalHariIni === 'function' ? fbConfig.tanggalHariIni() : new Date().toISOString().slice(0, 10));
+  const todayTestDate = (typeof tanggalHariIni === 'function' ? tanggalHariIni() : new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()));
 
   console.log('--- TEST 1: Stale pending in localStorage with EMPTY RTDB (Anti-False-Lock) ---');
   mockLocalStorage.setItem('status_izin_0098263610', 'pending');
