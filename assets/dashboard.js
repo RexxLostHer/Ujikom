@@ -3932,7 +3932,10 @@ function initBerandaOverview(user) {
     if (cardMeta) cardMeta.textContent = `NISN: ${nisnAktif} • ${kelasAktif}`;
     renderSmartCardPhoto(`assets/foto/${nisnAktif}.jpg`, namaAktif);
     if (cardUid) {
-      cardUid.textContent = (nisnAktif === '0082104129') ? '1058384422' : '006787337';
+      cardUid.textContent = (user && (user.cardUid || user.rfid)) ? (user.cardUid || user.rfid) : 'Memeriksa...';
+      if (typeof cekStatusKartuNfcSiswa === 'function') {
+        cekStatusKartuNfcSiswa(nisnAktif);
+      }
     }
     if (cardEl) {
       cardEl.style.cursor = 'default';
@@ -4206,8 +4209,8 @@ function muatDataRekapNisn(target) {
   nisn = String(nisn).trim();
 
   // UID & RFID Matching
-  if (nisn === '006787337' || nisn === 'UID_0098263610') nisn = '0098263610';
-  if (nisn === '1058384422' || nisn === 'UID_0082104129') nisn = '0082104129';
+  if (nisn === '006787337' || nisn === '1058384422' || nisn === 'UID_0098263610') nisn = '0098263610';
+  if (nisn === 'UID_0082104129') nisn = '0082104129';
   if (nisn.startsWith('UID_')) nisn = nisn.replace('UID_', '');
   const lowerTarget = nisn.toLowerCase();
   if (lowerTarget.includes('ihsan') || lowerTarget.includes('zemapk')) nisn = '0098263610';

@@ -983,7 +983,16 @@ body {
   .chat-modal-overlay,
   .btn-nav,
   .sidebar-btn,
-  .content-header p {
+  .content-header p,
+  #waFloatingBtn,
+  .wa-floating-btn,
+  #waHubWindow,
+  .wa-hub-window,
+  .wa-toast-container,
+  .wa-prompt-overlay,
+  .wa-floating-lock-badge,
+  .wa-badge-counter,
+  .wa-floating-logo-img {
     display: none !important;
   }
   .admin-layout {

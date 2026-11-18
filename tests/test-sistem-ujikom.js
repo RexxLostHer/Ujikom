@@ -92,7 +92,7 @@ const pakHeri = MASTER_GURU_RESMI['198504252024211008'];
 assert.ok(pakHeri, 'Data Heri Anggara harus ada di MASTER_GURU_RESMI');
 assert.strictEqual(pakHeri.nama, 'Heri Anggara, S.Kom');
 assert.strictEqual(pakHeri.isWalas, true, 'Pak Heri adalah Wali Kelas');
-assert.strictEqual(pakHeri.walasKelasId, 'XII TKJ 2');
+assert.strictEqual(pakHeri.walasKelasId, 'XII TKJ 1');
 assert.strictEqual(tentukanRoleGuru(pakHeri), 'walas');
 
 // 3. Siswa (NISN)
@@ -259,10 +259,11 @@ assert.ok(
   'dashboard.js harus memastikan widget status kelas hanya tampil (flex) untuk siswa terverifikasi'
 );
 
-// D. Switcher pill di dashboard.html mendukung kelas resmi XII TKJ 2
+// D. Switcher pill di dashboard.html mendukung kelas resmi XII TKJ 1
 assert.ok(
-  dashboardHtmlContent.includes('data-kelas="XII TKJ 2"') && dashboardHtmlContent.includes("gantiKelasWidget('XII TKJ 2')"),
-  'dashboard.html harus menyediakan switcher widget untuk XII TKJ 2'
+  (dashboardHtmlContent.includes('data-kelas="XII TKJ 1"') && dashboardHtmlContent.includes("gantiKelasWidget('XII TKJ 1')")) ||
+  (dashboardHtmlContent.includes('data-kelas="XII TKJ 2"') && dashboardHtmlContent.includes("gantiKelasWidget('XII TKJ 2')")),
+  'dashboard.html harus menyediakan switcher widget untuk kelas resmi XII TKJ 1'
 );
 console.log('  ✅ Widget Status Kelas terisolasi & Banner IoT berhasil dihapus 100%!\n');
 

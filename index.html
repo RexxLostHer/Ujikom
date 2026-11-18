@@ -4081,6 +4081,20 @@
         }
       }
 
+      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+        restoreGoogleBtn();
+        tampilNotif(notifTarget, '⚠️ <b>Google Sign-In tidak dapat berjalan di protokol file:// (klik ganda file lokal):</b><br>• Google OAuth mewajibkan web server (HTTP/HTTPS) agar token login dapat diterima peramban.<br>• <b>Solusi Cepat:</b> Buka melalui <b>Live Server</b> (klik kanan index.html &rarr; <i>Open with Live Server</i> di VS Code) atau jalankan <code>npx serve .</code> lalu buka <code>http://localhost:5500</code>.<br>• Atau, Anda dapat langsung login menggunakan formulir <b>Email & Password</b> di bawah.', 'error');
+        return;
+      }
+
+      if (typeof window !== 'undefined' && window.location && window.location.hostname === '127.0.0.1') {
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const targetUrl = `http://localhost${port}${window.location.pathname}${window.location.search}`;
+        restoreGoogleBtn();
+        tampilNotif(notifTarget, `⚠️ <b>Domain belum diizinkan Firebase (127.0.0.1):</b><br>• Google Auth memblokir pop-up jika dibuka via alamat IP <code>127.0.0.1</code>.<br>• <b>Solusi Cepat:</b> Buka melalui <a href="${targetUrl}" style="color:#2563eb;font-weight:700;text-decoration:underline;">http://localhost${port}</a>.<br>• Atau izinkan 127.0.0.1 di Firebase Console &rarr; Auth &rarr; Settings &rarr; Authorized domains.`, 'error');
+        return;
+      }
+
       try {
         const result = await loginDenganGoogle();
         loading(true, 'Menyiapkan Portal Presensi...');
@@ -4126,7 +4140,12 @@
           pesan += `• Atau tambahkan <code>${hostAktif}</code> ke <b>Firebase Console &rarr; Auth &rarr; Settings &rarr; Authorized domains</b>.`;
           tampilNotif(notifTarget, pesan, 'error');
         } else if (e.code === 'auth/popup-closed-by-user') {
-          tampilNotif(notifTarget, 'Login dibatalkan.', 'error');
+          let pesan = '⚠️ <b>Login Google ditutup / dibatalkan.</b><br>';
+          pesan += 'Jika pop-up tadi <i>loading terus</i> sebelum tertutup, periksa hal berikut:<br>';
+          pesan += '• <b>Cookie Pihak Ketiga:</b> Izinkan cookie pihak ketiga pada ikon gembok/mata di bilah alamat browser.<br>';
+          pesan += '• <b>Gunakan localhost:</b> Pastikan alamat web adalah <code>http://localhost:5500</code> (bukan 127.0.0.1 atau file://).<br>';
+          pesan += '• <b>Alternatif:</b> Anda bisa langsung masuk menggunakan formulir <b>Email & Password</b> di bawah.';
+          tampilNotif(notifTarget, pesan, 'error');
         } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || (e.message && (e.message.includes('popup-blocked') || e.message.includes('cancelled-popup-request')))) {
           if (window.location.protocol !== 'file:' && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().signInWithRedirect) {
             try {

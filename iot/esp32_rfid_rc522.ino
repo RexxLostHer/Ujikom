@@ -304,10 +304,16 @@ void prosesAbsensi(String uid) {
 
     Serial.println("[GURU DETECTED] " + namaGuru + " (NIP: " + nip + ")");
     
-    // Tulis ke presensi_guru/{nip}/{tglBuf}
+    // Tulis ke presensi_guru/{nip}/{tglBuf} dan mirror ke presensi_guru/{tglBuf}/{nip}
     String urlPresensiGuru = String(DATABASE_URL) + "/presensi_guru/" + nip + "/" + String(tglBuf) + ".json" + getAuthQuery();
-    String bodyPresensiGuru = "{\"rfidUid\":\"" + uid + "\",\"nama\":\"" + namaGuru + "\",\"nip\":\"" + nip + "\",\"jamMasuk\":\"" + String(waktuBuf) + "\",\"status\":\"hadir\",\"mapel\":\"" + mapelGuru + "\",\"device_id\":\"" + String(DEVICE_ID) + "\"}";
+    String bodyPresensiGuru = "{\"rfidUid\":\"" + uid + "\",\"nama\":\"" + namaGuru + "\",\"nip\":\"" + nip + "\",\"jamMasuk\":\"" + String(waktuBuf) + "\",\"waktu_masuk\":\"" + String(waktuBuf) + "\",\"waktu\":\"" + String(waktuBuf) + "\",\"status\":\"hadir\",\"mapel\":\"" + mapelGuru + "\",\"device_id\":\"" + String(DEVICE_ID) + "\",\"metode\":\"rfid_gateway\"}";
     http.begin(urlPresensiGuru);
+    http.addHeader("Content-Type", "application/json");
+    http.PUT(bodyPresensiGuru);
+    http.end();
+
+    String urlPresensiGuruMirror = String(DATABASE_URL) + "/presensi_guru/" + String(tglBuf) + "/" + nip + ".json" + getAuthQuery();
+    http.begin(urlPresensiGuruMirror);
     http.addHeader("Content-Type", "application/json");
     http.PUT(bodyPresensiGuru);
     http.end();

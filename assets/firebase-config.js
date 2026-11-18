@@ -822,7 +822,7 @@ var MASTER_GURU_RESMI = {
     "mapel": "Teknologi Jaringan & Komputer",
     "rfidUid": "O7P8Q9R0",
     "isWalas": true,
-    "walasKelasId": "XII TKJ 2",
+    "walasKelasId": "XII TKJ 1",
     "foto": "assets/foto/guru_198504252024211008.jpg",
     "foto_karakter": "Tokinari Tsukishiro"
   }
@@ -884,16 +884,6 @@ var DEFAULT_STATUS_KELAS = {
   'XII TKJ 1': {
     id: 'XII_TKJ_1',
     nama: 'XII TKJ 1',
-    status: 'belajar',
-    activeMapel: 'Teknologi Jaringan & Komputer',
-    activeTeacherId: '198504252024211008',
-    activeTeacherNama: 'Heri Anggara, S.Kom',
-    walasNama: 'Heri Anggara, S.Kom',
-    updatedAt: new Date().toISOString()
-  },
-  'XII TKJ 2': {
-    id: 'XII_TKJ_2',
-    nama: 'XII TKJ 2',
     status: 'belajar',
     activeMapel: 'Teknologi Jaringan & Komputer',
     activeTeacherId: '198504252024211008',
@@ -1224,37 +1214,18 @@ async function bootstrapSistemUjikom() {
     if (snapGuru && !snapGuru.exists()) {
       await db.ref('guru').set(MASTER_GURU_RESMI).catch(() => null);
     }
-    const snapKartuA = await db.ref('kartu/' + KARTU_UJI_COBA.kartuA.uid).once('value').catch(() => null);
-    if (snapKartuA && !snapKartuA.exists()) {
-      await db.ref('kartu/' + KARTU_UJI_COBA.kartuA.uid).set({
-        nisn: KARTU_UJI_COBA.kartuA.nisn,
+    // Inisialisasi kartu awal hanya bila node belum pernah ada sama sekali (Anti-overwrite kartu hasil tap/scan)
+    const snapKartuIhsan = await db.ref('kartu/1058384422').once('value').catch(() => null);
+    if (snapKartuIhsan && !snapKartuIhsan.exists()) {
+      await db.ref('kartu/1058384422').set({
+        uid: '1058384422',
+        nisn: '0098263610',
+        nama: 'M. IHSAN ATHALLAH',
+        kelas: 'XII RPL 2',
         tipe: 'siswa',
-        device_id: 'rpi-gateway-01'
+        device_id: 'gateway-rpi-01'
       }).catch(() => null);
     }
-    const snapKartuB = await db.ref('kartu/' + KARTU_UJI_COBA.kartuB.uid).once('value').catch(() => null);
-    if (snapKartuB && !snapKartuB.exists()) {
-      await db.ref('kartu/' + KARTU_UJI_COBA.kartuB.uid).set({
-        nip: KARTU_UJI_COBA.kartuB.nip,
-        tipe: 'guru',
-        device_id: 'rpi-gateway-01'
-      }).catch(() => null);
-    }
-    // Mapping Kartu RFID Fisik Ihsan (006787337) & Rizky (1058384422)
-    await db.ref('kartu/006787337').update({
-      nisn: '0098263610',
-      nama: 'M. IHSAN ATHALLAH',
-      kelas: 'XII RPL 2',
-      tipe: 'siswa',
-      device_id: 'rpi-gateway-01'
-    }).catch(() => null);
-    await db.ref('kartu/1058384422').update({
-      nisn: '0082104129',
-      nama: 'RIZKY RAMADANI',
-      kelas: 'XII RPL 2',
-      tipe: 'siswa',
-      device_id: 'rpi-gateway-01'
-    }).catch(() => null);
   } catch (err) {
     console.warn('[Bootstrap] Dilewati:', err.message);
   }
@@ -1529,17 +1500,17 @@ async function simulasiTapPairing(uid) {
   };
 }
 
-// 5. Cek apakah pengguna sudah memiliki kartu terdaftar di /kartu
+// 5. Cek apakah pengguna sudah memiliki kartu terdaftar di /kartu atau /rfid_map
 async function cekKartuUser(userId) {
   if (!userId) return null;
   const cleanId = String(userId).trim();
   const rtdb = getDbRef();
   if (rtdb && typeof rtdb.ref === 'function') {
     try {
-      const snap = await rtdb.ref('kartu').once('value');
+      const matches = [];
+      const snap = await rtdb.ref('kartu').once('value').catch(() => null);
       const val = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
       if (val && typeof val === 'object') {
-        const matches = [];
         for (const [uid, item] of Object.entries(val)) {
           if (!item) continue;
           if (typeof item === 'string' && item === cleanId) {
@@ -1548,11 +1519,23 @@ async function cekKartuUser(userId) {
             matches.push({ uid, ...item, linkedAt: item.linkedAt || 0 });
           }
         }
-        if (matches.length > 0) {
-          // Pilih kartu dengan timestamp linkedAt paling baru
-          matches.sort((a, b) => (b.linkedAt || 0) - (a.linkedAt || 0));
-          return matches[0];
+      }
+      const snapMap = await rtdb.ref('rfid_map').once('value').catch(() => null);
+      const valMap = snapMap ? (typeof snapMap.val === 'function' ? snapMap.val() : snapMap.val) : null;
+      if (valMap && typeof valMap === 'object') {
+        for (const [uid, item] of Object.entries(valMap)) {
+          if (!item) continue;
+          if (typeof item === 'string' && item === cleanId) {
+            matches.push({ uid, nisn: item, tipe: 'siswa', linkedAt: 0 });
+          } else if (item.nisn === cleanId || item.nip === cleanId || item.userId === cleanId) {
+            matches.push({ uid, ...item, linkedAt: item.linkedAt || 0 });
+          }
         }
+      }
+      if (matches.length > 0) {
+        // Pilih kartu dengan timestamp linkedAt paling baru
+        matches.sort((a, b) => (b.linkedAt || 0) - (a.linkedAt || 0));
+        return matches[0];
       }
     } catch (e) {
       console.warn('[Pairing] Gagal cek kartu di Firebase:', e.message);

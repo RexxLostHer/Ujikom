@@ -1660,6 +1660,28 @@
   background: #075E54;
   transform: scale(1.05);
 }
+
+/* ===== PRINT MEDIA STYLES: HIDE FLOATING CHAT & OVERLAYS SAAT CETAK / PDF ===== */
+@media print {
+  #waFloatingBtn,
+  .wa-floating-btn,
+  #waHubWindow,
+  .wa-hub-window,
+  .wa-toast-container,
+  .wa-prompt-overlay,
+  .wa-floating-lock-badge,
+  .wa-badge-counter,
+  .wa-custom-menu,
+  .wa-lightbox,
+  .wa-call-modal,
+  .wa-confirm-dialog,
+  .wa-floating-logo-img {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
 .wa-group-info-name {
   font-size: 17px;
   font-weight: 800;

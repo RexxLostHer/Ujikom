@@ -525,18 +525,22 @@ def proses_kartu(uid_kartu):
         print(f"[MAPEL] {mapel} — Kelas: {kelas_target}")
         print(f"[WAKTU] {tanggal} {waktu} WIB")
 
-        # Tulis ke presensi_guru/{nip}/{tanggal}
+        # Tulis ke presensi_guru/{nip}/{tanggal} dan mirror ke presensi_guru/{tanggal}/{nip}
         payload_guru = {
             "rfidUid": uid_kartu,
             "nama": nama_guru,
             "nip": nip_guru,
             "jamMasuk": waktu,
+            "waktu_masuk": waktu,
+            "waktu": waktu,
             "status": "hadir",
             "mapel": mapel,
+            "metode": "rfid_gateway",
             "device_id": DEVICE_ID,
             "timestamp": now.isoformat()
         }
         sukses_guru = put_firebase(f"presensi_guru/{nip_guru}/{tanggal}", payload_guru)
+        put_firebase(f"presensi_guru/{tanggal}/{nip_guru}", payload_guru)
 
         # Update KBM kelas menjadi aktif (belajar)
         payload_kelas = {

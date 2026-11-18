@@ -826,14 +826,20 @@ async function muatRekapPresensi() {
     let jam3 = (dataPresensi['3'] && dataPresensi['3'][nisn]) ? dataPresensi['3'][nisn].status : '-';
     let jam4 = (dataPresensi['4'] && dataPresensi['4'][nisn]) ? dataPresensi['4'][nisn].status : '-';
 
-    // Cek izin approved
-    const izinS = Object.values(allIzin).find(iz => String(iz.nisn).trim() === nisn && iz.tanggal === tgl && iz.status === 'disetujui');
+    // Cek izin approved (Immutable Permit Rule)
+    const izinS = Object.values(allIzin).find(iz => {
+      const n = String(iz.nisn || iz.siswaId || iz.pengajuId || '').trim();
+      const t = iz.tanggal || iz.tanggal_norm;
+      const appr = iz.status === 'disetujui' || iz.status === 'approved' || iz.approval_walas === 'approved';
+      return n === nisn && t === tgl && appr;
+    });
     if (izinS) {
-      const stIzin = (izinS.jenis === 'SAKIT' || izinS.jenis === 'SAKIT_MENDADAK') ? 'sakit' : 'izin';
-      if (jam1 === '-') jam1 = stIzin;
-      if (jam2 === '-') jam2 = stIzin;
-      if (jam3 === '-') jam3 = stIzin;
-      if (jam4 === '-') jam4 = stIzin;
+      const jLower = String(izinS.jenis || izinS.tipe || '').toLowerCase();
+      const stIzin = (jLower === 'sakit' || jLower === 'sakit_mendadak') ? 'sakit' : 'izin';
+      jam1 = stIzin;
+      jam2 = stIzin;
+      jam3 = stIzin;
+      jam4 = stIzin;
     }
 
     // Cek absensi personal
@@ -3879,16 +3885,16 @@ async function muatMonitoring3Kelas() {
           }
         }
 
-        // 3. Cek izin yang disetujui
-        if (!statusSiswa) {
-          const izinS = Object.values(allIzin).find(iz =>
-            String(iz.nisn).trim() === nisn &&
-            iz.tanggal === tgl &&
-            iz.status === 'disetujui'
-          );
-          if (izinS) {
-            statusSiswa = (izinS.jenis === 'SAKIT' || izinS.jenis === 'SAKIT_MENDADAK') ? 'sakit' : 'izin';
-          }
+        // 3. Cek izin yang disetujui (Immutable Permit Rule)
+        const izinS = Object.values(allIzin).find(iz => {
+          const n = String(iz.nisn || iz.siswaId || iz.pengajuId || '').trim();
+          const t = iz.tanggal || iz.tanggal_norm;
+          const appr = iz.status === 'disetujui' || iz.status === 'approved' || iz.approval_walas === 'approved';
+          return n === nisn && t === tgl && appr;
+        });
+        if (izinS) {
+          const jLower = String(izinS.jenis || izinS.tipe || '').toLowerCase();
+          statusSiswa = (jLower === 'sakit' || jLower === 'sakit_mendadak') ? 'sakit' : 'izin';
         }
 
         // 4. Fallback baseline resmi jika belum tap

@@ -486,6 +486,76 @@
   .counter-badge:empty {
     display: none !important;
   }
+
+  /* ===== PRINT STYLESHEET (Laporan Rekapitulasi Resmi Guru) ===== */
+  @media print {
+    body {
+      background: #ffffff !important;
+      color: #000000 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .dashboard-container {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+    }
+    #waFloatingBtn,
+    .wa-floating-btn,
+    #waHubWindow,
+    .wa-hub-window,
+    .wa-toast-container,
+    .wa-prompt-overlay,
+    .wa-floating-lock-badge,
+    .wa-badge-counter,
+    .wa-custom-menu,
+    .wa-lightbox,
+    .wa-call-modal,
+    .wa-confirm-dialog,
+    .wa-floating-logo-img,
+    .header,
+    .view-tabs,
+    #widgetNfcGuru,
+    .jam-banner-guru,
+    .glass-loader-overlay,
+    .modal-overlay,
+    .ceklis-overlay,
+    .toast-guru-float,
+    #toastContainer,
+    .btn-mini-action,
+    .btn-filter-chip,
+    button,
+    input,
+    select,
+    .no-print {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    #containerTabelRekap,
+    #wrapTabelRekapSiswaGuru,
+    #wrapTabelRekapPribadiGuru {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+    }
+    th, td {
+      border: 1px solid #cbd5e1 !important;
+      padding: 6px 10px !important;
+    }
+  }
+
+  /* Radar Mengajar dinonaktifkan / disembunyikan total */
+  #btnTabLiveGuru, #tabLiveGuru {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
@@ -551,7 +621,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
       Presensi Guru
     </button>
-    <button class="view-tab-btn" id="btnTabLiveGuru" onclick="switchGuruTab('tabLiveGuru', this)">
+    <button class="view-tab-btn" id="btnTabLiveGuru" onclick="switchGuruTab('tabLiveGuru', this)" style="display:none !important;" hidden aria-hidden="true">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
       Radar Mengajar
     </button>
@@ -814,8 +884,8 @@
     </div>
   </div>
 
-  <!-- ===== TAB 1: RADAR MENGAJAR KELAS ===== -->
-  <div id="tabLiveGuru" class="tab-content" style="display:none;">
+  <!-- ===== TAB 1: RADAR MENGAJAR KELAS (DINONAKTIFKAN / DISEMBUNYIKAN TOTAL) ===== -->
+  <div id="tabLiveGuru" class="tab-content" style="display:none !important;" hidden aria-hidden="true">
     
     <!-- Pilih Kelas & Tanggal -->
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px 22px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.02);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
