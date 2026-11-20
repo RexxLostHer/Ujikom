@@ -67,6 +67,9 @@
    GLOBAL BASE & RESET
    =================================================================== */
 
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -410,6 +413,18 @@ h1, h2, h3, h4, h5, h6,
 .filter-bar select {
   min-width: 190px;
   cursor: pointer;
+}
+
+#pilihKelasHome:disabled,
+#pilihKelasPantau:disabled,
+select.kelas-locked:disabled,
+select:disabled {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+  cursor: default !important;
+  padding-right: 16px !important;
 }
 
 .filter-bar input {
@@ -2939,3 +2954,15 @@ html.lenis, html.lenis body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Mode Terkunci Pengunjung / Belum Terverifikasi (Phase 1) ===== */
+body.mode-terkunci-pengunjung .view-tabs {
+  display: none !important;
+}
+
+body.mode-terkunci-pengunjung #waFloatingBtn,
+body.mode-terkunci-pengunjung #modalChat,
+body.mode-terkunci-pengunjung #waChatView {
+  display: none !important;
+}
+

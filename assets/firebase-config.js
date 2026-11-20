@@ -149,7 +149,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.653",
     "email": "awijaksana04@gmail.com",
     "foto": "assets/foto/3083030644.jpg",
-    "foto_karakter": "Yousuke Hirata"
+    "foto_karakter": "Yousuke Hirata",
+    "nik": "3211184111063841",
+    "tanggal_lahir": "2006-11-01"
   },
   "0091113849": {
     "nisn": "0091113849",
@@ -158,7 +160,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.613",
     "email": "mahmudfauziyusri@gmail.com",
     "foto": "assets/foto/0091113849.jpg",
-    "foto_karakter": "Manabu Horikita"
+    "foto_karakter": "Manabu Horikita",
+    "nik": "3211131111061083",
+    "tanggal_lahir": "2006-11-11"
   },
   "0081953923": {
     "nisn": "0081953923",
@@ -167,7 +171,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.614",
     "email": "saharaaida084@gmail.com",
     "foto": "assets/foto/0081953923.jpg",
-    "foto_karakter": "Suzune Horikita"
+    "foto_karakter": "Suzune Horikita",
+    "nik": "3211152511063768",
+    "tanggal_lahir": "2006-11-25"
   },
   "0094812111": {
     "nisn": "0094812111",
@@ -176,7 +182,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.615",
     "email": "bangkitfaiz7@gmail.com",
     "foto": "assets/foto/0094812111.jpg",
-    "foto_karakter": "Rokusuke Kouenji"
+    "foto_karakter": "Rokusuke Kouenji",
+    "nik": "3211104512067560",
+    "tanggal_lahir": "2006-12-05"
   },
   "0096396686": {
     "nisn": "0096396686",
@@ -185,7 +193,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.616",
     "email": "cahyasipmeme@gmail.com",
     "foto": "assets/foto/0096396686.jpg",
-    "foto_karakter": "Ken Sudou"
+    "foto_karakter": "Ken Sudou",
+    "nik": "3211085112066419",
+    "tanggal_lahir": "2006-12-11"
   },
   "0088101365": {
     "nisn": "0088101365",
@@ -194,7 +204,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.617",
     "email": "destika1903@gmail.com",
     "foto": "assets/foto/0088101365.jpg",
-    "foto_karakter": "Kikyou Kushida"
+    "foto_karakter": "Kikyou Kushida",
+    "nik": "3211012112068171",
+    "tanggal_lahir": "2006-12-21"
   },
   "0093165149": {
     "nisn": "0093165149",
@@ -203,7 +215,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.618",
     "email": "0093165149@gmail.com",
     "foto": "assets/foto/0093165149.jpg",
-    "foto_karakter": "Kanji Ike"
+    "foto_karakter": "Kanji Ike",
+    "nik": "3211160101076050",
+    "tanggal_lahir": "2007-01-01"
   },
   "0093346005": {
     "nisn": "0093346005",
@@ -212,7 +226,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.619",
     "email": "fahrialfauzi111@gmail.com",
     "foto": "assets/foto/0093346005.jpg",
-    "foto_karakter": "Haruki Yamauchi"
+    "foto_karakter": "Haruki Yamauchi",
+    "nik": "3211191301078741",
+    "tanggal_lahir": "2007-01-13"
   },
   "0091670887": {
     "nisn": "0091670887",
@@ -221,7 +237,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.620",
     "email": "0091670887@gmail.com",
     "foto": "assets/foto/0091670887.jpg",
-    "foto_karakter": "Teruhiko Yukimura"
+    "foto_karakter": "Teruhiko Yukimura",
+    "nik": "3211142301074078",
+    "tanggal_lahir": "2007-01-23"
   },
   "0091543636": {
     "nisn": "0091543636",
@@ -230,7 +248,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.622",
     "email": "fayadarkan073@gmail.com",
     "foto": "assets/foto/0091543636.jpg",
-    "foto_karakter": "Akito Miyake"
+    "foto_karakter": "Akito Miyake",
+    "nik": "3211094302076422",
+    "tanggal_lahir": "2007-02-03"
   },
   "0095806933": {
     "nisn": "0095806933",
@@ -239,7 +259,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.623",
     "email": "akmahaniff07@gmail.com",
     "foto": "assets/foto/0095806933.jpg",
-    "foto_karakter": "Hideo Sotomura"
+    "foto_karakter": "Hideo Sotomura",
+    "nik": "3211145102076765",
+    "tanggal_lahir": "2007-02-11"
   },
   "0084091049": {
     "nisn": "0084091049",
@@ -248,7 +270,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.624",
     "email": "0084091049@gmail.com",
     "foto": "assets/foto/0084091049.jpg",
-    "foto_karakter": "Masayoshi Hashimoto"
+    "foto_karakter": "Masayoshi Hashimoto",
+    "nik": "3211206302074616",
+    "tanggal_lahir": "2007-02-23"
   },
   "0092945323": {
     "nisn": "0092945323",
@@ -257,7 +281,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.625",
     "email": "daffarafasya007@gmail.com",
     "foto": "assets/foto/0092945323.jpg",
-    "foto_karakter": "Ryuuji Kanzaki"
+    "foto_karakter": "Ryuuji Kanzaki",
+    "nik": "3211174103071155",
+    "tanggal_lahir": "2007-03-01"
   },
   "0093579207": {
     "nisn": "0093579207",
@@ -266,7 +292,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.626",
     "email": "rizkiramadhan20009@gmail.com",
     "foto": "assets/foto/0093579207.jpg",
-    "foto_karakter": "Sou Shibata"
+    "foto_karakter": "Sou Shibata",
+    "nik": "3211091103078727",
+    "tanggal_lahir": "2007-03-11"
   },
   "0089025956": {
     "nisn": "0089025956",
@@ -275,7 +303,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.627",
     "email": "naaila368@gmail.com",
     "foto": "assets/foto/0089025956.jpg",
-    "foto_karakter": "Airi Sakura"
+    "foto_karakter": "Airi Sakura",
+    "nik": "3211152203076076",
+    "tanggal_lahir": "2007-03-22"
   },
   "0087369704": {
     "nisn": "0087369704",
@@ -284,7 +314,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.629",
     "email": "0087369704@gmail.com",
     "foto": "assets/foto/0087369704.jpg",
-    "foto_karakter": "Honami Ichinose"
+    "foto_karakter": "Honami Ichinose",
+    "nik": "3211090404071829",
+    "tanggal_lahir": "2007-04-04"
   },
   "0082852058": {
     "nisn": "0082852058",
@@ -293,7 +325,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.630",
     "email": "pashyaprasetyow@gmail.com",
     "foto": "assets/foto/0082852058.jpg",
-    "foto_karakter": "Kouhei Katsuragi"
+    "foto_karakter": "Kouhei Katsuragi",
+    "nik": "3211151004078468",
+    "tanggal_lahir": "2007-04-10"
   },
   "0093176594": {
     "nisn": "0093176594",
@@ -302,7 +336,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.631",
     "email": "incessputri23@gmail.com",
     "foto": "assets/foto/0093176594.jpg",
-    "foto_karakter": "Kei Karuizawa"
+    "foto_karakter": "Kei Karuizawa",
+    "nik": "3211182004078075",
+    "tanggal_lahir": "2007-04-20"
   },
   "0089822982": {
     "nisn": "0089822982",
@@ -311,7 +347,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.632",
     "email": "raflimuhammadghojali12@gmail.com",
     "foto": "assets/foto/0089822982.jpg",
-    "foto_karakter": "Albert Yamada"
+    "foto_karakter": "Albert Yamada",
+    "nik": "3211193004071412",
+    "tanggal_lahir": "2007-04-30"
   },
   "0084202991": {
     "nisn": "0084202991",
@@ -320,7 +358,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.633",
     "email": "faidzaraka@gmail.com",
     "foto": "assets/foto/0084202991.jpg",
-    "foto_karakter": "Daichi Ishizaki"
+    "foto_karakter": "Daichi Ishizaki",
+    "nik": "3211185005072884",
+    "tanggal_lahir": "2007-05-10"
   },
   "0081131116": {
     "nisn": "0081131116",
@@ -329,7 +369,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.634",
     "email": "rayaajuta6009@gmail.com",
     "foto": "assets/foto/0081131116.jpg",
-    "foto_karakter": "Hayato Kitou"
+    "foto_karakter": "Hayato Kitou",
+    "nik": "3211092305074402",
+    "tanggal_lahir": "2007-05-23"
   },
   "0088738345": {
     "nisn": "0088738345",
@@ -338,7 +380,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.635",
     "email": "reva.ayunadia08@gmail.com",
     "foto": "assets/foto/0088738345.jpg",
-    "foto_karakter": "Arisu Sakayanagi"
+    "foto_karakter": "Arisu Sakayanagi",
+    "nik": "3211120306076951",
+    "tanggal_lahir": "2007-06-03"
   },
   "0083707720": {
     "nisn": "0083707720",
@@ -347,7 +391,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.636",
     "email": "rezqimaulana05@gmail.com",
     "foto": "assets/foto/0083707720.jpg",
-    "foto_karakter": "Yahiko Totsuka"
+    "foto_karakter": "Yahiko Totsuka",
+    "nik": "3211150906079770",
+    "tanggal_lahir": "2007-06-09"
   },
   "0097000545": {
     "nisn": "0097000545",
@@ -356,7 +402,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.637",
     "email": "riantojr.101213@gmail.com",
     "foto": "assets/foto/0097000545.jpg",
-    "foto_karakter": "Miyabi Nagumo"
+    "foto_karakter": "Miyabi Nagumo",
+    "nik": "3211101906077507",
+    "tanggal_lahir": "2007-06-19"
   },
   "0084987133": {
     "nisn": "0084987133",
@@ -365,7 +413,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.638",
     "email": "iwanfhatur25@gmail.com",
     "foto": "assets/foto/0084987133.jpg",
-    "foto_karakter": "Ikuto Kiriyama"
+    "foto_karakter": "Ikuto Kiriyama",
+    "nik": "3211184107073793",
+    "tanggal_lahir": "2007-07-01"
   },
   "0083606520": {
     "nisn": "0083606520",
@@ -374,7 +424,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.639",
     "email": "expialidocioouss@gmail.com",
     "foto": "assets/foto/0083606520.jpg",
-    "foto_karakter": "Hiyori Shiina"
+    "foto_karakter": "Hiyori Shiina",
+    "nik": "3211081307071059",
+    "tanggal_lahir": "2007-07-13"
   },
   "0087321172": {
     "nisn": "0087321172",
@@ -383,7 +435,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.640",
     "email": "suciramadhanirizkia@gmail.com",
     "foto": "assets/foto/0087321172.jpg",
-    "foto_karakter": "Mio Ibuki"
+    "foto_karakter": "Mio Ibuki",
+    "nik": "3211146007074025",
+    "tanggal_lahir": "2007-07-20"
   },
   "0087949581": {
     "nisn": "0087949581",
@@ -392,7 +446,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.641",
     "email": "khoirunnisasalsabila749@gmail.com",
     "foto": "assets/foto/0087949581.jpg",
-    "foto_karakter": "Haruka Hasebe"
+    "foto_karakter": "Haruka Hasebe",
+    "nik": "3211187107075474",
+    "tanggal_lahir": "2007-07-31"
   },
   "0088938544": {
     "nisn": "0088938544",
@@ -401,7 +457,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.642",
     "email": "sofyyannrafi@gmail.com",
     "foto": "assets/foto/0088938544.jpg",
-    "foto_karakter": "Tomonari Mashima"
+    "foto_karakter": "Tomonari Mashima",
+    "nik": "3211175008075341",
+    "tanggal_lahir": "2007-08-10"
   },
   "0097682754": {
     "nisn": "0097682754",
@@ -410,7 +468,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.644",
     "email": "0097682754@gmail.com",
     "foto": "assets/foto/0097682754.jpg",
-    "foto_karakter": "Maya Satou"
+    "foto_karakter": "Maya Satou",
+    "nik": "3211011808079599",
+    "tanggal_lahir": "2007-08-18"
   },
   "0085991563": {
     "nisn": "0085991563",
@@ -419,7 +479,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.645",
     "email": "arsendimas5@gmail.com",
     "foto": "assets/foto/0085991563.jpg",
-    "foto_karakter": "Chiaki Matsushita"
+    "foto_karakter": "Chiaki Matsushita",
+    "nik": "3211053108075262",
+    "tanggal_lahir": "2007-08-31"
   },
   "0095039675": {
     "nisn": "0095039675",
@@ -428,7 +490,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.646",
     "email": "vivihanifah91@gmail.com",
     "foto": "assets/foto/0095039675.jpg",
-    "foto_karakter": "Akane Tachibana"
+    "foto_karakter": "Akane Tachibana",
+    "nik": "3211031109079461",
+    "tanggal_lahir": "2007-09-11"
   },
   "0087607700": {
     "nisn": "0087607700",
@@ -437,7 +501,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.647",
     "email": "0087607700@gmail.com",
     "foto": "assets/foto/0087607700.jpg",
-    "foto_karakter": "Masumi Kamuro"
+    "foto_karakter": "Masumi Kamuro",
+    "nik": "3211015809076617",
+    "tanggal_lahir": "2007-09-18"
   },
   "0096619392": {
     "nisn": "0096619392",
@@ -446,7 +512,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.648",
     "email": "zaidanhasbiakbar349@gmail.com",
     "foto": "assets/foto/0096619392.jpg",
-    "foto_karakter": "Tokinari Tsukishiro"
+    "foto_karakter": "Tokinari Tsukishiro",
+    "nik": "3211116809076304",
+    "tanggal_lahir": "2007-09-28"
   },
   "0081782494": {
     "nisn": "0081782494",
@@ -455,7 +523,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.649",
     "email": "abhiprayasamboga@gmail.com",
     "foto": "assets/foto/0081782494.jpg",
-    "foto_karakter": "Atsuomi Ayanokouji"
+    "foto_karakter": "Atsuomi Ayanokouji",
+    "nik": "3211075010071205",
+    "tanggal_lahir": "2007-10-10"
   },
   "0095250998": {
     "nisn": "0095250998",
@@ -464,7 +534,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.650",
     "email": "agusrizkynurfadil@gmail.com",
     "foto": "assets/foto/0095250998.jpg",
-    "foto_karakter": "Narumori Sakayanagi"
+    "foto_karakter": "Narumori Sakayanagi",
+    "nik": "3211085810071948",
+    "tanggal_lahir": "2007-10-18"
   },
   "0084736069": {
     "nisn": "0084736069",
@@ -473,7 +545,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.651",
     "email": "alifazakiroh@gmail.com",
     "foto": "assets/foto/0084736069.jpg",
-    "foto_karakter": "Sae Chabashira"
+    "foto_karakter": "Sae Chabashira",
+    "nik": "3211096710071003",
+    "tanggal_lahir": "2007-10-27"
   },
   "0092418049": {
     "nisn": "0092418049",
@@ -482,7 +556,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.652",
     "email": "cuankiebasomanguyun@gmail.com",
     "foto": "assets/foto/0092418049.jpg",
-    "foto_karakter": "Chie Hoshinomiya"
+    "foto_karakter": "Chie Hoshinomiya",
+    "nik": "3211065011074478",
+    "tanggal_lahir": "2007-11-10"
   },
   "0098205255": {
     "nisn": "0098205255",
@@ -491,7 +567,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.654",
     "email": "cherilsaskhia@gmail.com",
     "foto": "assets/foto/0098205255.jpg",
-    "foto_karakter": "Mei-Yu Wang"
+    "foto_karakter": "Mei-Yu Wang",
+    "nik": "3211101811073556",
+    "tanggal_lahir": "2007-11-18"
   },
   "0086172155": {
     "nisn": "0086172155",
@@ -500,7 +578,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.655",
     "email": "dandiiriziq@gmail.com",
     "foto": "assets/foto/0086172155.jpg",
-    "foto_karakter": "Kouji Machida"
+    "foto_karakter": "Kouji Machida",
+    "nik": "3211116611077134",
+    "tanggal_lahir": "2007-11-26"
   },
   "0096081488": {
     "nisn": "0096081488",
@@ -509,7 +589,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.656",
     "email": "devinurulazizah74@gmail.com",
     "foto": "assets/foto/0096081488.jpg",
-    "foto_karakter": "Yume Kobashi"
+    "foto_karakter": "Yume Kobashi",
+    "nik": "3211150912076292",
+    "tanggal_lahir": "2007-12-09"
   },
   "0082773779": {
     "nisn": "0082773779",
@@ -518,7 +600,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.657",
     "email": "dipaaboy@gmail.com",
     "foto": "assets/foto/0082773779.jpg",
-    "foto_karakter": "Satsuki Shinohara"
+    "foto_karakter": "Satsuki Shinohara",
+    "nik": "3211141812076977",
+    "tanggal_lahir": "2007-12-18"
   },
   "0091923585": {
     "nisn": "0091923585",
@@ -527,7 +611,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.658",
     "email": "zahraaanrr@gmail.com",
     "foto": "assets/foto/0091923585.jpg",
-    "foto_karakter": "Mako Amikura"
+    "foto_karakter": "Mako Amikura",
+    "nik": "3211202912078746",
+    "tanggal_lahir": "2007-12-29"
   },
   "0088435506": {
     "nisn": "0088435506",
@@ -536,7 +622,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.659",
     "email": "fulanmuhammad32@gmail.com",
     "foto": "assets/foto/0088435506.jpg",
-    "foto_karakter": "Tetsuya Hamaguchi"
+    "foto_karakter": "Tetsuya Hamaguchi",
+    "nik": "3211164901083100",
+    "tanggal_lahir": "2008-01-09"
   },
   "0087828183": {
     "nisn": "0087828183",
@@ -545,7 +633,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.660",
     "email": "iqbalmaulanasidik990@gmail.com",
     "foto": "assets/foto/0087828183.jpg",
-    "foto_karakter": "Hiroya Tokitou"
+    "foto_karakter": "Hiroya Tokitou",
+    "nik": "3211145801085105",
+    "tanggal_lahir": "2008-01-18"
   },
   "0085340789": {
     "nisn": "0085340789",
@@ -554,7 +644,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.661",
     "email": "kurniawansudrajat12@gmail.com",
     "foto": "assets/foto/0085340789.jpg",
-    "foto_karakter": "Susumu Moriyama"
+    "foto_karakter": "Susumu Moriyama",
+    "nik": "3211052901084179",
+    "tanggal_lahir": "2008-01-29"
   },
   "0087121894": {
     "nisn": "0087121894",
@@ -563,7 +655,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.662",
     "email": "zaidan1095@gmail.com",
     "foto": "assets/foto/0087121894.jpg",
-    "foto_karakter": "Kyou Ishigami"
+    "foto_karakter": "Kyou Ishigami",
+    "nik": "3211170802084746",
+    "tanggal_lahir": "2008-02-08"
   },
   "0098263610": {
     "nisn": "0098263610",
@@ -572,16 +666,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.663",
     "email": "7dosabesar557@gmail.com",
     "foto": "assets/foto/0098263610.jpg",
-    "foto_karakter": "Kiyotaka Ayanokouji"
-  },
-  "00082109": {
-    "nisn": "00082109",
-    "nama": "TIFANI ADISYA RAMADHANI",
-    "kelas": "XII RPL 2",
-    "nis": "24.25.X.664",
-    "email": "tifaniadisya@gmail.com",
-    "foto": "assets/foto/00082109.jpg",
-    "foto_karakter": "Kei Karuizawa"
+    "foto_karakter": "Kiyotaka Ayanokouji",
+    "nik": "3211165402087130",
+    "tanggal_lahir": "2008-02-14"
   },
   "0094996233": {
     "nisn": "0094996233",
@@ -590,7 +677,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.665",
     "email": "ardanzaquan@gmail.com",
     "foto": "assets/foto/0094996233.jpg",
-    "foto_karakter": "Makoto Sumida"
+    "foto_karakter": "Makoto Sumida",
+    "nik": "3211136502082989",
+    "tanggal_lahir": "2008-02-25"
   },
   "0089471184": {
     "nisn": "0089471184",
@@ -599,7 +688,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.666",
     "email": "mfarhan231008@gmail.com",
     "foto": "assets/foto/0089471184.jpg",
-    "foto_karakter": "Kazuomi Housen"
+    "foto_karakter": "Kazuomi Housen",
+    "nik": "3211120503088519",
+    "tanggal_lahir": "2008-03-05"
   },
   "0092047785": {
     "nisn": "0092047785",
@@ -608,7 +699,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.667",
     "email": "ajirifki694@gmail.com",
     "foto": "assets/foto/0092047785.jpg",
-    "foto_karakter": "Takuya Yagami"
+    "foto_karakter": "Takuya Yagami",
+    "nik": "3211111703083340",
+    "tanggal_lahir": "2008-03-17"
   },
   "0089511928": {
     "nisn": "0089511928",
@@ -617,7 +710,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.668",
     "email": "nabilaainunalzahrani@gmail.com",
     "foto": "assets/foto/0089511928.jpg",
-    "foto_karakter": "Kayano Onodera"
+    "foto_karakter": "Kayano Onodera",
+    "nik": "3211086603089150",
+    "tanggal_lahir": "2008-03-26"
   },
   "0092427440": {
     "nisn": "0092427440",
@@ -626,7 +721,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.669",
     "email": "nauvalpurnama07@gmail.com",
     "foto": "assets/foto/0092427440.jpg",
-    "foto_karakter": "Riku Utomiya"
+    "foto_karakter": "Riku Utomiya",
+    "nik": "3211180604087714",
+    "tanggal_lahir": "2008-04-06"
   },
   "0093940421": {
     "nisn": "0093940421",
@@ -635,7 +732,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.670",
     "email": "karuniania614@gmail.com",
     "foto": "assets/foto/0093940421.jpg",
-    "foto_karakter": "Chihiro Shiranami"
+    "foto_karakter": "Chihiro Shiranami",
+    "nik": "3211041804084495",
+    "tanggal_lahir": "2008-04-18"
   },
   "0089603330": {
     "nisn": "0089603330",
@@ -644,7 +743,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.671",
     "email": "annurnadila@gmail.com",
     "foto": "assets/foto/0089603330.jpg",
-    "foto_karakter": "Nene Mori"
+    "foto_karakter": "Nene Mori",
+    "nik": "3211202504084586",
+    "tanggal_lahir": "2008-04-25"
   },
   "0081281355": {
     "nisn": "0081281355",
@@ -653,7 +754,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.672",
     "email": "9f.raflynoviady@gmail.com",
     "foto": "assets/foto/0081281355.jpg",
-    "foto_karakter": "Katsunori Shiba"
+    "foto_karakter": "Katsunori Shiba",
+    "nik": "3211174705084942",
+    "tanggal_lahir": "2008-05-07"
   },
   "0093489720": {
     "nisn": "0093489720",
@@ -662,7 +765,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.673",
     "email": "0093489720@gmail.com",
     "foto": "assets/foto/0093489720.jpg",
-    "foto_karakter": "Soushi Miyamoto"
+    "foto_karakter": "Soushi Miyamoto",
+    "nik": "3211161405081978",
+    "tanggal_lahir": "2008-05-14"
   },
   "0081714691": {
     "nisn": "0081714691",
@@ -671,7 +776,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.675",
     "email": "rikaanoviyantika@gmail.com",
     "foto": "assets/foto/0081714691.jpg",
-    "foto_karakter": "Nazuna Asahina"
+    "foto_karakter": "Nazuna Asahina",
+    "nik": "3211186805087068",
+    "tanggal_lahir": "2008-05-28"
   },
   "0091835189": {
     "nisn": "0091835189",
@@ -680,7 +787,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.676",
     "email": "0091835189@gmail.com",
     "foto": "assets/foto/0091835189.jpg",
-    "foto_karakter": "Setsuya Minami"
+    "foto_karakter": "Setsuya Minami",
+    "nik": "3211050606087788",
+    "tanggal_lahir": "2008-06-06"
   },
   "0087989875": {
     "nisn": "0087989875",
@@ -689,7 +798,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.677",
     "email": "rinrinrinawati272@gmail.com",
     "foto": "assets/foto/0087989875.jpg",
-    "foto_karakter": "Nanami Yabu"
+    "foto_karakter": "Nanami Yabu",
+    "nik": "3211205406086376",
+    "tanggal_lahir": "2008-06-14"
   },
   "0082578655": {
     "nisn": "0082578655",
@@ -698,7 +809,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.678",
     "email": "ririndwir3011@gmail.com",
     "foto": "assets/foto/0082578655.jpg",
-    "foto_karakter": "Shiho Manabe"
+    "foto_karakter": "Shiho Manabe",
+    "nik": "3211152506085050",
+    "tanggal_lahir": "2008-06-25"
   },
   "0083044841": {
     "nisn": "0083044841",
@@ -707,7 +820,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.679",
     "email": "moyyprivate@gmail.com",
     "foto": "assets/foto/0083044841.jpg",
-    "foto_karakter": "Saki Yamashita"
+    "foto_karakter": "Saki Yamashita",
+    "nik": "3211050407084125",
+    "tanggal_lahir": "2008-07-04"
   },
   "0082104129": {
     "nisn": "0082104129",
@@ -716,7 +831,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.680",
     "email": "rizkybmw.3@gmail.com",
     "foto": "assets/foto/0082104129.jpg",
-    "foto_karakter": "Kakeru Ryuuen"
+    "foto_karakter": "Kakeru Ryuuen",
+    "nik": "3211055407082117",
+    "tanggal_lahir": "2008-07-14"
   },
   "0081607221": {
     "nisn": "0081607221",
@@ -725,7 +842,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.681",
     "email": "swahyudin902@gmail.com",
     "foto": "assets/foto/0081607221.jpg",
-    "foto_karakter": "Kyougo Komiya"
+    "foto_karakter": "Kyougo Komiya",
+    "nik": "3211066707087150",
+    "tanggal_lahir": "2008-07-27"
   },
   "0097169063": {
     "nisn": "0097169063",
@@ -734,7 +853,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.682",
     "email": "sriyantidevie.24@gmail.com",
     "foto": "assets/foto/0097169063.jpg",
-    "foto_karakter": "Minori Kinoshita"
+    "foto_karakter": "Minori Kinoshita",
+    "nik": "3211124608087207",
+    "tanggal_lahir": "2008-08-06"
   },
   "0085206927": {
     "nisn": "0085206927",
@@ -743,7 +864,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.683",
     "email": "lianatalita21@gmail.com",
     "foto": "assets/foto/0085206927.jpg",
-    "foto_karakter": "Takeko Nishino"
+    "foto_karakter": "Takeko Nishino",
+    "nik": "3211025208084036",
+    "tanggal_lahir": "2008-08-12"
   },
   "0089565003": {
     "nisn": "0089565003",
@@ -752,7 +875,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.684",
     "email": "haffidinwilly@gmail.com",
     "foto": "assets/foto/0089565003.jpg",
-    "foto_karakter": "Osamu Takahashi"
+    "foto_karakter": "Osamu Takahashi",
+    "nik": "3211192608082846",
+    "tanggal_lahir": "2008-08-26"
   },
   "0081876173": {
     "nisn": "0081876173",
@@ -761,7 +886,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "24.25.X.598",
     "email": "0081876173@gmail.com",
     "foto": "assets/foto/0081876173.jpg",
-    "foto_karakter": "Ichika Amasawa"
+    "foto_karakter": "Ichika Amasawa",
+    "nik": "3211154109086500",
+    "tanggal_lahir": "2008-09-01"
   },
   "0088082306": {
     "nisn": "0088082306",
@@ -770,7 +897,9 @@ var MASTER_DATA_SISWA_RESMI = {
     "nis": "0088082306",
     "email": "0088082306@gmail.com",
     "foto": "assets/foto/0088082306.jpg",
-    "foto_karakter": "Fuuka Kiryuuin"
+    "foto_karakter": "Fuuka Kiryuuin",
+    "nik": "3211205409082113",
+    "tanggal_lahir": "2008-09-14"
   }
 };
 
@@ -1504,11 +1633,39 @@ async function simulasiTapPairing(uid) {
 async function cekKartuUser(userId) {
   if (!userId) return null;
   const cleanId = String(userId).trim();
+
+  // Fast Path: Cek cache lokal seketika (0ms) agar refresh kartu instan tanpa tunggu roundtrip jaringan
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const localCardStr = localStorage.getItem('cached_kartu_' + cleanId);
+      if (localCardStr) {
+        const localCard = JSON.parse(localCardStr);
+        if (localCard && localCard.uid) return localCard;
+      }
+    }
+  } catch (eCache) {}
+
+  const KARTU_DEFAULT_MAP = {
+    '0098263610': { uid: '006787337', nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', kelas: 'XII RPL 2', tipe: 'siswa' },
+    '0082104129': { uid: '1058384422', nisn: '0082104129', nama: 'RIZKY RAMADANI', kelas: 'XII RPL 2', tipe: 'siswa' },
+    '0091113849': { uid: 'A1B2C3D4', nisn: '0091113849', nama: 'AHSAN MAHMUD FAUZI YUSRY', kelas: 'XII RPL 1', tipe: 'siswa' },
+    '198109012009022003': { uid: 'E5F6A7B8', nip: '198109012009022003', nama: 'Hani Hanifah, S.Si', tipe: 'guru' }
+  };
+
   const rtdb = getDbRef();
   if (rtdb && typeof rtdb.ref === 'function') {
     try {
       const matches = [];
-      const snap = await rtdb.ref('kartu').once('value').catch(() => null);
+      const fetchWithTimeout = (refPath) => Promise.race([
+        rtdb.ref(refPath).once('value'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))
+      ]).catch(() => null);
+
+      const [snap, snapMap] = await Promise.all([
+        fetchWithTimeout('kartu'),
+        fetchWithTimeout('rfid_map')
+      ]);
+
       const val = snap ? (typeof snap.val === 'function' ? snap.val() : snap.val) : null;
       if (val && typeof val === 'object') {
         for (const [uid, item] of Object.entries(val)) {
@@ -1520,7 +1677,6 @@ async function cekKartuUser(userId) {
           }
         }
       }
-      const snapMap = await rtdb.ref('rfid_map').once('value').catch(() => null);
       const valMap = snapMap ? (typeof snapMap.val === 'function' ? snapMap.val() : snapMap.val) : null;
       if (valMap && typeof valMap === 'object') {
         for (const [uid, item] of Object.entries(valMap)) {
@@ -1535,12 +1691,29 @@ async function cekKartuUser(userId) {
       if (matches.length > 0) {
         // Pilih kartu dengan timestamp linkedAt paling baru
         matches.sort((a, b) => (b.linkedAt || 0) - (a.linkedAt || 0));
-        return matches[0];
+        const bestCard = matches[0];
+        try {
+          if (typeof localStorage !== 'undefined' && bestCard) {
+            localStorage.setItem('cached_kartu_' + cleanId, JSON.stringify(bestCard));
+          }
+        } catch (eSave) {}
+        return bestCard;
       }
     } catch (e) {
       console.warn('[Pairing] Gagal cek kartu di Firebase:', e.message);
     }
   }
+
+  // Fallback ke kartu resmi bawaan jika ada
+  if (KARTU_DEFAULT_MAP[cleanId]) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('cached_kartu_' + cleanId, JSON.stringify(KARTU_DEFAULT_MAP[cleanId]));
+      }
+    } catch (eSaveDef) {}
+    return KARTU_DEFAULT_MAP[cleanId];
+  }
+
   return null;
 }
 
@@ -2071,6 +2244,10 @@ async function approveTeacherObstacle(permitIdOrObj) {
         activeMapel: permit.mapel || 'Jam Kosong Terkonfirmasi',
         activeTeacherNama: permit.namaPengaju,
         keteranganStatus: `Jamkos (${permit.namaPengaju}: ${permit.alasan})`,
+        tanggalJamkos: permit.tanggal || getTanggalHariIniWIB(),
+        jamPelajaran: permit.jamPelajaran || '',
+        jamMulai: permit.jamMulai || '',
+        jamSelesai: permit.jamSelesai || '',
         updatedAt: serverTs
       }, { merge: true });
     } catch (e) {}
@@ -2084,6 +2261,10 @@ async function approveTeacherObstacle(permitIdOrObj) {
         activeMapel: permit.mapel || 'Jam Kosong Terkonfirmasi',
         activeTeacherNama: permit.namaPengaju,
         keteranganStatus: `Jamkos (${permit.namaPengaju}: ${permit.alasan})`,
+        tanggalJamkos: permit.tanggal || getTanggalHariIniWIB(),
+        jamPelajaran: permit.jamPelajaran || '',
+        jamMulai: permit.jamMulai || '',
+        jamSelesai: permit.jamSelesai || '',
         updatedAt: Date.now()
       };
       await Promise.all([

@@ -53,11 +53,11 @@ for (const id of reqIds) {
 }
 console.log('  ✅ Seluruh atribut ID DOM wajib utuh 100%!\n');
 
-// 5. Verifikasi Master Siswa 70 & Invariant Belum Absen
-console.log('▶ [Test 5] Verifikasi Master Data 70 Siswa & 2 Siswa Belum Scan...');
+// 5. Verifikasi Master Siswa & Invariant Belum Absen
+console.log('▶ [Test 5] Verifikasi Master Data Siswa & 2 Siswa Belum Scan...');
 const siswa = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'assets/data-siswa.json'), 'utf8'));
 const list = Array.isArray(siswa) ? siswa : Object.values(siswa);
-assert.strictEqual(list.length, 70, 'Must have exactly 70 students');
+assert.strictEqual(list.length, 69, 'Must have exactly 69 students (after Tifani removed)');
 const ihsan = list.find(s => s.nisn === '0098263610');
 assert.ok(ihsan && ihsan.kelas === 'XII RPL 2', 'Ihsan must be in XII RPL 2');
 const rizky = list.find(s => s.nisn === '0082104129');

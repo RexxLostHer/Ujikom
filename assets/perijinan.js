@@ -321,6 +321,12 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
     try { ms = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI || {}; } catch (e) {}
   }
 
+  if (!finalNisn && user && (user.role === 'orangtua' || user.role === 'ortu') && user.nisn_anak) {
+    finalNisn = String(user.nisn_anak).trim();
+    if (!finalNama || finalNama === 'Siswa') finalNama = user.nama_anak || '';
+    if (!finalKelas || finalKelas === '-') finalKelas = user.kelas_anak || '';
+  }
+
   if (!finalNisn && user && user.email && typeof cariSiswaByEmail === 'function') {
     const sm = cariSiswaByEmail(user.email);
     if (sm && sm.nisn) finalNisn = sm.nisn;
@@ -361,8 +367,10 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
   }
 
   const isSiswa = user && (user.role === 'siswa' || (!user.role && finalNisn) || (finalNisn && typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI[finalNisn]) || finalNisn === '0098263610');
-  if (!user || user.role === 'pengunjung' || !finalNisn || !isSiswa) {
-    throw new Error('Akses Ditolak: Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi yang telah terverifikasi NISN.');
+  const isOrtu = user && (user.role === 'orangtua' || user.role === 'ortu') && (user.nisn_anak || finalNisn);
+
+  if (!user || user.role === 'pengunjung' || (!isSiswa && !isOrtu) || !finalNisn) {
+    throw new Error('Akses Ditolak: Fitur pengajuan perizinan hanya diperbolehkan untuk siswa resmi atau orang tua siswa terverifikasi.');
   }
 
   // Guard Anti-Double Send: Siswa hanya bisa mengajukan sekali izin jika masih ada izin pending
@@ -422,7 +430,8 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
           }
         } catch(e) {}
       }
-    }    // Guard: Cek apakah siswa sudah memiliki izin yang telah DISETUJUI / DI-ACC
+    }    // Guard: Cek apakah siswa sudah memiliki izin yang telah DISETUJUI / DI-ACC pada tanggal yang sama
+    const targetTgl = normalisasiFormatTanggal(tanggal) || tanggal;
     let approvedPermit = null;
     if (typeof ambilIzinDisetujuiAktifSiswa === 'function') {
       approvedPermit = ambilIzinDisetujuiAktifSiswa(finalNisn);
@@ -436,16 +445,24 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
       const stObj = (typeof localStorage !== 'undefined') ? localStorage : ((typeof global !== 'undefined') ? global.localStorage : null);
       if (stObj) {
         try {
-          const stFlag = stObj.getItem('status_izin_' + finalNisn);
-          if (stFlag === 'disetujui' || stFlag === 'approved') {
-            approvedPermit = { status: 'disetujui' };
+          const lastSubStr = stObj.getItem('last_submission_' + finalNisn);
+          if (lastSubStr) {
+            const p = JSON.parse(lastSubStr);
+            const pTgl = p ? (normalisasiFormatTanggal(p.tanggal || p.tanggal_norm) || p.tanggal) : '';
+            if (p && (p.status === 'disetujui' || p.status === 'approved') && pTgl === targetTgl) {
+              approvedPermit = p;
+            }
           }
         } catch (eSt) {}
       }
     }
 
+    // Hanya blokir jika izin yang disetujui memang untuk tanggal yang sama
     if (approvedPermit) {
-      throw new Error('Pengajuan izin Anda telah disetujui resmi oleh Wali Kelas/Admin. Tidak dapat mengirimkan permohonan lagi.');
+      const appTgl = normalisasiFormatTanggal(approvedPermit.tanggal || approvedPermit.tanggal_norm) || approvedPermit.tanggal;
+      if (!appTgl || appTgl === targetTgl) {
+        throw new Error('Pengajuan izin Anda untuk tanggal ini telah disetujui resmi oleh Wali Kelas/Admin. Tidak dapat mengirimkan permohonan lagi.');
+      }
     }
 
 
@@ -586,6 +603,8 @@ async function submitPerijinan(user, jenis, alasan, tanggal, fileInput) {
     targetKelasId: finalKelas || 'XII RPL 2',
     tipe: jenis,
     jenisPermit: jenis,
+    diajukan_oleh: (user && (user.role === 'orangtua' || user.role === 'ortu')) ? 'orangtua' : ((user && user.diajukan_oleh) || 'siswa'),
+    nama_wali: (user && (user.role === 'orangtua' || user.role === 'ortu')) ? (user.nama || 'Orang Tua / Wali') : null,
     foto_bukti: dokumen_url,
     buktiUrl: dokumen_url,
     dokumentasi: dokumen_url,
@@ -843,16 +862,39 @@ async function kirimChatPerijinan(pid, user, pesan) {
 // ===================================================================
 // RENDER PERIJINAN — USER (dashboard)
 // ===================================================================
+let _perizinanSayaListenerKey = '';
+let _perizinanSayaDbInstance = null;
+let _perizinanSayaActiveRefs = [];
+let _perizinanSayaActiveContainerId = '';
+let _perizinanSayaActiveUser = null;
+let _perizinanSayaCacheMap = {};
+
+function _detachPerizinanSayaListeners() {
+  _perizinanSayaActiveRefs.forEach(entry => {
+    try {
+      if (entry && entry.ref && typeof entry.ref.off === 'function') {
+        entry.ref.off('value', entry.cb);
+      }
+    } catch (e) {}
+  });
+  _perizinanSayaActiveRefs = [];
+}
+
 function renderDaftarPerijinanSaya(containerId, user) {
   const container = document.getElementById(containerId);
   if (!container || !user) return;
 
+  _perizinanSayaActiveContainerId = containerId;
+  _perizinanSayaActiveUser = user;
+
   const renderList = (itemsMap) => {
+    const activeContainer = document.getElementById(_perizinanSayaActiveContainerId) || container;
+    if (!activeContainer) return;
     const list = Object.values(itemsMap).sort((a, b) => (b.dibuat_pada || 0) - (a.dibuat_pada || 0));
-    container.innerHTML = '';
+    activeContainer.innerHTML = '';
 
     if (list.length === 0) {
-      container.innerHTML = '<p style="color:#94a3b8;font-size:14px;text-align:center;padding:24px;">Belum ada pengajuan perijinan.</p>';
+      activeContainer.innerHTML = '<p style="color:#94a3b8;font-size:14px;text-align:center;padding:24px;">Belum ada pengajuan perijinan.</p>';
       return;
     }
 
@@ -881,11 +923,15 @@ function renderDaftarPerijinanSaya(containerId, user) {
           (isPending ? '<button type="button" class="btn-batalkan" onclick="batalkanPengajuanIzin(\'' + (p.pid || p.id) + '\')" title="Batalkan Pengajuan Izin" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Batalkan Kirim</button>' : '') +
           ((isRejected || isCancelled) ? '<button class="btn-resubmit" onclick="const b=document.querySelector(\'[data-tab=&quot;ajukan-perijinan&quot;]\')||document.getElementById(\'btnTabAjukanPerijinan\');if(b)b.click();" style="background:#2563eb;color:#ffffff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Ajukan Ulang</button>' : '') +
         '</div>';
-      container.appendChild(el);
+      activeContainer.appendChild(el);
     });
   };
 
-  const perizinanSayaMap = {};
+  const targetKey = String(user.nisn || '') + '|' + String(user.uid || '') + '|' + String(user.nama || '');
+  if (_perizinanSayaListenerKey !== targetKey) {
+    _perizinanSayaCacheMap = {};
+  }
+  const perizinanSayaMap = _perizinanSayaCacheMap;
 
   // 1. Muat dari LocalStorage (offline / instan)
   const localItems = ambilDataPerizinanLokal();
@@ -894,15 +940,23 @@ function renderDaftarPerijinanSaya(containerId, user) {
     const isMine = (user.uid && item.uid === user.uid) || (user.nisn && item.nisn === user.nisn);
     if (isMine) {
       const pid = item.pid || item.id;
-      if (pid) perizinanSayaMap[pid] = { ...item, pid, id: pid };
+      if (pid) perizinanSayaMap[pid] = { ...(perizinanSayaMap[pid] || {}), ...item, pid, id: pid };
     }
   });
 
   renderList(perizinanSayaMap);
 
-  // 2. Sinkronkan dengan Firebase RTDB jika tersedia
+  // 2. Sinkronkan dengan Firebase RTDB jika tersedia (dilindungi guard agar listener tidak menumpuk)
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (_perizinanSayaListenerKey === targetKey && _perizinanSayaDbInstance === db && _perizinanSayaActiveRefs.length > 0) {
+      return;
+    }
+    _detachPerizinanSayaListeners();
+    _perizinanSayaListenerKey = targetKey;
+    _perizinanSayaDbInstance = db;
+
     const handleSnap = function (snapshot) {
+      const curUser = _perizinanSayaActiveUser || user;
       const data = (snapshot && typeof snapshot.val === 'function' ? snapshot.val() : null) || {};
       let hasChange = false;
       let latestResolvedItem = null;
@@ -910,10 +964,10 @@ function renderDaftarPerijinanSaya(containerId, user) {
 
       Object.keys(data).forEach(k => {
         const cloudItem = data[k] || {};
-        const isMine = (user.nisn && String(cloudItem.nisn || cloudItem.pengajuId || cloudItem.siswaId) === String(user.nisn)) ||
-                       (user.uid && (cloudItem.uid === user.uid || cloudItem.userId === user.uid)) ||
-                       (user.nama && cloudItem.nama && user.nama.trim().toLowerCase() === String(cloudItem.nama).trim().toLowerCase()) ||
-                       (user.nisn === '0098263610' && cloudItem.nama && String(cloudItem.nama).toLowerCase().includes('ihsan'));
+        const isMine = (curUser.nisn && String(cloudItem.nisn || cloudItem.pengajuId || cloudItem.siswaId) === String(curUser.nisn)) ||
+                       (curUser.uid && (cloudItem.uid === curUser.uid || cloudItem.userId === curUser.uid)) ||
+                       (curUser.nama && cloudItem.nama && curUser.nama.trim().toLowerCase() === String(cloudItem.nama).trim().toLowerCase()) ||
+                       (curUser.nisn === '0098263610' && cloudItem.nama && String(cloudItem.nama).toLowerCase().includes('ihsan'));
         if (isMine) {
           const existing = perizinanSayaMap[k];
           const statusFinal = cloudItem.status || (existing && existing.status) || 'pending';
@@ -936,7 +990,7 @@ function renderDaftarPerijinanSaya(containerId, user) {
         }
       });
 
-      if (latestResolvedItem && user.nisn && !anyPending) {
+      if (latestResolvedItem && curUser.nisn && !anyPending) {
         const stNorm = (latestResolvedItem.status === 'disetujui' || latestResolvedItem.status === 'approved') ? 'disetujui' : (latestResolvedItem.status === 'ditolak' || latestResolvedItem.status === 'rejected' ? 'ditolak' : 'dibatalkan');
         const todaySyncP = (typeof getTanggalHariIniWIB === 'function') ? getTanggalHariIniWIB() : ((typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
         const resDateP = (typeof normalisasiTanggalDashboard === 'function') ? normalisasiTanggalDashboard(latestResolvedItem.tanggal || latestResolvedItem.tanggal_norm || '') : (latestResolvedItem.tanggal || '');
@@ -946,19 +1000,19 @@ function renderDaftarPerijinanSaya(containerId, user) {
         try {
           if (typeof localStorage !== 'undefined') {
             if (isPastDayApprovedP) {
-              localStorage.removeItem('status_izin_' + user.nisn);
-              localStorage.removeItem('last_submission_' + user.nisn);
+              localStorage.removeItem('status_izin_' + curUser.nisn);
+              localStorage.removeItem('last_submission_' + curUser.nisn);
             } else {
-              localStorage.setItem('status_izin_' + user.nisn, stNorm);
+              localStorage.setItem('status_izin_' + curUser.nisn, stNorm);
             }
-            const lastSubStr = localStorage.getItem('last_submission_' + user.nisn);
+            const lastSubStr = localStorage.getItem('last_submission_' + curUser.nisn);
             if (lastSubStr) {
               const parsedSub = JSON.parse(lastSubStr);
               if (parsedSub && (parsedSub.id === latestResolvedItem.id || parsedSub.pid === latestResolvedItem.pid || (latestResolvedItem.tanggal && parsedSub.tanggal === latestResolvedItem.tanggal))) {
                 parsedSub.status = stNorm;
                 if (latestResolvedItem.catatan_guru) parsedSub.catatan_guru = latestResolvedItem.catatan_guru;
                 if (latestResolvedItem.diverifikasi_oleh) parsedSub.diverifikasi_oleh = latestResolvedItem.diverifikasi_oleh;
-                localStorage.setItem('last_submission_' + user.nisn, JSON.stringify(parsedSub));
+                localStorage.setItem('last_submission_' + curUser.nisn, JSON.stringify(parsedSub));
               }
             }
             localStorage.setItem('perizinan_sync_ping', String(Date.now()));
@@ -968,15 +1022,15 @@ function renderDaftarPerijinanSaya(containerId, user) {
 
         if (isPastDayApprovedP) {
           if (typeof bukaKunciFormPengajuanSiswa === 'function') {
-            bukaKunciFormPengajuanSiswa(null, user);
+            bukaKunciFormPengajuanSiswa(null, curUser);
           } else if (typeof window !== 'undefined' && typeof window.bukaKunciFormPengajuanSiswa === 'function') {
-            window.bukaKunciFormPengajuanSiswa(null, user);
+            window.bukaKunciFormPengajuanSiswa(null, curUser);
           }
         } else {
           if (typeof bukaKunciFormPengajuanSiswa === 'function') {
-            bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
+            bukaKunciFormPengajuanSiswa(latestResolvedItem, curUser);
           } else if (typeof window !== 'undefined' && typeof window.bukaKunciFormPengajuanSiswa === 'function') {
-            window.bukaKunciFormPengajuanSiswa(latestResolvedItem, user);
+            window.bukaKunciFormPengajuanSiswa(latestResolvedItem, curUser);
           }
         }
       }
@@ -986,16 +1040,23 @@ function renderDaftarPerijinanSaya(containerId, user) {
       }
     };
 
+    const attachRef = (refObj) => {
+      if (refObj && typeof refObj.on === 'function') {
+        refObj.on('value', handleSnap, function () {});
+        _perizinanSayaActiveRefs.push({ ref: refObj, cb: handleSnap });
+      }
+    };
+
     try {
-      db.ref('perijinan').on('value', handleSnap, function () {});
-      db.ref('perizinan').on('value', handleSnap, function () {});
+      attachRef(db.ref('perijinan'));
+      attachRef(db.ref('perizinan'));
       if (user.nisn) {
-        db.ref('perijinan').orderByChild('nisn').equalTo(user.nisn).on('value', handleSnap, function () {});
-        db.ref('perizinan').orderByChild('nisn').equalTo(user.nisn).on('value', handleSnap, function () {});
+        attachRef(db.ref('perijinan').orderByChild('nisn').equalTo(user.nisn));
+        attachRef(db.ref('perizinan').orderByChild('nisn').equalTo(user.nisn));
       }
       if (user.uid) {
-        db.ref('perijinan').orderByChild('uid').equalTo(user.uid).on('value', handleSnap, function () {});
-        db.ref('perizinan').orderByChild('uid').equalTo(user.uid).on('value', handleSnap, function () {});
+        attachRef(db.ref('perijinan').orderByChild('uid').equalTo(user.uid));
+        attachRef(db.ref('perizinan').orderByChild('uid').equalTo(user.uid));
       }
     } catch (e) {}
   }
@@ -1270,11 +1331,24 @@ function renderCardPerizinanAdmin(p) {
         '<button class="btn-approve" onclick="adminApprovePerizinanItem(\'' + p.id + '\', true)">Setujui (ACC Jamkos)</button>' +
         '<button class="btn-tolak" onclick="adminTolakPerizinanItem(\'' + p.id + '\', true)">Tolak</button>';
     } else {
+      const approveLabel = String(p.jenis || '').toLowerCase() === 'sakit'
+        ? 'Setujui Izin Sakit'
+        : ('Setujui ' + (jn.label || 'Izin'));
       actionButtons =
-        '<button class="btn-approve" onclick="adminApprovePerizinanItem(\'' + p.id + '\', false, \'' + (p.nisn || '') + '\', \'' + (p.tanggal || '') + '\', \'' + (p.jenis || '') + '\')">Setujui</button>' +
+        '<button class="btn-approve" onclick="adminApprovePerizinanItem(\'' + p.id + '\', false, \'' + (p.nisn || '') + '\', \'' + (p.tanggal || '') + '\', \'' + (p.jenis || '') + '\')">' + approveLabel + '</button>' +
         '<button class="btn-tolak" onclick="adminTolakPerizinanItem(\'' + p.id + '\', false)">Tolak</button>';
     }
   }
+
+  // Jejak penanganan: Admin maupun Wali Kelas dapat memproses izin siswa ini
+  const verifikator = p.diverifikasi_oleh || p.approvedBy || p.rejectedBy || '';
+  const catatanReviewer = p.catatan_guru || p.catatanReviewer || p.alasanTolak || '';
+  const processedInfo = (p.status !== 'pending' && (verifikator || catatanReviewer))
+    ? '<div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;color:#475569;line-height:1.5;">' +
+        (verifikator ? 'Diproses oleh: <strong>' + verifikator + '</strong>' + (p.peran_verifikator ? ' (' + (p.peran_verifikator === 'admin' ? 'Admin' : 'Wali Kelas') + ')' : '') : '') +
+        (catatanReviewer ? (verifikator ? ' • ' : '') + 'Catatan: <em>' + catatanReviewer + '</em>' : '') +
+      '</div>'
+    : '';
 
   const safeNama = (p.nama || '').replace(/'/g, "\\'");
   const chatButton = '<button class="btn-chat" onclick="bukaModalChat(\'' + p.id + '\', \'' + safeNama + '\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>';
@@ -1303,6 +1377,7 @@ function renderCardPerizinanAdmin(p) {
     '<div class="perijinan-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tanggal: <strong>' + (p.tanggal || '-') + '</strong></div>' +
     '<div class="perijinan-alasan-box">' + p.alasan + '</div>' +
     docLink +
+    processedInfo +
     '<div class="action-row">' +
       actionButtons +
       chatButton +
@@ -1455,13 +1530,27 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
     // 3. Update Firebase RTDB secara non-blocking dengan timeout safety
     if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
       try {
+        const fnRentang = (typeof ekstrakRentangJamJamkos === 'function')
+          ? ekstrakRentangJamJamkos
+          : ((typeof window !== 'undefined' && typeof window.ekstrakRentangJamJamkos === 'function')
+            ? window.ekstrakRentangJamJamkos
+            : null);
+        const rentangJamkos = fnRentang ? fnRentang(item) : null;
+        const tanggalJamkos = item.tanggal
+          || ((typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
+        const infoJamkos = {
+          tanggalJamkos: tanggalJamkos,
+          jamPelajaran: item.jamPelajaran || '',
+          jamMulai: item.jamMulai || (rentangJamkos ? rentangJamkos.mulai : ''),
+          jamSelesai: item.jamSelesai || (rentangJamkos ? rentangJamkos.selesai : '')
+        };
         const updates = [
           db.ref('kendala_guru/' + id).update({ status: 'approved', approvedBy: adminNama, approvedAt: new Date().toISOString() }).catch(() => null),
           db.ref('perizinan_guru/' + id).update({ status: 'approved', approvedBy: adminNama, approvedAt: new Date().toISOString() }).catch(() => null),
           db.ref('perijinan/' + id).update({ status: 'disetujui', approvedBy: adminNama, approvedAt: new Date().toISOString() }).catch(() => null),
           db.ref('perizinan/' + id).update({ status: 'disetujui', approvedBy: adminNama, approvedAt: new Date().toISOString() }).catch(() => null),
-          db.ref('kelas/' + targetKelas).update({ status: 'jamkos', activeMapel: item.mapel || 'Jam Kosong', activeTeacherNama: item.nama || item.guruNama || '-', keteranganJamkos: item.alasan || 'Tugas Mandiri', updatedAt: new Date().toISOString() }).catch(() => null),
-          db.ref('status_kelas/' + targetKelas).update({ status: 'jamkos', keterangan: item.alasan || 'Tugas Mandiri', mapel: item.mapel || 'Jam Kosong', updatedAt: Date.now() }).catch(() => null)
+          db.ref('kelas/' + targetKelas).update(Object.assign({ status: 'jamkos', activeMapel: item.mapel || 'Jam Kosong', activeTeacherNama: item.nama || item.guruNama || '-', keteranganJamkos: item.alasan || 'Tugas Mandiri', updatedAt: new Date().toISOString() }, infoJamkos)).catch(() => null),
+          db.ref('status_kelas/' + targetKelas).update(Object.assign({ status: 'jamkos', keterangan: item.alasan || 'Tugas Mandiri', mapel: item.mapel || 'Jam Kosong', updatedAt: Date.now() }, infoJamkos)).catch(() => null)
         ];
         await Promise.race([
           Promise.all(updates),
@@ -1472,7 +1561,34 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
     return;
   }
 
-  // Siswa
+  // Siswa - Admin dapat meng-ACC izin/sakit siswa (paralel dengan Wali Kelas)
+  const jenisAdminApprove = String(jenis || item.jenis || '').toLowerCase();
+  let catatan = 'Disetujui oleh Administrator.' + (jenisAdminApprove === 'sakit' ? ' Cepat sembuh.' : '');
+  if (typeof prompt === 'function') {
+    try {
+      const pRes = prompt('Catatan verifikasi izin siswa (opsional):', catatan);
+      if (pRes !== null) catatan = pRes.trim() || catatan;
+    } catch (ePrompt) {}
+  }
+  const approvedAtIso = new Date().toISOString();
+  const updatePayload = {
+    status: 'disetujui',
+    status_code: 'approved',
+    approval_walas: 'approved',
+    diverifikasi_oleh: adminNama,
+    diperiksa_oleh: adminNama,
+    peran_verifikator: 'admin',
+    catatan_guru: catatan,
+    catatanReviewer: catatan,
+    alasanTolak: '',
+    approvedBy: adminNama,
+    approvedAt: approvedAtIso,
+    diproses_oleh: adminNama,
+    diproses_pada: approvedAtIso,
+    sumber_approval: 'admin',
+    updated_at: approvedAtIso
+  };
+
   // 1. Optimistic Update LocalStorage
   try {
     if (typeof localStorage !== 'undefined') {
@@ -1485,7 +1601,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
           parsed = parsed.map(p => {
             if (p && (p.id === id || p.pid === id)) {
               updated = true;
-              return { ...p, status: 'disetujui' };
+              return { ...p, ...updatePayload };
             }
             return p;
           });
@@ -1493,7 +1609,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
         } else if (parsed && typeof parsed === 'object') {
           Object.keys(parsed).forEach(k => {
             if (k === id || (parsed[k] && (parsed[k].id === id || parsed[k].pid === id))) {
-              parsed[k].status = 'disetujui';
+              Object.assign(parsed[k], updatePayload);
               updated = true;
             }
           });
@@ -1504,8 +1620,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
   } catch (e) {}
 
   if (cacheSemuaPerizinanAdmin[id]) {
-    cacheSemuaPerizinanAdmin[id].status = 'disetujui';
-    cacheSemuaPerizinanAdmin[id].rawStatus = 'disetujui';
+    Object.assign(cacheSemuaPerizinanAdmin[id], updatePayload, { rawStatus: 'disetujui' });
   }
 
   renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
@@ -1516,7 +1631,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
     const jenisLabel = (getJenisPerijinanInfo(jenis || item.jenis)?.label || jenis || item.jenis || 'Izin');
     fnCeklis({
       judul: 'Izin Siswa Berhasil Disetujui!',
-      pesan: `Permohonan ${jenisLabel} untuk siswa ${namaSiswa} telah berhasil di-ACC. Presensi otomatis tersinkronkan.`,
+      pesan: `Permohonan ${jenisLabel} untuk siswa ${namaSiswa} telah di-ACC oleh ${adminNama} (Admin). Presensi otomatis tersinkronkan.`,
       badge: 'ACC PERIZINAN SISWA',
       kategori: 'izin'
     });
@@ -1524,15 +1639,17 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
 
   // 2. Chat & Firebase RTDB secara non-blocking
   try {
-    kirimChatPerijinan(id, adminUser, 'Perijinan Anda telah DISETUJUI. Kehadiran tercatat sebagai ' + (getJenisPerijinanInfo(jenis || item.jenis)?.label || jenis || 'Izin') + '.').catch(() => null);
+    kirimChatPerijinan(id, adminUser, 'Perijinan Anda telah DISETUJUI oleh ' + adminNama + ' (Admin). Kehadiran tercatat sebagai ' + (getJenisPerijinanInfo(jenis || item.jenis)?.label || jenis || 'Izin') + '.' + (catatan ? ' Catatan: ' + catatan : '')).catch(() => null);
   } catch (e) {}
 
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
     try {
-      const updates = [
-        db.ref('perijinan/' + id + '/status').set('disetujui').catch(() => null),
-        db.ref('perizinan/' + id + '/status').set('disetujui').catch(() => null)
-      ];
+      const targetIds = new Set([id, item.id, item.pid].filter(Boolean));
+      const updates = [];
+      targetIds.forEach(tId => {
+        updates.push(db.ref('perijinan/' + tId).update(updatePayload).catch(() => null));
+        updates.push(db.ref('perizinan/' + tId).update(updatePayload).catch(() => null));
+      });
       await Promise.race([
         Promise.all(updates),
         new Promise(res => setTimeout(res, 2000))
@@ -1551,7 +1668,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
         const lastSub = localStorage.getItem('last_submission_' + targetNisn);
         if (lastSub) {
           const parsed = JSON.parse(lastSub);
-          parsed.status = 'disetujui';
+          Object.assign(parsed, updatePayload);
           localStorage.setItem('last_submission_' + targetNisn, JSON.stringify(parsed));
         }
         localStorage.setItem('perizinan_sync_ping', String(Date.now()));
@@ -1563,7 +1680,7 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
       if (typeof BroadcastChannel !== 'undefined') {
         const bc = new BroadcastChannel('ujikom_perizinan_bus');
         if (typeof bc.unref === 'function') bc.unref();
-        bc.postMessage({
+        bc.postMessage(Object.assign({}, updatePayload, {
           type: 'PERMIT_APPROVED',
           id: id,
           nisn: targetNisn,
@@ -1571,12 +1688,12 @@ async function adminApprovePerizinanItem(id, isGuru, nisn, tanggal, jenis) {
           statusBaru: 'disetujui',
           tanggal: targetTanggal,
           jenis: targetJenis
-        });
+        }));
         setTimeout(() => { try { bc.close(); } catch (e) {} }, 500);
       }
       if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(new CustomEvent('perizinan_updated', {
-          detail: { id: id, status: 'disetujui', statusBaru: 'disetujui', nisn: targetNisn, tanggal: targetTanggal, jenis: targetJenis }
+          detail: Object.assign({}, updatePayload, { id: id, status: 'disetujui', statusBaru: 'disetujui', nisn: targetNisn, tanggal: targetTanggal, jenis: targetJenis })
         }));
       }
     } catch (eBc) {}
@@ -1698,8 +1815,26 @@ async function adminTolakPerizinanItem(id, isGuru) {
     return;
   }
 
-  // Siswa
+  // Siswa — Admin dapat menolak izin/sakit siswa (paralel dengan Wali Kelas)
   const alasan = (typeof prompt === 'function' ? prompt('Alasan penolakan (opsional):') : '') || 'Perijinan ditolak.';
+  const rejectedAtIso = new Date().toISOString();
+  const tolakPayload = {
+    status: 'ditolak',
+    status_code: 'rejected',
+    approval_walas: 'rejected',
+    diverifikasi_oleh: adminNama,
+    diperiksa_oleh: adminNama,
+    peran_verifikator: 'admin',
+    catatan_guru: alasan,
+    catatanReviewer: alasan,
+    alasanTolak: alasan,
+    rejectedBy: adminNama,
+    rejectedAt: rejectedAtIso,
+    diproses_oleh: adminNama,
+    diproses_pada: rejectedAtIso,
+    sumber_approval: 'admin',
+    updated_at: rejectedAtIso
+  };
 
   // 1. Optimistic Update LocalStorage
   try {
@@ -1713,7 +1848,7 @@ async function adminTolakPerizinanItem(id, isGuru) {
           parsed = parsed.map(p => {
             if (p && (p.id === id || p.pid === id)) {
               updated = true;
-              return { ...p, status: 'ditolak' };
+              return { ...p, ...tolakPayload };
             }
             return p;
           });
@@ -1721,7 +1856,7 @@ async function adminTolakPerizinanItem(id, isGuru) {
         } else if (parsed && typeof parsed === 'object') {
           Object.keys(parsed).forEach(k => {
             if (k === id || (parsed[k] && (parsed[k].id === id || parsed[k].pid === id))) {
-              parsed[k].status = 'ditolak';
+              Object.assign(parsed[k], tolakPayload);
               updated = true;
             }
           });
@@ -1732,8 +1867,7 @@ async function adminTolakPerizinanItem(id, isGuru) {
   } catch (e) {}
 
   if (cacheSemuaPerizinanAdmin[id]) {
-    cacheSemuaPerizinanAdmin[id].status = 'ditolak';
-    cacheSemuaPerizinanAdmin[id].rawStatus = 'ditolak';
+    Object.assign(cacheSemuaPerizinanAdmin[id], tolakPayload, { rawStatus: 'ditolak' });
   }
 
   renderDaftarPerijinanAdmin('daftarPerijinanAdmin', typeof filterPerijinanAktif !== 'undefined' ? filterPerijinanAktif : 'pending');
@@ -1758,9 +1892,7 @@ async function adminTolakPerizinanItem(id, isGuru) {
         const lastSub = localStorage.getItem('last_submission_' + targetNisn);
         if (lastSub) {
           const parsed = JSON.parse(lastSub);
-          parsed.status = 'ditolak';
-          parsed.alasanTolak = alasan;
-          parsed.catatan_guru = alasan;
+          Object.assign(parsed, tolakPayload);
           localStorage.setItem('last_submission_' + targetNisn, JSON.stringify(parsed));
         }
         localStorage.setItem('perizinan_sync_ping', String(Date.now()));
@@ -1772,7 +1904,7 @@ async function adminTolakPerizinanItem(id, isGuru) {
       if (typeof BroadcastChannel !== 'undefined') {
         const bc = new BroadcastChannel('ujikom_perizinan_bus');
         if (typeof bc.unref === 'function') bc.unref();
-        bc.postMessage({
+        bc.postMessage(Object.assign({}, tolakPayload, {
           type: 'PERMIT_REJECTED',
           id: id,
           nisn: targetNisn,
@@ -1781,12 +1913,12 @@ async function adminTolakPerizinanItem(id, isGuru) {
           alasan: alasan,
           catatan: alasan,
           alasanTolak: alasan
-        });
+        }));
         setTimeout(() => { try { bc.close(); } catch (e) {} }, 500);
       }
       if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(new CustomEvent('perizinan_updated', {
-          detail: { id: id, status: 'ditolak', statusBaru: 'ditolak', nisn: targetNisn, alasan: alasan, catatan: alasan, alasanTolak: alasan }
+          detail: Object.assign({}, tolakPayload, { id: id, status: 'ditolak', statusBaru: 'ditolak', nisn: targetNisn, alasan: alasan, catatan: alasan, alasanTolak: alasan })
         }));
       }
     } catch (eBc) {}
@@ -1794,30 +1926,23 @@ async function adminTolakPerizinanItem(id, isGuru) {
 
   // 2. Chat & Firebase RTDB secara non-blocking
   try {
-    kirimChatPerijinan(id, adminUser, 'Maaf, perijinan Anda DITOLAK. ' + alasan).catch(() => null);
+    kirimChatPerijinan(id, adminUser, 'Maaf, perijinan Anda DITOLAK oleh ' + adminNama + ' (Admin). ' + alasan).catch(() => null);
   } catch (e) {}
 
   if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
     try {
-      const tolakPayload = { status: 'ditolak', status_code: 'rejected', approval_walas: 'rejected', updated_at: new Date().toISOString() };
-      const updates = [
-        db.ref('perijinan/' + id).update(tolakPayload).catch(() => null),
-        db.ref('perizinan/' + id).update(tolakPayload).catch(() => null)
-      ];
+      const targetIds = new Set([id, item.id, item.pid].filter(Boolean));
+      const updates = [];
+      targetIds.forEach(tId => {
+        updates.push(db.ref('perijinan/' + tId).update(tolakPayload).catch(() => null));
+        updates.push(db.ref('perizinan/' + tId).update(tolakPayload).catch(() => null));
+      });
       await Promise.race([
         Promise.all(updates),
         new Promise(res => setTimeout(res, 2000))
       ]);
     } catch (e) {}
   }
-}
-
-async function adminApprove(pid, nisn, tanggal, jenis) {
-  return adminApprovePerizinanItem(pid, false, nisn, tanggal, jenis);
-}
-
-async function adminTolak(pid) {
-  return adminTolakPerizinanItem(pid, false);
 }
 
 // ===================================================================

@@ -26,6 +26,9 @@
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
 }
 
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
 
 h1, h2, h3, h4, .admin-brand-text strong, .sidebar-section-label, .sidebar-btn .label, .btn-primary, .btn-action, .stat-value {

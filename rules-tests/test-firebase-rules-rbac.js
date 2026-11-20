@@ -183,6 +183,40 @@ assert.ok(!rulesContent.includes('".read": true'), 'database.rules.json tidak bo
 
 console.log('✓ Test 5 LULUS: Seluruh berkas terlacak di Git bersih dari UID kartu asli, file PII, dan celah terbuka.');
 
+// =================================================================
+// TEST 6: Anti-Timpa Identitas (NISN/NIP Claim)
+// =================================================================
+console.log('\n[Test 6] Evaluasi Anti-Timpa Identitas NISN/NIP...');
+
+const usersWrite = rules.users['$uid']['.write'];
+assert.ok(usersWrite.includes("newData.child('role').val() === 'pengunjung'"),
+  'Pembuatan akun tanpa klaim hanya boleh sebagai pengunjung');
+assert.ok(usersWrite.includes("root.child('nisn_claimed').child(newData.child('nisn').val()).child('uid').val() === auth.uid"),
+  'Role siswa wajib memiliki klaim NISN atas nama auth.uid');
+assert.ok(usersWrite.includes("root.child('guru_claimed').child(newData.child('nip').val()).child('uid').val() === auth.uid"),
+  'Role guru/walas wajib memiliki klaim NIP atas nama auth.uid');
+assert.ok(usersWrite.includes("root.child('siswa').child(newData.child('nisn').val()).exists()"),
+  'NISN yang diklaim wajib terdaftar di /siswa');
+assert.ok(usersWrite.includes("root.child('guru').child(newData.child('nip').val()).exists()"),
+  'NIP yang diklaim wajib terdaftar di /guru');
+
+for (const node of ['nisn_claimed', 'guru_claimed']) {
+  assert.ok(rules[node], `Node ${node} wajib ada di rules`);
+  const childKey = node === 'nisn_claimed' ? '$nisn' : '$nip';
+  const child = rules[node][childKey];
+  assert.ok(child['.write'].includes("newData.child('uid').val() === auth.uid"),
+    `${node} hanya boleh ditulis dengan uid pemilik (auth.uid)`);
+  assert.ok(child['.write'].includes("data.child('uid').val() === auth.uid"),
+    `${node} tidak boleh ditimpa oleh akun lain`);
+}
+
+assert.ok(rules.guru['.read'] !== 'auth != null',
+  'Direktori /guru tidak boleh terbaca oleh semua akun terautentikasi');
+assert.strictEqual(rules.guru['$nip']['.read'], 'auth != null',
+  '/guru/{nip} tetap harus bisa dibaca untuk verifikasi NIP');
+
+console.log('✓ Test 6 LULUS: Klaim NISN/NIP wajib dimiliki auth.uid dan tidak dapat ditimpa akun lain.');
+
 console.log('\n===================================================================');
 console.log('🎉 SELURUH PENGUJIAN KEAMANAN RBAC & AUDIT PRD LULUS 100%!');
 console.log('===================================================================');

@@ -427,14 +427,14 @@ async function runAdversarialSyncSuite() {
   assert.strictEqual(DAFTAR_KELAS_RESMI.length, 3);
   assert.deepStrictEqual(DAFTAR_KELAS_RESMI, ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1']);
 
-  // Verify all 70 students in MASTER_DATA_SISWA_RESMI belong exclusively to official classes
+  // Verify all students in MASTER_DATA_SISWA_RESMI belong exclusively to official classes
   for (const [nisn, student] of Object.entries(MASTER_DATA_SISWA_RESMI)) {
     assert.ok(
       DAFTAR_KELAS_RESMI.includes(student.kelas),
       `Student ${nisn} (${student.nama}) has non-official class: ${student.kelas}`
     );
   }
-  console.log('  [PASS 4.1] All 70 official students belong strictly to the 3 official classes.');
+  console.log('  [PASS 4.1] All official students belong strictly to the 3 official classes.');
 
   // 4.2 Normalization function tests
   assert.strictEqual(normalisasiKelas('12 RPL 1'), 'XII RPL 1');

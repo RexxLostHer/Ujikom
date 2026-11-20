@@ -556,6 +556,10 @@
   #btnTabLiveGuru, #tabLiveGuru {
     display: none !important;
   }
+  /* Hapus blocking glass loader agar halaman langsung tampil instan */
+  #glassLoader {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
@@ -758,7 +762,7 @@
             JAM MASUK: 06.30 - 08.00 WIB
           </div>
           <h2 style="font-size:18px;font-weight:800;color:#0f172a;">Siswa Tanpa Keterangan Pagi Ini</h2>
-          <p style="font-size:13px;color:#64748b;margin-top:2px;">Daftar siswa yang belum tap kartu dan tanpa keterangan izin setelah 06.30 WIB agar dapat dipantau langsung oleh Wali Kelas.</p>
+          <p style="font-size:13px;color:#64748b;margin-top:2px;"></p>
         </div>
         <button onclick="muatLiveAlertWalas()" class="btn-mini-action" style="background:#b91c1c;color:#fff;padding:9px 16px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
@@ -1514,49 +1518,23 @@
   </div>
 </div>
 
-<!-- GSAP & Lenis CDN -->
+<!-- GSAP CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261029_07"></script>
-<script src="assets/auth.js?v=20261024_02"></script>
-<script src="assets/jadwal-util.js?v=20261024_02"></script>
+<script src="assets/firebase-config.js?v=20261119_01"></script>
+<script src="assets/auth.js?v=20261118_01"></script>
+<script src="assets/jadwal-util.js?v=20261119_01"></script>
 <script src="assets/ceklis-popup.js?v=20261029_08"></script>
-<script src="assets/perijinan.js?v=20261029_09"></script>
-<script src="assets/dashboard-guru.js?v=20261029_09"></script>
-<script src="assets/profile-modal.js?v=20261024_02"></script>
+<script src="assets/perijinan.js?v=20261119_01"></script>
+<script src="assets/dashboard-guru.js?v=20261119_01"></script>
+<script src="assets/profile-modal.js?v=20261118_01"></script>
 <script src="assets/chat-hub.js?v=20261029_06"></script>
 
 <script>
-  // Lenis Smooth Scroll Synchronized with GSAP Ticker
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let lenis = null;
-  if (!prefersReducedMotion && window.Lenis) {
-    try {
-      lenis = new Lenis({
-        duration: 1.2,
-        smoothWheel: true,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-      });
-      if (window.gsap) {
-        gsap.ticker.add((time) => {
-          lenis.raf(time * 1000);
-        });
-        gsap.ticker.lagSmoothing(0);
-      } else {
-        function raf(time) {
-          lenis.raf(time);
-          requestAnimationFrame(raf);
-        }
-        requestAnimationFrame(raf);
-      }
-    } catch (e) {
-      console.warn('Lenis init:', e);
-    }
-  }
 
   // Dismiss Glass Loader and Run GSAP Entrance Animation
   function dismissGlassLoader() {
@@ -1566,7 +1544,7 @@
     if (window.gsap) {
       gsap.to(loader, {
         opacity: 0,
-        duration: 0.6,
+        duration: 0.25,
         ease: 'power2.out',
         onComplete: () => {
           loader.style.display = 'none';
@@ -1575,25 +1553,28 @@
       if (!prefersReducedMotion) {
         gsap.from('.header, .view-tabs, .card-siswa-guru, .card-izin-guru, .jam-banner-guru', {
           opacity: 0,
-          y: 20,
-          duration: 0.7,
-          stagger: 0.08,
+          y: 12,
+          duration: 0.35,
+          stagger: 0.04,
           ease: 'power2.out',
           clearProps: 'all'
         });
       }
     } else {
       loader.classList.add('fade-out');
-      setTimeout(() => { loader.style.display = 'none'; }, 600);
+      setTimeout(() => { loader.style.display = 'none'; }, 200);
     }
   }
 
   window.dismissGlassLoader = dismissGlassLoader;
-  window.addEventListener('load', () => {
-    setTimeout(dismissGlassLoader, 400);
-  });
+  if (document.readyState === 'complete') {
+    dismissGlassLoader();
+  } else {
+    window.addEventListener('DOMContentLoaded', () => setTimeout(dismissGlassLoader, 50));
+    window.addEventListener('load', dismissGlassLoader);
+  }
   // Fallback safety timeout
-  setTimeout(dismissGlassLoader, 2500);
+  setTimeout(dismissGlassLoader, 800);
 </script>
 
 <!-- MODAL PENAUTAN (PAIRING) NFC GURU KEDINASAN -->

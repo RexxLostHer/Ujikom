@@ -199,3 +199,11 @@ void kirimPresensiRfid(String nisn, String tanggal, String waktu, String status,
 - **Akun Utama Siswa Ihsan**: Akun `7dosabesar557@gmail.com` telah dikukuhkan sebagai akun primer untuk NISN `0098263610` (akun `zemapk16` telah dilepas role-nya).
 - **Keamanan WhatsApp Chat Hub**: Ruang obrolan pribadi telah diamankan 100% dari kebocoran antar akun, dan akun yang belum terverifikasi diblokir dari akses chat.
 - **Humanisasi Status Presensi**: Menggunakan istilah formal ramah siswa ("Hadir", "Terlambat", "Izin", "Sakit", "Alpa") tanpa tanda kurung artifisial.
+
+---
+
+## 7. Perubahan Terkait IoT: Presensi Live Kini Terbatas
+- `presensi-live.html` tidak lagi menjadi display publik terbuka. Halaman memuat `assets/auth.js` dan hanya mengizinkan sesi terverifikasi `admin` / `guru` / `walas` / `iot_gateway`.
+- Jika TV lobby digunakan, perangkat harus login dengan akun staff/gateway yang valid. Tanpa sesi, layar menampilkan "Akses Terbatas" dan TIDAK memasang listener `siswa`, `kartu`, `rfid_map`, maupun `kelas`.
+- Gateway Raspberry Pi (`gateway-rpi-01@iot.smkn1sumedang.sch.id`) harus tetap memiliki role `iot_gateway` di `/users/{uid}` agar dapat menulis `absensi`, `riwayat`, `tap_realtime`, dan `gateway_status`.
+- Klaim NISN/NIP kini wajib: `nisn_claimed/{nisn}` dan `guru_claimed/{nip}` harus dimiliki uid yang sama sebelum role terverifikasi disimpan.

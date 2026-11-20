@@ -489,29 +489,35 @@ async function main() {
   // -------------------------------------------------------------------
   // TEST 10: Pengenalan Otomatis Siswa Google Auth (sisMatch) di auth.js
   // -------------------------------------------------------------------
-  console.log('▶ [Test 10] Pengenalan Otomatis Siswa Google Auth zemapk15@gmail.com ke M. Ihsan Athallah...');
+  // NOTE: zemapk15@gmail.com DILARANG dipetakan ke siswa - wajib tetap sebagai pengunjung
+  // sesuai Invariant: "zemapk15@gmail.com adalah akun visitor (pengunjung) dengan nisn: null
+  // dan MUST NEVER be mapped or linked to student M. Ihsan Athallah"
+
+  console.log('▶ [Test 10] Pengenalan Otomatis Siswa Google Auth zemapk15@gmail.com -> pengunjung (tidak boleh mapped ke siswa)');
 
   const authCode = fs.readFileSync(path.join(__dirname, '../assets/auth.js'), 'utf8');
   assert.ok(authCode.includes('else if (sisMatch)'), 'auth.js harus memiliki cabang pengenalan sisMatch');
   const authModule = require('../assets/auth.js');
-  const sisIhsan = authModule.cariSiswaByEmail('zemapk15@gmail.com');
-  assert.ok(sisIhsan, 'Siswa zemapk15@gmail.com harus ditemukan');
-  assert.strictEqual(sisIhsan.nisn, '0098263610', 'NISN harus 0098263610');
-  assert.strictEqual(sisIhsan.nama, 'M. IHSAN ATHALLAH', 'Nama harus M. IHSAN ATHALLAH');
+  // zemapk15@gmail.com seharusnya DIDAPATKAN null dari cariSiswaByEmail (karena wajib pengunjung)
+  const sisFromZemapk15 = authModule.cariSiswaByEmail('zemapk15@gmail.com');
+  // Harus null karena zemapk15 DILARANG dipetakan ke siswa
+  assert.ok(!sisFromZemapk15, 'zemapk15@gmail.com seharusnya DIDAPATKAN null dari cariSiswaByEmail (tidak boleh mapped ke siswa)');
 
-  // Uji prosesLoginUser dengan mock user Google baru
+  // Uji prosesLoginUser dengan mock user Google zemapk15 (harus menjadi pengunjung)
   const mockFbUser = {
-    uid: 'UID_GOOGLE_NEW_IHSAN',
+    uid: 'UID_GOOGLE_ZEMAPK15',
     email: 'zemapk15@gmail.com',
     displayName: 'M. Ihsan Athallah',
     photoURL: 'https://lh3.googleusercontent.com/photo.jpg'
   };
   mockDbData['users'] = {};
   const loggedUser = await authModule.prosesLoginUser(mockFbUser);
-  assert.strictEqual(loggedUser.role, 'siswa', 'Akun login Google siswa harus mendapat role siswa');
-  assert.strictEqual(loggedUser.nisn, '0098263610', 'Akun login Google siswa harus otomatis tertaut NISN');
-  assert.strictEqual(loggedUser.isVerified, true, 'Akun siswa resmi harus berstatus isVerified');
-  console.log('  ✓ Akun Google siswa langsung dipetakan ke role siswa resmi (NISN: 0098263610) tanpa terlempar ke pengunjung.\n');
+  // Akun ini WAJIB menjadi pengunjung, bukan siswa
+  assert.strictEqual(loggedUser.role, 'pengunjung', 'Akun login Google zemapk15@gmail.com WAJIB mendapat role pengunjung, BUKAN siswa');
+  assert.strictEqual(loggedUser.nisn, null, 'Akun login Google zemapk15@gmail.com WAJIB memiliki nisn: null');
+  assert.strictEqual(loggedUser.kelas, null, 'Akun login Google zemapk15@gmail.com WAJIB memiliki kelas: null');
+  assert.strictEqual(loggedUser.isVerified, false, 'Akun login Google zemapk15@gmail.com WAJIB isVerified: false');
+  console.log('  ✓ Akun Google zemapk15 login berhasil dikonfirmasi sebagai pengunjung dengan isVerified: false\n');
 
   console.log('========================================================================');
   console.log('🎉 SEMUA PENGUJIAN KETAHANAN PERMISSION_DENIED LULUS (100% PASSED)!');

@@ -72,12 +72,19 @@ function bukaModalProfil() {
             </div>
             <div>
               <h3 style="color:#0f172a;margin:0;font-size:14px;font-weight:700;">Verifikasi Identitas Resmi</h3>
-              <p style="font-size:12px;color:#64748b;margin:1px 0 0 0;">Hubungkan akun dengan NISN Siswa (10 digit) atau NIP Guru (18 digit)</p>
+              <p style="font-size:12px;color:#64748b;margin:1px 0 0 0;">Hubungkan akun Siswa (NISN), Guru (NIP), atau Orang Tua / Wali (NIK & Tgl Lahir Anak)</p>
             </div>
           </div>
 
+          <!-- Selector Tipe Verifikasi -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;background:#f1f5f9;padding:4px;border-radius:10px;">
+            <button type="button" id="btnModeVerifSiswaGuru" onclick="setModeVerifModal('siswaguru')" style="flex:1;padding:7px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.05);">Siswa / Guru</button>
+            <button type="button" id="btnModeVerifOrtu" onclick="setModeVerifModal('ortu')" style="flex:1;padding:7px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;">Orang Tua / Wali</button>
+          </div>
+
           <div id="boxAccordionKlaim" style="display:block;">
-            <div class="profile-field-row" style="margin-bottom:0;">
+            <!-- Form Siswa / Guru -->
+            <div id="formVerifSiswaGuru" class="profile-field-row" style="margin-bottom:0;">
               <div style="display:flex;gap:8px;align-items:center;">
                 <input type="text" id="inputIdentitasVerif" class="profile-input" placeholder="Masukkan 10 digit NISN atau 18 digit NIP..." maxlength="20"
                        style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#0f172a;flex:1;"
@@ -92,6 +99,32 @@ function bukaModalProfil() {
               <input type="hidden" id="inputNisnVerif">
               <input type="hidden" id="inputNipVerif">
               <input type="hidden" id="inputNipWalasVerif">
+            </div>
+
+            <!-- Form Khusus Orang Tua / Wali -->
+            <div id="formVerifOrtu" style="display:none;margin-bottom:0;">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div>
+                  <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">NIK Siswa</label>
+                  <input type="text" id="inputNikOrtuVerif" class="profile-input" placeholder="Masukkan 16 digit NIK Siswa..." maxlength="20"
+                         style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#0f172a;width:100%;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">Tanggal Lahir Anak</label>
+                  <input type="date" id="inputTglLahirOrtuVerif" class="profile-input"
+                         style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#0f172a;width:100%;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">Nama Orang Tua / Wali (Opsional)</label>
+                  <input type="text" id="inputNamaWaliVerif" class="profile-input" placeholder="Contoh: Bpk. Suherman"
+                         style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#0f172a;width:100%;box-sizing:border-box;">
+                </div>
+                <button type="button" class="profile-btn-action" onclick="handlePeriksaOrtuUnified()" id="btnCekOrtuUnified"
+                       style="background:#0f172a;color:#ffffff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Verifikasi Data Anak
+                </button>
+              </div>
             </div>
 
             <!-- Unified Preview Box -->
@@ -389,46 +422,6 @@ function togglePasswordProfil(inputId, btn) {
   }
 }
 
-async function handleSimpanNamaProfil() {
-  const inp = document.getElementById('editNamaPengguna');
-  const btn = document.getElementById('btnSimpanNama');
-  if (!inp || !btn) return;
-  const namaBaru = inp.value.trim();
-  if (!namaBaru) {
-    tampilProfilNotif('Nama lengkap tidak boleh kosong.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Menyimpan...';
-  try {
-    if (typeof ubahProfilPengguna === 'function') {
-      await ubahProfilPengguna(namaBaru);
-    } else {
-      const user = firebase.auth().currentUser;
-      if (user) await user.updateProfile({ displayName: namaBaru });
-      const userAktif = getSessionUser() || {};
-      userAktif.nama = namaBaru;
-      setSessionUser(userAktif);
-    }
-
-    tampilProfilNotif('Nama profil berhasil diperbarui!', 'success');
-    btn.textContent = 'Tersimpan ✓';
-    setTimeout(() => { btn.disabled = false; btn.textContent = 'Simpan'; }, 2000);
-
-    // Sinkronkan ke UI dashboard langsung
-    const headerNama = document.getElementById('namaUser') || document.getElementById('adminNamaBadge');
-    if (headerNama) {
-      if (headerNama.tagName === 'H1') headerNama.textContent = namaBaru;
-      else headerNama.textContent = namaBaru;
-    }
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Simpan';
-    tampilProfilNotif(err.message || 'Gagal menyimpan nama profil.', 'error');
-  }
-}
-
 async function handleGantiPasswordProfil() {
   const pCurrent = document.getElementById('passSaatIniProfil');
   const p1 = document.getElementById('passBaruProfil');
@@ -662,6 +655,100 @@ function batalPreviewUnified() {
   dataGuruTerverifikasiCache = null;
 }
 
+function setModeVerifModal(mode) {
+  const btnSiswaGuru = document.getElementById('btnModeVerifSiswaGuru');
+  const btnOrtu = document.getElementById('btnModeVerifOrtu');
+  const fSiswaGuru = document.getElementById('formVerifSiswaGuru');
+  const fOrtu = document.getElementById('formVerifOrtu');
+  batalPreviewUnified();
+
+  if (mode === 'ortu') {
+    if (btnSiswaGuru) {
+      btnSiswaGuru.style.background = 'transparent';
+      btnSiswaGuru.style.color = '#64748b';
+      btnSiswaGuru.style.boxShadow = 'none';
+    }
+    if (btnOrtu) {
+      btnOrtu.style.background = '#ffffff';
+      btnOrtu.style.color = '#0f172a';
+      btnOrtu.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+    }
+    if (fSiswaGuru) fSiswaGuru.style.display = 'none';
+    if (fOrtu) fOrtu.style.display = 'block';
+  } else {
+    if (btnSiswaGuru) {
+      btnSiswaGuru.style.background = '#ffffff';
+      btnSiswaGuru.style.color = '#0f172a';
+      btnSiswaGuru.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+    }
+    if (btnOrtu) {
+      btnOrtu.style.background = 'transparent';
+      btnOrtu.style.color = '#64748b';
+      btnOrtu.style.boxShadow = 'none';
+    }
+    if (fSiswaGuru) fSiswaGuru.style.display = 'block';
+    if (fOrtu) fOrtu.style.display = 'none';
+  }
+}
+
+async function handlePeriksaOrtuUnified() {
+  const inpNik = document.getElementById('inputNikOrtuVerif');
+  const inpTgl = document.getElementById('inputTglLahirOrtuVerif');
+  const inpWali = document.getElementById('inputNamaWaliVerif');
+  const btn = document.getElementById('btnCekOrtuUnified');
+  const box = document.getElementById('boxPreviewUnified');
+  if (!inpNik || !inpTgl || !btn) return;
+
+  const rawNik = inpNik.value.trim();
+  const rawTgl = inpTgl.value.trim();
+  const rawWali = inpWali ? inpWali.value.trim() : '';
+
+  if (!rawNik) {
+    tampilProfilNotif('Harap masukkan NIK siswa (16 digit).', 'error');
+    return;
+  }
+  if (!rawTgl) {
+    tampilProfilNotif('Harap pilih tanggal lahir anak.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Memverifikasi Data Anak...';
+
+  try {
+    const hasil = await periksaDataOrtuSiswa(rawNik, rawTgl);
+    dataIdentitasTerverifikasiCache = {
+      tipe: 'ortu',
+      data: hasil,
+      namaWali: rawWali
+    };
+
+    const elBadge = document.getElementById('previewBadgeRoleUnified');
+    const elNama = document.getElementById('previewNamaUnified');
+    const elMeta = document.getElementById('previewMetaUnified');
+    const btnTaut = document.getElementById('btnTautkanUnified');
+
+    if (elBadge) elBadge.textContent = 'VERIFIKASI WALI SISWA VALID';
+    if (elNama) elNama.textContent = hasil.nama_anak;
+    if (elMeta) elMeta.textContent = `NISN: ${hasil.nisn} • Kelas: ${hasil.kelas} • NIK: ${hasil.nik}`;
+    if (btnTaut) {
+      btnTaut.textContent = '✓ Hubungkan Akun Orang Tua';
+      btnTaut.style.background = '#059669';
+      btnTaut.style.borderColor = '#047857';
+      btnTaut.style.color = '#ffffff';
+    }
+    if (box) box.style.display = 'block';
+    tampilProfilNotif(`Data anak cocok: ${hasil.nama_anak} (${hasil.kelas}). Klik Hubungkan untuk masuk ke Portal Orang Tua.`, 'success');
+  } catch (err) {
+    if (box) box.style.display = 'none';
+    dataIdentitasTerverifikasiCache = null;
+    tampilProfilNotif(err.message || 'Gagal memeriksa data anak.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verifikasi Data Anak';
+  }
+}
+
 async function handleKonfirmasiTautkanUnified() {
   if (!dataIdentitasTerverifikasiCache) {
     tampilProfilNotif('Harap periksa identitas terlebih dahulu.', 'error');
@@ -675,7 +762,14 @@ async function handleKonfirmasiTautkanUnified() {
   }
 
   try {
-    if (dataIdentitasTerverifikasiCache.tipe === 'siswa') {
+    if (dataIdentitasTerverifikasiCache.tipe === 'ortu') {
+      const d = dataIdentitasTerverifikasiCache.data;
+      const updated = await konfirmasiTautkanOrtu(d.nik, d.tanggal_lahir, dataIdentitasTerverifikasiCache.namaWali);
+      tampilProfilNotif(`Selamat! Akun Anda terverifikasi sebagai Orang Tua dari ${updated.nama_anak}. Mengalihkan ke Portal Orang Tua...`, 'success');
+      setTimeout(() => {
+        window.location.href = 'dashboard-ortu.html';
+      }, 1000);
+    } else if (dataIdentitasTerverifikasiCache.tipe === 'siswa') {
       const updated = await konfirmasiTautkanNisn(dataIdentitasTerverifikasiCache.data.nisn);
       tampilProfilNotif('Selamat! Akun Anda berhasil ditautkan sebagai Siswa (' + updated.nama + '). Halaman akan diperbarui...', 'success');
       setTimeout(() => {
@@ -695,73 +789,6 @@ async function handleKonfirmasiTautkanUnified() {
       btn.textContent = '✓ Hubungkan Akun Saya';
     }
     tampilProfilNotif(err.message || 'Gagal menghubungkan akun.', 'error');
-  }
-}
-
-// ===== HANDLER KONFIRMASI NISN SISWA =====
-let dataSiswaTerverifikasiCache = null;
-
-async function handlePeriksaNisn() {
-  const inp = document.getElementById('inputNisnVerif');
-  const btn = document.getElementById('btnCekNisn');
-  const box = document.getElementById('boxPreviewSiswa');
-  if (!inp || !btn) return;
-
-  const nisn = inp.value.trim();
-  if (!nisn) {
-    tampilProfilNotif('Harap masukkan NISN Anda.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Memeriksa...';
-  try {
-    const hasil = await periksaNisnSiswa(nisn);
-    dataSiswaTerverifikasiCache = hasil;
-    document.getElementById('previewNamaSiswa').textContent = hasil.nama;
-    document.getElementById('previewMetaSiswa').textContent = `NISN: ${hasil.nisn} • Kelas: ${hasil.kelas} • Jurusan: ${hasil.jurusan}`;
-    if (box) box.style.display = 'block';
-    tampilProfilNotif('Data siswa ditemukan! Silakan klik tombol konfirmasi di bawah.', 'success');
-  } catch (err) {
-    if (box) box.style.display = 'none';
-    dataSiswaTerverifikasiCache = null;
-    tampilProfilNotif(err.message || 'Gagal memeriksa NISN.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Periksa';
-  }
-}
-
-function batalPreviewNisn() {
-  const box = document.getElementById('boxPreviewSiswa');
-  if (box) box.style.display = 'none';
-  dataSiswaTerverifikasiCache = null;
-}
-
-async function handleKonfirmasiTautkanNisn() {
-  if (!dataSiswaTerverifikasiCache) {
-    tampilProfilNotif('Harap periksa NISN terlebih dahulu.', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btnTautkanNisn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Menghubungkan...';
-  }
-
-  try {
-    const updated = await konfirmasiTautkanNisn(dataSiswaTerverifikasiCache.nisn);
-    tampilProfilNotif('Selamat! Akun Anda berhasil ditautkan sebagai Siswa (' + updated.nama + '). Halaman akan diperbarui...', 'success');
-    setTimeout(() => {
-      window.location.href = 'dashboard.html';
-    }, 1000);
-  } catch (err) {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '✓ Ya, Hubungkan Akun Saya';
-    }
-    tampilProfilNotif(err.message || 'Gagal menautkan NISN.', 'error');
   }
 }
 
@@ -794,102 +821,9 @@ function bukaModalProfilDenganTabNip(mode) {
   }, 250);
 }
 
-function toggleModeKlaim(mode) {
-  const inp = document.getElementById('inputIdentitasVerif');
-  if (inp) inp.focus();
-}
-
-// ===== HANDLER KONFIRMASI NIP GURU / WALAS =====
-let dataGuruTerverifikasiCache = null;
-
-async function handlePeriksaNip(source) {
-  const isWalasMode = source === 'walas';
-  const inp = isWalasMode ? (document.getElementById('inputNipWalasVerif') || document.getElementById('inputNipVerif')) : document.getElementById('inputNipVerif');
-  const btn = isWalasMode ? (document.getElementById('btnCekNipWalas') || document.getElementById('btnCekNip')) : document.getElementById('btnCekNip');
-  const box = isWalasMode ? document.getElementById('boxPreviewWalas') : document.getElementById('boxPreviewGuru');
-  if (!inp || !btn) return;
-
-  const nip = inp.value.trim();
-  if (!nip) {
-    tampilProfilNotif('Harap masukkan NIP Anda.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Memeriksa...';
-  try {
-    const hasil = await periksaNipGuru(nip);
-    dataGuruTerverifikasiCache = hasil;
-    const elNama = isWalasMode ? document.getElementById('previewNamaWalas') : document.getElementById('previewNamaGuru');
-    const elMeta = isWalasMode ? document.getElementById('previewMetaWalas') : document.getElementById('previewMetaGuru');
-    if (elNama) elNama.textContent = hasil.nama;
-    const statusPeran = hasil.isWalas ? `Wali Kelas ${hasil.walasKelasId}` : 'Guru Biasa (Pengajar)';
-    if (elMeta) elMeta.textContent = `NIP: ${hasil.nip} • Mapel: ${hasil.mapel} • Peran Terdeteksi: ${statusPeran}`;
-
-    const btnTautWalas = document.getElementById('btnTautkanWalas');
-    const btnTautGuru = document.getElementById('btnTautkanGuru');
-    const labelTaut = hasil.isWalas ? `✓ Ya, Hubungkan Akun Wali Kelas (${hasil.walasKelasId})` : '✓ Ya, Hubungkan Akun Guru Biasa';
-    if (btnTautWalas) btnTautWalas.textContent = labelTaut;
-    if (btnTautGuru) btnTautGuru.textContent = labelTaut;
-
-    if (box) box.style.display = 'block';
-    tampilProfilNotif(`Data terverifikasi: ${hasil.nama} (${statusPeran}). Silakan klik tombol hubungkan.`, 'success');
-  } catch (err) {
-    if (box) box.style.display = 'none';
-    dataGuruTerverifikasiCache = null;
-    tampilProfilNotif(err.message || 'Gagal memeriksa NIP.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = isWalasMode ? 'Periksa NIP Walas' : 'Periksa NIP';
-  }
-}
-
-function batalPreviewGuru() {
-  const box = document.getElementById('boxPreviewGuru');
-  if (box) box.style.display = 'none';
-  dataGuruTerverifikasiCache = null;
-}
-
-function batalPreviewWalas() {
-  const box = document.getElementById('boxPreviewWalas');
-  if (box) box.style.display = 'none';
-  dataGuruTerverifikasiCache = null;
-}
-
-async function handleKonfirmasiTautkanGuru() {
-  if (!dataGuruTerverifikasiCache) {
-    tampilProfilNotif('Harap periksa NIP terlebih dahulu.', 'error');
-    return;
-  }
-
-  const btnWalas = document.getElementById('btnTautkanWalas');
-  const btnGuru = document.getElementById('btnTautkanGuru');
-  [btnWalas, btnGuru].forEach(b => {
-    if (b) {
-      b.disabled = true;
-      b.textContent = 'Menghubungkan...';
-    }
-  });
-
-  try {
-    const updated = await konfirmasiTautkanGuru(dataGuruTerverifikasiCache.nip);
-    const roleTitle = updated.role === 'walas' ? `Wali Kelas (${updated.walasKelasId})` : 'Guru Pengajar';
-    tampilProfilNotif('Selamat! Akun Anda berhasil ditautkan sebagai ' + roleTitle + ' (' + updated.nama + '). Mengalihkan...', 'success');
-    setTimeout(() => {
-      window.location.href = 'dashboard-guru.html';
-    }, 1200);
-  } catch (err) {
-    [btnWalas, btnGuru].forEach(b => {
-      if (b) {
-        b.disabled = false;
-        b.textContent = b.id === 'btnTautkanWalas' ? '✓ Ya, Hubungkan Akun Wali Kelas' : '✓ Ya, Hubungkan Akun Guru Biasa';
-      }
-    });
-    tampilProfilNotif(err.message || 'Gagal menautkan NIP.', 'error');
-  }
-}
-
 if (typeof window !== 'undefined') {
+  window.setModeVerifModal = setModeVerifModal;
+  window.handlePeriksaOrtuUnified = handlePeriksaOrtuUnified;
   window.toggleAccordionKlaim = toggleAccordionKlaim;
   window.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
   window.bukaModalProfil = bukaModalProfil;
@@ -897,6 +831,8 @@ if (typeof window !== 'undefined') {
   window.bukaModalProfilDenganTabNip = bukaModalProfilDenganTabNip;
 }
 if (typeof global !== 'undefined') {
+  global.setModeVerifModal = setModeVerifModal;
+  global.handlePeriksaOrtuUnified = handlePeriksaOrtuUnified;
   global.toggleAccordionKlaim = toggleAccordionKlaim;
   global.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
   global.bukaModalProfil = (typeof window !== 'undefined' ? window.bukaModalProfil : bukaModalProfil);
@@ -904,6 +840,8 @@ if (typeof global !== 'undefined') {
   global.bukaModalProfilDenganTabNip = (typeof window !== 'undefined' ? window.bukaModalProfilDenganTabNip : bukaModalProfilDenganTabNip);
 }
 if (typeof module !== 'undefined' && module.exports) {
+  module.exports.setModeVerifModal = setModeVerifModal;
+  module.exports.handlePeriksaOrtuUnified = handlePeriksaOrtuUnified;
   module.exports.bukaVerifikasiNfcDariProfil = bukaVerifikasiNfcDariProfil;
   module.exports.bukaModalProfil = bukaModalProfil;
   module.exports.bukaModalProfilDenganTabNisn = bukaModalProfilDenganTabNisn;

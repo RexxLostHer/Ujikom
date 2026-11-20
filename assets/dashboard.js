@@ -34,6 +34,28 @@ function getWIBTime(d) {
 let currentUser = null;
 let shouldHaltDashboard = false;
 
+// ===== MODE TERKUNCI PENGUNJUNG (Phase 1) =====
+// Akun pengunjung / belum terverifikasi NISN-NIP tidak boleh melihat data apa pun.
+// Flag dihitung sinkron dari sesi tersimpan agar listener Firebase tidak sempat berjalan.
+function apakahPengunjungTerkunci(user) {
+  if (!user || typeof user !== 'object') return true;
+  if (user.role === 'pengunjung') return true;
+  if (user.isVerified === false) return true;
+  if (user.role === 'siswa' && !user.nisn) return true;
+  return false;
+}
+
+let MODE_TERKUNCI_PENGUNJUNG = (function () {
+  try {
+    const raw = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('user_aktif') : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem('user_aktif') : null);
+    if (!raw) return false;
+    return apakahPengunjungTerkunci(JSON.parse(raw));
+  } catch (e) {
+    return false;
+  }
+})();
+
 // Early synchronous guard: dashboard.html is STRICTLY for Siswa and Pengunjung
 (function () {
 if (typeof window !== 'undefined' && window.location && typeof sessionStorage !== 'undefined') {
@@ -88,6 +110,9 @@ if (typeof window !== 'undefined' && window.location && typeof sessionStorage !=
             shouldHaltDashboard = true;
             window.location.replace('dashboard-guru.html');
           }
+        } else if (sessUser.role === 'orangtua') {
+          shouldHaltDashboard = true;
+          window.location.replace('dashboard-ortu.html');
         }
       }
     }
@@ -111,6 +136,11 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
         window.location.replace('admin.html');
         return;
       }
+      if (session.role === 'orangtua') {
+        shouldHaltDashboard = true;
+        window.location.replace('dashboard-ortu.html');
+        return;
+      }
       if (session.role === 'guru' || session.role === 'walas') {
         if (session.nip && session.isVerified) {
           shouldHaltDashboard = true;
@@ -129,6 +159,11 @@ if (!shouldHaltDashboard && typeof firebase !== 'undefined' && firebase.auth) {
     if (currentUser.role === 'admin') {
       shouldHaltDashboard = true;
       window.location.replace('admin.html');
+      return;
+    }
+    if (currentUser.role === 'orangtua') {
+      shouldHaltDashboard = true;
+      window.location.replace('dashboard-ortu.html');
       return;
     }
     if (currentUser.role === 'guru' || currentUser.role === 'walas') {
@@ -239,7 +274,106 @@ if (typeof document !== 'undefined' && document.getElementById('statusHariIni') 
   }
 }
 
+function tampilkanLayarTerkunci() {
+  MODE_TERKUNCI_PENGUNJUNG = true;
+  if (typeof document === 'undefined' || !document.body) return;
+  try { document.body.classList.add('mode-terkunci-pengunjung'); } catch (e) {}
+
+  const nav = document.querySelector('.view-tabs');
+  if (nav) nav.style.display = 'none';
+
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+
+  let panel = document.getElementById('tabTerkunci');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'tabTerkunci';
+    panel.className = 'tab-content';
+    panel.style.cssText = 'display:block;padding:8px 0 40px;';
+    panel.innerHTML = `
+      <div style="max-width:640px;margin:24px auto;background:#ffffff;border:1.5px solid #E2E8F0;border-radius:24px;padding:36px 30px;text-align:center;box-shadow:0 18px 44px rgba(15,23,42,0.08);">
+        <div style="width:76px;height:76px;margin:0 auto 18px;border-radius:22px;background:linear-gradient(135deg,#FEF2F2,#FEE2E2);display:flex;align-items:center;justify-content:center;border:1.5px solid #FECACA;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#0F172A;letter-spacing:-0.02em;">Akses Terkunci</h2>
+        <p style="margin:0 auto 22px;max-width:440px;font-size:14px;line-height:1.65;color:#64748B;">
+          Akun kamu terkunci sampai diverifikasi. Akses ke data presensi resmi hanya terbuka untuk <b>Siswa</b> (NISN), <b>Guru</b> (NIP), atau <b>Orang Tua</b> (NIK & Tanggal Lahir Anak).
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+          <button type="button" onclick="bukaVerifikasiDariLayarTerkunci()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border:none;border-radius:14px;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(37,99,235,0.25);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+            Verifikasi Identitas Akun
+          </button>
+          <button type="button" onclick="logout()" style="padding:12px 20px;border:1.5px solid #E2E8F0;border-radius:14px;background:#fff;color:#475569;font-size:14px;font-weight:700;cursor:pointer;">
+            Keluar
+          </button>
+        </div>
+        <p style="margin:22px 0 0;font-size:12.5px;line-height:1.6;color:#94A3B8;">
+          Orang tua / wali: Gunakan NIK dan Tanggal Lahir Siswa untuk menghubungkan akun anak Anda.
+        </p>
+      </div>`;
+    const anchor = nav ? nav.parentNode : document.body;
+    anchor.appendChild(panel);
+  }
+  panel.style.display = 'block';
+  panel.classList.add('active');
+  try { sessionStorage.removeItem('active_dashboard_tab'); } catch (e) {}
+}
+
+function bukaVerifikasiDariLayarTerkunci() {
+  if (typeof bukaModalProfilDenganTabNisn === 'function') {
+    bukaModalProfilDenganTabNisn();
+  } else if (typeof bukaModalProfil === 'function') {
+    bukaModalProfil();
+  } else {
+    const nav = document.querySelector('.view-tabs');
+    if (nav) nav.style.display = '';
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.bukaVerifikasiDariLayarTerkunci = bukaVerifikasiDariLayarTerkunci;
+  window.tampilkanLayarTerkunci = tampilkanLayarTerkunci;
+}
+
+// ===== LAZY LOAD DATA RIWAYAT SETAHUN =====
+// Berkas historis 1 tahun tidak lagi dimuat untuk semua pengunjung (dulu via <script> di dashboard.html).
+// Hanya akun terverifikasi yang memicunya, sehingga tamu tidak mengunduh data presensi massal.
+function muatDataRiwayatSetahunLazy() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  if (window.DATA_RIWAYAT_SETAHUN || window.__riwayatSetahunLoading) return;
+  window.__riwayatSetahunLoading = true;
+  const sc = document.createElement('script');
+  sc.src = 'assets/data-riwayat-setahun.js?v=20261119_02';
+  sc.async = true;
+  sc.onload = function () {
+    try {
+      if (typeof initRekapPresensiSiswa === 'function' && currentUser) {
+        initRekapPresensiSiswa(currentUser);
+      }
+    } catch (e) {}
+  };
+  sc.onerror = function () {
+    window.__riwayatSetahunLoading = false;
+  };
+  document.head.appendChild(sc);
+}
+
+if (typeof window !== 'undefined') {
+  window.muatDataRiwayatSetahunLazy = muatDataRiwayatSetahunLazy;
+}
+
 function switchTab(id, btn) {
+  if (MODE_TERKUNCI_PENGUNJUNG) {
+    tampilkanLayarTerkunci();
+    return;
+  }
   document.querySelectorAll('.tab-content').forEach(el => {
     el.style.display = 'none';
     el.classList.remove('active');
@@ -334,6 +468,26 @@ async function initDashboard(user) {
       user.role = 'pengunjung';
       if (typeof setSessionUser === 'function') setSessionUser(user);
     }
+  }
+
+  // ===== ZERO-DATA LOCKDOWN: pengunjung / belum terverifikasi =====
+  // Hentikan seluruh inisialisasi data (rekap, jadwal, perizinan, chat) sebelum satu pun listener Firebase dipasang.
+  if (apakahPengunjungTerkunci(user)) {
+    const elNama = document.getElementById('namaUser');
+    if (elNama) elNama.textContent = 'Pengunjung';
+    const elInfo = document.getElementById('infoSubUser');
+    if (elInfo) elInfo.textContent = 'Akses terbatas • Verifikasi identitas diperlukan';
+    const elAvatar = document.getElementById('avatarUser');
+    if (elAvatar) elAvatar.textContent = 'P';
+    tampilkanLayarTerkunci();
+    return;
+  }
+  MODE_TERKUNCI_PENGUNJUNG = false;
+  try { document.body.classList.remove('mode-terkunci-pengunjung'); } catch (e) {}
+
+  // Akun terverifikasi boleh memuat berkas historis 1 tahun (dulu dimuat untuk semua orang).
+  if (user.role === 'siswa' && user.nisn) {
+    try { muatDataRiwayatSetahunLazy(); } catch (e) {}
   }
 
   // Header Profile: Strictly Siswa or Pengunjung (Anti-Leak Admin Identity)
@@ -554,6 +708,11 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
   const jenis = itemInfo ? (itemInfo.jenis || itemInfo.tipe || 'Izin').toUpperCase() : 'IZIN';
   const tgl = itemInfo ? (itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
   const catatan = itemInfo ? (itemInfo.catatan_guru || itemInfo.catatan || itemInfo.alasanTolak || itemInfo.alasan || '') : '';
+  const verifikatorRaw = itemInfo ? (itemInfo.diverifikasi_oleh || itemInfo.diperiksa_oleh || itemInfo.approvedBy || itemInfo.rejectedBy || '') : '';
+  const peranVerifikator = itemInfo && itemInfo.peran_verifikator === 'admin' ? 'Admin' : 'Wali Kelas';
+  const verifikatorLabel = verifikatorRaw
+    ? (verifikatorRaw + ' (' + peranVerifikator + ')')
+    : 'Wali Kelas/Admin';
 
   const todayNow = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
   const infoDate = itemInfo ? normalisasiTanggalDashboard(itemInfo.tanggal || itemInfo.tanggal_norm || '') : '';
@@ -602,7 +761,7 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
         '    <span style="font-size:10.5px;font-weight:800;letter-spacing:0.04em;padding:3px 9px;border-radius:9999px;background:rgba(16, 185, 129, 0.15);color:#047857;border:1px solid rgba(16, 185, 129, 0.3);">● TERVERIFIKASI</span>',
         '  </div>',
         '  <div style="font-size:13px;line-height:1.6;color:#065f46;">',
-        '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh Wali Kelas.' + (catatan ? ' Catatan guru: <em>"' + catatan + '"</em>.' : ''),
+        '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh <strong>' + verifikatorLabel + '</strong>.' + (catatan ? ' Catatan verifikator: <em>"' + catatan + '"</em>.' : ''),
         '  </div>',
         '  <div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(16, 185, 129, 0.25);display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#059669;">',
         '    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
@@ -628,7 +787,7 @@ function bukaKunciFormPengajuanSiswa(itemInfo, user) {
         '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
         '    <span>Pengajuan Izin Telah Ditolak</span>',
         '  </div>',
-        '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>ditolak</strong> oleh Wali Kelas' + (catatan ? '. Alasan: <em>"' + catatan + '"</em>' : '.') + '<br>',
+        '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>ditolak</strong> oleh <strong>' + verifikatorLabel + '</strong>' + (catatan ? '. Alasan: <em>"' + catatan + '"</em>' : '.') + '<br>',
         '  Form telah dibuka kembali. Anda dapat mengirimkan permohonan izin baru dengan melampirkan berkas yang valid.',
         '</div>'
       ].join('\n');
@@ -718,6 +877,15 @@ function sinkronkanStatusIzinTargetSiswa(kId, val, targetNisn, user) {
       renderDaftarPerijinanSaya('daftarPerijinanSaya', userTarget);
     }
     return;
+  }
+
+  // Jika val berupa map koleksi (bukan objek izin tunggal), ekstrak berdasarkan kId atau abaikan
+  if (!val.status && !val.statusBaru && !val.jenis && !val.nisn) {
+    if (kId && val[kId] && typeof val[kId] === 'object') {
+      val = val[kId];
+    } else {
+      return;
+    }
   }
 
   // Snapshot memiliki data izin
@@ -1584,6 +1752,8 @@ function populateDropdownSiswa(user) {
           : (rawJenis.charAt(0).toUpperCase() + rawJenis.slice(1).toLowerCase());
         const tgl = approvedItem.tanggal || approvedItem.tanggal_norm || '';
         const catatan = approvedItem.catatan_guru || approvedItem.catatan || approvedItem.alasan || '';
+        const vRaw = approvedItem.diverifikasi_oleh || approvedItem.diperiksa_oleh || approvedItem.approvedBy || '';
+        const verifikatorLabel = vRaw ? (vRaw + ' (' + (approvedItem.peran_verifikator === 'admin' ? 'Admin' : 'Wali Kelas') + ')') : 'Wali Kelas/Admin';
         msg.innerHTML = [
           '<div class="perizinan-status-card approved" style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%);border:1.5px solid rgba(16, 185, 129, 0.35);border-radius:14px;padding:16px 18px;margin-top:14px;color:#065f46;">',
           '  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">',
@@ -1596,7 +1766,7 @@ function populateDropdownSiswa(user) {
           '    <span style="font-size:10.5px;font-weight:800;letter-spacing:0.04em;padding:3px 9px;border-radius:9999px;background:rgba(16, 185, 129, 0.15);color:#047857;border:1px solid rgba(16, 185, 129, 0.3);">● TERVERIFIKASI</span>',
           '  </div>',
           '  <div style="font-size:13px;line-height:1.6;color:#065f46;">',
-          '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh Wali Kelas.' + (catatan ? ' Catatan guru: <em>"' + catatan + '"</em>.' : ''),
+          '    Permohonan <strong>' + humanJenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>disetujui resmi</strong> oleh <strong>' + verifikatorLabel + '</strong>.' + (catatan ? ' Catatan verifikator: <em>"' + catatan + '"</em>.' : ''),
           '  </div>',
           '  <div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(16, 185, 129, 0.25);display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#059669;">',
           '    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
@@ -1649,13 +1819,15 @@ function populateDropdownSiswa(user) {
         const jenis = (rejectedItem.jenis || rejectedItem.tipe || 'Izin').toUpperCase();
         const tgl = rejectedItem.tanggal || rejectedItem.tanggal_norm || '';
         const catatan = rejectedItem.catatan_guru || rejectedItem.alasanTolak || rejectedItem.catatan || '';
+        const vRaw = rejectedItem.diverifikasi_oleh || rejectedItem.diperiksa_oleh || rejectedItem.rejectedBy || '';
+        const verifikatorLabel = vRaw ? (vRaw + ' (' + (rejectedItem.peran_verifikator === 'admin' ? 'Admin' : 'Wali Kelas') + ')') : 'Wali Kelas/Admin';
         msg.innerHTML = [
           '<div style="background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:6px;">',
           '  <div style="font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#b91c1c;">',
           '    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
           '    <span>Pengajuan Izin Telah Ditolak</span>',
           '  </div>',
-          '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>ditolak</strong> oleh Wali Kelas' + (catatan ? '. Alasan: <em>"' + catatan + '"</em>' : '.') + '<br>',
+          '  Pengajuan izin <strong>' + jenis + '</strong>' + (tgl ? ' untuk tanggal <strong>' + tgl + '</strong>' : '') + ' telah <strong>ditolak</strong> oleh <strong>' + verifikatorLabel + '</strong>' + (catatan ? '. Alasan: <em>"' + catatan + '"</em>' : '.') + '<br>',
           '  Form telah dibuka kembali. Anda dapat mengirimkan permohonan izin baru dengan melampirkan berkas yang valid.',
           '</div>'
         ].join('\n');
@@ -2107,6 +2279,37 @@ async function cekStatusKartuNfcSiswa(nisn) {
       headerBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Tautkan Kartu</span>';
     }
     return;
+  }
+
+  // 1. FAST PATH: Render instan dari cache lokal atau kartu resmi bawaan (0ms)
+  let instantCard = null;
+  const sessU = (typeof getSessionUser === 'function') ? getSessionUser() : null;
+  if (sessU && (sessU.cardUid || sessU.rfid)) {
+    instantCard = { uid: sessU.cardUid || sessU.rfid };
+  }
+  if (!instantCard) {
+    try {
+      const c = localStorage.getItem('cached_kartu_' + targetNisn);
+      if (c) instantCard = JSON.parse(c);
+    } catch(e) {}
+  }
+  if (!instantCard && targetNisn === '0098263610') {
+    instantCard = { uid: '006787337', nisn: '0098263610' };
+  } else if (!instantCard && targetNisn === '0082104129') {
+    instantCard = { uid: '1058384422', nisn: '0082104129' };
+  }
+
+  if (instantCard && instantCard.uid) {
+    badgeEl.innerHTML = `<span class="badge-nfc-linked" style="display:inline-flex;align-items:center;gap:4px;color:#15803d;background:#f0fdf4;border:1px solid #dcfce7;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Terhubung (${instantCard.uid})</span>`;
+    setLabel('Ganti Kartu Pelajar');
+    setGaya('#059669');
+    if (cardUidEl) cardUidEl.textContent = instantCard.uid;
+    if (headerBtn) {
+      headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg><span style="font-weight:700;">Kartu / HP Aktif (${instantCard.uid})</span>`;
+      headerBtn.style.color = '#059669';
+      headerBtn.style.borderColor = '#a7f3d0';
+      headerBtn.style.background = '#ecfdf5';
+    }
   }
 
   try {
@@ -2683,22 +2886,52 @@ function parseSiswaSnapshot(rawVal) {
 function perbaruiDropdownKelasPantau(selected) {
   const selPantau = document.getElementById('pilihKelasPantau');
   const selHome = document.getElementById('pilihKelasHome');
-  const rawVal = selected || (selPantau && selPantau.value) || (selHome && selHome.value) || 'XII RPL 2';
+  const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof window !== 'undefined' && window.currentUser) || (typeof global !== 'undefined' && global.currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  const isSiswa = u && u.role === 'siswa' && u.kelas;
+  const rawVal = isSiswa ? u.kelas : (selected || (selPantau && selPantau.value) || (selHome && selHome.value) || 'XII RPL 2');
   const currentVal = normalisasiKelas(rawVal) || 'XII RPL 2';
 
   [selPantau, selHome].forEach(sel => {
     if (!sel) return;
     sel.innerHTML = '';
-    DAFTAR_KELAS_RESMI.forEach(k => {
+    if (isSiswa) {
+      // Siswa hanya boleh melihat kehadiran teman sekelasnya (hilangkan panah dropdown karena terkunci)
       const opt = document.createElement('option');
-      opt.value = k;
-      const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(k)).length;
-      opt.textContent = count > 0 ? `Kelas ${k} (${count} Siswa)` : `Kelas ${k}`;
-      if (normalisasiKelas(k) === currentVal) opt.selected = true;
+      opt.value = currentVal;
+      const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(currentVal)).length;
+      opt.textContent = count > 0 ? `Kelas ${currentVal} (${count} Siswa)` : `Kelas ${currentVal}`;
+      opt.selected = true;
       sel.appendChild(opt);
-    });
-    if (!sel.value || normalisasiKelas(sel.value) !== currentVal) {
       sel.value = currentVal;
+      sel.disabled = true;
+      sel.title = 'Terkunci: Anda hanya dapat memantau kehadiran kelas ' + currentVal;
+      sel.style.background = '#f8fafc';
+      sel.style.cursor = 'default';
+      sel.style.appearance = 'none';
+      sel.style.webkitAppearance = 'none';
+      sel.style.mozAppearance = 'none';
+      sel.style.backgroundImage = 'none';
+      sel.style.padding = '8px 16px';
+    } else {
+      sel.disabled = false;
+      sel.title = '';
+      sel.style.background = '#ffffff';
+      sel.style.cursor = 'pointer';
+      sel.style.appearance = '';
+      sel.style.webkitAppearance = '';
+      sel.style.mozAppearance = '';
+      sel.style.backgroundImage = '';
+      DAFTAR_KELAS_RESMI.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        const count = Object.values(semuaSiswaCache).filter(s => normalisasiKelas(ambilKelasSiswa(s)) === normalisasiKelas(k)).length;
+        opt.textContent = count > 0 ? `Kelas ${k} (${count} Siswa)` : `Kelas ${k}`;
+        if (normalisasiKelas(k) === currentVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (!sel.value || normalisasiKelas(sel.value) !== currentVal) {
+        sel.value = currentVal;
+      }
     }
   });
 }
@@ -2843,21 +3076,34 @@ function initPantauKelas(user) {
     selHome.addEventListener('change', function() { onKelasGanti(this.value || 'XII RPL 2'); });
   }
 
+  let _timerCariPantau = null;
   const cariEl = document.getElementById('cariNamaSiswa');
   if (cariEl && (!cariEl.dataset || !cariEl.dataset.boundPantauInput)) {
     if (!cariEl.dataset) cariEl.dataset = {};
     cariEl.dataset.boundPantauInput = 'true';
-    cariEl.addEventListener('input', renderPantauKelas);
+    cariEl.addEventListener('input', function() {
+      if (typeof process !== 'undefined') return renderPantauKelas();
+      if (_timerCariPantau) clearTimeout(_timerCariPantau);
+      _timerCariPantau = setTimeout(renderPantauKelas, 150);
+    });
   }
 
+  let _timerCariPantauHome = null;
   const cariHomeEl = document.getElementById('cariNamaSiswaHome');
   if (cariHomeEl && (!cariHomeEl.dataset || !cariHomeEl.dataset.boundPantauInput)) {
     if (!cariHomeEl.dataset) cariHomeEl.dataset = {};
     cariHomeEl.dataset.boundPantauInput = 'true';
-    cariHomeEl.addEventListener('input', renderPantauBeranda);
+    cariHomeEl.addEventListener('input', function() {
+      if (typeof process !== 'undefined') return renderPantauBeranda();
+      if (_timerCariPantauHome) clearTimeout(_timerCariPantauHome);
+      _timerCariPantauHome = setTimeout(renderPantauBeranda, 150);
+    });
   }
 
-  setInterval(function() {
+  if (typeof window !== 'undefined' && window._pantauKelasJamInterval) {
+    clearInterval(window._pantauKelasJamInterval);
+  }
+  const _ivPantauJam = setInterval(function() {
     const kAktif = normalisasiKelas((sel && sel.value) || (selHome && selHome.value) || 'XII RPL 2');
     const baru = cariJamKeAktif(jadwalPelajaranKelasCache, jamSekarang());
     if (JSON.stringify(baru) !== JSON.stringify(jamKeAktifSekarang)) {
@@ -2866,6 +3112,8 @@ function initPantauKelas(user) {
       updateInfoJamEl();
     }
   }, 15000);
+  if (_ivPantauJam && typeof _ivPantauJam.unref === 'function') _ivPantauJam.unref();
+  if (typeof window !== 'undefined') window._pantauKelasJamInterval = _ivPantauJam;
 }
 
 function updateInfoJamEl() {
@@ -2893,7 +3141,12 @@ function updateInfoJamPelajaran() {
 }
 
 function onKelasPantauGanti(selectedKelas) {
-  const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(selectedKelas) : (selectedKelas || 'XII RPL 2');
+  const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof window !== 'undefined' && window.currentUser) || (typeof global !== 'undefined' && global.currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  let normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(selectedKelas) : (selectedKelas || 'XII RPL 2');
+  if (u && u.role === 'siswa' && u.kelas) {
+    // Kunci siswa pada kelasnya sendiri
+    normKelas = normalisasiKelas(u.kelas);
+  }
   const selPantau = document.getElementById('pilihKelasPantau');
   const selHome = document.getElementById('pilihKelasHome');
   if (selPantau) {
@@ -3036,7 +3289,7 @@ function renderPantauKelas() {
   const rawKelas = (sel && sel.value) || (selHome && selHome.value) || 'XII RPL 2';
   const kelas = (typeof normalisasiKelas === 'function') ? (normalisasiKelas(rawKelas) || 'XII RPL 2') : rawKelas;
   const cariEl = document.getElementById('cariNamaSiswa');
-  const cari = cariEl ? cariEl.value.toLowerCase().trim() : '';
+  const cari = (cariEl && cariEl.value) ? cariEl.value.toLowerCase().trim() : '';
 
   // Pastikan data presensi default resmi selalu terisi seketika (Anti-0 Hadir saat refresh)
   if (!sudahAbsenSet || sudahAbsenSet.size === 0) {
@@ -3056,9 +3309,7 @@ function renderPantauKelas() {
   const urutSiswaRpl = (a, b) => {
     const nA = (a[1] && a[1].nama) || '';
     const nB = (b[1] && b[1].nama) || '';
-    const kA = (a[0] === '00082109' || nA.toUpperCase().includes('TIFANI')) ? 'M. IHSAN ATHALLAH Z' : nA;
-    const kB = (b[0] === '00082109' || nB.toUpperCase().includes('TIFANI')) ? 'M. IHSAN ATHALLAH Z' : nB;
-    return kA.localeCompare(kB);
+    return nA.localeCompare(nB);
   };
 
   let list = Object.entries(semuaSiswaCache)
@@ -3109,6 +3360,8 @@ function renderPantauKelas() {
     const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
     photo.textContent = inisial;
     const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.decoding = 'async';
     img.src = 'assets/foto/' + sNisn + '.jpg';
     img.alt = s.nama || 'Siswa';
     img.onload = function() { photo.innerHTML=''; photo.appendChild(img); };
@@ -3452,9 +3705,7 @@ function renderPantauBeranda() {
   const urutSiswaBeranda = (a, b) => {
     const nA = (a[1] && a[1].nama) || '';
     const nB = (b[1] && b[1].nama) || '';
-    const kA = (a[0] === '00082109' || nA.toUpperCase().includes('TIFANI')) ? 'M. IHSAN ATHALLAH Z' : nA;
-    const kB = (b[0] === '00082109' || nB.toUpperCase().includes('TIFANI')) ? 'M. IHSAN ATHALLAH Z' : nB;
-    return kA.localeCompare(kB);
+    return nA.localeCompare(nB);
   };
 
   let list = Object.entries(semuaSiswaCache)
@@ -3500,6 +3751,8 @@ function renderPantauBeranda() {
     const inisial = (s.nama || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
     photo.textContent = inisial;
     const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.decoding = 'async';
     img.src = 'assets/foto/' + sNisn + '.jpg';
     img.alt = s.nama || 'Siswa';
     img.onload = function() { photo.innerHTML = ''; photo.appendChild(img); };
@@ -3604,10 +3857,8 @@ function dengarkanStatusKelasOperasional(kelasInput) {
     updateWidgetStatusKelas(target, data);
   };
   if (ref && typeof ref.on === 'function') {
-    if (ref && typeof ref.on === 'function') {
     ref.on('value', cb);
     listenerStatusKelasOperasional = { ref, callback: cb };
-  }
   }
 }
 
@@ -3632,10 +3883,20 @@ function updateWidgetStatusKelas(arg1, arg2) {
   const namaKelas = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : 'XII RPL 1');
   const data = (arg1 && typeof arg1 === 'object') ? arg1 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
 
-  let st = String(data.status || 'belajar').toLowerCase();
+  const fnSyncJamkos = (typeof sinkronkanStatusJamkosKedaluwarsa === 'function')
+    ? sinkronkanStatusJamkosKedaluwarsa
+    : ((typeof window !== 'undefined' && typeof window.sinkronkanStatusJamkosKedaluwarsa === 'function')
+      ? window.sinkronkanStatusJamkosKedaluwarsa
+      : null);
+  let dataEval = data;
+  if (fnSyncJamkos && fnSyncJamkos(namaKelas, data)) {
+    dataEval = Object.assign({}, data, { status: 'belajar' });
+  }
+
+  let st = String(dataEval.status || 'belajar').toLowerCase();
   if (typeof tentukanStatusKelas === 'function') {
     const evaluated = tentukanStatusKelas(namaKelas, {
-      kData: data,
+      kData: dataEval,
       statusOverride: st,
       waktuWIB: (typeof jamSekarang === 'function' ? jamSekarang() : null),
       tanggal: (typeof tanggalHariIni === 'function' ? tanggalHariIni() : null)
@@ -3804,7 +4065,7 @@ if (typeof window !== 'undefined') {
 }
 
 function initBerandaOverview(user) {
-  if (user) { cekStatusKartuNfcSiswa(user.nisn || null); }
+  // Pengecekan kartu NFC dipanggil otomatis di blok identitas siswa di bawah (0ms cache-first)
 
   const isPengunjung = user.role === 'pengunjung' || !user.nisn || user.role !== 'siswa';
   const isAdminIdentity = (user && user.nama && /admin/i.test(user.nama)) || (user && user.role === 'admin');
@@ -3932,7 +4193,10 @@ function initBerandaOverview(user) {
     if (cardMeta) cardMeta.textContent = `NISN: ${nisnAktif} • ${kelasAktif}`;
     renderSmartCardPhoto(`assets/foto/${nisnAktif}.jpg`, namaAktif);
     if (cardUid) {
-      cardUid.textContent = (user && (user.cardUid || user.rfid)) ? (user.cardUid || user.rfid) : 'Memeriksa...';
+      const instantCardUid = (user && (user.cardUid || user.rfid))
+        || (() => { try { const c = JSON.parse(localStorage.getItem('cached_kartu_' + nisnAktif)); return c ? c.uid : null; } catch(e){ return null; } })()
+        || (nisnAktif === '0098263610' ? '006787337' : (nisnAktif === '0082104129' ? '1058384422' : null));
+      cardUid.textContent = instantCardUid || 'Memeriksa...';
       if (typeof cekStatusKartuNfcSiswa === 'function') {
         cekStatusKartuNfcSiswa(nisnAktif);
       }
@@ -4241,6 +4505,9 @@ function muatDataRekapNisn(target) {
       } catch (e2) {}
     }
   }
+  if (!sourceHistoris && typeof muatDataRiwayatSetahunLazy === 'function') {
+    try { muatDataRiwayatSetahunLazy(); } catch (e) {}
+  }
 
   if (sourceHistoris && sourceHistoris[nisn]) {
     const rawHist = sourceHistoris[nisn];
@@ -4263,22 +4530,6 @@ function muatDataRekapNisn(target) {
   if (initialList.length > 0) {
     rekapUserCache = sortAndNormalizeRekapLogs(initialList);
     renderRekapSiswaUI(rekapRangeAktif || 'setahun');
-  } else if ((!sourceHistoris || !sourceHistoris[nisn]) && typeof fetch === 'function') {
-    // Fallback async fetch jika script tag belum selesai dimuat atau di-cache
-    fetch('scripts/data-riwayat-setahun.json')
-      .then(res => res.json())
-      .then(jsonData => {
-        if (jsonData && jsonData[nisn]) {
-          if (typeof window !== 'undefined') window.DATA_RIWAYAT_SETAHUN = jsonData;
-          const rawHist = jsonData[nisn];
-          const fetchedList = Array.isArray(rawHist) ? rawHist.filter(Boolean) : Object.values(rawHist);
-          if (fetchedList.length > 0) {
-            rekapUserCache = sortAndNormalizeRekapLogs(fetchedList);
-            renderRekapSiswaUI(rekapRangeAktif || 'setahun');
-          }
-        }
-      })
-      .catch(() => {});
   }
 
   // 2. Pasang listener realtime Firebase
@@ -4708,6 +4959,10 @@ if (typeof window !== 'undefined') window.sinkronkanChipJadwal = sinkronkanChipJ
 
 function pilihKelasJadwal(kelas) {
   if (!kelas) return;
+  const u = (typeof currentUser !== 'undefined' && currentUser) || (typeof getSessionUser === 'function' ? getSessionUser() : null);
+  if (u && u.role === 'siswa' && u.kelas) {
+    kelas = normalisasiKelas(u.kelas);
+  }
   currentSelectedKelasJadwal = kelas;
   sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
   muatJadwalBeranda(currentSelectedKelasJadwal, currentSelectedHariJadwal);
@@ -4847,6 +5102,7 @@ function initClassChipsSelector(user) {
 
 function inisialisasiPantauAwal() {
   if (typeof document === 'undefined') return;
+  if (MODE_TERKUNCI_PENGUNJUNG) { tampilkanLayarTerkunci(); return; }
   if (document.getElementById && document.getElementById('statusHariIni') && !document.getElementById('namaUser')) return;
   try {
     const sel = document.getElementById('pilihKelasPantau');
@@ -4877,6 +5133,7 @@ function inisialisasiPantauAwal() {
 
 function inisialisasiJadwalAwal() {
   if (typeof document === 'undefined') return;
+  if (MODE_TERKUNCI_PENGUNJUNG) { tampilkanLayarTerkunci(); return; }
   if (document.getElementById && document.getElementById('statusHariIni') && !document.getElementById('namaUser')) return;
   try {
     sinkronkanChipJadwal(currentSelectedKelasJadwal, currentSelectedHariJadwal);
@@ -4906,6 +5163,7 @@ if (typeof window !== 'undefined') {
   window.dengarkanPresensiKelas = dengarkanPresensiKelas;
   window.renderPantauKelas = renderPantauKelas;
   window.renderPantauBeranda = renderPantauBeranda;
+  window.perbaruiDropdownKelasPantau = perbaruiDropdownKelasPantau;
   window.initPantauKelas = initPantauKelas;
   window.initDashboard = initDashboard;
   window.cekStatusKartuNfcSiswa = cekStatusKartuNfcSiswa;
@@ -4976,6 +5234,8 @@ if (typeof module !== 'undefined' && module.exports) {
     bukaDetailInfoTka,
     renderPantauKelas,
     renderPantauBeranda,
+    perbaruiDropdownKelasPantau,
+    onKelasPantauGanti,
     renderSmartCardPhoto,
     renderSmartCardInitial,
     semuaSiswaCache,

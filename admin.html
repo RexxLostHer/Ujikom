@@ -184,7 +184,7 @@
       <div id="tab-perijinan" class="tab-panel active">
         <div class="content-header">
           <h2>Perizinan Masuk</h2>
-          <p>Daftar permohonan izin dan sakit yang diajukan siswa dan guru.</p>
+          <p>Daftar permohonan izin dan sakit siswa serta kendala guru. Admin dan Wali Kelas berwenang memproses ACC izin/sakit siswa kelas binaan.</p>
         </div>
         <div class="filter-bar">
           <button class="filter-btn active" data-filter="pending" onclick="setFilterPerijinan(this)">Menunggu</button>
@@ -414,7 +414,7 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" id="cariSiswaAdmin" oninput="filterDataSiswaAdminLive()" placeholder="Cari NISN, nama siswa, atau kelas..." style="width:100%; padding:9px 12px 9px 36px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13.5px; outline:none; background:#ffffff; color:#0f172a; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+            <input type="text" id="cariSiswaAdmin" oninput="filterDataSiswaAdminDebounced()" placeholder="Cari NISN, nama siswa, atau kelas..." style="width:100%; padding:9px 12px 9px 36px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13.5px; outline:none; background:#ffffff; color:#0f172a; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
           </div>
           <div style="font-size:13px; font-weight:700; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; padding:7px 14px; border-radius:8px;">
             Total Ditampilkan: <span id="countSiswaAdmin" style="color:#0f172a; font-weight:800;">0</span> Siswa
@@ -980,49 +980,22 @@
   </div>
 </div>
 
-<!-- GSAP & Lenis CDN -->
+<!-- GSAP CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=20261029_07"></script>
-<script src="assets/jadwal-util.js?v=20261001_10"></script>
+<script src="assets/firebase-config.js?v=20261119_01"></script>
+<script src="assets/jadwal-util.js?v=20261119_01"></script>
 <script src="assets/auth.js?v=20261001_10"></script>
 <script src="assets/ceklis-popup.js?v=20261029_08"></script>
-<script src="assets/perijinan.js?v=20261029_09"></script>
-<script src="assets/admin.js?v=20261104_1400"></script>
+<script src="assets/perijinan.js?v=20261119_01"></script>
+<script src="assets/admin.js?v=20261119_01"></script>
 <script src="assets/chat-hub.js?v=20261029_06"></script>
-<script src="assets/profile-modal.js?v=20261001_10"></script>
+<script src="assets/profile-modal.js?v=20261118_01"></script>
 
 <script>
-  // Lenis Smooth Scroll Synchronized with GSAP Ticker
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let lenis = null;
-  if (!prefersReducedMotion && window.Lenis) {
-    try {
-      lenis = new Lenis({
-        duration: 1.2,
-        smoothWheel: true,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-      });
-      if (window.gsap) {
-        gsap.ticker.add((time) => {
-          lenis.raf(time * 1000);
-        });
-        gsap.ticker.lagSmoothing(0);
-      } else {
-        function raf(time) {
-          lenis.raf(time);
-          requestAnimationFrame(raf);
-        }
-        requestAnimationFrame(raf);
-      }
-    } catch (e) {
-      console.warn('Lenis init:', e);
-    }
-  }
 
   // Dismiss Glass Loader and Run GSAP Entrance Animation
   function dismissGlassLoader() {

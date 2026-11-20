@@ -264,34 +264,31 @@ function initAdmin() {
     renderJadwalTable(jadwalCache);
   });
 
-  // Realtime Listeners untuk Telemetri Kehadiran 3 Kelas & Dewan Guru
-  try {
-    db.ref('presensi_jam').on('value', function () {
+  // Realtime Listeners untuk Telemetri Kehadiran 3 Kelas & Dewan Guru (dengan debounce 120ms agar tidak double-query saat tap kartu)
+  let _monitoringRefreshTimer = null;
+  const scheduleMonitoringRefresh = function (includeRekap) {
+    if (_monitoringRefreshTimer) clearTimeout(_monitoringRefreshTimer);
+    _monitoringRefreshTimer = setTimeout(function () {
+      _monitoringRefreshTimer = null;
       if (typeof muatMonitoring3Kelas === 'function') {
         const activeTab = (typeof document !== 'undefined' && document.querySelector('.tab-panel.active')) ? document.querySelector('.tab-panel.active').id : '';
         if (activeTab === 'tab-monitoring3kelas') muatMonitoring3Kelas();
-        if (activeTab === 'tab-rekap' && typeof muatRekapPresensi === 'function') muatRekapPresensi();
+        if (includeRekap && activeTab === 'tab-rekap' && typeof muatRekapPresensi === 'function') muatRekapPresensi();
       }
-    });
+    }, 120);
+    if (_monitoringRefreshTimer && typeof _monitoringRefreshTimer.unref === 'function') _monitoringRefreshTimer.unref();
+  };
+
+  try {
+    db.ref('presensi_jam').on('value', function () { scheduleMonitoringRefresh(true); });
   } catch (e) {}
 
   try {
-    db.ref('absensi').on('value', function () {
-      if (typeof muatMonitoring3Kelas === 'function') {
-        const activeTab = (typeof document !== 'undefined' && document.querySelector('.tab-panel.active')) ? document.querySelector('.tab-panel.active').id : '';
-        if (activeTab === 'tab-monitoring3kelas') muatMonitoring3Kelas();
-        if (activeTab === 'tab-rekap' && typeof muatRekapPresensi === 'function') muatRekapPresensi();
-      }
-    });
+    db.ref('absensi').on('value', function () { scheduleMonitoringRefresh(true); });
   } catch (e) {}
 
   try {
-    db.ref('presensi_guru').on('value', function () {
-      if (typeof muatMonitoring3Kelas === 'function') {
-        const activeTab = (typeof document !== 'undefined' && document.querySelector('.tab-panel.active')) ? document.querySelector('.tab-panel.active').id : '';
-        if (activeTab === 'tab-monitoring3kelas') muatMonitoring3Kelas();
-      }
-    });
+    db.ref('presensi_guru').on('value', function () { scheduleMonitoringRefresh(false); });
   } catch (e) {}
 
   listenPendingCount();
@@ -299,7 +296,6 @@ function initAdmin() {
   renderDaftarPerijinanAdmin('daftarPerijinanAdmin', 'pending');
   listenKendalaGuruAdmin();
   initStatusKelasControls();
-  populateVirtualSiswaSimulasi();
   populateJadwalKelasOptions();
 }
 
@@ -1235,6 +1231,7 @@ function submitSiswa() {
 }
 
 let filterQuerySiswaAdmin = '';
+let _timerCariSiswaAdmin = null;
 
 function filterDataSiswaAdminLive() {
   const inputEl = document.getElementById('cariSiswaAdmin');
@@ -1245,10 +1242,14 @@ function filterDataSiswaAdminLive() {
   renderSiswaTable(pool);
 }
 
+function filterDataSiswaAdminDebounced() {
+  if (_timerCariSiswaAdmin) clearTimeout(_timerCariSiswaAdmin);
+  _timerCariSiswaAdmin = setTimeout(filterDataSiswaAdminLive, 150);
+}
+
 function renderSiswaTable(data) {
   const tbody = document.getElementById('siswaTableBody');
   const selKartu  = document.getElementById('kartuNisn');
-  const selSim    = document.getElementById('simulasiNisn');
   const selPelKls = document.getElementById('pelajaranKelas');
   if (!tbody) return;
 
@@ -1256,7 +1257,6 @@ function renderSiswaTable(data) {
   tbody.innerHTML = '';
 
   if (selKartu) selKartu.innerHTML = '<option value="">-- Pilih siswa --</option>';
-  if (selSim) selSim.innerHTML = '<option value="">-- Pilih siswa --</option>';
 
   const parsedData = (typeof parseSiswaSnapshot === 'function') ? parseSiswaSnapshot(data) : data;
   const allItems = Object.entries(parsedData).sort((a,b) => (a[1].nama || '').localeCompare(b[1].nama || ''));
@@ -1271,12 +1271,6 @@ function renderSiswaTable(data) {
       opt.value = displayNisn;
       opt.textContent = displayNisn + ' — ' + (s.nama || '');
       selKartu.appendChild(opt);
-    }
-    if (selSim) {
-      const opt2 = document.createElement('option');
-      opt2.value = displayNisn;
-      opt2.textContent = (s.nama || displayNisn) + ' (' + (s.kelas || '') + ')';
-      selSim.appendChild(opt2);
     }
   });
 
@@ -1334,7 +1328,7 @@ function renderSiswaTable(data) {
         '<td>' +
           '<div style="display:flex;align-items:center;gap:12px;">' +
             '<div style="width:38px;height:38px;border-radius:10px;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;border:1.5px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.06);flex-shrink:0;">' +
-              '<img src="' + fotoUrl + '" alt="' + (s.nama || '') + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.textContent=\'' + inisial + '\';">' +
+              '<img src="' + fotoUrl + '" alt="' + (s.nama || '') + '" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" onerror="this.onerror=null;this.style.display=\'none\';this.parentElement.textContent=\'' + inisial + '\';">' +
             '</div>' +
             '<div>' +
               '<div style="font-weight:700;color:#0f172a;">' + (s.nama || '') + '</div>' +
@@ -2679,7 +2673,6 @@ function cariSiswaByEmailAdmin(email) {
   }
   const siswaEmailMap = {
     '7dosabesar557@gmail.com': '0098263610',
-    'zemapk15@gmail.com': '0098263610',
     'ihsan@gmail.com': '0098263610',
     'ihsan@smkn1sumedang.sch.id': '0098263610',
     'ihsanathallah@gmail.com': '0098263610',
@@ -3017,15 +3010,24 @@ function renderTabelPengguna(data) {
   });
 }
 
+let _usersListenerAdminDb = null;
+
 function loadUsers() {
-  db.ref('users').on('value', function (snap) {
-    const data = snap.val() || {};
-    usersCache = data;
-    if (guruCache && Object.keys(guruCache).length > 0) {
-      renderGuruTable(guruCache);
+  if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (_usersListenerAdminDb === db) {
+      renderTabelPengguna(usersCache || {});
+      return;
     }
-    renderTabelPengguna(usersCache);
-  });
+    _usersListenerAdminDb = db;
+    db.ref('users').on('value', function (snap) {
+      const data = snap.val() || {};
+      usersCache = data;
+      if (guruCache && Object.keys(guruCache).length > 0) {
+        renderGuruTable(guruCache);
+      }
+      renderTabelPengguna(usersCache);
+    });
+  }
 }
 
 async function lepasTautanNisnAdmin(uid, nisn, email) {
@@ -3196,9 +3198,10 @@ function listenKendalaGuruAdmin() {
   updateBadgeKendalaGuru();
   renderKendalaGuruAdmin(filterKendalaAktif);
 
-  // 2. Dengarkan perubahan realtime dari Firebase
+  // 2. Dengarkan perubahan realtime dari Firebase (dilindungi guard agar tidak menumpuk saat storage event terpanggil)
   try {
-    if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+    if (typeof db !== 'undefined' && db && typeof db.ref === 'function' && window._kendalaAdminListenerDb !== db) {
+      if (typeof window !== 'undefined') window._kendalaAdminListenerDb = db;
       const handleSnapKendala = function (snap) {
         const val = snap.val() || {};
         Object.keys(val).forEach(k => {
@@ -3447,6 +3450,14 @@ async function adminApproveKendala(id) {
 
   if (activeDb) {
     try {
+      const fnRentang = (typeof ekstrakRentangJamJamkos === 'function')
+        ? ekstrakRentangJamJamkos
+        : ((typeof window !== 'undefined' && typeof window.ekstrakRentangJamJamkos === 'function')
+          ? window.ekstrakRentangJamJamkos
+          : null);
+      const rentangJamkos = fnRentang ? fnRentang(k) : null;
+      const tanggalJamkos = k.tanggal
+        || ((typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10));
       const updates = [
         activeDb.ref('kendala_mengajar/' + id).update({
           status: 'approved',
@@ -3508,9 +3519,10 @@ async function adminApproveKendala(id) {
           activeMapel: k.mapel || 'Belajar Mandiri',
           activeTeacherNama: k.guruNama || k.nama || '-',
           keteranganJamkos: (k.jamPelajaran ? `[${k.jamPelajaran}] ` : '') + (k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)'),
+          tanggalJamkos: tanggalJamkos,
           jamPelajaran: k.jamPelajaran || '',
-          jamMulai: k.jamMulai || '',
-          jamSelesai: k.jamSelesai || '',
+          jamMulai: k.jamMulai || (rentangJamkos ? rentangJamkos.mulai : ''),
+          jamSelesai: k.jamSelesai || (rentangJamkos ? rentangJamkos.selesai : ''),
           updatedAt: new Date().toISOString()
         }).catch(() => null),
         activeDb.ref('classes/' + targetKelas).update({
@@ -3519,12 +3531,20 @@ async function adminApproveKendala(id) {
           activeMapel: k.mapel || 'Belajar Mandiri',
           activeTeacherNama: k.guruNama || k.nama || '-',
           keteranganJamkos: k.alasan || 'Tugas Mandiri (Guru Berhalangan Hadir)',
+          tanggalJamkos: tanggalJamkos,
+          jamPelajaran: k.jamPelajaran || '',
+          jamMulai: k.jamMulai || (rentangJamkos ? rentangJamkos.mulai : ''),
+          jamSelesai: k.jamSelesai || (rentangJamkos ? rentangJamkos.selesai : ''),
           updatedAt: new Date().toISOString()
         }).catch(() => null),
         activeDb.ref('status_kelas/' + targetKelas).update({
           status: 'jamkos',
           keterangan: k.alasan || 'Tugas Mandiri',
           mapel: k.mapel || 'Belajar Mandiri',
+          tanggalJamkos: tanggalJamkos,
+          jamPelajaran: k.jamPelajaran || '',
+          jamMulai: k.jamMulai || (rentangJamkos ? rentangJamkos.mulai : ''),
+          jamSelesai: k.jamSelesai || (rentangJamkos ? rentangJamkos.selesai : ''),
           updatedAt: Date.now()
         }).catch(() => null)
       ];
@@ -3743,10 +3763,34 @@ function renderStatusKelasControls(dataKelas) {
 
 async function ubahStatusKelasManual(kelasId, statusBaru) {
   try {
-    await db.ref('kelas/' + kelasId).update({
+    const payload = {
       status: statusBaru,
       updatedAt: new Date().toISOString()
-    });
+    };
+    if (statusBaru === 'jamkos') {
+      const tgl = (typeof tanggalHariIni === 'function') ? tanggalHariIni() : new Date().toISOString().slice(0, 10);
+      const jadwal = (typeof ambilJadwalKelasHariIni === 'function' && typeof namaHariDariTanggal === 'function')
+        ? ambilJadwalKelasHariIni(null, kelasId, namaHariDariTanggal(tgl))
+        : null;
+      let jamMulai = '07:00';
+      let jamSelesai = (jadwal && jadwal.jamPulang) || '15:30';
+      if (jadwal && jadwal.jadwal && typeof jadwal.jadwal === 'object') {
+        Object.values(jadwal.jadwal).forEach(p => {
+          if (p && p.mulai && p.mulai < jamMulai) jamMulai = p.mulai;
+          if (p && p.selesai && p.selesai > jamSelesai) jamSelesai = p.selesai;
+        });
+      }
+      payload.tanggalJamkos = tgl;
+      payload.jamPelajaran = `Jam ke-1 s/d 8 (${jamMulai} - ${jamSelesai})`;
+      payload.jamMulai = jamMulai;
+      payload.jamSelesai = jamSelesai;
+    } else {
+      payload.tanggalJamkos = '';
+      payload.jamPelajaran = '';
+      payload.jamMulai = '';
+      payload.jamSelesai = '';
+    }
+    await db.ref('kelas/' + kelasId).update(payload);
   } catch (err) {
     console.warn('Gagal update /kelas di Firebase:', err.message);
   }
@@ -3824,6 +3868,9 @@ async function muatMonitoring3Kelas() {
     pilotClasses.forEach(itemCls => {
       const cls = itemCls.nama;
       const kInfo = dataKelas[cls] || { status: 'belajar', activeMapel: '-', activeTeacherNama: '-' };
+      if (typeof sinkronkanStatusJamkosKedaluwarsa === 'function' && sinkronkanStatusJamkosKedaluwarsa(cls, kInfo)) {
+        kInfo.status = 'belajar';
+      }
       let stEval = null;
       if (typeof tentukanStatusKelas === 'function') {
         stEval = tentukanStatusKelas(cls, { kData: kInfo, statusOverride: kInfo.status });
@@ -4123,298 +4170,6 @@ async function muatMonitoring3Kelas() {
   }
 }
 
-// ===================================================================
-// MODUL SIMULASI ABSEN RFID VIRTUAL & AUTOMASI SISTEM (PRD 4.1 & 5.2)
-// ===================================================================
-function gantiModeSimulasiKartu(mode) {
-  const boxSiswa = document.getElementById('boxPilihVirtualSiswa');
-  if (boxSiswa) {
-    boxSiswa.style.display = (mode === 'virtualSiswa') ? 'block' : 'none';
-  }
-}
-
-function setJamSimulasi(jam) {
-  const input = document.getElementById('simulasiJamInput');
-  if (input) input.value = jam;
-}
-
-function populateVirtualSiswaSimulasi() {
-  const select = document.getElementById('simulasiNisn');
-  if (!select) return;
-
-  const pilotClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
-  const daftar = Object.values(siswaCache)
-    .filter(s => pilotClasses.includes(s.kelas))
-    .sort((a, b) => (a.kelas || '').localeCompare(b.kelas || '') || (a.nama || '').localeCompare(b.nama || ''));
-
-  if (daftar.length === 0) {
-    select.innerHTML = '<option value="0091113849">0091113849 - AHSAN MAHMUD FAUZI YUSRY (XII RPL 1)</option>';
-    return;
-  }
-
-  select.innerHTML = '';
-  daftar.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.nisn;
-    opt.textContent = `${s.nisn} — ${s.nama} (${s.kelas})`;
-    select.appendChild(opt);
-  });
-}
-
-function logTerminalSimulasi(pesan, warna) {
-  const logBox = document.getElementById('simulasiTerminalLog');
-  if (!logBox) return;
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const stamp = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-
-  const div = document.createElement('div');
-  div.style.color = warna || '#38bdf8';
-  div.style.lineHeight = '1.45';
-  div.style.borderBottom = '1px dashed #1e293b';
-  div.style.padding = '3px 0';
-  div.innerHTML = `<span style="color:#64748b;">[${stamp}]</span> ${pesan}`;
-
-  logBox.appendChild(div);
-  logBox.scrollTop = logBox.scrollHeight;
-}
-
-async function submitSimulasiTapLengkap() {
-  const mode = document.getElementById('simulasiModeKartu')?.value || 'kartuA';
-  const jamInput = document.getElementById('simulasiJamInput')?.value || '06:20:00';
-  const tglInput = document.getElementById('simulasiTanggalInput')?.value || tanggalHariIni();
-
-  logTerminalSimulasi(`▶ Menginisiasi tap simulasi RFID mode: [${mode}] pada ${jamInput} (${tglInput})...`, '#94a3b8');
-
-  // MODE KARTU B: GURU
-  if (mode === 'kartuB') {
-    const guru = KARTU_UJI_COBA.kartuB;
-    try {
-      await db.ref('presensi_guru/' + guru.nip + '/' + tglInput).set({
-        rfidUid: guru.uid,
-        nama: guru.nama,
-        nip: guru.nip,
-        jamMasuk: jamInput,
-        status: 'hadir',
-        mapel: guru.mapel,
-        tipe: 'rfid_fisik_kartu_b',
-        timestamp: new Date().toISOString()
-      });
-
-      await db.ref('kelas/XII RPL 1').update({
-        status: 'belajar',
-        activeMapel: guru.mapel,
-        activeTeacherNama: guru.nama,
-        activeTeacherId: guru.nip,
-        updatedAt: new Date().toISOString()
-      });
-
-      logTerminalSimulasi(`✅ [TAP GURU BERHASIL] UID: <strong>${guru.uid}</strong> | Guru: <strong>${guru.nama}</strong> | Jam: ${jamInput} | KBM XII RPL 1: <strong>BELAJAR AKTIF</strong>`, '#10b981');
-      showMsg('simulasiMsg', `✅ Kartu B (Guru: ${guru.nama}) berhasil di-tap! KBM XII RPL 1 aktif.`, 'success');
-    } catch (err) {
-      logTerminalSimulasi(`❌ [ERROR TAP GURU] ${err.message}`, '#ef4444');
-      showMsg('simulasiMsg', 'Gagal tap guru: ' + err.message, 'error');
-    }
-    return;
-  }
-
-  // MODE SISWA (KARTU A ATAU SISWA VIRTUAL)
-  let targetSiswa = null;
-  if (mode === 'kartuA') {
-    targetSiswa = {
-      nisn: KARTU_UJI_COBA.kartuA.nisn,
-      nama: KARTU_UJI_COBA.kartuA.nama,
-      kelas: KARTU_UJI_COBA.kartuA.kelas,
-      uid: KARTU_UJI_COBA.kartuA.uid
-    };
-  } else {
-    const nisnTarget = document.getElementById('simulasiNisn')?.value;
-    const s = siswaCache[nisnTarget];
-    if (s) {
-      targetSiswa = { nisn: s.nisn, nama: s.nama, kelas: s.kelas || 'XII RPL 1', uid: 'VIRTUAL_' + s.nisn };
-    } else {
-      targetSiswa = { nisn: nisnTarget || '0091113849', nama: 'Siswa Virtual', kelas: 'XII RPL 1', uid: 'VIRTUAL' };
-    }
-  }
-
-  // Pastikan siswa yang berstatus Izin/Sakit yang disetujui tidak tertimpa oleh tap RFID
-  try {
-    let izinAda = null;
-    if (typeof cacheSemuaPerizinanAdmin !== 'undefined') {
-      izinAda = Object.values(cacheSemuaPerizinanAdmin).find(iz =>
-        iz && (iz.nisn === targetSiswa.nisn || iz.siswaId === targetSiswa.nisn) &&
-        iz.tanggal === tglInput && (iz.status === 'disetujui' || iz.status === 'approved')
-      );
-    }
-    if (!izinAda && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
-      const [snapPj, snapPz] = await Promise.all([
-        db.ref('perijinan').once('value').catch(() => null),
-        db.ref('perizinan').once('value').catch(() => null)
-      ]);
-      const findIzin = (snap) => snap && snap.val() && Object.values(snap.val()).find(iz =>
-        iz && (iz.nisn === targetSiswa.nisn || iz.siswaId === targetSiswa.nisn) &&
-        iz.tanggal === tglInput && (iz.status === 'disetujui' || iz.status === 'approved')
-      );
-      izinAda = findIzin(snapPj) || findIzin(snapPz);
-    }
-    if (izinAda) {
-      const ketIzin = (izinAda.jenis || 'izin').toUpperCase();
-      logTerminalSimulasi(`ℹ️ [TAP DIABAIKAN] ${targetSiswa.nama} sudah memiliki status resmi: ${ketIzin} (Tidak dapat ditimpa oleh scan)`, '#3b82f6');
-      showMsg('simulasiMsg', `ℹ️ Siswa ${targetSiswa.nama} sudah berstatus ${ketIzin} yang disetujui. Scan IoT tidak menimpa status izin.`, 'info');
-      return;
-    }
-  } catch (eIzinCheck) {}
-
-  // Evaluasi Ambang Batas Waktu PRD Bab 4.1
-  const cleanJam = jamInput.length === 5 ? jamInput + ':00' : jamInput;
-  let statusBaru = 'hadir';
-  let ketBadge = 'Hadir (Tepat Waktu)';
-  let warnaLog = '#10b981';
-
-  if (cleanJam <= '06:30:00') {
-    statusBaru = 'hadir';
-    ketBadge = 'Hadir (Tepat Waktu)';
-    warnaLog = '#10b981';
-  } else if (cleanJam <= '08:00:00') {
-    statusBaru = 'terlambat';
-    ketBadge = 'Terlambat';
-    warnaLog = '#f59e0b';
-  } else {
-    statusBaru = 'terlambat';
-    ketBadge = 'Terlambat (Lewat Batas Toleransi)';
-    warnaLog = '#ef4444';
-  }
-
-  try {
-    // 1. Simpan ke presensi_jam/{kelas}/{tanggal}/1/{nisn}
-    await db.ref('presensi_jam/' + targetSiswa.kelas + '/' + tglInput + '/1/' + targetSiswa.nisn).set({
-      waktu: cleanJam,
-      status: statusBaru,
-      tipe: 'rfid_virtual_simulasi',
-      keterangan: ketBadge,
-      rfidUid: targetSiswa.uid,
-      updatedAt: new Date().toISOString()
-    });
-
-    // 2. Simpan ke history absensi/{nisn}
-    await db.ref('absensi/' + targetSiswa.nisn).push({
-      tanggal: tglInput,
-      waktu: cleanJam,
-      status: statusBaru,
-      tipe: 'masuk',
-      keterangan: ketBadge,
-      rfidUid: targetSiswa.uid
-    });
-
-    logTerminalSimulasi(
-      `🏷️ [TAP SISWA SUKSES] <strong>${targetSiswa.nama}</strong> (${targetSiswa.kelas}) | Jam: ${cleanJam} | Status: <strong>${ketBadge.toUpperCase()}</strong>`,
-      warnaLog
-    );
-    showMsg('simulasiMsg', `✅ Tap berhasil! ${targetSiswa.nama} tercatat: ${ketBadge}`, 'success');
-
-    // Refresh monitoring jika aktif
-    const activeTab = document.querySelector('.tab-panel.active')?.id;
-    if (activeTab === 'tab-monitoring3kelas') muatMonitoring3Kelas();
-  } catch (err) {
-    logTerminalSimulasi(`❌ [ERROR TAP SISWA] ${err.message}`, '#ef4444');
-    showMsg('simulasiMsg', 'Gagal tap siswa: ' + err.message, 'error');
-  }
-}
-
-// Automasi Tepat 08.00 WIB (PRD Bab 4.1):
-// Periksa seluruh siswa di 3 kelas binaan. Yang belum tap dan tanpa perijinan valid ditandai ALPA.
-async function jalankanAutomasiAutoAlpa() {
-  const tglInput = document.getElementById('autoAlpaTanggalInput')?.value || tanggalHariIni();
-  const elMsg = document.getElementById('autoAlpaMsg');
-  if (elMsg) {
-    elMsg.style.display = 'block';
-    elMsg.style.color = '#d97706';
-    elMsg.textContent = '⏳ Menjalankan algoritma pemindaian automasi 08.00 WIB...';
-  }
-
-  logTerminalSimulasi(`⏰ [AUTOMASI 08.00 WIB] Memulai inspeksi otomatis 3 kelas pilot untuk tanggal: ${tglInput}...`, '#f59e0b');
-
-  const pilotClasses = ['XII RPL 1', 'XII RPL 2', 'XII TKJ 1'];
-
-  try {
-    const [snapPresensi, snapPerizinan, snapPerijinan] = await Promise.all([
-      db.ref('presensi_jam').once('value').catch(() => null),
-      db.ref('perizinan').once('value').catch(() => null),
-      db.ref('perijinan').once('value').catch(() => null)
-    ]);
-
-    const dataPresensiAll = (snapPresensi && snapPresensi.val()) || {};
-    const dataPerizinanAll = { ...((snapPerijinan && snapPerijinan.val()) || {}), ...((snapPerizinan && snapPerizinan.val()) || {}) };
-
-    // Kumpulkan perijinan yang disetujui pada tanggal tersebut
-    const perijinanApprovedPerNisn = {};
-    Object.values(dataPerizinanAll).forEach(pj => {
-      if (pj && (pj.tanggal === tglInput || pj.tanggal_norm === tglInput) && (pj.status === 'disetujui' || pj.status === 'approved')) {
-        perijinanApprovedPerNisn[pj.nisn] = pj.jenis || 'izin';
-      }
-    });
-
-    let countAlpa = 0;
-    let countIzinOtomatis = 0;
-    let countLewat = 0;
-
-    for (const cls of pilotClasses) {
-      const siswaDiKelas = Object.values(siswaCache).filter(s => s.kelas === cls);
-      const presensiJam1 = (dataPresensiAll[cls] && dataPresensiAll[cls][tglInput] && dataPresensiAll[cls][tglInput]['1']) || {};
-
-      for (const s of siswaDiKelas) {
-        // Jika sudah tap RFID sebelum 08.00 WIB, biarkan
-        if (presensiJam1[s.nisn]) {
-          countLewat++;
-          continue;
-        }
-
-        // Jika belum tap, periksa izin resmi
-        if (perijinanApprovedPerNisn[s.nisn]) {
-          const jenisIzin = perijinanApprovedPerNisn[s.nisn];
-          await db.ref('presensi_jam/' + cls + '/' + tglInput + '/1/' + s.nisn).set({
-            waktu: '08:00:00',
-            status: jenisIzin,
-            tipe: 'auto_perijinan_walas',
-            keterangan: 'Izin Resmi Disetujui Walas',
-            updatedAt: new Date().toISOString()
-          });
-          countIzinOtomatis++;
-          logTerminalSimulasi(`📋 [AUTO-IZIN 08.00] ${s.nama} (${cls}) ditetapkan: <strong>${jenisIzin.toUpperCase()}</strong> (Ada izin disetujui)`, '#2563eb');
-        } else {
-          // Tidak ada izin & belum tap -> AUTO-ALPA
-          await db.ref('presensi_jam/' + cls + '/' + tglInput + '/1/' + s.nisn).set({
-            waktu: '08:00:00',
-            status: 'alpha',
-            tipe: 'auto_alpa_system',
-            keterangan: 'Auto-Alpa (Tidak Hadir & Tanpa Keterangan s.d 08.00 WIB)',
-            updatedAt: new Date().toISOString()
-          });
-          countAlpa++;
-          logTerminalSimulasi(`⚠️ [AUTO-SISTEM 08.00] ${s.nama} (${cls}) ditetapkan: <strong style="color:#ef4444;">Tanpa Keterangan</strong>`, '#dc2626');
-        }
-      }
-    }
-
-    const ringkasan = `✅ Automasi 08.00 WIB tuntas: ${countAlpa} siswa ditandai Tanpa Keterangan, ${countIzinOtomatis} siswa izin/sakit resmi, ${countLewat} siswa sudah tap.`;
-    logTerminalSimulasi(ringkasan, '#10b981');
-    if (elMsg) {
-      elMsg.style.display = 'block';
-      elMsg.style.color = '#059669';
-      elMsg.textContent = ringkasan;
-    }
-
-    // Refresh telemetry
-    muatMonitoring3Kelas();
-  } catch (err) {
-    logTerminalSimulasi(`❌ [ERROR AUTOMASI 08.00] ${err.message}`, '#ef4444');
-    if (elMsg) {
-      elMsg.style.color = '#dc2626';
-      elMsg.textContent = 'Gagal menjalankan automasi: ' + err.message;
-    }
-  }
-}
-
 // Sinkronisasi realtime lintas-tab / window via storage event untuk admin
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('storage', function (e) {
@@ -4441,7 +4196,6 @@ if (typeof window !== 'undefined') {
   window.bukaModalBuktiIzinAdmin = (typeof bukaModalBuktiIzinAdmin === 'function') ? bukaModalBuktiIzinAdmin : (typeof window !== 'undefined' ? window.bukaModalBuktiIzinAdmin : null);
   window.adminApproveKendala = adminApproveKendala;
   window.adminRejectKendala = adminRejectKendala;
-  window.submitSimulasiTapLengkap = submitSimulasiTapLengkap;
   window.resetSemuaDataIzinDanChat = (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : (typeof window !== 'undefined' ? window.resetSemuaDataIzinDanChat : null);
   window.PERMITTED_ROLES = PERMITTED_ROLES;
   window.cariGuruByEmailAdmin = cariGuruByEmailAdmin;
@@ -4467,6 +4221,7 @@ if (typeof window !== 'undefined') {
   window.muatMonitoring3Kelas = muatMonitoring3Kelas;
   window.populatePresensiKelas = populatePresensiKelas;
   window.filterDataSiswaAdminLive = filterDataSiswaAdminLive;
+  window.filterDataSiswaAdminDebounced = filterDataSiswaAdminDebounced;
   window.renderSiswaTable = renderSiswaTable;
   window.renderKartuTable = renderKartuTable;
 }
@@ -4488,6 +4243,7 @@ if (typeof global !== 'undefined') {
   global.muatMonitoring3Kelas = muatMonitoring3Kelas;
   global.populatePresensiKelas = populatePresensiKelas;
   global.filterDataSiswaAdminLive = filterDataSiswaAdminLive;
+  global.filterDataSiswaAdminDebounced = filterDataSiswaAdminDebounced;
   global.renderSiswaTable = renderSiswaTable;
   global.renderKartuTable = renderKartuTable;
 }
@@ -4495,6 +4251,7 @@ if (typeof global !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     filterDataSiswaAdminLive,
+    filterDataSiswaAdminDebounced,
     renderSiswaTable,
     renderKartuTable,
     muatRekapPresensi,
@@ -4517,7 +4274,6 @@ if (typeof module !== 'undefined' && module.exports) {
     bukaModalBuktiIzinAdmin: (typeof bukaModalBuktiIzinAdmin === 'function') ? bukaModalBuktiIzinAdmin : null,
     adminApproveKendala,
     adminRejectKendala,
-    submitSimulasiTapLengkap,
     resetSemuaDataIzinDanChat: (typeof resetSemuaDataIzinDanChat === 'function') ? resetSemuaDataIzinDanChat : null,
     ubahRoleUser,
     lepasTautanNisnAdmin,

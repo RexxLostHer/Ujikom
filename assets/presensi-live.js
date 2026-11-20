@@ -12,7 +12,7 @@ function getWIBTime(d) {
   }
 }
 
-// Monitoring Presensi RFID — Akses Terbuka (Siswa, Guru & Pengunjung)
+// Monitoring Presensi RFID — Akses Terbatas (akun sekolah terverifikasi)
 const adminUser = (typeof localStorage !== 'undefined' ? localStorage.getItem('admin_aktif') : null) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('user_aktif'));
 
 const logoutBtn = (typeof document !== 'undefined') ? document.getElementById('logoutBtn') : null;
@@ -25,6 +25,54 @@ if (logoutBtn) {
     window.location.href = 'index.html';
   });
 }
+
+// ===== GUARD AKSES PRESENSI LIVE (Phase 1) =====
+// Halaman ini TIDAK lagi terbuka untuk publik. Hanya akun terverifikasi (staff / IoT gateway)
+// yang boleh memuat data kehadiran. Pengunjung & akun belum verifikasi mendapat layar kunci.
+var AKSES_LIVE_DITOLAK = false;
+
+function tampilkanLayarTerkunciLive() {
+  if (typeof document === 'undefined' || !document.body) return;
+  var container = document.querySelector('.container');
+  if (container) container.style.display = 'none';
+  var overlay = document.getElementById('layarTerkunciLive');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'layarTerkunciLive';
+    overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#0F172A 0%,#1E293B 100%);z-index:99999;';
+    overlay.innerHTML =
+      '<div style="max-width:460px;width:100%;background:#ffffff;border-radius:24px;padding:36px 30px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.35);">' +
+        '<div style="width:72px;height:72px;margin:0 auto 18px;border-radius:20px;background:linear-gradient(135deg,#FEF2F2,#FEE2E2);display:flex;align-items:center;justify-content:center;border:1.5px solid #FECACA;">' +
+          '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' +
+        '</div>' +
+        '<h2 style="margin:0 0 10px;font-size:21px;font-weight:800;color:#0F172A;letter-spacing:-0.02em;">Akses Terbatas</h2>' +
+        '<p style="margin:0 0 22px;font-size:14px;line-height:1.65;color:#64748B;">Presensi Live hanya dapat dibuka oleh akun sekolah yang sudah terverifikasi (Admin, Guru, Wali Kelas). Silakan masuk terlebih dahulu.</p>' +
+        '<a href="index.html" style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:14px;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 8px 20px rgba(37,99,235,0.25);">Masuk / Verifikasi Akun</a>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'flex';
+}
+
+(function () {
+  var sesi = null;
+  try {
+    sesi = (typeof getSessionUser === 'function') ? getSessionUser() : null;
+  } catch (e) {}
+  var role = sesi && sesi.role;
+  var boleh = !!sesi && sesi.isVerified !== false &&
+    ['admin', 'guru', 'walas', 'iot_gateway'].indexOf(role) !== -1;
+  if (!boleh) {
+    AKSES_LIVE_DITOLAK = true;
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tampilkanLayarTerkunciLive);
+      } else {
+        tampilkanLayarTerkunciLive();
+      }
+    }
+  }
+})();
 
 // ---- State ----
 let siswaCache = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && Object.keys(MASTER_DATA_SISWA_RESMI).length > 0)
@@ -190,7 +238,7 @@ function renderRoster() {
 }
 
 let statusKelasLiveMap = {};
-if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+if (!AKSES_LIVE_DITOLAK && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
   try {
     db.ref('kelas').on('value', function (snapshot) {
       statusKelasLiveMap = snapshot.val() || {};
@@ -345,14 +393,14 @@ function pindahKelas(kelas) {
   listenerJadwalPelajaran = { ref, callback };
 }
 
-if (typeof kelasSelect !== 'undefined' && kelasSelect && typeof kelasSelect.addEventListener === 'function') {
+if (!AKSES_LIVE_DITOLAK && typeof kelasSelect !== 'undefined' && kelasSelect && typeof kelasSelect.addEventListener === 'function') {
   kelasSelect.addEventListener('change', function () {
     pindahKelas(kelasSelect.value);
   });
 }
 
 // Cek pergantian jam tiap 15 detik
-if (typeof window !== 'undefined' && typeof setInterval === 'function') {
+if (!AKSES_LIVE_DITOLAK && typeof window !== 'undefined' && typeof setInterval === 'function') {
   setInterval(cekJamAktifTerkini, 15000);
 }
 
@@ -383,7 +431,7 @@ function perbaruiSiswaLive(parsed) {
   }
 }
 
-if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+if (!AKSES_LIVE_DITOLAK && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
   try {
     db.ref('siswa').on('value', function (snapshot) {
       const parsed = (typeof parseSiswaSnapshot === 'function')

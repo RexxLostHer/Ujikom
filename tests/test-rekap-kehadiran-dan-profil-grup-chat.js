@@ -102,13 +102,23 @@ assert.ok(dataSetahun['0098263610'], 'Data riwayat 1 tahun M. Ihsan Athallah (00
 const ihsanLogs = Object.values(dataSetahun['0098263610']);
 assert.ok(ihsanLogs.length > 200, `Log kehadiran historis harus memuat > 200 catatan (saat ini: ${ihsanLogs.length})`);
 
-// B. Validasi dashboard.html menyertakan script tag data-riwayat-setahun.js
+// B. Validasi dashboard.html TIDAK lagi memuat data massal secara eager untuk pengunjung,
+//    dan dashboard.js memuatnya secara lazy hanya setelah akun terverifikasi.
 const dashHtml = fs.readFileSync(path.join(__dirname, '../dashboard.html'), 'utf8');
 assert.ok(
-  dashHtml.includes('src="assets/data-riwayat-setahun.js'),
-  'dashboard.html wajib menyertakan script tag assets/data-riwayat-setahun.js sebelum dashboard.js'
+  !dashHtml.includes('src="assets/data-riwayat-setahun.js'),
+  'dashboard.html TIDAK BOLEH memuat data-riwayat-setahun.js secara eager (bocor ke pengunjung)'
 );
-console.log(`  ✓ Data riwayat 1 tahun tersedia (${ihsanLogs.length} catatan) dan terhubung di dashboard.html.\n`);
+const dashJsSrc = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
+assert.ok(
+  dashJsSrc.includes('muatDataRiwayatSetahunLazy'),
+  'dashboard.js wajib menyediakan lazy loader muatDataRiwayatSetahunLazy() untuk akun terverifikasi'
+);
+assert.ok(
+  dashJsSrc.includes('assets/data-riwayat-setahun.js'),
+  'Lazy loader wajib mereferensikan assets/data-riwayat-setahun.js'
+);
+console.log(`  ✓ Data riwayat 1 tahun tersedia (${ihsanLogs.length} catatan) dan dimuat lazy hanya untuk akun terverifikasi.\n`);
 
 console.log('▶ [Test 2] Memvalidasi Fungsi Rekap Kehadiran, Aliases & Kalkulasi...');
 

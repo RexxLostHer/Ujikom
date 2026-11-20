@@ -1,13 +1,12 @@
 // ===================================================================
 // TEST SUITE: test-pantau-rekap-open-access.js
-// Verifikasi Akses Terbuka Pantau Presensi Kelas & Rekap 1 Tahun
-// Baik untuk Akun Siswa Maupun Akun Pengunjung/Tamu
+// Verifikasi Pantau Presensi Kelas & Rekap 1 Tahun untuk Akun Terverifikasi
+// + Penegakan Zero-Data Lockdown untuk Akun Pengunjung/Tamu (Phase 1)
 // ===================================================================
 
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 
 function buatElement(tag = 'div') {
   return {
@@ -41,7 +40,7 @@ function buatElement(tag = 'div') {
   };
 }
 
-console.log('=== MEMULAI TEST AKSES TERBUKA PANTAU & REKAP PRESENSI ===\n');
+console.log('=== MEMULAI TEST PANTAU & REKAP PRESENSI (AKUN TERVERIFIKASI + LOCKDOWN PENGUNJUNG) ===\n');
 
 // 1. Verifikasi dashboard.html struktur filter bar & rekap
 const htmlPath = fs.existsSync('dashboard.html') ? 'dashboard.html' : path.join(__dirname, '..', 'dashboard.html');
@@ -126,29 +125,59 @@ const dbMockData = {
   }
 };
 
-// Validasi bahwa pengunjung dapat memilih kelas XII RPL 2
-const selectedKelas = userPengunjung.kelas || domMock.pilihKelasPantau.value || 'XII RPL 2';
-assert.strictEqual(selectedKelas, 'XII RPL 2', 'Default kelas untuk pengunjung harus XII RPL 2');
-console.log('✓ [Test 2] Dropdown Pantau Kelas otomatis memilih XII RPL 2 untuk akun Pengunjung.');
+// Validasi bahwa pengunjung TIDAK lagi mendapatkan akses Pantau Kelas / Rekap.
+// Sejak Phase 1, akun pengunjung & belum terverifikasi dikunci total (zero-data lockdown).
+const dashJsLockdown = fs.readFileSync(path.join(__dirname, '../assets/dashboard.js'), 'utf8');
+assert.ok(
+  dashJsLockdown.includes('function apakahPengunjungTerkunci'),
+  'dashboard.js wajib memiliki deteksi pengunjung terkunci (apakahPengunjungTerkunci)'
+);
+assert.ok(
+  dashJsLockdown.includes('MODE_TERKUNCI_PENGUNJUNG'),
+  'dashboard.js wajib memiliki flag MODE_TERKUNCI_PENGUNJUNG'
+);
+assert.strictEqual(userPengunjung.role, 'pengunjung', 'Fixture pengunjung harus ber-role pengunjung');
+assert.ok(
+  !html.includes('Terbuka transparan untuk Pengunjung'),
+  'dashboard.html tidak boleh lagi mengklaim data terbuka untuk Pengunjung'
+);
+console.log('✓ [Test 2] Zero-data lockdown aktif: pengunjung tidak lagi memperoleh Pantau Kelas.');
 
-// Validasi bahwa rekap presensi TIDAK disembunyikan untuk pengunjung
-domMock.rekapContentSiswa.style.display = 'block';
-assert.strictEqual(domMock.rekapContentSiswa.style.display, 'block', 'Konten rekap siswa harus selalu tampil (tidak boleh di-hide)');
-console.log('✓ [Test 3] Tab Rekap & Riwayat Presensi terbuka dan dapat diakses 100% oleh Pengunjung.');
+// Validasi layar kunci menggantikan seluruh tab konten (bukan sekadar menyembunyikan rekap)
+assert.ok(
+  dashJsLockdown.includes("document.getElementById('tabTerkunci')") ||
+  dashJsLockdown.includes('getElementById("tabTerkunci")'),
+  'dashboard.js wajib merender panel tabTerkunci untuk akun terkunci'
+);
+assert.ok(
+  dashJsLockdown.includes("classList.add('mode-terkunci-pengunjung')"),
+  'Layar kunci wajib menambahkan class body mode-terkunci-pengunjung'
+);
+const styleLockdown = fs.readFileSync(path.join(__dirname, '../assets/style.css'), 'utf8');
+assert.ok(
+  styleLockdown.includes('body.mode-terkunci-pengunjung .view-tabs'),
+  'style.css wajib menyembunyikan navigasi tab saat mode terkunci'
+);
+console.log('✓ [Test 3] Layar kunci menutup seluruh tab konten & navigasi untuk pengunjung.');
 
-// Validasi pemuatan opsi siswa pada dropdown rekap
+// Validasi rekap presensi tidak pernah dimuat untuk pengunjung (data massal 1 tahun tidak boleh terunduh)
+assert.ok(
+  !html.includes('src="assets/data-riwayat-setahun.js'),
+  'dashboard.html tidak boleh memuat data-riwayat-setahun.js secara eager untuk pengunjung'
+);
+assert.ok(
+  dashJsLockdown.includes('function muatDataRiwayatSetahunLazy'),
+  'dashboard.js wajib memuat data riwayat 1 tahun secara lazy hanya setelah akun terverifikasi'
+);
 const listSiswaRekap = Object.entries(dbMockData.siswa).map(([nisn, s]) => ({ nisn, nama: s.nama, kelas: s.kelas }));
 listSiswaRekap.forEach(s => {
   const opt = buatElement('option');
   opt.value = s.nisn;
-  opt.textContent = `${s.nama} (${s.kelas}) — NISN: ${s.nisn}`;
+  opt.textContent = `${s.nama} (${s.kelas}) - NISN: ${s.nisn}`;
   domMock.pilihSiswaRekap.appendChild(opt);
 });
-
-assert.strictEqual(domMock.pilihSiswaRekap.options.length, 2, 'Dropdown rekap harus memuat 2 siswa terdaftar');
-const activeRekapNisn = userPengunjung.nisn || domMock.pilihSiswaRekap.options[0].value;
-assert.strictEqual(activeRekapNisn, '0098263610', 'Pengunjung secara default meninjau M. Ihsan Athallah');
-console.log('✓ [Test 4] Dropdown rekap memuat daftar siswa dan memilih M. Ihsan Athallah sebagai default preview.');
+assert.strictEqual(domMock.pilihSiswaRekap.options.length, 2, 'Dropdown rekap tetap memuat 2 siswa untuk akun terverifikasi');
+console.log('✓ [Test 4] Data rekap massal hanya dimuat lazy untuk akun terverifikasi, bukan untuk pengunjung.');
 
 // 5. Evaluasi Ketepatan Urutan Evaluasi Status Pill Presensi (Anti-False-Late Bug)
 console.log('[Test 5] Evaluasi Urutan Evaluasi Status Pill Presensi...');
@@ -235,5 +264,5 @@ assert.ok(dashJsContent.includes('Laboratorium Komputer RPL'), 'Info TKA harus m
 console.log('✓ [Test 7] Handler interaktivitas info TOEIC dan TKA valid dan informatif.');
 
 console.log('\n======================================================');
-console.log('🎉 SEMUA TEST AKSES TERBUKA PANTAU & REKAP LOLOS 100%!');
+console.log('🎉 SEMUA TEST PANTAU, REKAP & LOCKDOWN PENGUNJUNG LOLOS 100%!');
 console.log('======================================================');

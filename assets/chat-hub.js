@@ -243,15 +243,20 @@
       }
     }
 
+    const isOrtu = Boolean(
+      (u.role === 'orangtua' || u.role === 'ortu') &&
+      u.isVerified !== false &&
+      (u.nisn_anak || (u.daftar_anak && Object.keys(u.daftar_anak).length > 0))
+    );
     const isAdmin = Boolean((u.role === 'admin' || u.isAdmin) || (isAdminPage && u.role !== 'pengunjung' && u.isVerified !== false));
-    const isGuru = Boolean(isAdmin || (u.nip && (u.role === 'guru' || u.role === 'walas' || u.isGuru) && u.isVerified !== false) || (isGuruPage && !isAdminPage && u.nip && u.role !== 'pengunjung' && u.isVerified !== false));
-    const isSiswa = Boolean(!isAdmin && !isGuru && u.nisn && (u.role === 'siswa' || !u.role) && u.role !== 'pengunjung' && u.isVerified !== false);
+    const isGuru = Boolean(!isOrtu && (isAdmin || (u.nip && (u.role === 'guru' || u.role === 'walas' || u.isGuru) && u.isVerified !== false) || (isGuruPage && !isAdminPage && u.nip && u.role !== 'pengunjung' && u.isVerified !== false)));
+    const isSiswa = Boolean(!isOrtu && !isAdmin && !isGuru && u.nisn && (u.role === 'siswa' || !u.role) && u.role !== 'pengunjung' && u.isVerified !== false);
 
     const isPengunjung = Boolean(
       u.role === 'pengunjung' ||
       u.isPengunjung === true ||
       u.isVerified === false ||
-      (!isAdmin && !isGuru && !isSiswa)
+      (!isAdmin && !isGuru && !isSiswa && !isOrtu)
     );
 
     if (isPengunjung) {
@@ -276,7 +281,28 @@
     }
 
     let cleanId = '';
-    if (isAdmin) {
+    if (isOrtu) {
+      cleanId = String(u.uid || u.id || ('ortu_' + (u.nisn_anak || 'wali'))).trim();
+      const namaOrtu = u.nama || 'Orang Tua / Wali';
+      const kelasAnak = u.kelas_anak || (u.daftar_anak && Object.values(u.daftar_anak)[0] && Object.values(u.daftar_anak)[0].kelas) || 'XII RPL 2';
+      return {
+        ...u,
+        id: cleanId,
+        uid: cleanId,
+        nama: namaOrtu,
+        role: 'orangtua',
+        isVerified: true,
+        isOrtu: true,
+        isGuru: false,
+        isWalas: false,
+        isAdmin: false,
+        isPengunjung: false,
+        kelas: kelasAnak,
+        kelas_anak: kelasAnak,
+        nomorKontak: cleanId,
+        foto: u.foto || u.foto_google || ''
+      };
+    } else if (isAdmin) {
       cleanId = String(u.id || u.nip || 'admin').trim();
     } else if (isGuru) {
       cleanId = String(u.nip || '').replace(/[^0-9]/g, '') || '199209142022211007';
@@ -341,6 +367,9 @@
     if (u.role === 'siswa') {
       const siswaNisn = u.nisn || (u.nomorKontak && u.nomorKontak !== '-' && /^\d{8,}$/.test(String(u.nomorKontak)) ? String(u.nomorKontak) : null);
       return Boolean(siswaNisn && u.isVerified !== false);
+    }
+    if (u.role === 'orangtua' || u.role === 'ortu') {
+      return Boolean(u.isVerified !== false && (u.nisn_anak || (u.daftar_anak && Object.keys(u.daftar_anak).length > 0)));
     }
     return false;
   }
@@ -733,7 +762,7 @@
         kategori: 'kelas',
         kelas: 'XII RPL 2',
         deskripsi: 'Grup Resmi Siswa & Wali Kelas XII RPL 2 SMK Negeri 1 Sumedang',
-        adminIds: [walasPerKelas['XIIRPL2'].nip, 'admin', 'ADMIN-01'],
+        adminIds: [walasPerKelas['XIIRPL2'].nip, 'admin'],
         memberIds: Array.from(new Set([walasPerKelas['XIIRPL2'].nip, 'admin', ...(siswaPerKelas['XIIRPL2'] || ['0098263610'])]))
       },
       'group_XII_RPL_1': {
@@ -742,7 +771,7 @@
         kategori: 'kelas',
         kelas: 'XII RPL 1',
         deskripsi: 'Grup Resmi Siswa & Wali Kelas XII RPL 1 SMK Negeri 1 Sumedang',
-        adminIds: [walasPerKelas['XIIRPL1'].nip, 'admin', 'ADMIN-01'],
+        adminIds: [walasPerKelas['XIIRPL1'].nip, 'admin'],
         memberIds: Array.from(new Set([walasPerKelas['XIIRPL1'].nip, 'admin', ...(siswaPerKelas['XIIRPL1'] || ['0081234567'])]))
       },
       'group_XII_TKJ_1': {
@@ -751,7 +780,7 @@
         kategori: 'kelas',
         kelas: 'XII TKJ 1',
         deskripsi: 'Grup Resmi Siswa & Wali Kelas XII TKJ 1 SMK Negeri 1 Sumedang',
-        adminIds: [walasPerKelas['XIITKJ1'].nip, 'admin', 'ADMIN-01'],
+        adminIds: [walasPerKelas['XIITKJ1'].nip, 'admin'],
         memberIds: Array.from(new Set([walasPerKelas['XIITKJ1'].nip, 'admin', ...(siswaPerKelas['XIITKJ1'] || ['0071122334'])]))
       },
       'group_walas_sumedang': {
@@ -760,7 +789,7 @@
         kategori: 'walas',
         kelas: null,
         deskripsi: 'Koordinasi internal para Wali Kelas SMK Negeri 1 Sumedang',
-        adminIds: ['199209142022211007', '198312052022211017', 'admin', 'ADMIN-01'],
+        adminIds: ['199209142022211007', '198312052022211017', 'admin'],
         memberIds: Array.from(new Set(['admin', ...(semuaWalasIds.length > 0 ? semuaWalasIds : ['199209142022211007', '198312052022211017', '198504252024211008'])]))
       },
       'group_dewan_guru': {
@@ -769,8 +798,35 @@
         kategori: 'guru',
         kelas: null,
         deskripsi: 'Musyawarah Seluruh Dewan Guru Pengajar & Wali Kelas SMKN 1 Sumedang',
-        adminIds: ['198109012009022003', '199209142022211007', 'admin', 'ADMIN-01'],
+        adminIds: ['198109012009022003', '199209142022211007', 'admin'],
         memberIds: Array.from(new Set(['admin', ...(semuaGuruIds.length > 0 ? semuaGuruIds : ['198109012009022003', '197905032006042004', '199209142022211007', '198312052022211017', '198504252024211008'])]))
+      },
+      'group_ortu_XII_RPL_1': {
+        id: 'group_ortu_XII_RPL_1',
+        nama: 'Orang Tua XII RPL 1',
+        kategori: 'ortu',
+        kelas: 'XII RPL 1',
+        deskripsi: 'Grup kelas XII RPL 1',
+        adminIds: [walasPerKelas['XIIRPL1'].nip, 'admin'],
+        memberIds: [walasPerKelas['XIIRPL1'].nip, 'admin']
+      },
+      'group_ortu_XII_RPL_2': {
+        id: 'group_ortu_XII_RPL_2',
+        nama: 'Orang Tua XII RPL 2',
+        kategori: 'ortu',
+        kelas: 'XII RPL 2',
+        deskripsi: 'Grup kelas XII RPL 2',
+        adminIds: [walasPerKelas['XIIRPL2'].nip, 'admin'],
+        memberIds: [walasPerKelas['XIIRPL2'].nip, 'admin']
+      },
+      'group_ortu_XII_TKJ_1': {
+        id: 'group_ortu_XII_TKJ_1',
+        nama: 'Orang Tua XII TKJ 1',
+        kategori: 'ortu',
+        kelas: 'XII TKJ 1',
+        deskripsi: 'Grup kelas XII TKJ 1',
+        adminIds: [walasPerKelas['XIITKJ1'].nip, 'admin'],
+        memberIds: [walasPerKelas['XIITKJ1'].nip, 'admin']
       }
     };
 
@@ -783,6 +839,34 @@
         }
       }
     } catch (e) {}
+
+    // Injeksi otomatis akun Orang Tua yang sedang aktif ke dalam memberIds grup paguyuban kelas anaknya
+    try {
+      const activeU = getActiveUserChat();
+      if (activeU && (activeU.role === 'orangtua' || activeU.role === 'ortu') && activeU.isVerified !== false) {
+        const rawKelas = activeU.kelas_anak || activeU.kelas || '';
+        const kNorm = normalisasiKelasChat(rawKelas);
+        const targetGrupId = kNorm ? ('group_ortu_' + rawKelas.replace(/\s+/g, '_')) : null;
+        if (targetGrupId && defaultGroups[targetGrupId]) {
+          const mSet = new Set(defaultGroups[targetGrupId].memberIds || []);
+          mSet.add(String(activeU.id));
+          defaultGroups[targetGrupId].memberIds = Array.from(mSet);
+        }
+        // Multi-Anak: Jika ortu memiliki anak di kelas lain
+        if (activeU.daftar_anak && typeof activeU.daftar_anak === 'object') {
+          Object.values(activeU.daftar_anak).forEach(ch => {
+            if (ch && ch.kelas) {
+              const gId = 'group_ortu_' + ch.kelas.replace(/\s+/g, '_');
+              if (defaultGroups[gId]) {
+                const s = new Set(defaultGroups[gId].memberIds || []);
+                s.add(String(activeU.id));
+                defaultGroups[gId].memberIds = Array.from(s);
+              }
+            }
+          });
+        }
+      }
+    } catch (eInj) {}
 
     return defaultGroups;
   }
@@ -807,13 +891,13 @@
       return false; // Dilarang melihat grup kelas lain
     }
 
-    // 2. WALI KELAS: Melihat grup kelas binaannya + Forum Walas + Dewan Guru
+    // 2. WALI KELAS: Melihat grup kelas binaannya + Forum Walas + Dewan Guru + Paguyuban Ortu kelas binaannya
     if (isWalas) {
-      if (g.kategori === 'kelas') {
+      if (g.kategori === 'kelas' || g.kategori === 'ortu') {
         if (groupKelasNorm && userKelasNorm && groupKelasNorm === userKelasNorm) return true;
         if (g.adminIds && g.adminIds.includes(String(user.id))) return true;
         if (g.memberIds && g.memberIds.includes(String(user.id))) return true;
-        return false; // Tidak menampilkan grup kelas lain
+        return false; // Tidak menampilkan grup kelas/ortu kelas lain
       }
       if (g.kategori === 'walas') return true;
       if (g.kategori === 'guru') return true;
@@ -827,7 +911,22 @@
       return false; // Dilarang masuk grup walas tanpa wewenang
     }
 
-    // 4. ADMIN: Akses penuh ke seluruh grup
+    // 4. ORANG TUA / WALI: HANYA boleh melihat grup Paguyuban Orang Tua kelas anaknya!
+    if (userRole === 'orangtua' || userRole === 'ortu') {
+      if (g.kategori !== 'ortu') return false; // Dilarang melihat grup siswa, walas, dewan guru
+      const childKelasNorm = normalisasiKelasChat(user.kelas_anak || user.kelas || '');
+      if (childKelasNorm && groupKelasNorm && childKelasNorm === groupKelasNorm) return true;
+      // Multi-anak: Cek apakah ada anak ortu yang berada di kelas grup ini
+      if (user.daftar_anak && typeof user.daftar_anak === 'object') {
+        const matchesAnyChild = Object.values(user.daftar_anak).some(ch => {
+          return ch && normalisasiKelasChat(ch.kelas) === groupKelasNorm;
+        });
+        if (matchesAnyChild) return true;
+      }
+      return false;
+    }
+
+    // 5. ADMIN: Akses penuh ke seluruh grup
     if (userRole === 'admin' || user.isAdmin) return true;
 
     return false;
@@ -866,6 +965,8 @@
       return 'background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color:#ffffff;';
     } else if (g.id === 'group_dewan_guru') {
       return 'background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color:#ffffff;';
+    } else if (g.kategori === 'ortu') {
+      return 'background: #0f172a; color:#ffffff;';
     }
     return 'background: linear-gradient(135deg, #128C7E 0%, #075E54 100%); color:#ffffff;';
   }
@@ -888,6 +989,8 @@
       return `<span style="font-size:17px;">👑</span>`;
     } else if (g.id === 'group_dewan_guru') {
       return `<span style="font-size:17px;">🎓</span>`;
+    } else if (g.kategori === 'ortu') {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
     }
     const initials = (g.nama || 'GP').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
     return `<span style="font-size:12px;font-weight:800;">${initials}</span>`;
@@ -960,6 +1063,14 @@
         set.add(digits);
       }
     };
+
+    if (user.role === 'orangtua' || user.role === 'ortu') {
+      // Identifiers akun orang tua murni: DILARANG menyertakan NISN anak agar direct chat pribadi siswa tidak bocor ke ortu
+      addVal(user.id);
+      addVal(user.uid);
+      addVal(user.nomorKontak);
+      return Array.from(set);
+    }
 
     addVal(user.id);
     addVal(user.uid);
@@ -2528,10 +2639,10 @@
 
         // Resolve display name: nama lawan bicara, BUKAN nama diri sendiri!
         let displayName = th.contactName;
-        if (!displayName || displayName === currentUser.nama) {
-          if (isGroup) {
-            displayName = (groupObj && groupObj.nama) || 'Grup';
-          } else if (roomId.startsWith('direct_')) {
+        if (isGroup) {
+          displayName = (groupObj && groupObj.nama) || th.contactName || 'Grup';
+        } else if (!displayName || displayName === currentUser.nama) {
+          if (roomId.startsWith('direct_')) {
             const otherId = getOtherParticipantId(currentUser, roomId);
             if (otherId) {
               const allC = getSemuaKontak();
@@ -2691,7 +2802,7 @@
       const myId = String(currentUser.id || '').trim();
       const myNomor = String(currentUser.nomorKontak || '').trim();
 
-      // 1. Filter diri sendiri agar TIDAK muncul di daftar kontak
+      // 1. Filter kontak sesuai role
       let filtered = contacts.filter(c => {
         if (!c) return false;
         const cId = String(c.id || '').trim();
@@ -2700,16 +2811,21 @@
         if (c.nisn && c.nisn === myNomor) return false;
         if (c.nip && c.nip === myNomor) return false;
 
+        // ORANG TUA: Di buku kontak, HANYA boleh melihat Wali Kelas & Admin (DILARANG chat pribadi siswa lain)
+        if (currentUser.role === 'orangtua' || currentUser.role === 'ortu') {
+          if (!c.isGuru && c.role !== 'admin' && c.role !== 'walas') return false;
+        }
+
         if (!query) return true;
         return (c.nama && c.nama.toLowerCase().includes(query)) ||
                (cNomor && cNomor.includes(query)) ||
                (c.kelas && c.kelas.toLowerCase().includes(query));
       });
 
-      // 2. Jika SISWA: Posisikan Wali Kelas binaannya di posisi paling atas dengan PIN khusus!
+      // 2. Jika SISWA atau ORANG TUA: Posisikan Wali Kelas binaan anaknya di posisi paling atas dengan PIN khusus!
       let pinnedWalas = null;
-      if (currentUser.role === 'siswa') {
-        const userKelasNorm = normalisasiKelasChat(currentUser.kelas);
+      if (currentUser.role === 'siswa' || currentUser.role === 'orangtua' || currentUser.role === 'ortu') {
+        const userKelasNorm = normalisasiKelasChat(currentUser.kelas_anak || currentUser.kelas);
         const others = [];
         filtered.forEach(c => {
           if (!pinnedWalas && c.isGuru && normalisasiKelasChat(c.kelas) === userKelasNorm) {
@@ -2802,11 +2918,13 @@
     const btnAddWrap = document.getElementById('waGroupAddMemberWrap');
     const avatarEl = document.getElementById('waGroupInfoAvatar');
 
-    if (titleEl) titleEl.textContent = 'Profil & Info Grup';
+    if (titleEl) titleEl.textContent = 'Info Grup';
     if (nameEl) nameEl.textContent = g.nama;
     if (descEl) descEl.textContent = g.deskripsi;
     if (countEl) countEl.textContent = `${g.memberIds.length} Anggota • Admin: ${g.adminIds ? g.adminIds.length : 1}`;
     if (btnAddWrap) btnAddWrap.style.display = isAdmin ? 'block' : 'none';
+    const btnGantiAv = document.getElementById('waBtnGantiAvatarGrup');
+    if (btnGantiAv) btnGantiAv.style.display = isAdmin ? 'inline-flex' : 'none';
 
     if (avatarEl) {
       avatarEl.style = getGroupAvatarStyle(g);
@@ -2828,17 +2946,26 @@
       });
 
       g.memberIds.forEach(mId => {
-        const c = contactMap[mId] || { nama: 'Pengguna ID ' + mId, nomorKontak: mId, role: 'member' };
+        let c = contactMap[mId];
+        if (!c) {
+          if (currentUser && (mId === currentUser.id || mId === currentUser.uid)) {
+            c = { nama: currentUser.nama + ' (Anda)', role: 'orangtua' };
+          } else {
+            c = { nama: 'Pengguna ID ' + mId, nomorKontak: mId, role: 'member' };
+          }
+        }
         const isMemAdmin = g.adminIds && g.adminIds.includes(mId);
         const row = document.createElement('div');
         row.className = 'wa-member-row';
+
+        let roleDisplay = c.role === 'admin' ? 'Administrator' : (c.role === 'walas' ? 'Wali Kelas' : (c.role === 'orangtua' ? 'Orang Tua / Wali' : (c.isGuru ? 'Guru' : 'Siswa')));
 
         row.innerHTML = `
           <div class="wa-member-info">
             <div class="wa-avatar" style="width:36px;height:36px;font-size:12px;">${c.nama ? c.nama[0].toUpperCase() : 'U'}</div>
             <div>
               <div style="font-size:13.5px;font-weight:700;color:#0F172A;">${escapeHtmlWa(c.nama)}</div>
-              <div style="font-size:11.5px;color:#64748B;">${c.role === 'admin' ? 'Administrator' : (c.role === 'walas' ? 'Wali Kelas' : (c.isGuru ? 'Guru' : 'Siswa'))} ${isMemAdmin ? '<span class="wa-badge-role wa-badge-admin" style="margin-left:4px;">👑 Admin Grup</span>' : ''}</div>
+              <div style="font-size:11.5px;color:#64748B;">${roleDisplay} ${isMemAdmin ? '<span class="wa-badge-role wa-badge-admin" style="margin-left:4px;">👑 Admin Grup</span>' : ''}</div>
             </div>
           </div>
           ${isAdmin && mId !== currentUser.id && !isMemAdmin ? `

@@ -35,6 +35,128 @@ function namaHariDariTanggal(tanggalStr) {
   return namaHariList[d.getDay()];
 }
 
+// ===================================================================
+// AUTO-EXPIRE JAMKOS (berdasarkan tanggal + jam pelajaran)
+// Status "jamkos" hanya berlaku pada tanggal lapor dan di dalam rentang
+// jam pelajaran yang dilaporkan. Di luar itu otomatis dianggap selesai.
+// ===================================================================
+function normalisasiTanggalWIB(nilai) {
+  if (nilai === null || nilai === undefined || nilai === '') return null;
+  if (nilai instanceof Date) {
+    const wib = new Date(nilai.getTime() + 7 * 3600 * 1000);
+    return isNaN(wib.getTime()) ? null : wib.toISOString().slice(0, 10);
+  }
+  if (typeof nilai === 'number') {
+    const ms = nilai < 1e12 ? nilai * 1000 : nilai;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  }
+  const str = String(nilai).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function tanggalJamkosDari(kData) {
+  if (!kData) return null;
+  return normalisasiTanggalWIB(kData.tanggalJamkos)
+    || normalisasiTanggalWIB(kData.tanggal)
+    || normalisasiTanggalWIB(kData.approvedAt)
+    || normalisasiTanggalWIB(kData.updatedAt);
+}
+
+function ekstrakRentangJamJamkos(kData) {
+  if (!kData) return null;
+  const rapikan = (v) => {
+    const m = String(v || '').trim().match(/^(\d{1,2})[:.](\d{2})$/);
+    return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+  };
+  let mulai = rapikan(kData.jamMulai);
+  let selesai = rapikan(kData.jamSelesai);
+  if (!mulai || !selesai) {
+    const sumber = [kData.jamPelajaran, kData.keteranganJamkos, kData.keterangan, kData.jam_ke]
+      .filter(Boolean).join(' | ');
+    const match = sumber.match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|—|s\/d|sd|sampai)\s*(\d{1,2}[:.]\d{2})/i);
+    if (match) {
+      if (!mulai) mulai = rapikan(match[1]);
+      if (!selesai) selesai = rapikan(match[2]);
+    }
+  }
+  if (!mulai || !selesai) return null;
+  return { mulai, selesai };
+}
+
+// Apakah status jamkos masih berlaku pada tanggal & jam tertentu.
+// Bila data tidak punya tanggal/jam sama sekali, dianggap berlaku (kompatibilitas data lama).
+function statusJamkosMasihBerlaku(kData, tanggalAcuan, waktuWIB) {
+  if (!kData) return true;
+  const status = String(kData.status || '').toLowerCase().trim();
+  if (status && status !== 'jamkos') return false;
+  const tgl = tanggalAcuan || tanggalHariIni();
+  const tglJamkos = tanggalJamkosDari(kData);
+  if (tglJamkos && tgl && tglJamkos !== tgl) return false;
+  const rentang = ekstrakRentangJamJamkos(kData);
+  if (!rentang) return true;
+  const jam = String(waktuWIB || jamSekarang()).slice(0, 5);
+  return jam >= rentang.mulai && jam < rentang.selesai;
+}
+
+// Apakah status jamkos sudah benar-benar kedaluwarsa (boleh dibersihkan ke "belajar").
+// Jamkos untuk jam pelajaran yang belum dimulai TIDAK dianggap kedaluwarsa.
+function statusJamkosKedaluwarsa(kData, tanggalAcuan, waktuWIB) {
+  if (!kData || String(kData.status || '').toLowerCase().trim() !== 'jamkos') return false;
+  const tgl = tanggalAcuan || tanggalHariIni();
+  const tglJamkos = tanggalJamkosDari(kData);
+  if (tglJamkos && tgl && tglJamkos !== tgl) return true;
+  const rentang = ekstrakRentangJamJamkos(kData);
+  if (!rentang) return false;
+  const jam = String(waktuWIB || jamSekarang()).slice(0, 5);
+  return jam >= rentang.selesai;
+}
+
+// Bersihkan status jamkos yang sudah kedaluwarsa di Firebase (idempotent, sekali per kelas/hari).
+function sinkronkanStatusJamkosKedaluwarsa(kelas, kData) {
+  try {
+    if (!kData || String(kData.status || '').toLowerCase().trim() !== 'jamkos') return false;
+    if (!statusJamkosKedaluwarsa(kData)) return false;
+    const normKelas = (typeof normalisasiKelas === 'function') ? normalisasiKelas(kelas) : (kelas || '');
+    if (!normKelas) return false;
+    const dbAktif = (typeof db !== 'undefined' && db && typeof db.ref === 'function') ? db
+      : ((typeof window !== 'undefined' && window.db && typeof window.db.ref === 'function') ? window.db
+        : ((typeof global !== 'undefined' && global.db && typeof global.db.ref === 'function') ? global.db : null));
+    if (!dbAktif) return false;
+    const kunci = 'jamkos_heal_' + normKelas + '_' + tanggalHariIni();
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        if (sessionStorage.getItem(kunci)) return false;
+        sessionStorage.setItem(kunci, '1');
+      }
+    } catch (eStore) {}
+    const bersih = {
+      status: 'belajar',
+      tanggalJamkos: '',
+      jamPelajaran: '',
+      jamMulai: '',
+      jamSelesai: '',
+      keteranganJamkos: '',
+      updatedAt: new Date().toISOString()
+    };
+    dbAktif.ref('kelas/' + normKelas).update(bersih).catch(() => null);
+    dbAktif.ref('classes/' + normKelas).update(Object.assign({ statusKelas: 'belajar' }, bersih)).catch(() => null);
+    dbAktif.ref('status_kelas/' + normKelas).update({
+      status: 'belajar',
+      keterangan: '',
+      mapel: '',
+      updatedAt: Date.now()
+    }).catch(() => null);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Cari jam ke berapa yang sedang aktif berdasarkan waktu sekarang.
 // Mendukung format flat { "1": {...} } maupun format pohon multi-hari { "senin": {...} }
 // return null kalau nggak lagi ada jam pelajaran (istirahat/di luar jam sekolah)
@@ -373,16 +495,51 @@ function tentukanStatusKelas(kelas, opsi) {
   }
 
   // ===================================================================
-  // 1. DI LUAR JAM KBM: HARI LIBUR / AKHIR PEKAN
+  // 1. DI LUAR JAM KBM: HARI LIBUR / AKHIR PEKAN / TANGGAL MERAH NASIONAL
   // Pada akhir pekan atau hari libur resmi, status selalu Libur
   // ===================================================================
-  if (hariLower === 'sabtu' || hariLower === 'minggu' || statusFirebase === 'libur') {
+  const DAFTAR_LIBUR_NASIONAL = {
+    // Hari Libur Nasional & Cuti Bersama Indonesia (format YYYY-MM-DD atau MM-DD)
+    '01-01': 'Tahun Baru Masehi',
+    '01-27': 'Isra Mi\'raj Nabi Muhammad SAW',
+    '01-28': 'Tahun Baru Imlek',
+    '01-29': 'Cuti Bersama Imlek',
+    '03-02': 'Hari Suci Nyepi',
+    '03-03': 'Cuti Bersama Nyepi',
+    '03-20': 'Hari Raya Idul Fitri',
+    '03-21': 'Hari Raya Idul Fitri',
+    '03-22': 'Cuti Bersama Idul Fitri',
+    '03-23': 'Cuti Bersama Idul Fitri',
+    '03-24': 'Cuti Bersama Idul Fitri',
+    '04-03': 'Wafat Isa Almasih',
+    '04-05': 'Hari Paskah',
+    '05-01': 'Hari Buruh Internasional',
+    '05-14': 'Kenaikan Isa Almasih',
+    '05-27': 'Hari Raya Waisak',
+    '05-28': 'Cuti Bersama Waisak',
+    '06-01': 'Hari Lahir Pancasila',
+    '06-07': 'Hari Raya Idul Adha',
+    '06-27': 'Tahun Baru Islam (1 Muharram)',
+    '08-17': 'Hari Kemerdekaan RI (HUT RI)',
+    '09-05': 'Maulid Nabi Muhammad SAW',
+    '12-25': 'Hari Raya Natal',
+    '12-26': 'Cuti Bersama Natal'
+  };
+
+  const tglClean = String(tgl || '').trim();
+  const mmDd = tglClean.length >= 10 ? tglClean.slice(5, 10) : '';
+  const namaLibur = DAFTAR_LIBUR_NASIONAL[tglClean] || DAFTAR_LIBUR_NASIONAL[mmDd];
+
+  if (hariLower === 'sabtu' || hariLower === 'minggu' || statusFirebase === 'libur' || Boolean(namaLibur)) {
+    const ketLibur = namaLibur
+      ? `Libur Nasional: ${namaLibur}. Tidak ada kegiatan belajar mengajar aktif.`
+      : 'Hari libur sekolah / akhir pekan. Tidak ada jadwal KBM aktif hari ini.';
     return createResult(
       'libur',
       'Libur',
       'Libur',
       '#64748b',
-      'Hari libur sekolah / akhir pekan. Tidak ada jadwal KBM aktif hari ini.'
+      ketLibur
     );
   }
 
@@ -422,7 +579,12 @@ function tentukanStatusKelas(kelas, opsi) {
   // 4. DI DALAM RENTANG JAM KBM AKTIF (jamMasuk <= waktuWIB < jamSelesaiTerakhir)
   // PRIORITAS 3 — JAMKOS (Hanya jika di dalam jam aktif & ada laporan / override jamkos)
   // ===================================================================
-  const isJamkos = (statusFirebase === 'jamkos' || !!opts.isJamkos);
+  const kDataJamkos = opts.kData || opts.overrideFirebase || null;
+  const jamkosMasihBerlaku = kDataJamkos
+    ? statusJamkosMasihBerlaku(kDataJamkos, tgl, waktuWIB)
+    : true; // data lama tanpa rincian tanggal/jam: tetap dihormati
+  const isJamkos = !!opts.isJamkos
+    || (statusFirebase === 'jamkos' && jamkosMasihBerlaku);
   if (isJamkos) {
     return createResult(
       'jamkos',
@@ -454,6 +616,10 @@ if (typeof window !== 'undefined') {
   window.JAM_PULANG_RESMI = JAM_PULANG_RESMI;
   window.ambilJadwalKelasHariIni = ambilJadwalKelasHariIni;
   window.tentukanStatusKelas = tentukanStatusKelas;
+  window.statusJamkosMasihBerlaku = statusJamkosMasihBerlaku;
+  window.statusJamkosKedaluwarsa = statusJamkosKedaluwarsa;
+  window.ekstrakRentangJamJamkos = ekstrakRentangJamJamkos;
+  window.sinkronkanStatusJamkosKedaluwarsa = sinkronkanStatusJamkosKedaluwarsa;
 }
 if (typeof global !== 'undefined') {
   global.tanggalHariIni = tanggalHariIni;
@@ -464,6 +630,10 @@ if (typeof global !== 'undefined') {
   global.JAM_PULANG_RESMI = JAM_PULANG_RESMI;
   global.ambilJadwalKelasHariIni = ambilJadwalKelasHariIni;
   global.tentukanStatusKelas = tentukanStatusKelas;
+  global.statusJamkosMasihBerlaku = statusJamkosMasihBerlaku;
+  global.statusJamkosKedaluwarsa = statusJamkosKedaluwarsa;
+  global.ekstrakRentangJamJamkos = ekstrakRentangJamJamkos;
+  global.sinkronkanStatusJamkosKedaluwarsa = sinkronkanStatusJamkosKedaluwarsa;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -475,7 +645,11 @@ if (typeof module !== 'undefined' && module.exports) {
     MASTER_JADWAL_RESMI,
     JAM_PULANG_RESMI,
     ambilJadwalKelasHariIni,
-    tentukanStatusKelas
+    tentukanStatusKelas,
+    statusJamkosMasihBerlaku,
+    statusJamkosKedaluwarsa,
+    ekstrakRentangJamJamkos,
+    sinkronkanStatusJamkosKedaluwarsa
   };
 }
 

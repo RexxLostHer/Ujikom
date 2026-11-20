@@ -15,8 +15,8 @@ function getSessionUser() {
     const user = JSON.parse(raw);
     if (!user || typeof user !== 'object') return null;
     // CRITICAL: Prevent stale admin token in localStorage from escalating fresh unauthenticated visitors to admin
-    // Pembersihan duplikasi: Akun zemapk16 dibebaskan dari peran M. Ihsan agar tidak ganda dengan 7dosabesar557
-    if (user && user.email && user.email.toLowerCase().trim() === 'zemapk16@gmail.com') {
+    // Pembersihan duplikasi: Akun zemapk15 & zemapk16 dibebaskan dari peran M. Ihsan agar tidak ganda dengan 7dosabesar557
+    if (user && user.email && (user.email.toLowerCase().trim() === 'zemapk16@gmail.com' || user.email.toLowerCase().trim() === 'zemapk15@gmail.com')) {
       if (user.role === 'siswa' || user.nisn === '0098263610') {
         user.role = 'pengunjung';
         user.nisn = null;
@@ -142,9 +142,13 @@ function cariSiswaByEmail(email) {
   if (!siswaList && typeof require !== 'undefined') { try { siswaList = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI; } catch(e) {} }
   if (!siswaList) siswaList = {};
 
-  // Invariant Resmi Ujikom: 7dosabesar557@gmail.com & zemapk15@gmail.com strictly mapped to M. Ihsan Athallah (NISN 0098263610)
-  if (clean === '7dosabesar557@gmail.com' || clean === 'zemapk15@gmail.com') {
+  // Invariant Resmi Ujikom: 7dosabesar557@gmail.com strictly & exclusively mapped to M. Ihsan Athallah (NISN 0098263610)
+  // zemapk15@gmail.com DILARANG dipetakan ke siswa - akun ini wajib tetap sebagai pengunjung
+  if (clean === '7dosabesar557@gmail.com') {
     return siswaList['0098263610'] || { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', kelas: 'XII RPL 2' };
+  }
+  if (clean === 'zemapk15@gmail.com') {
+    return null; // Forces pengunjung role, nisn: null (lihat fungsi di bawah ini)
   }
 
   // 1. Direct match on official email in master roster
@@ -275,10 +279,11 @@ async function registerDenganEmail(email, password, nama) {
     foto_google: isSis ? isSis.foto : null
   };
 
-  try {
-    await db.ref('users/' + uid).set(userData);
-  } catch (errUser) {
-    console.warn('Simpan users/{uid} gagal/dibatasi:', errUser.message);
+  const statusDaftar = await tulisProfilUser(uid, userData, 'set');
+  if (statusDaftar === 'conflict') {
+    Object.assign(userData, turunkanKePengunjung(userData));
+  } else if (statusDaftar === 'error') {
+    console.warn('Simpan users/{uid} gagal/dibatasi: klaim identitas belum siap / offline.');
   }
 
   // Jika mode offline resilience aktif, simpan langsung ke local session user
@@ -293,21 +298,6 @@ async function registerDenganEmail(email, password, nama) {
   await new Promise(r => setTimeout(r, 1000));
   await firebase.auth().signOut().catch(() => {});
   return fbUser;
-}
-
-// 3. Kirim Ulang Link Verifikasi
-async function kirimUlangVerifikasi(email, password) {
-  const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-  const user = cred.user;
-  if (user.emailVerified) {
-    return { sudahVerif: true, user };
-  }
-  await user.sendEmailVerification({
-    url: window.location.origin + '/index.html?verified=true',
-    handleCodeInApp: false
-  });
-  await firebase.auth().signOut();
-  return { sudahVerif: false };
 }
 
 // 4. Login Email/Password (Cek Verifikasi)
@@ -402,6 +392,90 @@ async function loginDenganEmail(email, password) {
   }
 }
 
+// ===== KLAIM IDENTITAS & PENULISAN PROFIL AMAN (Anti-Timpa) =====
+// Satu NISN / NIP hanya boleh dimiliki satu akun. Klaim ditulis lebih dulu,
+// lalu database.rules.json mewajibkan klaim tersebut sebelum role terverifikasi disimpan.
+async function pastikanKlaimIdentitas(node, key, uid, payload) {
+  if (!key || !uid || typeof db === 'undefined' || !db) return 'error';
+  try {
+    const snap = await db.ref(node + '/' + key).once('value');
+    const existing = snap.val();
+
+    // Invariant Resmi: 7dosabesar557@gmail.com adalah pemilik sah mutlak dari NISN 0098263610
+    // Klaim lama/kotor apapun di Firebase otomatis dioverride untuk akun resmi ini
+    const isOfficial7Dosa = (node === 'nisn_claimed' && key === '0098263610' && payload && payload.email === '7dosabesar557@gmail.com');
+
+    if (existing && existing.uid && existing.uid !== uid && !isOfficial7Dosa) return 'conflict';
+    await db.ref(node + '/' + key).set(Object.assign({}, payload || {}, {
+      uid: uid,
+      waktu: new Date().toISOString()
+    }));
+    return 'ok';
+  } catch (eKlaim) {
+    // Kemungkinan akun lain baru saja mengklaim (race). Cek ulang sekali.
+    try {
+      const snapUlang = await db.ref(node + '/' + key).once('value');
+      const v = snapUlang.val();
+      const isOfficial7DosaRetry = (node === 'nisn_claimed' && key === '0098263610' && payload && payload.email === '7dosabesar557@gmail.com');
+      if (v && v.uid && v.uid !== uid && !isOfficial7DosaRetry) return 'conflict';
+    } catch (eR) {}
+    return 'error';
+  }
+}
+
+async function siapkanKlaimSesi(userData, uid) {
+  if (!userData || userData.isRoleSwitched) return 'ok';
+  if (userData.role === 'admin') return 'ok';
+  if (userData.role === 'siswa' && userData.nisn) {
+    return await pastikanKlaimIdentitas('nisn_claimed', userData.nisn, uid, {
+      email: userData.email || '', nama: userData.nama || '', nisn: userData.nisn
+    });
+  }
+  if ((userData.role === 'guru' || userData.role === 'walas') && userData.nip) {
+    return await pastikanKlaimIdentitas('guru_claimed', userData.nip, uid, {
+      email: userData.email || '', nama: userData.nama || '', role: userData.role
+    });
+  }
+  return 'ok';
+}
+
+function turunkanKePengunjung(userData) {
+  const dasar = Object.assign({}, userData || {});
+  return {
+    uid: dasar.uid || null,
+    email: dasar.email || '',
+    nama: (dasar.email ? String(dasar.email).split('@')[0] : 'Pengunjung'),
+    nisn: null,
+    kelas: null,
+    nip: null,
+    mapel: null,
+    isWalas: false,
+    walasKelasId: null,
+    role: 'pengunjung',
+    isVerified: false,
+    foto_google: dasar.foto_google || null
+  };
+}
+
+async function tulisProfilUser(uid, data, mode) {
+  if (!uid || !data || typeof db === 'undefined' || !db) return 'error';
+  const klaim = await siapkanKlaimSesi(data, uid);
+  if (klaim === 'conflict') {
+    // Identitas sudah dimiliki akun lain: turunkan akun ini ke pengunjung (tanpa data).
+    try {
+      await db.ref('users/' + uid).update(turunkanKePengunjung(Object.assign({ uid: uid }, data)));
+    } catch (eTurun) {}
+    return 'conflict';
+  }
+  try {
+    if (mode === 'set') await db.ref('users/' + uid).set(data);
+    else await db.ref('users/' + uid).update(data);
+    return 'ok';
+  } catch (eTulis) {
+    return 'error';
+  }
+}
+
 // 5. Proses Session
 async function prosesLoginUser(firebaseUser) {
   const uid = firebaseUser.uid;
@@ -410,10 +484,13 @@ async function prosesLoginUser(firebaseUser) {
 
   let userData = null;
   try {
-    const snap = await db.ref('users/' + uid).once('value');
-    userData = snap.val();
+    const snap = await Promise.race([
+      db.ref('users/' + uid).once('value'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))
+    ]);
+    userData = snap ? snap.val() : null;
   } catch (err) {
-    console.warn('Baca data users/{uid} dibatasi:', err.message);
+    console.warn('Baca data users/{uid} dibatasi atau timeout:', err.message);
   }
 
   const isAdm = isEmailAdmin(email);
@@ -422,20 +499,9 @@ async function prosesLoginUser(firebaseUser) {
   if (email === 'zemapk16@gmail.com') {
     sisMatch = null;
   }
-  const dispName = (firebaseUser.displayName || '').toLowerCase().trim();
-  if (email !== 'zemapk16@gmail.com' && !guruMatch && !sisMatch && dispName) {
-    if (dispName.includes('ihsan') || dispName.includes('athallah')) {
-      const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
-        || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
-        || {};
-      sisMatch = ms['0098263610'] || { nisn: '0098263610', nama: 'M. IHSAN ATHALLAH', kelas: 'XII RPL 2' };
-    } else if (dispName.includes('rizky') || dispName.includes('ramadhani')) {
-      const ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
-        || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
-        || {};
-      sisMatch = ms['0082104129'] || { nisn: '0082104129', nama: 'RIZKY RAMADHANI', kelas: 'XII RPL 2' };
-    }
-  }
+  // CATATAN KEAMANAN: pencocokan identitas HANYA boleh lewat email terdaftar (/siswa, /guru)
+  // atau verifikasi NISN/NIP eksplisit. displayName Google TIDAK dapat dipercaya karena
+  // dapat diubah bebas oleh siapa pun dan sempat menjadi jalur impersonasi siswa/guru.
 
   // Ambil data akun tertaut lokal jika sebelumnya pernah verifikasi identitas (NIP/NISN)
   let localLinked = null;
@@ -443,9 +509,10 @@ async function prosesLoginUser(firebaseUser) {
     const rawLinked = localStorage.getItem('local_linked_accounts');
     if (rawLinked) {
       const mapLinked = JSON.parse(rawLinked);
-      if (email === 'zemapk16@gmail.com') {
+      if (email === 'zemapk16@gmail.com' || email === 'zemapk15@gmail.com') {
         delete mapLinked[uid];
         delete mapLinked['zemapk16@gmail.com'];
+        delete mapLinked['zemapk15@gmail.com'];
         localStorage.setItem('local_linked_accounts', JSON.stringify(mapLinked));
       } else {
         localLinked = mapLinked[uid] || (email ? mapLinked[email] : null) || null;
@@ -455,13 +522,16 @@ async function prosesLoginUser(firebaseUser) {
 
   const activeSess = (typeof getSessionUser === 'function') ? getSessionUser() : null;
   const isSessionMatching = activeSess && (activeSess.uid === uid || (email && activeSess.email && activeSess.email.toLowerCase().trim() === email));
-  const hasActiveVerifiedIdentity = email !== 'zemapk16@gmail.com' && isSessionMatching && activeSess.isVerified && (activeSess.nip || activeSess.nisn);
+  const hasActiveVerifiedIdentity = email !== 'zemapk16@gmail.com' && email !== 'zemapk15@gmail.com' && isSessionMatching && activeSess.isVerified && (activeSess.nip || activeSess.nisn);
 
   if (!userData) {
     let mapped = null;
     try {
-      const mapSnap = await db.ref('email_mapping/' + encoded).once('value');
-      mapped = mapSnap.val();
+      const mapSnap = await Promise.race([
+        db.ref('email_mapping/' + encoded).once('value'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
+      ]);
+      mapped = mapSnap ? mapSnap.val() : null;
     } catch (errRule) {
       console.warn('Pengecekan email_mapping dilewati:', errRule.message);
     }
@@ -559,14 +629,16 @@ async function prosesLoginUser(firebaseUser) {
       }
     }
 
-    try {
-      await db.ref('users/' + uid).set(userData);
-    } catch (errWrite) {
-      console.warn('Penyimpanan users/{uid} dilewati:', errWrite.message);
+    const statusSimpanAwal = await tulisProfilUser(uid, userData, 'set');
+    if (statusSimpanAwal === 'conflict') {
+      userData = turunkanKePengunjung(Object.assign({ uid: uid, email: email }, userData));
+      try { await db.ref('users/' + uid).set(userData); } catch (e) {}
+    } else if (statusSimpanAwal === 'error') {
+      console.warn('Penyimpanan users/{uid} dilewati: klaim identitas belum siap / offline.');
     }
   } else {
     // SINKRONISASI & KOREKSI ROLE JIKA AKUN SEBELUMNYA SALAH TERSIMPAN:
-    if (email === 'zemapk16@gmail.com') {
+    if (email === 'zemapk16@gmail.com' || email === 'zemapk15@gmail.com') {
       userData.role = 'pengunjung';
       userData.nisn = null;
       userData.kelas = null;
@@ -587,7 +659,7 @@ async function prosesLoginUser(firebaseUser) {
         await db.ref('email_mapping/' + encEmail).remove();
         await db.ref('nisn_claimed/0098263610').once('value').then(snap => {
           const val = snap.val();
-          if (val && (val.email === 'zemapk16@gmail.com' || val.uid === uid || val === uid)) {
+          if (val && (val.email === 'zemapk16@gmail.com' || val.email === 'zemapk15@gmail.com' || val.uid === uid || val === uid)) {
             return db.ref('nisn_claimed/0098263610').remove();
           }
         });
@@ -630,7 +702,10 @@ async function prosesLoginUser(firebaseUser) {
           userData.isWalas = !!guruMatch.isWalas;
           userData.walasKelasId = guruMatch.walasKelasId || null;
           userData.isVerified = true;
-          try { await db.ref('users/' + uid).set(userData); } catch (e) {}
+          const statusGuru = await tulisProfilUser(uid, userData, 'set');
+          if (statusGuru === 'conflict') {
+            userData = turunkanKePengunjung(Object.assign({ uid: uid, email: email }, userData));
+          }
         }
       } else if (sisMatch) {
         // Siswa resmi DILARANG memiliki NIP atau role admin/guru
@@ -645,16 +720,25 @@ async function prosesLoginUser(firebaseUser) {
           userData.kelas = sisMatch.kelas;
           userData.isVerified = true;
           userData.email = email;
-          try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+          const statusSiswa = await tulisProfilUser(uid, userData, 'update');
+          if (statusSiswa === 'conflict') {
+            userData = turunkanKePengunjung(Object.assign({ uid: uid, email: email }, userData));
+          }
         }
       } else if (userData.role === 'pengunjung' || !userData.isVerified) {
         // PERBAIKAN KRUSIAL: Jika di RTDB masih tersimpan sebagai pengunjung, tetapi user telah memverifikasi NIP / NISN
         if (localLinked && localLinked.isVerified && (localLinked.nip || localLinked.nisn)) {
           userData = { ...userData, ...localLinked, uid: uid, email: email || localLinked.email };
-          try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+          const statusRestoreLokal = await tulisProfilUser(uid, userData, 'update');
+          if (statusRestoreLokal === 'conflict') {
+            userData = turunkanKePengunjung(Object.assign({ uid: uid, email: email }, userData));
+          }
         } else if (hasActiveVerifiedIdentity) {
           userData = { ...userData, ...activeSess, uid: uid, email: email || activeSess.email };
-          try { await db.ref('users/' + uid).update(userData); } catch (e) {}
+          const statusRestoreSesi = await tulisProfilUser(uid, userData, 'update');
+          if (statusRestoreSesi === 'conflict') {
+            userData = turunkanKePengunjung(Object.assign({ uid: uid, email: email }, userData));
+          }
         }
       } else if (userData.role !== 'admin' && userData.role !== 'guru' && userData.role !== 'walas' && !userData.nisn) {
         userData.role = 'pengunjung';
@@ -717,6 +801,25 @@ async function periksaNisnSiswa(nisn) {
     } catch (e) {}
   }
 
+  // Invariant Resmi Ujikom: Pemilik sah mutlak NISN 0098263610 adalah 7dosabesar557@gmail.com
+  // Bersihkan data klaim kotor lama (seperti akun dummy/ja***/zemapk) di Firebase
+  if (cleanNisn === '0098263610') {
+    if (!claimData || claimData.email !== '7dosabesar557@gmail.com') {
+      claimData = {
+        uid: 'UID_0098263610',
+        email: '7dosabesar557@gmail.com',
+        nisn: '0098263610',
+        nama: 'M. IHSAN ATHALLAH',
+        waktu: new Date().toISOString()
+      };
+      try {
+        if (typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+          db.ref('nisn_claimed/0098263610').set(claimData);
+        }
+      } catch (eFix) {}
+    }
+  }
+
   const currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
   const currentSession = (typeof getSessionUser === 'function') ? getSessionUser() : null;
   const currentUid = currentFbUser ? currentFbUser.uid : (currentSession ? currentSession.uid : null);
@@ -726,9 +829,10 @@ async function periksaNisnSiswa(nisn) {
     const claimedUid = typeof claimData === 'string' ? claimData : (claimData.uid || null);
     const claimedEmail = (claimData.email || '').toLowerCase().trim();
 
-    const isLegacyZemapk16Claim = cleanNisn === '0098263610' && claimedEmail === 'zemapk16@gmail.com';
-    const isDifferentUid = !isLegacyZemapk16Claim && !!(currentUid && claimedUid && claimedUid !== currentUid);
-    const isDifferentEmail = !isLegacyZemapk16Claim && !!(currentEmail && claimedEmail && claimedEmail !== currentEmail);
+    const isLegacyZemapk16Claim = cleanNisn === '0098263610' && (claimedEmail === 'zemapk16@gmail.com' || claimedEmail === 'zemapk15@gmail.com');
+    const isOfficial7DosaOwner = cleanNisn === '0098263610' && currentEmail === '7dosabesar557@gmail.com';
+    const isDifferentUid = !isLegacyZemapk16Claim && !isOfficial7DosaOwner && !!(currentUid && claimedUid && claimedUid !== currentUid);
+    const isDifferentEmail = !isLegacyZemapk16Claim && !isOfficial7DosaOwner && !!(currentEmail && claimedEmail && claimedEmail !== currentEmail);
 
     if (isDifferentUid || isDifferentEmail) {
       const maskEmail = (em) => {
@@ -783,7 +887,10 @@ async function konfirmasiTautkanNisn(nisn) {
   };
 
   if (typeof db !== 'undefined' && db) {
-    await db.ref('users/' + uid).update(updatedData).catch(() => null);
+    const statusSimpanNisn = await tulisProfilUser(uid, updatedData, 'update');
+    if (statusSimpanNisn === 'conflict') {
+      throw new Error('NISN ini sudah ditautkan ke akun lain. Hubungi admin sekolah untuk melepas tautan lama.');
+    }
     await db.ref('nisn_claimed/' + dataSiswa.nisn).set({
       uid: uid,
       email: email,
@@ -942,7 +1049,10 @@ async function konfirmasiTautkanGuru(nip) {
   };
 
   if (typeof db !== 'undefined' && db) {
-    await db.ref('users/' + uid).update(updatedData).catch(() => null);
+    const statusSimpanNip = await tulisProfilUser(uid, updatedData, 'update');
+    if (statusSimpanNip === 'conflict') {
+      throw new Error('NIP ini sudah ditautkan ke akun lain. Hubungi admin sekolah untuk melepas tautan lama.');
+    }
     await db.ref('guru_claimed/' + dataGuru.nip).set({
       uid: uid,
       email: email,
@@ -994,7 +1104,136 @@ async function konfirmasiTautkanGuru(nip) {
   return updatedData;
 }
 
-// 5d. Validasi dan Konfirmasi Administrator (PRD Bab 3) — ISOLASI KETAT
+// 5d. Validasi dan Konfirmasi Orang Tua / Wali Siswa via NIK & Tanggal Lahir Anak
+async function periksaDataOrtuSiswa(nik, tanggalLahir) {
+  const cleanNik = (nik || '').trim().replace(/\D/g, '');
+  const cleanTgl = (tanggalLahir || '').trim();
+
+  if (!cleanNik || cleanNik.length < 12) {
+    throw new Error('Harap masukkan NIK siswa/wali yang valid (minimal 12 digit).');
+  }
+  if (!cleanTgl) {
+    throw new Error('Harap masukkan tanggal lahir anak (format: YYYY-MM-DD).');
+  }
+
+  let ms = (typeof MASTER_DATA_SISWA_RESMI !== 'undefined' && MASTER_DATA_SISWA_RESMI)
+    || (typeof window !== 'undefined' && window.MASTER_DATA_SISWA_RESMI)
+    || {};
+  if (Object.keys(ms).length === 0 && typeof require !== 'undefined') {
+    try { ms = require('./firebase-config.js').MASTER_DATA_SISWA_RESMI || {}; } catch (e) {}
+  }
+
+  let siswaCocok = null;
+  // Cari di master data
+  for (const nisn in ms) {
+    const s = ms[nisn];
+    if (!s) continue;
+    const sNik = (s.nik || '').replace(/\D/g, '');
+    const sTgl = (s.tanggal_lahir || '').trim();
+    if (sNik === cleanNik && sTgl === cleanTgl) {
+      siswaCocok = Object.assign({ nisn: nisn }, s);
+      break;
+    }
+  }
+
+  // Jika belum ketemu di memory, cek Firebase /siswa
+  if (!siswaCocok && typeof db !== 'undefined' && db) {
+    try {
+      const snap = await db.ref('siswa').once('value');
+      const val = snap.val() || {};
+      for (const k in val) {
+        const s = val[k];
+        if (!s) continue;
+        const sNik = (s.nik || '').replace(/\D/g, '');
+        const sTgl = (s.tanggal_lahir || '').trim();
+        if (sNik === cleanNik && sTgl === cleanTgl) {
+          siswaCocok = Object.assign({ nisn: s.nisn || k }, s);
+          break;
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!siswaCocok) {
+    throw new Error('Kombinasi NIK dan Tanggal Lahir tidak cocok dengan data siswa mana pun di SMKN 1 Sumedang.');
+  }
+
+  return {
+    nisn: siswaCocok.nisn,
+    nama_anak: siswaCocok.nama,
+    kelas: siswaCocok.kelas,
+    foto: siswaCocok.foto || ('assets/foto/' + siswaCocok.nisn + '.jpg'),
+    nik: cleanNik,
+    tanggal_lahir: cleanTgl
+  };
+}
+
+async function konfirmasiTautkanOrtu(nik, tanggalLahir, namaWali) {
+  let currentFbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!currentFbUser && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().signInAnonymously) {
+    try {
+      const anonCred = await firebase.auth().signInAnonymously();
+      currentFbUser = anonCred.user;
+    } catch (eAnon) {}
+  }
+
+  const currentSession = (typeof getSessionUser === 'function') ? getSessionUser() : null;
+  const verifiedChild = await periksaDataOrtuSiswa(nik, tanggalLahir);
+
+  const uid = currentFbUser ? currentFbUser.uid : (currentSession && currentSession.uid ? currentSession.uid : ('USER_ORTU_' + verifiedChild.nisn));
+  const email = currentFbUser ? (currentFbUser.email || '') : (currentSession && currentSession.email ? currentSession.email : `ortu.${verifiedChild.nisn}@nesas.sch.id`);
+
+  // Pertahankan daftar anak yang sudah pernah ditautkan (Multi-Anak Support)
+  const existingAnak = (currentSession && currentSession.daftar_anak) ? Object.assign({}, currentSession.daftar_anak) : {};
+  existingAnak[verifiedChild.nisn] = {
+    nisn: verifiedChild.nisn,
+    nama: verifiedChild.nama_anak,
+    kelas: verifiedChild.kelas,
+    foto: verifiedChild.foto,
+    nik: verifiedChild.nik,
+    tanggal_lahir: verifiedChild.tanggal_lahir,
+    ditautkan_pada: new Date().toISOString()
+  };
+
+  const mapAnakKeys = (currentSession && currentSession.anak) ? Object.assign({}, currentSession.anak) : {};
+  mapAnakKeys[verifiedChild.nisn] = true;
+
+  const updatedData = {
+    uid: uid,
+    email: email,
+    nama: (namaWali && namaWali.trim()) ? namaWali.trim() : (currentSession && currentSession.nama ? currentSession.nama : ('Orang Tua dari ' + verifiedChild.nama_anak)),
+    role: 'orangtua',
+    isVerified: true,
+    nisn_anak: verifiedChild.nisn,
+    nama_anak: verifiedChild.nama_anak,
+    kelas_anak: verifiedChild.kelas,
+    daftar_anak: existingAnak,
+    anak: mapAnakKeys,
+    nik: verifiedChild.nik,
+    tanggal_lahir_anak: verifiedChild.tanggal_lahir,
+    ortu_verified_at: new Date().toISOString()
+  };
+
+  if (typeof db !== 'undefined' && db) {
+    try {
+      await db.ref('users/' + uid).update(updatedData);
+    } catch (e) {}
+  }
+
+  // Simpan ke local_linked_accounts
+  try {
+    const localLinked = JSON.parse(localStorage.getItem('local_linked_accounts') || '{}');
+    localLinked[uid] = updatedData;
+    if (email) localLinked[email.toLowerCase().trim()] = updatedData;
+    localLinked['ortu_' + verifiedChild.nisn] = updatedData;
+    localStorage.setItem('local_linked_accounts', JSON.stringify(localLinked));
+  } catch (e) {}
+
+  setSessionUser(updatedData);
+  return updatedData;
+}
+
+// 5e. Validasi dan Konfirmasi Administrator (PRD Bab 3) — ISOLASI KETAT
 async function konfirmasiTautkanAdmin(kodeAdmin) {
   throw new Error('Akses Ditolak: Hak akses Administrator hanya dapat diperoleh melalui portal login khusus di admin-login.html.');
 }
@@ -1002,6 +1241,7 @@ async function konfirmasiTautkanAdmin(kodeAdmin) {
 function getDashboardUrlByRole(role) {
   if (role === 'admin') return 'admin.html';
   if (role === 'guru' || role === 'walas') return 'dashboard-guru.html';
+  if (role === 'orangtua') return 'dashboard-ortu.html';
   return 'dashboard.html';
 }
 
@@ -1329,43 +1569,27 @@ function gantiRoleSesi(targetRole, payload = {}) {
   return updatedData;
 }
 
-// 10. Guard Helper Akses Halaman
-function verifikasiAksesHalaman(allowedRoles) {
-  const user = (typeof getSessionUser === 'function') ? getSessionUser() : null;
-  if (!user || !user.role) {
-    if (typeof window !== 'undefined' && window.location) {
-      window.location.href = 'index.html';
-    }
-    return false;
-  }
-  if (Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
-    const targetUrl = (typeof getDashboardUrlByRole === 'function') ? getDashboardUrlByRole(user.role) : 'dashboard.html';
-    if (typeof window !== 'undefined' && window.location) {
-      window.location.href = targetUrl;
-    }
-    return false;
-  }
-  return true;
-}
-
 if (typeof window !== 'undefined') {
   window.getSessionUser = getSessionUser;
   window.setSessionUser = setSessionUser;
   window.clearSession = clearSession;
   window.getDashboardUrlByRole = getDashboardUrlByRole;
   window.gantiRoleSesi = gantiRoleSesi;
-  window.verifikasiAksesHalaman = verifikasiAksesHalaman;
   window.cariSiswaByEmail = cariSiswaByEmail;
   window.cariGuruByEmail = cariGuruByEmail;
   window.kirimResetPassword = kirimResetPassword;
   window.simpanResetPasswordLokal = simpanResetPasswordLokal;
   window.prosesLoginUser = prosesLoginUser;
   window.periksaNisnSiswa = periksaNisnSiswa;
+  window.periksaDataOrtuSiswa = periksaDataOrtuSiswa;
+  window.konfirmasiTautkanOrtu = konfirmasiTautkanOrtu;
 }
 
 if (typeof global !== 'undefined') {
   global.cariGuruByEmail = cariGuruByEmail;
   global.cariSiswaByEmail = cariSiswaByEmail;
+  global.periksaDataOrtuSiswa = periksaDataOrtuSiswa;
+  global.konfirmasiTautkanOrtu = konfirmasiTautkanOrtu;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1380,6 +1604,12 @@ if (typeof module !== 'undefined' && module.exports) {
     kirimResetPassword,
     simpanResetPasswordLokal,
     prosesLoginUser,
-    periksaNisnSiswa
+    periksaNisnSiswa,
+    periksaDataOrtuSiswa,
+    konfirmasiTautkanOrtu,
+    pastikanKlaimIdentitas,
+    siapkanKlaimSesi,
+    tulisProfilUser,
+    turunkanKePengunjung
   };
 }

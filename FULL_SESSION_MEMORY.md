@@ -339,3 +339,30 @@
 ## 5. Berkas Penghubung Utama
 - **`presensia-iot-contract.js`**: SDK kontrak JavaScript untuk memproses tap kartu, menghitung status WIB, memvalidasi anti-passback, dan menghasilkan payload Firebase RTDB.
 - **`IOT_AGENT_CONTEXT.md`**: Ringkasan arsitektur IoT dan petunjuk coding C++ ESP32 & Python Raspberry Pi.
+
+---
+
+## 6. Zero-Data Lockdown Pengunjung & Hardening Identitas (Phase 1)
+
+### 6.1 Pengunjung / Akun Belum Terverifikasi
+- `assets/dashboard.js` menghitung `MODE_TERKUNCI_PENGUNJUNG` secara sinkron dari `user_aktif` SEBELUM listener Firebase dipasang.
+- Kondisi terkunci: `role === 'pengunjung'`, `isVerified === false`, atau `role === 'siswa'` tanpa `nisn`.
+- Saat terkunci: seluruh `.tab-content` disembunyikan, panel `#tabTerkunci` dirender, `switchTab()`, `inisialisasiPantauAwal()`, dan `inisialisasiJadwalAwal()` langsung return, dan `initDashboard()` berhenti sebelum `initBerandaOverview()`.
+- `assets/data-riwayat-setahun.js` TIDAK lagi dimuat eager di `dashboard.html`; hanya dimuat via `muatDataRiwayatSetahunLazy()` setelah akun terverifikasi.
+- CSS: `body.mode-terkunci-pengunjung` menyembunyikan `.view-tabs`, `#waFloatingBtn`, `#modalChat`, `#waChatView`.
+
+### 6.2 Presensi Live (TV Lobby)
+- `presensi-live.html` kini memuat `assets/auth.js` sebelum `assets/presensi-live.js`.
+- Hanya `admin`, `guru`, `walas`, `iot_gateway` (terverifikasi) yang boleh memuat data. Selain itu `AKSES_LIVE_DITOLAK = true` dan semua listener (`kelas`, `siswa`, `rfid_map`, `kartu`, dropdown, interval) dilewati.
+
+### 6.3 Klaim Identitas Anti-Timpa (NISN/NIP)
+- `database.rules.json` kini memiliki node `nisn_claimed`, `guru_claimed`, dan `email_mapping`.
+- `users/{uid}` hanya boleh dibuat sebagai `pengunjung` tanpa klaim. Role `siswa` wajib: NISN ada di `/siswa` + `nisn_claimed/{nisn}/uid === auth.uid`. Role `guru`/`walas` wajib: NIP ada di `/guru` + `guru_claimed/{nip}/uid === auth.uid`.
+- Klaim tidak bisa ditimpa akun lain (`data.child('uid') === auth.uid`), dan pengguna hanya bisa menurunkan dirinya sendiri ke `pengunjung`.
+- `assets/auth.js`: `pastikanKlaimIdentitas()`, `siapkanKlaimSesi()`, `tulisProfilUser()`, `turunkanKePengunjung()`. Klaim ditulis lebih dulu, lalu profil. Konflik klaim menurunkan akun ke `pengunjung` tanpa data.
+- Heuristik `displayName` Google ("ihsan"/"rizky") DIHAPUS. Identitas hanya lewat email terdaftar di `/siswa` / `/guru` atau verifikasi NISN/NIP eksplisit.
+- `/guru` root hanya untuk staff; `/guru/{nip}` tetap `auth != null` untuk kebutuhan verifikasi NIP.
+- Sesi demo `isRoleSwitched` tidak pernah menulis klaim identitas.
+
+### 6.4 Batasan yang Masih Terbuka
+- Aset statis (`assets/data-riwayat-setahun.js`, `assets/firebase-config.js`, `seed/roster-data.json`) tetap dapat diunduh langsung lewat URL. Untuk privasi penuh, data massal harus dipindah ke Firebase/Cloud Function dengan rules, bukan berkas statis.
